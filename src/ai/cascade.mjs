@@ -1,5 +1,5 @@
 // Cascade router: provider order, per-task confidence thresholds, hard escalation, fallback to local.
-import { guard } from './guardrails.mjs';
+import { guard, redactValue, restore } from './guardrails.mjs';
 import { hasRequiredShape, schemaFor, TASKS } from './schemas.mjs';
 
 const KNOWN = ['local', 'vertex-claude', 'vertex-gemini'];
@@ -89,6 +89,17 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
     }
     const tenantId = opts.tenantId ?? ctx.tenant?.id;
     const aiConfig = (tenantId && ctx.tenants?.get?.(tenantId)?.ai) || { provider: 'local' };
+    const humanConfirm = aiConfig.humanConfirmRequired === true;
+    const redactSetting = aiConfig.redactPiiBeforeModel; // cloud is always redacted; only an explicit true affects local
+    const maxTokens = Number(aiConfig.maxTokensPerClaim);
+    const claimId = opts.claimId ?? undefined;
+    const budgeted = Number.isFinite(maxTokens) && maxTokens > 0 && !!claimId && !!tenantId && typeof log?.tokensForClaim === 'function';
+    let budgetHit = false;
+    const overBudget = () => {
+      if (!budgeted) return false;
+      try { return log.tokensForClaim(tenantId, claimId) >= maxTokens; } catch { return false; }
+    };
+    const finish = (o) => (humanConfirm || budgetHit ? { ...o, unconfirmed: true } : o);
     const flags = hardFlags(input, opts.flags ?? []);
     const hard = flags.length > 0;
     const chain = resolveChain(aiConfig, task, { hard });
@@ -101,18 +112,35 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
     for (const entry of chain) {
       const started = performance.now();
       const logIt = (extra) => log?.record(tenantId, {
-        task, provider: entry.provider, model: entry.model, tier: entry.tier, input,
+        task, provider: entry.provider, model: entry.model, tier: entry.tier, input, claimId,
         latencyMs: performance.now() - started, escalated: tried.length > 0, ...extra,
       });
       let res;
+      let map = {};
       try {
+        if (entry.provider !== 'local' && overBudget()) {
+          budgetHit = true;
+          tried.push(entry.provider);
+          logIt({ usage: { skipped: 'budget' } });
+          continue;
+        }
         const p = await getProvider(entry.provider, opts.providers);
         if (!p || (typeof p.available === 'function' && !(await p.available()))) {
           tried.push(entry.provider);
           logIt({ usage: { skipped: 'unavailable' } });
           continue;
         }
-        res = await p.run(task, input, { tier: entry.tier, schema, model: entry.model, tenantId });
+        const explicitRedact = redactSetting === true;
+        let sendInput = input;
+        // Guarded providers redact themselves (forceRedact); injected/unguarded ones are redacted here.
+        if (explicitRedact && !p.guarded) {
+          const r = redactValue(input ?? {});
+          sendInput = r.value; map = r.map;
+        }
+        res = await p.run(task, sendInput, { tier: entry.tier, schema, model: entry.model, tenantId, ...(explicitRedact ? { forceRedact: true } : {}) });
+        if (res && !res.refusal && explicitRedact && !p.guarded && Object.keys(map).length) {
+          res = { ...res, output: restore(res.output, map), explanation: restore(res.explanation ?? '', map) };
+        }
         if (!res || res.refusal) {
           tried.push(entry.provider);
           logIt({ usage: { skipped: 'refusal' } });
@@ -141,7 +169,7 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
         ...(hard ? { hardEscalation: flags } : {}),
       };
       logIt({ model: out.model, confidence: out.confidence, usage: out.usage });
-      if (out.confidence >= entry.threshold) return out;
+      if (out.confidence >= entry.threshold) return finish(out);
       attempts.push(out);
       tried.push(entry.provider);
     }
@@ -149,7 +177,7 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
       throw new ctx.AppError('ai_unavailable', `No AI provider could complete '${task}'`, 503);
     }
     const best = attempts.reduce((a, b) => (b.confidence > a.confidence ? b : a));
-    return { ...best, unconfirmed: best.confidence < finalThreshold };
+    return { ...best, unconfirmed: best.confidence < finalThreshold || humanConfirm || budgetHit };
   }
 
   async function health() {

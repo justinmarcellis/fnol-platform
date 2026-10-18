@@ -1,0 +1,101 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:19.373Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:32:57.117Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:33:49.286Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:43:05.786Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-EXP-01",
+  "team": "experience",
+  "title": "Claimant app fixes: status polling, loss type, hidden picker, a11y",
+  "story": "S2-EXP-03-1, S2-EXP-03-2, S2-EXP-03-3 (claimant app fixes + a11y warnings)",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-claimant-web-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "src/web/claimant/",
+    "tests/unit/web/claimant/",
+    "tests/ui/claimant.test.mjs"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "status.js schedules polling without Illegal invocation: setTimeout bound to globalThis (or arrow wrappers); unit test in tests/unit/web/claimant/status.test.mjs covers default timers",
+    "app.js asks loss type first and startSession sends lossType in the POST body; selecting auto glass reaches the glass_location question",
+    "app.css has .ctl[hidden]{display:none}; Kestrel (English-only) tenant shows no language picker",
+    "The three t.todo tests in tests/ui/claimant.test.mjs are real passing tests (todo option removed)",
+    "node --test --disable-warning=ExperimentalWarning tests/ui/claimant.test.mjs tests/unit/web/claimant/ passes, with Chromium actually run via Playwright (not skipped)",
+    "a11y-check warnings for claimant start and status screens reduced to zero or each remaining one is justified in the result"
+  ],
+  "brief": "Intervention IMP-10: you MUST run the app in Chromium through the Playwright tests (resolve from /opt/node-tools/node_modules, browsers at /opt/pw-browsers; run with the node --test command) before declaring done; unit tests alone are not enough, these defects only showed in a real browser. Blockers are in org/hubs/experience.jsonl. (1) S2-EXP-03-1: src/web/claimant/status.js passes a plain object holding window.setTimeout and calls timers.setTimeout(...), which throws Illegal invocation. Bind to globalThis or default to arrow wrappers, keep injectable fakes for unit tests. (2) S2-EXP-03-2: app.js startSession never sends lossType, so loss-type question sets (auto glass, glass_location) are unreachable. Add a loss-type choice as the first step (accessible radio group or select, strings in strings.js), send lossType in the session start request, then render the returned question set. Check flow.js/chat.js for where the first question is rendered, and the existing channel decision claimant_web. Keep existing unit tests green and add one for lossType in the request. (3) S2-EXP-03-3: .ctl{display:flex} overrides the hidden attribute; add .ctl[hidden]{display:none} in app.css. (4) Run the a11y harness (tests/ui/a11y-harness.mjs, src/web/shared/a11y-check.js is read-only, not yours) and fix claimant warnings: labels, landmarks, focus, contrast, aria-live, etc. Flip the three todo tests in tests/ui/claimant.test.mjs to normal tests; they currently document the exact assertions. Do not touch src/web/csr, shared, package.json. Pitfall: tests must fail before the fix; verify by reasoning or briefly reverting. Report Chromium test output in your result.",
+  "valueDrivers": [
+    "claimant completion rate",
+    "accessibility compliance"
+  ],
+  "requirements": [
+    "S2-EXP-03-1",
+    "S2-EXP-03-2",
+    "S2-EXP-03-3",
+    "IMP-6",
+    "IMP-10"
+  ],
+  "startedAt": "2026-10-18T21:32:57.117Z",
+  "doneAt": "2026-10-18T21:43:05.786Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:43:05.786Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria verified: 31/31 pass with Chromium run, polling fix + unit test, loss type first and sent, .ctl[hidden], todos real, a11y warnings zero"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.4086,
+    "inputTokens": 34,
+    "cacheWriteTokens": 64482,
+    "cacheReadTokens": 1182618,
+    "outputTokens": 1082,
+    "agents": {
+      "a20cae16bb2d8aac9": {
+        "label": "S3-EXP-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19044,
+        "cacheReadTokens": 218333,
+        "outputTokens": 63,
+        "usd": 0.0919
+      },
+      "ad371996740b575dd": {
+        "label": "S3-EXP-01 ic-experience-claimant-web-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 26,
+        "cacheWriteTokens": 45438,
+        "cacheReadTokens": 964285,
+        "outputTokens": 1019,
+        "usd": 0.3167
+      }
+    }
+  }
+}

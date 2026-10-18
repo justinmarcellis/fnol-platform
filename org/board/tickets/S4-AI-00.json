@@ -1,0 +1,26 @@
+{
+  "id": "S4-AI-00",
+  "team": "ai",
+  "title": "Sprint 4 planning: AI",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-ai",
+  "reviewer": "ceo",
+  "status": "review",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:47:22.316Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:19.012Z",
+      "from": "ready",
+      "to": "review"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

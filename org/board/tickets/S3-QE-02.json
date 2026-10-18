@@ -1,0 +1,101 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:38.940Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:37:50.286Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:42:34.850Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:43:31.382Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-QE-02",
+  "team": "quality",
+  "title": "Version-robust contract tests (IMP-8) and test report",
+  "story": "As a maintainer I want contract tests that survive version bumps with actionable failure output, and a test report mapping requirements to proving tests, so releases do not break on cosmetic changes and coverage is auditable.",
+  "points": 3,
+  "tier": "fast",
+  "owner": "ic-quality-contract-tester",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "tests/unit/integrations/docs/yaml-lite.test.mjs",
+    "tests/security/routes.test.mjs",
+    "docs/test-report.md"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml",
+    "tests/security/routes.snapshot.json"
+  ],
+  "requirements": [
+    "REQ-14",
+    "REQ-15",
+    "REQ-17",
+    "REQ-18",
+    "REQ-19",
+    "REQ-20"
+  ],
+  "valueDrivers": [
+    "Maintainable test suite",
+    "Auditable quality evidence"
+  ],
+  "acceptance": [
+    "yaml-lite.test.mjs no longer hard-codes '1.2.0': the expected info.version is read from the openapi.yaml text itself (independent regex) and compared to the parsed value, plus a semver-shape assertion; path-count assertions use a floor derived from the document, not a literal that breaks on bumps",
+    "routes.test.mjs keeps the snapshot comparison but the failure message prints the exact added/removed/changed operations as a diff and a one-line refresh command (e.g. node -e \"import('./tests/security/routes.test.mjs').then(m=>m.refreshSnapshot())\" or equivalent that works from the repo root)",
+    "routes.test.mjs exports a small refreshSnapshot() function that rewrites tests/security/routes.snapshot.json deterministically (sorted, same format); importing the module for the refresh does not run or break the tests; the header comment documents the command",
+    "Both test files pass: node --test --disable-warning=ExperimentalWarning tests/unit/integrations/docs/yaml-lite.test.mjs tests/security/routes.test.mjs; a deliberate mutation (temporarily changing a snapshot entry in a scratch copy) shows the diff message",
+    "docs/test-report.md lists totals (suites, tests, pass, fail, todo, skipped) per suite folder from a full run of the suite with the date and command, and maps REQ-01..REQ-25 each to at least one named test file (or marks it as not automated with the reason)"
+  ],
+  "brief": "Part A (IMP-8, fast). yaml-lite.test.mjs line ~82 asserts doc.info.version equals '1.2.0': read the raw openapi text, extract the version with a regex such as /^\\s{2}version:\\s*(\\S+)/m, assert it matches /^\\d+\\.\\d+\\.\\d+$/ and equals doc.info.version; replace other literal counts with floors computed from a text count of operationId lines or a documented minimum. routes.test.mjs: the drift test currently uses two deepEquals with a generic message. Compute added, removed and changed (same op, different roles/module/public) and build a readable multi-line diff string (+ op / - op / ~ op old -> new). Throw via assert.fail with the diff and the refresh command. Add `export function refreshSnapshot()` that regenerates from parseOpenApi() in helpers.mjs using the same shape {op, roles, module, public} sorted by op, writing JSON with two-space indent and trailing newline; do not execute at import. Because test files run top-level code when imported, guard so importing for refresh is cheap (the tests register but the node:test runner is harmless outside --test; verify the command works). Document in the file header. Do not edit helpers.mjs or the snapshot file unless the refresh produces no change. Part B (docs, fast). Run the full suite once at the end: node --test --disable-warning=ExperimentalWarning tests/**/*.test.mjs via a glob expanded by the shell (Node 22 rejects bare directories; also include tests/security/index.js if it is a test entry). Other teams may be mid-flight, so record the actual numbers and any failing test names honestly, never edit them to look green. Parse the TAP/spec summary per top-level folder (unit, integration, e2e, security, synthetic, ui). Map REQ-01..REQ-25 using product/requirements.md and grep the test names; include a note that dod.test.mjs and tenant-differences.test.mjs (S3-QE-01) are included if present at run time. Only synthetic data; no commits.",
+  "startedAt": "2026-10-18T21:37:50.286Z",
+  "doneAt": "2026-10-18T21:43:31.382Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:43:31.382Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria verified: both files pass (58/0 fail), no hard-coded version, diff+refresh cmd message, refreshSnapshot exported, report has totals and REQ-01..25 map; 22 full-suite failures are outside ticket paths and documented"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.1483,
+    "inputTokens": 60,
+    "cacheWriteTokens": 170306,
+    "cacheReadTokens": 2840292,
+    "outputTokens": 881,
+    "agents": {
+      "ab4bd1b796c5262e9": {
+        "label": "S3-QE-02 ic-quality-contract-tester",
+        "model": "claude-haiku-5-5",
+        "inputTokens": 52,
+        "cacheWriteTokens": 149301,
+        "cacheReadTokens": 2619922,
+        "outputTokens": 214,
+        "usd": 0.045
+      },
+      "ab6a4e1c677b88eca": {
+        "label": "S3-QE-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 21005,
+        "cacheReadTokens": 220370,
+        "outputTokens": 667,
+        "usd": 0.1033
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bootIntegrations, publish, fakeFetch } from './helpers.mjs';
+import { bootIntegrations, publish, fakeFetch, allowHosts } from './helpers.mjs';
 import { verifySignature } from '../../../../src/modules/integrations/webhooks/signing.mjs';
 
 const HOUR = 3600e3;
@@ -212,6 +212,7 @@ test('timeouts abort the request and are retried', async () => {
 test('SSRF: production blocks private targets even if one is already stored, and DNS rebinding', async () => {
   const { app, fetch } = await setup({ devMode: false }, 200);
   try {
+    allowHosts(app, ['*.partner.example', '169.254.169.254', '127.0.0.1']);
     app.svc().worker.configure({ resolveHost: async (h) => (h === 'rebind.partner.example' ? ['10.0.0.8'] : ['93.184.216.34']) });
     const t = app.ctx.db.forTenant('alpha');
     const mk = (id, url) => t.insert('webhook_subscriptions', {

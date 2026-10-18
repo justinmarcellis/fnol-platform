@@ -1,0 +1,26 @@
+{
+  "id": "S4-EXP-00",
+  "team": "experience",
+  "title": "Sprint 4 planning: EXP",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-experience",
+  "reviewer": "ceo",
+  "status": "review",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:47:22.316Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:22.527Z",
+      "from": "ready",
+      "to": "review"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

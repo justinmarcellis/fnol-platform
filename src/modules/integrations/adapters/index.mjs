@@ -2,7 +2,7 @@ import { createRegistry } from './port.mjs';
 import { coreClaimsSuite } from './core-claims-suite.mjs';
 import { hashPayload } from './hash.mjs';
 import { migrations as fakeCoreMigrations, receiveClaim, registerFakeCoreRoutes } from './fake-core.mjs';
-import { validateWebhookUrl, checkResolvedHost } from '../webhooks/url-guard.mjs';
+import { validateWebhookUrl, resolveAndPin } from '../webhooks/url-guard.mjs';
 
 export { hashPayload } from './hash.mjs';
 export { coreClaimsSuite } from './core-claims-suite.mjs';
@@ -50,6 +50,13 @@ const defaultRegistry = createRegistry([coreClaimsSuite]);
 const services = new WeakMap(); // tenant-bound ctx -> service (event handlers)
 const subscribed = new WeakSet(); // root bus objects already subscribed
 
+/** Tenant values (mapping-a, mapping-b, a, B ...) -> adapter profile ids (A, B). Unknown values pass through upper-cased. */
+export function normaliseProfile(value) {
+  const v = String(value ?? 'A').trim().toUpperCase();
+  const m = /^MAPPING[-_ ]?([A-Z0-9]+)$/.exec(v);
+  return m ? m[1] : v;
+}
+
 const portConfig = (config) => config?.integrations?.claimsPort ?? {};
 const actorName = (actor) => (typeof actor === 'string' ? actor : actor?.id ?? 'system:integrations');
 
@@ -73,9 +80,11 @@ export function createAdapterService(ctx, opts = {}) {
   };
   const enabledId = () => portConfig(ctx.tenant?.config).adapter ?? DEFAULT_ADAPTER;
   const profileOf = (adapter) => {
-    const profile = String(portConfig(ctx.tenant?.config).settings?.profile ?? 'A').toUpperCase();
+    const settings = portConfig(ctx.tenant?.config).settings;
+    const raw = settings?.fieldMapProfile ?? settings?.profile ?? 'A';
+    const profile = normaliseProfile(raw);
     if (adapter.profiles && !adapter.profiles.includes(profile)) {
-      throw new ctx.AppError('invalid_adapter_settings', `Mapping profile "${profile}" is not supported by ${adapter.id}`, 422);
+      throw new ctx.AppError('invalid_adapter_settings', `Mapping profile "${raw}" is not supported by ${adapter.id}`, 422);
     }
     return profile;
   };
@@ -124,11 +133,10 @@ export function createAdapterService(ctx, opts = {}) {
     if (!url) return { kind: 'inprocess', receive: (payload) => receiveClaim(ctx, payload, { hash: hashPayload }) };
     const check = validateWebhookUrl(url, { devMode: Boolean(ctx.config?.devMode) });
     if (!check.ok) throw new Error(`target url rejected: ${check.reason}`);
-    if (!check.loopback) {
-      const blocked = await checkResolvedHost(check.url);
-      if (blocked) throw new Error(`target url rejected: ${blocked}`);
-    }
-    return { kind: 'http', url: check.url.toString() };
+    // Resolve once, validate every address, and hand the pinned address to the adapter (no second DNS lookup).
+    const pin = await resolveAndPin(check.url, { allowLoopback: check.loopback, resolveHost: opts.resolveHost });
+    if (!pin.ok) throw new Error(`target url rejected: ${pin.reason}`);
+    return { kind: 'http', url: check.url.toString(), pinned: { address: pin.address, family: pin.family }, ...(opts.transport ? { transport: opts.transport } : {}) };
   }
 
   const service = {

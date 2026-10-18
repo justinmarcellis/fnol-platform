@@ -30,6 +30,7 @@ body { margin: 0; background: var(--c-bg); color: var(--c-text); font: 16px/1.5 
 .brand-name { font-weight: 700; font-size: 1.125rem; overflow-wrap: anywhere; }
 .controls { display: flex; flex-wrap: wrap; gap: var(--gap); }
 .ctl { display: flex; flex-direction: column; font-size: .8125rem; color: var(--c-muted); gap: 2px; }
+.ctl[hidden] { display: none; }
 select, input[type=text], input[type=number], input[type=date], input[type=time], input[type=tel], input[type=email], input[type=datetime-local], textarea {
   font: inherit; color: var(--c-text); background: var(--c-bg); border: 2px solid var(--c-border); border-radius: var(--radius); padding: 10px 12px; min-height: 44px; width: 100%;
 }

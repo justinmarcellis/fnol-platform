@@ -8,12 +8,35 @@ Everything here uses synthetic, fictional data. No real carriers, people or secr
 
 ## Quick start
 ```
-npm run seed    # optional: seeds policies and writes data/dev-users.json
-npm start       # platform on :8080, dashboard on :8090 if present
+npm start       # seeds and loads demo claims on a new database, then serves the platform on :8080
 ```
-`npm start` runs `scripts/dev.mjs`. It creates `.secrets/`, runs the seed script only when the database is missing or empty, then starts the platform. Open http://localhost:8080/ and check http://localhost:8080/healthz.
+`npm start` runs `scripts/dev.mjs`. It creates `.secrets/`. When the database is missing or empty it runs `scripts/seed.mjs` (policies and dev users) and then `scripts/demo-data.mjs` (demo claims). It then starts the platform and the dashboard (:8090) if present, and prints the demo URLs and a bearer token for every dev user.
 
-The apps are served at `/` (claimant), `/csr`, `/adjuster` and `/admin`.
+## Demo URLs
+| URL | What |
+| --- | --- |
+| http://localhost:8080/ | Claimant app |
+| http://localhost:8080/csr | CSR app |
+| http://localhost:8080/adjuster | Adjuster workbench |
+| http://localhost:8080/admin | Admin console |
+| http://localhost:8080/healthz | Health |
+| http://localhost:8090/ | Dashboard (if `dashboard/server.mjs` starts; needs port 8090 free) |
+
+Authenticated checks with a printed token (use a supervisor token for KPIs):
+```
+curl -H "Authorization: Bearer <token>" "http://localhost:8080/api/v1/adjuster/inbox?mine=false"
+curl -H "Authorization: Bearer <supervisor token>" http://localhost:8080/api/v1/kpis
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/claims
+```
+The inbox defaults to `mine=true` (claims assigned to the token's `sub`). Routing assigns adjusters named in the tenant config (for example `adj-aur-302`), not the dev users, so use `mine=false` or `queue=<queue>` to see the demo claims.
+
+## Demo data
+`scripts/demo-data.mjs` (`npm run demo`) boots the app on port 0 and, for every tenant in `tenants/*.json`, generates every scenario in `SCENARIOS` (from `tests/synthetic/index.mjs`) whose line of business is enabled, repeating with new deterministic seeds until the tenant has at least 12 claims (about 14 to 15 today). For each tenant it:
+1. Seeds the scenario policies through `coverage.seedPolicies` first.
+2. Creates each claim through `ctx.forTenant(tenantId).modules.claims.createClaim` (never SQL) with an idempotency key `demo:<tenant>:<scenario>:<seed>`.
+3. Waits for the event pipeline to settle (`bus.drain`), then walks a planned, legal path of status changes so the claims spread across `assigned`, `in_review`, `pending_info` and `closed`, and adds a task (some completed) and a note.
+
+A failure on one claim is logged (`fail <tenant>/<scenario>#<seed>: ...`) and skipped. The last line is a summary, for example `demo-data summary: created 29, existing 0, failed 0, policies 29`. Running it again creates nothing new (`existing` counts the claims already there). Options for `demoData(opts)`: `minPerTenant`, `seed`, `createApp`, `importSynthetic`, `log`.
 
 ## What the seed script does
 `scripts/seed.mjs` boots `createApp` on port 0 (nothing listens), then for each tenant in `tenants/*.json` and each enabled line of business:
@@ -58,10 +81,32 @@ Tests use temporary databases and local fakes; they do not touch `data/`.
 ## Secrets and local files
 `.secrets/` (master key), `data/` and `*.db` are gitignored. Never commit them. The master key is generated on first boot; deleting it makes existing encrypted data unreadable, so reset by deleting `data/` and `.secrets/` together.
 
+## Tenant seeding (seed-once)
+`tenants/*.json` are seeds, not the source of truth after first boot. On every start `loadDir()` applies a file only when the tenant has no stored config, or when the file's top-level `seedVersion` (missing means 0) is greater than the `seedVersion` in the stored config (missing means 0). Otherwise the file is skipped and a log line says so (`tenant config applied` or `tenant config skipped`, with `tenantId`, `reason` and both seed versions; config contents are never logged). A tenant edited in the console (stored via `put()`) is therefore not overwritten by a restart.
+
+To force a re-seed of a tenant from its file, bump `seedVersion` in the file (for example 1 to 2) and restart. The file then overwrites the stored config as a new version.
+
+Console edits must carry `seedVersion` forward. If an edit drops the field, the stored config is treated as `seedVersion` 0 and any file with a higher value will overwrite the edit on the next start.
+
+`npm run demo:reset` wipes `data/`, so no stored configs remain and every tenant file is applied again on the next boot (a full reseed).
+
 ## Reset
+Demo reset keeps `.secrets/` (so the master key and token signing stay valid), wipes `data/`, reseeds and reloads demo claims:
 ```
-rm -rf data .secrets && npm run seed
+npm run demo:reset
 ```
+Full reset, including the master key (existing tokens stop working):
+```
+rm -rf data .secrets && npm run seed && npm run demo
+```
+
+## Clean-clone procedure
+```
+git clone <repo-url> fnol && cd fnol    # Node 22+, nothing to npm install
+npm start                               # first run: seed + demo claims, then serves on :8080
+curl localhost:8080/healthz             # expect {"ok":true,...,"tenants":2}
+```
+Use `PORT=8081 npm start` if 8080 is busy. A second `npm start` finds a non-empty database and skips seeding and demo data.
 
 ## Troubleshooting
 - Port in use: `PORT=8081 npm start`.

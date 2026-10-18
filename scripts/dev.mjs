@@ -18,6 +18,12 @@ if (fs.existsSync(seed) && dbEmpty) {
   console.log('Database empty: running scripts/seed.mjs');
   const r = spawnSync(process.execPath, [...nodeArgs, seed], { cwd: root, stdio: 'inherit', env: process.env });
   if (r.status !== 0) console.warn(`seed exited with status ${r.status}; continuing`);
+  const demo = path.join(root, 'scripts', 'demo-data.mjs');
+  if (fs.existsSync(demo) && r.status === 0) {
+    console.log('New database: running scripts/demo-data.mjs');
+    const d = spawnSync(process.execPath, [...nodeArgs, demo], { cwd: root, stdio: 'inherit', env: process.env });
+    if (d.status !== 0) console.warn(`demo-data exited with status ${d.status}; continuing`);
+  }
 }
 
 const { createApp } = await import('../src/server.mjs');
@@ -32,7 +38,19 @@ if (fs.existsSync(dash)) {
 }
 
 console.log(`Platform:  http://localhost:${app.port}/   (health: /healthz)`);
-console.log(`Apps:      /  /csr  /adjuster  /admin`);
+const base = `http://localhost:${app.port}`;
+console.log(`Apps:      ${base}/  ${base}/csr  ${base}/adjuster  ${base}/admin`);
+try {
+  console.log('Dev users and tokens (fictional, valid for the default token lifetime):');
+  for (const tenantId of [...app.ctx.tenants.list()].sort()) {
+    for (const role of ['claimant', 'csr', 'adjuster', 'supervisor', 'carrier_admin', 'platform_admin']) {
+      const sub = `dev-${tenantId}-${role}`;
+      const token = app.ctx.auth.issueToken({ sub, tenantId, roles: [role], name: `Dev ${role}` });
+      console.log(`  ${tenantId} ${role} (${sub}): ${token}`);
+    }
+  }
+  console.log(`Use: curl -H "Authorization: Bearer <token>" ${base}/api/v1/...   (see docs/setup.md)`);
+} catch (e) { console.warn(`could not print dev tokens: ${e.message}`); }
 if (children.length) console.log('Dashboard: http://localhost:8090/');
 
 let stopping = false;

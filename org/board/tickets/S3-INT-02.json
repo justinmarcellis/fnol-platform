@@ -1,0 +1,135 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:25.767Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:34:58.217Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:38:46.867Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:40:44.337Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:50:01.400Z",
+      "from": "in_progress",
+      "to": "done"
+    }
+  ],
+  "id": "S3-INT-02",
+  "team": "integrations",
+  "title": "Integrations: fake-core authz and redaction, pinned-address webhook delivery, no redirects",
+  "story": "Fix SEC2-003 (high), SEC2-007 (high) and integrations medium findings (SEC2-015)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-integrations-webhook-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "src/modules/integrations/",
+    "tests/unit/integrations/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/openapi.yaml",
+    "architecture/security-review-s2.md"
+  ],
+  "acceptance": [
+    "GET /api/v1/integrations/fake-core/claims requires tenant_admin or supervisor (integration and other roles get 403) and applies the same integration/auditor PII redaction as claims routes; test per role in tests/unit/integrations/adapters/fake-core-authz.test.mjs",
+    "POST fake-core stays tenant-scoped and has a body size cap well under 15 MB (documented), tested",
+    "Webhook worker resolves the target host exactly once (dns lookup all:true), validates every returned address against the private/loopback/link-local/metadata blocklist, and connects to the pinned validated address; a test with an injected resolver that returns different answers on a second call proves the second answer is never used and fetch/connect receives the pinned IP with original Host/SNI",
+    "Mixed answers (one public, one private) are rejected; IPv6 and IPv4-mapped forms are classified; devMode loopback exception (R2) still works per existing tests",
+    "Webhook and claims-port (adapters/index.mjs push to core-claims-suite) requests use redirect:'manual' and any 3xx response is treated as a failed delivery and never followed; test asserts Location is not requested",
+    "allowedHosts enforcement (SEC2-015) at subscription create/update and delivery with empty list meaning deny unless devMode; tests cover accept and refuse",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/integrations/webhooks/*.test.mjs tests/unit/integrations/adapters/*.test.mjs passes; existing signing and url-guard tests still pass"
+  ],
+  "brief": "Files: adapters/fake-core.mjs (ROLES line ~19, listing ~80, decrypt ~67), integrations/routes.mjs (mount ~30-43), webhooks/worker.mjs (checkResolvedHost ~86, fetch ~95), webhooks/url-guard.mjs (classifyAddress, ~104 comment accepting the race), webhooks/service.mjs (checkUrl ~80), adapters/index.mjs ~128 and core-claims-suite.mjs ~42. Fake-core: restrict ROLES to tenant_admin and supervisor (carrier_admin alias also allowed as elsewhere), reuse the claims PII_ROLES redaction (read src/modules/claims/routes.mjs) and mask x-pii in the listing payload; mount in devMode or demo flag only if the existing tests allow, else keep mounted with the role restriction. SSRF: add a helper in url-guard.mjs, e.g. resolveAndPin(url, {lookup}) returning {address, family, hostname}; every address from lookup(all:true) must pass classifyAddress. Connect to the pinned address with node:https request (zero-dependency core, no undici import) using options {host: address, servername: hostname, headers: {Host}} or a custom lookup returning the pinned address; keep the cert validation against the original hostname. Make the transport injectable so tests do not need network (existing worker tests use an injected fetch; keep that seam but pass pinned info). Apply the same helper to the claims-port target. Redirects: set redirect:'manual' if fetch is kept, or treat any 3xx as failure with the node:https path. Also widen classifyAddress for IPv6 transition ranges (SEC2-019: 2002::/16, 2001::/32, 64:ff9b:1::/48, ::ffff:0:0/96, fec0::/10) as it is cheap and in the same file. Enforce tenant config notifications.webhooks.allowedHosts (read via the tenant-bound ctx) per SEC2-015. Review other integrations medium findings in the review doc and fix. Do not edit tests/security (read-only) or package.json. Use globs for node --test. Post to security hub when SEC2-003 and SEC2-007 are fixed; post contract-change if the fake-core route needs documenting in openapi (SEC2-003 contract request already exists).",
+  "valueDrivers": [
+    "SSRF and PII exposure prevention",
+    "Carrier security review readiness"
+  ],
+  "requirements": [
+    "Safe outbound webhook delivery",
+    "Role-scoped integration data"
+  ],
+  "startedAt": "2026-10-18T21:34:58.217Z",
+  "review": {
+    "reworkCount": 2,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:40:44.336Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Criteria met and 73 integration tests pass, but allowedHosts enforcement newly breaks 3 tests in tests/security (sec2 tenant isolation, webhook delivery, webhook/adapter routes: 422/host not allowed) not in quality-baseline; needs coordinated fix with security tests or compat default"
+      },
+      {
+        "at": "2026-10-18T21:44:48.151Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "73 integration unit tests pass, but regression gate shows 3 new tests/security failures not in baseline (sec2 webhook rebinding/redirect, webhook/adapter admin routes, tenant B isolation) because allowedHosts enforcement 422s on hooks.example.test; security test hosts or tenant allowedHosts must be reconciled, ticket also left in_progress"
+      },
+      {
+        "at": "2026-10-18T21:50:01.400Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Orchestrator re-review: strict allowedHosts kept; demo tenants now allow *.example.test (reserved test TLD); security suite 175/0"
+      }
+    ],
+    "firstPass": false
+  },
+  "doneAt": "2026-10-18T21:50:01.400Z",
+  "spend": {
+    "usd": 1.3665,
+    "inputTokens": 104,
+    "cacheWriteTokens": 169632,
+    "cacheReadTokens": 4506211,
+    "outputTokens": 4096,
+    "agents": {
+      "a28d5377de8116861": {
+        "label": "S3-INT-02 ic-integrations-webhook-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 62,
+        "cacheWriteTokens": 98773,
+        "cacheReadTokens": 3265253,
+        "outputTokens": 3029,
+        "usd": 0.9304
+      },
+      "acb2479f654a7219a": {
+        "label": "S3-INT-02 ic-integrations-webhook-dev rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 20,
+        "cacheWriteTokens": 27156,
+        "cacheReadTokens": 612522,
+        "outputTokens": 142,
+        "usd": 0.1919
+      },
+      "ade1cacb158a62f2d": {
+        "label": "S3-INT-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 22620,
+        "cacheReadTokens": 407730,
+        "outputTokens": 902,
+        "usd": 0.1471
+      },
+      "ae72cfba4cce20158": {
+        "label": "S3-INT-02 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 21083,
+        "cacheReadTokens": 220706,
+        "outputTokens": 23,
+        "usd": 0.0971
+      }
+    }
+  }
+}

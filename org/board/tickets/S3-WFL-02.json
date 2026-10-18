@@ -1,0 +1,113 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:28.857Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:33:12.624Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:34:43.372Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:39:07.254Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-WFL-02",
+  "team": "workflow",
+  "title": "Claims claimant-safe projection, ownership, routing roles, status reason and note provenance",
+  "story": "Fix SEC2-004 (high) and claims mediums SEC2-008 and SEC2-016; remove carrier_admin from routing",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-workflow-domain-modeler",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "src/modules/claims/",
+    "src/modules/rules/routes.mjs",
+    "src/modules/rules/routes.js",
+    "tests/unit/claims/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/contracts/openapi.yaml (claims, routing)",
+    "architecture/security-review-s2.md (SEC2-004, SEC2-008, SEC2-016, R5)",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "tests/unit/claims/projection.test.mjs passes: node --test --disable-warning=ExperimentalWarning tests/unit/claims/",
+    "claimant and agent GET /claims/{id} and POST responses contain no triage.fraudScore, severityScore, flags (SIU), internal notes, reserve suggestions or routing.adjusterId; staff view unchanged",
+    "a claimant token cannot read a claim whose reportedBy.id differs (404)",
+    "claim.status.changed event and claim_status_history.reason carry no free text (reason code or encrypted); test asserts the outbox payload",
+    "POST notes ignores req.body.ai; aiGenerated only set via an internal AI path; test",
+    "carrier_admin removed from POST /claims/{claimId}/routing in rules routes (supervisor and adjuster only); route test asserts 403 for carrier_admin",
+    "existing claims tests still pass; result states SEC2-004/008/016 todos can be flipped"
+  ],
+  "brief": "Files: src/modules/claims/routes.mjs, service.mjs (present at ~84-91, triage/routing written ~494-503, changeStatus ~268-278, addNote ~342-347), src/modules/rules/routes.js (WRITE constant line 3 includes carrier_admin; routes.mjs does not exist yet, edit only routes.js unless it appears). (1) SEC2-004: add a pure function projectForClaimant(claim) in a new src/modules/claims/projection.mjs: whitelist claim number, status, dates, lob, lossType, public documents, redacted party summary; strip triage (fraud indicators, SIU flags, severityScore), routing, notes, reserve suggestions, assignee. Apply in routes.mjs to every response where the caller has no staff role (claimant and agent; PII_ROLES/READ staff keep the full view; auditor and integration unchanged). Whitelist, not blacklist, so new fields default hidden. Also in the service getClaim path for non-staff roles. (2) R5 ownership: for claimant tokens require claim.reportedBy.id === req.user.sub else 404 (no claimIds claim exists; do not change core). (3) SEC2-008: in changeStatus drop reason from the published event (send reasonCode only) and encrypt reason in claim_status_history using the existing pii.mjs helpers; keep reason visible to staff via the API. (4) SEC2-016: in routes.mjs addNote strip ai from req.body; service accepts ai only via an internal option not reachable from HTTP. (5) Rules routes: remove carrier_admin from the routing POST roles. Do not change OVERRIDE_ROLES semantics beyond this. Tests: tests/unit/claims/projection.test.mjs using helpers.mjs with local fakes; do not edit tests/security. Pitfalls: ETag/version must remain; never log PII. After finishing, post to the security hub that SEC2-004, SEC2-008, SEC2-016 todos can be flipped.",
+  "valueDrivers": [
+    "Security: SIU confidentiality and fraud-score secrecy",
+    "Privacy: no free-text PII in events"
+  ],
+  "requirements": [
+    "SEC2-004",
+    "SEC2-008",
+    "SEC2-016",
+    "R5"
+  ],
+  "startedAt": "2026-10-18T21:33:12.624Z",
+  "doneAt": "2026-10-18T21:39:07.254Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:39:07.254Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; claims 36/36 and rules 52/52 pass. Follow-up for architecture: openapi.yaml POST /claims/{id}/routing x-roles still lists carrier_admin, so security/roles.test fails that route until the contract is updated."
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.7157,
+    "inputTokens": 56,
+    "cacheWriteTokens": 121635,
+    "cacheReadTokens": 1977107,
+    "outputTokens": 1609,
+    "agents": {
+      "a41e78c1190f6790a": {
+        "label": "S3-WFL-02 ic-workflow-domain-modeler",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 58926,
+        "cacheReadTokens": 1105073,
+        "outputTokens": 1457,
+        "usd": 0.383
+      },
+      "ac3e30e6526035b3c": {
+        "label": "S3-WFL-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 16,
+        "cacheWriteTokens": 28049,
+        "cacheReadTokens": 492634,
+        "outputTokens": 75,
+        "usd": 0.1694
+      },
+      "ae3536cc54ff06b37": {
+        "label": "S3-WFL-02 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 34660,
+        "cacheReadTokens": 379400,
+        "outputTokens": 77,
+        "usd": 0.1633
+      }
+    }
+  }
+}

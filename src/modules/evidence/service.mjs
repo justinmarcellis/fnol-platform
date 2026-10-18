@@ -1,11 +1,12 @@
 // Evidence service (modules.md#evidence). ctx is tenant-bound. Never logs bytes or extracted PII.
 import crypto from 'node:crypto';
-import { KINDS, DEFAULT_MAX_BYTES, ALLOWED_TYPES, baseType, readableText, detectKind, sniffContentType } from './parse.mjs';
+import { KINDS, DEFAULT_MAX_BYTES, ALLOWED_TYPES, baseType, readableText, detectKind, extractEstimateGrandTotal, sniffContentType } from './parse.mjs';
 import { blobKey, putBlob, getBlob } from './blobs.mjs';
 
 const TEXT_CAP = 20000;
 const PII_FIELDS = new Set(['citedParty', 'atFaultParty']);
 const HIGH_CONFIDENCE = 0.8;
+const STAFF_SOURCES = new Set(['csr_upload', 'adjuster_upload', 'api']);
 const LOW_CONFIDENCE = 0.6;
 const NO_SIDECAR_CAP = 0.4;
 
@@ -188,7 +189,7 @@ export function createService(ctx) {
         result = await ctx.ai.run('extract_document', {
           ...(docMeta.autoKind ? {} : { kind: row.kind }), text: text.slice(0, TEXT_CAP), filename: docMeta.filename,
         }, { tenantId: tid() });
-        const ext = textExtraction(result, documentId);
+        const ext = textExtraction(result, documentId, text);
         if (docMeta.autoKind && KINDS.includes(result.output?.kind) && result.output.kind !== row.kind) {
           ctx.db.update('documents', row.id, { kind: result.output.kind });
         }
@@ -226,14 +227,19 @@ export function createService(ctx) {
       return ext;
     },
 
-    /** Facts for triage: accepted, or confidence >= 0.8 and not rejected. */
+    /**
+     * Facts for triage (SEC2-012): a field counts when a person accepted it (accepted === true), or when it is
+     * confident (>= 0.8), not rejected, and the document came from a trusted staff source. Claimant-sourced
+     * (or unknown-source) values stay suggestions until reviewed.
+     */
     async getAcceptedFacts(claimId) {
       const facts = {};
       const rank = new Map();
       for (const d of await svc.listDocuments(claimId)) {
+        const staff = STAFF_SOURCES.has(d.source);
         for (const f of d.extraction?.fields ?? []) {
           if (f.accepted === false) continue;
-          if (!(f.accepted === true || f.confidence >= HIGH_CONFIDENCE)) continue;
+          if (!(f.accepted === true || (staff && f.confidence >= HIGH_CONFIDENCE))) continue;
           const score = (f.accepted === true ? 2 : 0) + f.confidence;
           if (rank.has(f.name) && rank.get(f.name) >= score) continue;
           rank.set(f.name, score);
@@ -258,9 +264,17 @@ export function createService(ctx) {
     return { provider: r.provider, model: r.model, confidence: clamp(r.confidence), ...(r.tier !== undefined ? { tier: r.tier } : {}) };
   }
 
-  function textExtraction(r, documentId) {
+  function textExtraction(r, documentId, text = '') {
     const out = r.output ?? {};
     const fields = (out.fields ?? []).map((f) => mapField(f, documentId));
+    // Estimate total must be the grand total, not the parts subtotal (triage copies it into the reserve).
+    const grand = extractEstimateGrandTotal(text);
+    if (grand !== undefined) {
+      const cur = fields.find((f) => f.name === 'estimateTotal');
+      if (cur) { cur.value = grand; cur.normalizedValue = undefined; } else {
+        fields.push({ name: 'estimateTotal', value: grand, confidence: 0.85, provenance: { source: 'ai_extraction', documentId }, accepted: null });
+      }
+    }
     const needsReview = !!out.needsReview || fields.length === 0;
     return {
       status: needsReview ? 'partial' : 'completed', fields, needsReview, ai: aiInfo(r),

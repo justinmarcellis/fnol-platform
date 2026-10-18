@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bootIntegrations } from './helpers.mjs';
+import { bootIntegrations, allowHosts } from './helpers.mjs';
 
 const input = (extra = {}) => ({ url: 'http://127.0.0.1:9/hook', eventTypes: ['claim.reported'], ...extra });
 
@@ -72,6 +72,7 @@ test('validation: urls, event types, unknown fields, tenant mismatch', async () 
 test('production mode rejects loopback targets', async () => {
   const app = await bootIntegrations({ devMode: false });
   try {
+    allowHosts(app, ['hooks.partner.example']);
     await assert.rejects(app.svc().createSubscription(input()), (e) => e.status === 422);
     const ok = await app.svc().createSubscription({ url: 'https://hooks.partner.example/fnol', eventTypes: ['*'] });
     assert.equal(ok.url, 'https://hooks.partner.example/fnol');
@@ -126,4 +127,55 @@ test('adapter functions degrade gracefully when the adapters service is absent',
     await assert.rejects(app.svc().previewMapping('x', 'clm_1'), (e) => e.status === 404);
     await assert.rejects(app.svc().pushClaim('x', 'clm_1', {}), (e) => e.status === 404);
   } finally { await app.close(); }
+});
+
+test('create denies a host outside notifications.webhooks.allowedHosts (422 naming the host)', async () => {
+  const app = await bootIntegrations({ devMode: false });
+  try {
+    allowHosts(app, ['hooks.partner.example', '*.ok.example']);
+    await assert.rejects(
+      app.svc().createSubscription({ url: 'https://evil.other.example/x', eventTypes: ['*'] }),
+      (e) => e.status === 422 && e.code === "validation_failed" && e.message.includes("evil.other.example"),
+    );
+    assert.deepEqual(await app.svc().listSubscriptions(), []);
+  } finally { await app.close(); }
+});
+
+test('update denies a host outside allowedHosts and leaves the url unchanged', async () => {
+  const app = await bootIntegrations({ devMode: false });
+  try {
+    allowHosts(app, ['hooks.partner.example']);
+    const sub = await app.svc().createSubscription({ url: 'https://hooks.partner.example/a', eventTypes: ['*'] });
+    await assert.rejects(
+      app.svc().updateSubscription(sub.id, { url: 'https://evil.other.example/b' }),
+      (e) => e.status === 422 && e.message.includes('evil.other.example'),
+    );
+    assert.equal((await app.svc().getSubscription(sub.id)).url, 'https://hooks.partner.example/a');
+  } finally { await app.close(); }
+});
+
+test('allowed hosts succeed on create and update, including wildcard entries', async () => {
+  const app = await bootIntegrations({ devMode: false });
+  try {
+    allowHosts(app, ['hooks.partner.example', '*.ok.example']);
+    const sub = await app.svc().createSubscription({ url: 'https://hooks.partner.example/a', eventTypes: ['*'] });
+    const upd = await app.svc().updateSubscription(sub.id, { url: 'https://x.ok.example/b' });
+    assert.equal(upd.url, 'https://x.ok.example/b');
+  } finally { await app.close(); }
+});
+
+test('empty or missing allowedHosts denies every host outside dev mode', async () => {
+  const app = await bootIntegrations({ devMode: false });
+  try {
+    const body = { url: 'https://hooks.partner.example/a', eventTypes: ['*'] };
+    await assert.rejects(app.svc().createSubscription(body), (e) => e.status === 422 && e.message.includes('allowed'));
+    allowHosts(app, []);
+    await assert.rejects(app.svc().createSubscription(body), (e) => e.status === 422);
+  } finally { await app.close(); }
+});
+
+test('webhook routes surface the 422 for a denied host on POST and PATCH', async () => {
+  const src = (await import('node:fs')).readFileSync(new URL('../../../../src/modules/integrations/webhooks/routes.mjs', import.meta.url), 'utf8');
+  assert.match(src, /createSubscription\(req\.body/);
+  assert.match(src, /updateSubscription\(req\.params\.webhookId, req\.body/);
 });

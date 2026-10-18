@@ -1,6 +1,6 @@
 // HTTP routes matching architecture/contracts/openapi.yaml (routing tag).
-// platform_admin passes every role check in core; carrier_admin is accepted as the tenant admin equivalent.
-const WRITE = ['supervisor', 'adjuster', 'carrier_admin'];
+// platform_admin passes every role check in core. carrier_admin may read routing but not write it (S3-WFL-02).
+const WRITE = ['supervisor', 'adjuster'];
 const READ = ['csr', 'adjuster', 'supervisor', 'auditor', 'carrier_admin'];
 const OVERRIDE_ROLES = ['supervisor', 'carrier_admin', 'platform_admin'];
 

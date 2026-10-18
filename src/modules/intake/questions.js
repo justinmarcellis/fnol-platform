@@ -1,13 +1,24 @@
 // Question engine: pure functions over a tenant question set (TenantConfig.questionSets[]).
 // Visibility and requiredness come from conditions evaluated by rules.evaluateCondition (injected),
 // so a question added in tenant config appears with no code change.
+import { isSafePattern, runPattern, MAX_PATTERN_INPUT } from './security.js';
+export { isSafePattern };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^\+?[0-9 ().-]{7,20}$/;
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
-const MAX_PATTERN_INPUT = 2000;
+const patternCache = new Map();
+
+function safeRegex(pattern) {
+  if (patternCache.has(pattern)) return patternCache.get(pattern);
+  let re = null;
+  try { if (isSafePattern(pattern)) re = new RegExp(pattern); } catch { re = null; }
+  if (patternCache.size > 500) patternCache.clear();
+  patternCache.set(pattern, re);
+  return re;
+}
 
 /** Pick a localized string from an I18nText ({ en, es }), falling back to en then any value. */
 export function localize(text, locale = 'en') {
@@ -117,9 +128,10 @@ export function validateAnswer(q, value, { locale = 'en', today } = {}) {
       const max = v.maxLength ?? (q.type === 'longtext' ? 8000 : 500);
       if (value.length > max) return m(`Must be ${max} characters or fewer.`, `Debe tener ${max} caracteres o menos.`);
       if (v.pattern) {
-        try {
-          if (value.length > MAX_PATTERN_INPUT || !new RegExp(v.pattern).test(value)) return m('The format is not valid.', 'El formato no es valido.');
-        } catch { /* a bad tenant pattern must not block the claimant */ }
+        // Unsafe or invalid tenant patterns are skipped (never executed): they can neither hang nor block the claimant.
+        const re = safeRegex(v.pattern);
+        // Input is capped (SEC3-003) and evaluation is time-boxed; a timeout counts as invalid.
+        if (re && (value.length > MAX_PATTERN_INPUT || runPattern(re, value) !== true)) return m('The format is not valid.', 'El formato no es valido.');
       }
       return null;
     }

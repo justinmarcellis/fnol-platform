@@ -49,7 +49,7 @@ test('string tables have en/es parity', () => {
 });
 
 test('pure modules do not import the kit; no innerHTML anywhere; dev panel hidden by default', () => {
-  for (const f of ['search.js', 'assisted.js', 'recent.js', 'strings.js', 'errors.js']) {
+  for (const f of ['search.js', 'assisted.js', 'recent.js', 'strings.js', 'errors.js', 'answers.js', 'panel.js']) {
     assert.doesNotMatch(readFileSync(new URL(f, dir), 'utf8'), /from ['"]\/shared|import ['"]\/shared/, f);
   }
   for (const f of readdirSync(dir)) {

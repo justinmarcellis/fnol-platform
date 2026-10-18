@@ -16,7 +16,34 @@ CREATE INDEX IF NOT EXISTS idx_fake_core_ref ON fake_core_claims (tenant_id, cla
   tenantTables: ['fake_core_claims'],
 }];
 
-const ROLES = ['integration', 'tenant_admin', 'carrier_admin', 'supervisor'];
+import { REDACTED } from '../../claims/pii.mjs';
+
+/** POST (receive a core payload) is for the pushing integration and tenant admins. */
+const POST_ROLES = ['integration', 'tenant_admin', 'carrier_admin'];
+/** GET (listing of stored payloads) is admin/supervisor only (SEC2-003); integration, auditor and others get 403. */
+const LIST_ROLES = ['tenant_admin', 'carrier_admin', 'supervisor'];
+/** Same roles that see clear PII on claims routes (claims/routes.mjs PII_ROLES, intersected with LIST_ROLES). */
+const PII_ROLES = ['supervisor', 'carrier_admin', 'platform_admin'];
+/** Documented body cap for POST fake-core: 256 KiB of JSON (the platform-wide limit is 15 MB). Larger bodies get 413. */
+export const FAKE_CORE_MAX_BODY_BYTES = 256 * 1024;
+
+// x-pii-bearing keys of both claims-port profiles (see profiles/profile-a.mjs and profile-b.mjs; mirrors claims PII_PATHS).
+const PII_KEY = /^(?:incidentDesc|locationDesc|addr1|addr2|geoPoint|givenName|surname|commercialName|injuryDesc|birthDt|phoneNumber|emailAddr|licenseNumber|licensePlateNumber|damageDesc|LOSS_LAT|LOSS_LNG|(?:.*_)?(?:LOSS_DESC|LOSS_LOC_DESC|ADDR_LINE[12]|ORG_NAME|FIRST_NAME|LAST_NAME|BIRTH_DATE|PHONE|EMAIL|DL_NO|INJURY_DESC|PLATE|DAMAGE_DESC))$/;
+
+/**
+ * Replace PII values in a stored core payload with the claims "[redacted]" marker (deep copy).
+ * @param {unknown} value
+ * @returns {unknown}
+ */
+export function redactCorePayload(value) {
+  if (Array.isArray(value)) return value.map(redactCorePayload);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = PII_KEY.test(k) && v !== null && v !== undefined ? REDACTED : redactCorePayload(v);
+    return out;
+  }
+  return value;
+}
 
 /** The platform claim reference inside either profile's payload, or undefined. */
 export function claimRefOf(payload) {
@@ -75,9 +102,15 @@ export function registerFakeCoreRoutes(router, { hash }) {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
       throw new req.ctx.AppError('invalid_payload', 'JSON object body required', 400);
     }
+    const size = req.rawBody?.length ?? Buffer.byteLength(JSON.stringify(req.body));
+    if (size > FAKE_CORE_MAX_BODY_BYTES) {
+      throw new req.ctx.AppError('payload_too_large', `Body exceeds the ${FAKE_CORE_MAX_BODY_BYTES} byte limit for this route`, 413);
+    }
     res.json(201, receiveClaim(req.ctx, req.body, { hash }));
-  }, { roles: ROLES });
+  }, { roles: POST_ROLES });
   router.get(path, async (req, res) => {
-    res.json(200, { items: listReceived(req.ctx, { limit: req.query.limit }) });
-  }, { roles: ROLES });
+    const clear = req.user.roles.some((r) => PII_ROLES.includes(r));
+    const items = listReceived(req.ctx, { limit: req.query.limit });
+    res.json(200, { items: clear ? items : items.map((i) => ({ ...i, payload: redactCorePayload(i.payload) })) });
+  }, { roles: LIST_ROLES });
 }

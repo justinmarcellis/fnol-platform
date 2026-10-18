@@ -1344,7 +1344,8 @@
     "webhooks": {
       "enabled": true,
       "allowedHosts": [
-        "hooks.aurelia-mutual.example"
+        "hooks.aurelia-mutual.example",
+        "*.example.test"
       ],
       "signingAlgorithm": "hmac-sha256",
       "includePii": false

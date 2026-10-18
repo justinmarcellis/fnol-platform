@@ -1167,7 +1167,8 @@
     "webhooks": {
       "enabled": true,
       "allowedHosts": [
-        "events.kestrel-point.example"
+        "events.kestrel-point.example",
+        "*.example.test"
       ],
       "signingAlgorithm": "hmac-sha256",
       "includePii": false

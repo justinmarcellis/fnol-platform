@@ -135,7 +135,7 @@ paths:
       tags: [intake]
       operationId: startIntakeSession
       summary: Start a guided FNOL session for a line of business and channel
-      x-roles: [claimant, csr, agent, integration, carrier_admin]
+      x-roles: [claimant, csr, agent, integration]
       x-module: intake
       requestBody:
         required: true
@@ -171,7 +171,7 @@ paths:
     get:
       tags: [intake]
       operationId: getIntakeSession
-      x-roles: [claimant, csr, agent, integration, carrier_admin]
+      x-roles: [claimant, csr, agent, integration]
       x-module: intake
       responses:
         '200':
@@ -186,7 +186,7 @@ paths:
       tags: [intake]
       operationId: getNextQuestion
       summary: Next question after evaluating showIf / requiredIf against current answers
-      x-roles: [claimant, csr, agent, integration, carrier_admin]
+      x-roles: [claimant, csr, agent, integration]
       x-module: intake
       responses:
         '200':
@@ -202,7 +202,7 @@ paths:
       tags: [intake]
       operationId: answerQuestion
       summary: Answer one question (or several with `answers`); returns the next step
-      x-roles: [claimant, csr, agent, integration, carrier_admin]
+      x-roles: [claimant, csr, agent, integration]
       x-module: intake
       requestBody:
         required: true
@@ -238,7 +238,7 @@ paths:
         Runs `extract_narrative` through the AI cascade and returns the step with `suggestions[]` (each with AI provenance).
         Nothing is recorded as an answer: the caller confirms a suggestion by posting it to `/answers` with `provenance: ai_extraction`.
         The narrative text is PII and is not stored by this call.
-      x-roles: [claimant, csr, agent, integration, carrier_admin]
+      x-roles: [claimant, csr, agent, integration]
       x-module: intake
       requestBody:
         required: true
@@ -264,7 +264,7 @@ paths:
       tags: [intake]
       operationId: submitIntakeSession
       summary: Submit a complete session; creates the claim (publishes claim.reported)
-      x-roles: [claimant, csr, agent, integration, carrier_admin]
+      x-roles: [claimant, csr, agent, integration]
       x-module: intake
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       responses:
@@ -705,7 +705,7 @@ paths:
       tags: [routing]
       operationId: routeClaim
       summary: Route a triaged claim by tenant rules, or override (supervisor)
-      x-roles: [supervisor, adjuster, carrier_admin]
+      x-roles: [supervisor, adjuster]
       x-module: rules
       requestBody:
         required: false

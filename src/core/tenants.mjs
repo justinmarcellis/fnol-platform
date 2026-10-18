@@ -69,14 +69,29 @@ export function createTenants(ctx, { tenantsDir }) {
       ctx.audit.record(tenantId, { actor, action: 'tenant.config.put', entityType: 'tenant', entityId: tenantId, details: { version } });
       return { version, changed: true };
     },
-    /** Load tenants/*.json (tenant id = config.id or file name). */
+    /**
+     * Seed-once load of tenants/*.json (tenant id = config.id or file name).
+     * A file is applied only when the tenant has no stored config, or when the file's
+     * top-level seedVersion (missing = 0) is greater than the stored config's (missing = 0).
+     * Otherwise it is skipped so console edits survive restarts.
+     * @returns {string[]} ids of all tenants present in the directory (applied or skipped)
+     */
     loadDir() {
       if (!fs.existsSync(tenantsDir)) return [];
       const loaded = [];
       for (const f of fs.readdirSync(tenantsDir).filter((n) => n.endsWith('.json')).sort()) {
         const config = JSON.parse(fs.readFileSync(path.join(tenantsDir, f), 'utf8'));
         const id = config.id ?? path.basename(f, '.json');
-        api.put(id, config, 'boot');
+        const stored = latest(id);
+        const fileSeed = Number(config.seedVersion ?? 0) || 0;
+        const storedSeed = stored ? (Number(db.parseJson(stored.config)?.seedVersion ?? 0) || 0) : 0;
+        if (!stored || fileSeed > storedSeed) {
+          const reason = stored ? 'file seedVersion is higher than stored' : 'no stored config';
+          api.put(id, config, 'boot');
+          ctx.log?.info?.('tenant config applied', { tenantId: id, reason, fileSeedVersion: fileSeed, storedSeedVersion: stored ? storedSeed : null });
+        } else {
+          ctx.log?.info?.('tenant config skipped', { tenantId: id, reason: 'stored config is current (seed-once)', fileSeedVersion: fileSeed, storedSeedVersion: storedSeed });
+        }
         loaded.push(id);
       }
       return loaded;

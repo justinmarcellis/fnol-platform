@@ -93,3 +93,11 @@ test('runTriage reads band cut-offs from TenantConfig.severityBands', async () =
   const after = await app.triage('beta').runTriage(ID, { force: true });
   assert.equal(after.severityBand, 'major');
 });
+
+test('estimate tier is re-based to the grand total on top of the AI score (S3-ITG-01)', () => {
+  const ai = { score: 71, drivers: ['injuries reported', 'estimate at or above $2,500'] };
+  const r = computeSeverity(ai, [], { estimateTotal: 4003, vehicleNotDrivable: true });
+  assert.equal(r.score, 71 - 8 + 8);
+  assert.equal(r.band, 'major');
+  assert.equal(computeSeverity({ score: 71, drivers: ['estimate at or above $15,000'] }, [], { estimateTotal: 20000 }).score, 71 - 25 + 15);
+});

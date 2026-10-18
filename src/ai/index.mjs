@@ -9,8 +9,11 @@ export { TASKS, schemaFor };
  * @param {object} ctx platform ctx (root, or tenant-bound: ctx.tenant.id is then the default tenant)
  * @param {{providers?: object}} [opts] inject providers by name (tests)
  * @returns {{run: Function, forTenant: Function, tasks: string[], health: Function, log: object}}
- *   run(task, input, {tenantId?, flags?, providers?}) ->
+ *   run(task, input, {tenantId?, claimId?, flags?, providers?}) ->
  *   {output, provider, model, confidence, explanation, usage, tier, unconfirmed?}
+ *   claimId (callers should pass it) keys the per-claim token budget: it is stored inside ai_inference.usage and
+ *   summed by log.tokensForClaim(tenantId, claimId) for the tenant's ai.maxTokensPerClaim.
+ *   Tenant ai settings honoured: humanConfirmRequired, redactPiiBeforeModel, maxTokensPerClaim (see docs/ai-evaluation.md).
  *   Modules pass opts.tenantId (or use ai.forTenant(id)); without a tenant only the local provider is used.
  */
 export function createAi(ctx, opts = {}) {

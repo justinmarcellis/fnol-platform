@@ -1,7 +1,7 @@
 {
   "number": 3,
   "name": "Sprint 3: harden and document",
-  "status": "active",
+  "status": "closed",
   "startedAt": "2026-10-18T21:31:10.823Z",
   "budgetUsd": 50,
   "goal": "Close all 7 high security findings and 4 UI defects; prove the PoC definition of done per LOB; configuration guide, demo script, COTS readiness",
@@ -11,5 +11,45 @@
     "testPassRate": 1,
     "openHighFindings": 0
   },
-  "committed": []
+  "committed": [],
+  "review": {
+    "shipped": [
+      "All 7 Sprint 2 high security findings fixed with real regression tests (security suite 175 pass / 0 fail)",
+      "Security gate (IMP-9) caught and fixed a new high (SEC3-001) within the sprint",
+      "4 UI defects fixed and verified in Chromium",
+      "Definition-of-done test per LOB incl. signed webhook + core adapter; tenant-differences test",
+      "Demo data on first start; configuration guide, 10-minute demo script, COTS readiness assessment, docs index"
+    ],
+    "risks": [
+      "Demo rehearsal found 4 product gaps + 2 bugs (UI claims cannot reach coverage/fast-track; adapter profile key; config overwritten at boot): Sprint 4",
+      "6 SEC3 mediums open",
+      "GCP deployment still blocked on credentials"
+    ],
+    "completedPoints": 87,
+    "committedPoints": 87,
+    "usd": 17.58,
+    "pointsPerDollar": 4.9,
+    "firstPassAcceptance": 0.909,
+    "reworkRate": 0.091,
+    "testPassRate": 0.9892,
+    "testsPassed": "1192/1205"
+  },
+  "retro": {
+    "went_well": [
+      "Security gate found a high the acceptance reviewer missed, and the rework loop fixed it in-sprint",
+      "A docs agent that rehearsed the demo against the running system found real product gaps that unit and e2e tests did not",
+      "IC refused to weaken a security control to make tests pass and escalated instead (S3-INT-02)"
+    ],
+    "went_badly": [
+      "A correct fix (estimate totals) regressed severity calibration because AI tiers and triage tiers are duplicated across team boundaries",
+      "Gate findings JSON captured pre-rework state, so a fixed high was reported Open",
+      "Sprint 3 needed an orchestrator-dispatched follow-up wave"
+    ],
+    "manager_retros": [
+      "product: rehearsing the demo should happen in Sprint 2, not Sprint 3",
+      "quality: DoD test needed GET /claims after submit because submit returns a summary; contract says full Claim",
+      "integration: duplicated tier constants need one owner (move to src/ai schemas)"
+    ]
+  },
+  "closedAt": "2026-10-18T21:51:13.421Z"
 }

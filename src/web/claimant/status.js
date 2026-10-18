@@ -46,7 +46,7 @@ export function buildTimeline(claim, t) {
  * @param {{ api: any, claimId: string, timers?: { setTimeout: Function, clearTimeout: Function },
  *           intervalMs?: number, isHidden?: () => boolean, clock?: { now(): number } }} deps
  */
-export function createStatusPoller({ api, claimId, timers = { setTimeout, clearTimeout }, intervalMs = DEFAULT_INTERVAL_MS, isHidden = () => false, clock = { now: () => Date.now() } }) {
+export function createStatusPoller({ api, claimId, timers = { setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms), clearTimeout: (id) => globalThis.clearTimeout(id) }, intervalMs = DEFAULT_INTERVAL_MS, isHidden = () => false, clock = { now: () => Date.now() } }) {
   const listeners = new Set();
   let handle = null;
   let running = false;

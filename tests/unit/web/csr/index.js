@@ -2,3 +2,4 @@
 import './search.test.mjs';
 import './assisted.test.mjs';
 import './recent.test.mjs';
+import './answers.test.mjs';

@@ -50,7 +50,8 @@ export function createInferenceLog(ctx) {
         tier: e.tier ?? null,
         confidence: typeof e.confidence === 'number' ? e.confidence : null,
         input_hash: hashInput(e.input),
-        usage: e.usage ?? null,
+        // ai_inference has no claim column: the claim id rides inside the usage JSON.
+        usage: e.claimId ? { ...(e.usage ?? {}), claimId: String(e.claimId) } : (e.usage ?? null),
         latency_ms: Math.round(e.latencyMs ?? 0),
         escalated: e.escalated ? 1 : 0,
         created_at: ctx.clock?.nowIso?.() ?? new Date().toISOString(),
@@ -71,5 +72,28 @@ export function createInferenceLog(ctx) {
     return rows.map((r) => ({ ...r, usage: ctx.db.parseJson(r.usage, null), escalated: !!r.escalated }));
   }
 
-  return { record, list };
+  const tokensOf = (u) => {
+    if (!u || typeof u !== 'object') return 0;
+    const n = (v) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0);
+    if (n(u.totalTokens)) return n(u.totalTokens);
+    return n(u.inputTokens) + n(u.outputTokens) + n(u.in) + n(u.out);
+  };
+
+  /**
+   * Total tokens spent on one claim (sum over ai_inference rows whose usage.claimId matches).
+   * Tenant-scoped through db.forTenant, so another tenant's rows are never counted.
+   * @returns {number}
+   */
+  function tokensForClaim(tenantId, claimId) {
+    if (!tenantId || !claimId) return 0;
+    const rows = ctx.db.forTenant(tenantId).all('SELECT usage FROM ai_inference WHERE usage LIKE ?', `%${String(claimId).replace(/[%_\\]/g, '')}%`);
+    let total = 0;
+    for (const r of rows) {
+      const u = ctx.db.parseJson(r.usage, null);
+      if (u && u.claimId === String(claimId)) total += tokensOf(u);
+    }
+    return total;
+  }
+
+  return { record, list, tokensForClaim };
 }

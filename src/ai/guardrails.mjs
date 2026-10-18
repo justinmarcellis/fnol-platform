@@ -287,6 +287,8 @@ export function isCloudProvider(provider) {
  * @param {object} [opts]
  * @param {number} [opts.maxChars=20000] total string budget per call
  * @param {'truncate'|'reject'} [opts.onOversize='truncate']
+ * @param {boolean} [opts.forceRedact=false] redact PII for this provider even when it is local (cloud providers are always redacted);
+ *   a per-call `runOpts.forceRedact` of true does the same
  * @param {boolean} [opts.restoreOutput=true] map placeholders back to originals in the returned output (local only)
  * @param {{record: Function}} [opts.log] inference log; invalid/failed calls are recorded
  * @param {Function} [opts.onGuard] called with the guard report for each call (tests, telemetry)
@@ -325,11 +327,13 @@ export function guard(provider, task, opts = {}) {
         if (capped.truncated && opts.onOversize === 'reject') return done({ refusal: true, error: 'input_too_large' }, 'guard_input_too_large');
         safe = capped.value;
         let map = {};
-        if (cloud) {
+        const redactOn = cloud || opts.forceRedact === true || runOpts.forceRedact === true;
+        if (redactOn) {
           const r = redactValue(safe);
           safe = r.value; map = r.map; report.redacted = r.count;
         }
-        const res = await provider.run(t, safe, runOpts);
+        const { forceRedact: _f, ...innerOpts } = runOpts;
+        const res = await provider.run(t, safe, innerOpts);
         if (!res || res.refusal) return done(res && typeof res === 'object' ? res : { refusal: true, error: 'empty' }, null);
         const v = validateOutput(t, res.output);
         const conf = typeof res.confidence === 'number' && Number.isFinite(res.confidence) && res.confidence >= 0 && res.confidence <= 1;
@@ -338,7 +342,7 @@ export function guard(provider, task, opts = {}) {
           report.errors = conf ? v.errors : [...v.errors, '$.confidence: must be a number in [0,1]'];
           return done({ refusal: true, error: 'invalid_output', model: res.model }, 'guard_invalid_output');
         }
-        const out = cloud && report.redacted ? { ...res, output: restore(res.output, map), explanation: restore(res.explanation ?? '', map) } : res;
+        const out = redactOn && report.redacted ? { ...res, output: restore(res.output, map), explanation: restore(res.explanation ?? '', map) } : res;
         return done(opts.restoreOutput === false ? res : out, null);
       } catch (e) {
         report.errors.push(String(e?.message ?? e).slice(0, 120));

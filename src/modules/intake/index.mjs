@@ -31,12 +31,16 @@ export const migrations = [
 
 export { createService };
 
+// Injectable producer lookup for the agent role (fail closed when unset and coverage has no producer data).
+let coverageLookup;
+export function setCoverageLookup(fn) { coverageLookup = typeof fn === 'function' ? fn : undefined; }
+
 export default {
   name: 'intake',
   migrations,
 
   /** Mounted at ctx.modules.intake (tenant-bound per ctx.forTenant). */
-  service: (ctx) => createService(ctx),
+  service: (ctx) => createService(ctx, { get coverageLookup() { return coverageLookup; } }),
 
   routes(router) {
     registerRoutes(router);

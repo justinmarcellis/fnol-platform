@@ -92,7 +92,10 @@
     "metric": "tickets with structured verdict but no fabric review",
     "before": 1,
     "target": 0,
-    "status": "active"
+    "status": "done",
+    "after": 1,
+    "result": "revised",
+    "note": "One verdict still unrecorded after a security rework reset the status; orchestrator close step now reconciles structured verdicts with the fabric"
   },
   {
     "id": "IMP-8",
@@ -103,7 +106,10 @@
     "metric": "tests broken by a contract bump",
     "before": 2,
     "target": 0,
-    "status": "active"
+    "status": "done",
+    "after": 0,
+    "result": "kept",
+    "note": "Contract bump in S3-SEC-01 broke no other tests"
   },
   {
     "id": "IMP-9",
@@ -114,7 +120,10 @@
     "metric": "high security findings discovered after acceptance",
     "before": 7,
     "target": 0,
-    "status": "active"
+    "status": "done",
+    "after": 1,
+    "result": "kept",
+    "note": "Gate found 1 high + 5 mediums on 5 module tickets; the high was fixed before close. Cost ~$0.25 per gated ticket."
   },
   {
     "id": "IMP-10",
@@ -124,6 +133,20 @@
     "owner": "dir-experience",
     "metric": "escaped defects for this configuration",
     "before": 3,
+    "target": 0,
+    "status": "done",
+    "after": 0,
+    "result": "kept",
+    "note": "Claimant web dev configuration: 0 new escaped defects with the Playwright context; no further intervention needed"
+  },
+  {
+    "id": "IMP-11",
+    "sprint": 4,
+    "area": "process",
+    "hypothesis": "Rehearsing the demo (and any end-user walkthrough) against the running system is a standing ticket every sprint from Sprint 2 on, so product gaps surface a sprint earlier",
+    "owner": "dir-product",
+    "metric": "product gaps found in the final sprint",
+    "before": 6,
     "target": 0,
     "status": "active"
   }

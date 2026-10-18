@@ -1,37 +1,40 @@
-// Policy search. Pure logic: inject { api, t, clock }. No kit imports.
+// Policy search. Pure logic: inject { api, t }. No kit imports.
 //
-// openapi.yaml has no free-text policy search route. The endpoint used is
-//   GET /policies/{policyNumber}/snapshot?asOf=YYYY-MM-DD   (operationId getPolicySnapshot, "CSR intake helper")
-// which looks a policy up by exact number. The result list therefore holds 0 or 1 rows.
-import { isUnavailable, isoDate } from './errors.js';
+// Uses GET /policies?q=<text> (operationId searchPolicies, contract 1.2.0). The server classifies q (VIN, postal
+// code, phone, policy-number prefix, else last name) and returns { items: PolicySummary[], matchedOn }.
+import { isUnavailable } from './errors.js';
 
-const POLICY_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/;
-
-/** Normalise user input to a policy number, or null when it is not plausible. */
-export function normalizePolicyNumber(input) {
-  const v = String(input ?? '').trim().toUpperCase();
-  return POLICY_RE.test(v) ? v : null;
+/** Trim the free-text query; null when empty or over the contract's 100 character limit. */
+export function normalizeQuery(input) {
+  const v = String(input ?? '').trim();
+  return v && v.length <= 100 ? v : null;
 }
 
-/** Flatten a PolicySnapshot into a table row. Pure. */
-export function snapshotToRow(snap) {
-  const insured = snap?.namedInsureds?.[0]?.name ?? '';
-  const p = snap?.period ?? {};
+/** Flatten a PolicySummary into a table row. Pure. */
+export function summaryToRow(sum) {
+  const insured = (sum?.namedInsureds ?? []).map((n) => n?.name).filter(Boolean).join(', ');
+  const p = sum?.period ?? {};
   return {
-    policyNumber: snap?.policyNumber ?? '',
-    lob: snap?.lob ?? '',
-    status: snap?.status ?? '',
+    policyNumber: sum?.policyNumber ?? '',
+    lob: sum?.lob ?? '',
+    status: sum?.status ?? '',
     insured,
     period: p.effectiveDate && p.expirationDate ? `${p.effectiveDate} - ${p.expirationDate}` : '',
-    snapshot: snap,
+    summary: sum,
   };
 }
 
+/** Map a { items, matchedOn } response to { rows, matchedOn }. Tolerates a missing or malformed body. */
+export function mapSearchResponse(res) {
+  const items = Array.isArray(res?.items) ? res.items : [];
+  return { rows: items.map(summaryToRow), matchedOn: typeof res?.matchedOn === 'string' ? res.matchedOn : null };
+}
+
 /**
- * @param {{ api: any, t: (k:string,p?:object)=>string, clock?: {now():number} }} deps
+ * @param {{ api: any, t: (k:string,p?:object)=>string }} deps
  */
-export function createPolicySearch({ api, t, clock = { now: () => Date.now() } }) {
-  const state = { phase: 'idle', query: '', results: [], selected: null, error: null, message: '' };
+export function createPolicySearch({ api, t }) {
+  const state = { phase: 'idle', query: '', matchedOn: null, results: [], selected: null, error: null, message: '' };
   const listeners = new Set();
   const snap = () => ({ ...state, results: [...state.results] });
   const emit = () => { const s = snap(); for (const l of listeners) l(s); };
@@ -40,28 +43,30 @@ export function createPolicySearch({ api, t, clock = { now: () => Date.now() } }
     get state() { return snap(); },
     subscribe(fn) { listeners.add(fn); fn(snap()); return () => listeners.delete(fn); },
 
-    /** Look up a policy. Phases: idle | searching | done | invalid | unavailable. */
+    /** Search policies by free text. Phases: idle | searching | done | invalid | unavailable. */
     async search(input) {
-      const policyNumber = normalizePolicyNumber(input);
+      const q = normalizeQuery(input);
       state.query = String(input ?? '').trim();
       state.selected = null;
       state.error = null;
-      if (!policyNumber) {
+      state.matchedOn = null;
+      if (!q) {
         state.phase = 'invalid'; state.results = []; state.message = t('csr.search.required'); emit();
         return [];
       }
       state.phase = 'searching'; state.message = ''; emit();
       try {
-        const snapshot = await api.get(`/policies/${encodeURIComponent(policyNumber)}/snapshot`, { asOf: isoDate(clock) });
-        state.results = snapshot ? [snapshotToRow(snapshot)] : [];
+        const { rows, matchedOn } = mapSearchResponse(await api.get('/policies', { q }));
+        state.results = rows; state.matchedOn = matchedOn;
         state.phase = 'done';
-        state.message = state.results.length ? t('csr.search.found', { count: state.results.length }) : t('csr.search.empty');
+        state.message = rows.length ? t('csr.search.found', { count: rows.length }) : t('csr.search.empty');
       } catch (err) {
         if (isUnavailable(err)) {
           state.phase = 'unavailable'; state.results = []; state.message = t('csr.unavailable.body');
           state.error = { code: err?.code ?? 'service_unavailable', status: err?.status };
-        } else if (err?.status === 404 || err?.code === 'not_found') {
-          state.phase = 'done'; state.results = []; state.message = t('csr.search.empty');
+        } else if (err?.status === 400 || err?.code === 'bad_request') {
+          state.phase = 'invalid'; state.results = []; state.message = t('csr.search.unclassified');
+          state.error = { code: err?.code ?? 'bad_request', status: err?.status };
         } else {
           state.phase = 'done'; state.results = [];
           state.error = { code: err?.code ?? 'error', status: err?.status };

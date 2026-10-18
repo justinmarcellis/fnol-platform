@@ -1,5 +1,6 @@
 // Pure helpers: multipart parsing, PDF text scan, kind detection. No ctx access.
 import zlib from 'node:zlib';
+import { AppError } from '../../core/errors.mjs';
 
 export const KINDS = ['photo', 'police_report', 'estimate', 'invoice', 'other'];
 export const MAX_BYTES = 10 * 1024 * 1024;
@@ -36,6 +37,10 @@ export function sniffContentType(bytes) {
 /** Strip parameters and lowercase a content type. */
 export const baseType = (ct) => String(ct ?? '').split(';')[0].trim().toLowerCase();
 
+/** Multipart DoS caps (S4-AI-02): part count and total parse time. */
+export const MAX_MULTIPART_PARTS = 20;
+export const MAX_MULTIPART_MS = 100;
+
 /**
  * Minimal, binary-safe multipart/form-data parser.
  * @param {Buffer} buf raw body
@@ -43,12 +48,18 @@ export const baseType = (ct) => String(ct ?? '').split(';')[0].trim().toLowerCas
  * @returns {{name: string, filename?: string, contentType?: string, data: Buffer}[]}
  */
 export function parseMultipart(buf, contentType) {
+  const deadline = performance.now() + MAX_MULTIPART_MS;
+  const tooMany = () => new AppError('validation_error', `Multipart body is limited to ${MAX_MULTIPART_PARTS} parts`, 400);
   const m = /boundary=(?:"([^"]+)"|([^;\s]+))/i.exec(String(contentType ?? ''));
   if (!m) return null;
   const delim = Buffer.from(`--${m[1] ?? m[2]}`);
   const parts = [];
   let pos = buf.indexOf(delim);
+  let seen = 0;
   while (pos !== -1) {
+    // every delimiter counts, named or not, so empty parts cannot be used to spin the loop
+    if (++seen > MAX_MULTIPART_PARTS + 1) throw tooMany();
+    if (performance.now() > deadline) throw new AppError('validation_error', 'Multipart body took too long to parse', 400);
     const start = pos + delim.length;
     if (buf.slice(start, start + 2).toString() === '--') break;
     const next = buf.indexOf(delim, start);
@@ -66,6 +77,7 @@ export function parseMultipart(buf, contentType) {
       const disp = headers['content-disposition'] ?? '';
       const name = /\bname="([^"]*)"/i.exec(disp)?.[1];
       const filename = /\bfilename="([^"]*)"/i.exec(disp)?.[1];
+      if (name !== undefined && parts.length >= MAX_MULTIPART_PARTS) throw tooMany();
       if (name !== undefined) parts.push({ name, filename, contentType: headers['content-type'], data: chunk.slice(sep + 4) });
     }
     pos = next;
@@ -80,32 +92,159 @@ function unescapePdf(s) {
   });
 }
 
-function scanContent(content) {
-  const lines = [];
-  for (const bt of content.matchAll(/BT([\s\S]*?)ET/g)) {
-    for (const op of bt[1].matchAll(/\[((?:\\.|[^\]\\])*)\]\s*TJ|\(((?:\\.|[^\\)])*)\)\s*Tj/g)) {
-      if (op[2] !== undefined) lines.push(unescapePdf(op[2]));
-      else lines.push([...op[1].matchAll(/\(((?:\\.|[^\\)])*)\)/g)].map((x) => unescapePdf(x[1])).join(''));
-    }
+// Limits for the PDF text scan (SEC2-005). Every loop below advances a cursor; nothing backtracks.
+export const MAX_STREAMS = 200;
+export const MAX_SCAN_BYTES = 12 * 1024 * 1024;
+export const MAX_INFLATE_BYTES = 2 * 1024 * 1024;
+export const MAX_TOTAL_INFLATE_BYTES = 16 * 1024 * 1024;
+export const SCAN_BUDGET_MS = 100;
+const MAX_LINES = 5000;
+export const MAX_SECTION_PARTS = 2000; // strings per BT..ET section
+export const MAX_SECTION_CHARS = 256 * 1024; // chars scanned per BT..ET section
+const CHECK_EVERY = 256; // iterations between performance.now() checks
+
+const isWs = (c) => c === 32 || c === 10 || c === 13 || c === 9 || c === 12 || c === 0;
+
+/** Read a PDF literal string starting after '(' at i. Returns { text, end } (end is index after ')'), or null. */
+function readString(s, i) {
+  let depthless = i;
+  while (depthless < s.length) {
+    const c = s.charCodeAt(depthless);
+    if (c === 92) depthless += 2; // backslash escape
+    else if (c === 41) return { text: s.slice(i, depthless), end: depthless + 1 };
+    else depthless++;
   }
-  return lines;
+  return null;
+}
+
+function skipWs(s, i) {
+  while (i < s.length && isWs(s.charCodeAt(i))) i++;
+  return i;
+}
+
+/** Linear tokenizer for one BT..ET section: (text) Tj and [(a) 10 (b)] TJ. */
+function scanSection(sec, lines, deadline) {
+  let i = 0;
+  let ticks = 0;
+  let strings = 0;
+  const n = sec.length;
+  while (i < n && lines.length < MAX_LINES) {
+    if ((++ticks & (CHECK_EVERY - 1)) === 0 && performance.now() > deadline) return;
+    const c = sec.charCodeAt(i);
+    if (c === 40) { // (
+      const str = readString(sec, i + 1);
+      if (!str) return;
+      if (++strings > MAX_SECTION_PARTS) return;
+      const j = skipWs(sec, str.end);
+      if (sec.charCodeAt(j) === 84 && sec.charCodeAt(j + 1) === 106) { lines.push(unescapePdf(str.text)); i = j + 2; } else i = str.end;
+    } else if (c === 91) { // [
+      let j = i + 1;
+      const parts = [];
+      let closed = false;
+      while (j < n) {
+        if ((++ticks & (CHECK_EVERY - 1)) === 0 && performance.now() > deadline) return;
+        const d = sec.charCodeAt(j);
+        if (d === 40) {
+          const str = readString(sec, j + 1);
+          if (!str || ++strings > MAX_SECTION_PARTS) return;
+          parts.push(unescapePdf(str.text));
+          j = str.end;
+        } else if (d === 93) { closed = true; j++; break; } else j++;
+      }
+      if (!closed) return;
+      const k = skipWs(sec, j);
+      if (sec.charCodeAt(k) === 84 && sec.charCodeAt(k + 1) === 74) { lines.push(parts.join('')); i = k + 2; } else i = j;
+    } else i++;
+  }
+}
+
+/** Find BT..ET sections with indexOf only. */
+function scanContent(content, lines, deadline) {
+  let pos = 0;
+  let ticks = 0;
+  while (pos < content.length && lines.length < MAX_LINES) {
+    if ((++ticks & (CHECK_EVERY - 1)) === 1 && performance.now() > deadline) return;
+    const bt = content.indexOf('BT', pos);
+    if (bt === -1) return;
+    const et = content.indexOf('ET', bt + 2);
+    if (et === -1) return; // unterminated: nothing later can terminate either
+    scanSection(content.slice(bt + 2, Math.min(et, bt + 2 + MAX_SECTION_CHARS)), lines, deadline);
+    pos = et + 2;
+  }
 }
 
 /**
  * Best-effort text from a simple PDF: uncompressed text objects, plus Flate streams that inflate.
+ * Bounded: stream count, scanned bytes, inflate size and wall-clock. Returns a partial result, never throws.
  * @param {Buffer} bytes
  * @returns {string} '' when nothing readable
  */
 export function extractPdfText(bytes) {
-  const raw = bytes.toString('latin1');
-  const lines = scanContent(raw);
-  for (const s of raw.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
-    try {
-      const inflated = zlib.inflateSync(Buffer.from(s[1], 'latin1')).toString('latin1');
-      lines.push(...scanContent(inflated));
-    } catch { /* not Flate or not valid: ignore */ }
-  }
+  const hit = Buffer.isBuffer(bytes) ? pdfTextCache.get(bytes) : undefined;
+  if (hit !== undefined) return hit;
+  const out = extractPdfTextUncached(bytes);
+  if (Buffer.isBuffer(bytes)) pdfTextCache.set(bytes, out);
+  return out;
+}
+
+// extract()/readableText() are called several times per upload on the same Buffer; scan once.
+const pdfTextCache = new WeakMap();
+
+function extractPdfTextUncached(bytes) {
+  const lines = [];
+  try {
+    const deadline = performance.now() + SCAN_BUDGET_MS;
+    const buf = bytes.length > MAX_SCAN_BYTES ? bytes.subarray(0, MAX_SCAN_BYTES) : bytes;
+    scanContent(buf.toString('latin1'), lines, deadline);
+    let pos = 0;
+    let streams = 0;
+    let inflatedTotal = 0;
+    while (streams < MAX_STREAMS && lines.length < MAX_LINES && performance.now() < deadline) {
+      const k = buf.indexOf('stream', pos);
+      if (k === -1) break;
+      pos = k + 6;
+      if (k >= 3 && buf.toString('latin1', k - 3, k) === 'end') continue; // "endstream"
+      let start = k + 6;
+      if (buf[start] === 13) start++;
+      if (buf[start] !== 10) continue;
+      start++;
+      const end = buf.indexOf('endstream', start);
+      if (end === -1) break;
+      pos = end + 9;
+      streams++;
+      let stop = end;
+      if (stop > start && buf[stop - 1] === 10) stop--;
+      if (stop > start && buf[stop - 1] === 13) stop--;
+      if (stop <= start || inflatedTotal >= MAX_TOTAL_INFLATE_BYTES) continue;
+      try {
+        const out = zlib.inflateSync(buf.subarray(start, stop), { maxOutputLength: MAX_INFLATE_BYTES });
+        inflatedTotal += out.length;
+        scanContent(out.toString('latin1'), lines, deadline);
+      } catch { /* not Flate, invalid, or over the output limit (RangeError): skip this stream */ }
+    }
+  } catch { /* partial result */ }
   return lines.map((l) => l.trim()).filter(Boolean).join('\n');
+}
+
+/**
+ * Grand total of an estimate or invoice: a labelled grand total wins over the parts subtotal;
+ * otherwise parts + labor + tax (+ paint/materials/sublet) when parts is present. Returns a number or undefined.
+ * @param {string} text
+ */
+export function extractEstimateGrandTotal(text) {
+  const t = String(text ?? '').slice(0, 200000);
+  const amount = '\\$?\\s{0,3}(\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d{1,9}(?:\\.\\d{1,2})?)';
+  const num = (s) => Number(s.replace(/,/g, ''));
+  // last labelled grand total wins (totals sit at the bottom)
+  const labelled = [...t.matchAll(new RegExp(`(?:grand[ \\t]+total|total[ \\t]+due|amount[ \\t]+due|total[ \\t]+amount[ \\t]+due|balance[ \\t]+due)[ \\t]{0,3}[:\\-]?[ \\t]{0,3}${amount}`, 'gi'))];
+  if (labelled.length) return num(labelled.at(-1)[1]);
+  const pick = (label) => {
+    const m = [...t.matchAll(new RegExp(`${label}[ \\t]{0,3}(?:total|subtotal)?[ \\t]{0,3}[:\\-]?[ \\t]{0,3}${amount}`, 'gi'))];
+    return m.length ? num(m.at(-1)[1]) : undefined;
+  };
+  const parts = pick('parts');
+  if (parts === undefined) return undefined;
+  return Math.round([parts, pick('labor'), pick('paint'), pick('sublet'), pick('tax')].reduce((a, v) => a + (v ?? 0), 0) * 100) / 100;
 }
 
 /** Decode the readable text of a document, or '' (images, unreadable PDFs). */

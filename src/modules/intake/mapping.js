@@ -85,3 +85,127 @@ export function toClaimCreate(session, answers, questions, lobConfig) {
   if (!ev.lossDate) missing.push('lossEvent.lossDate');
   return { input, missing };
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// Enrichment from the policy snapshot (S4-WFL-01). toClaimCreate stays synchronous and pure; the async
+// step below adds what only the policy system knows (insured vehicle / insured location identity) so
+// coverage verification can match the claim to a policy unit.
+
+const norm = (v) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim().toUpperCase() : '');
+const isAutoLob = (lob) => /auto/.test(String(lob ?? ''));
+const asObj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : null);
+
+function setMeta(out, meta) {
+  Object.defineProperty(out, 'enrichment', { value: meta, enumerable: false, configurable: true });
+  return out;
+}
+
+/** VIN / unit identifiers the claimant or CSR supplied, from the mapped insured vehicle entry and from answers. */
+function vehicleIds(input, answers, questions) {
+  const vins = new Set();
+  const units = new Set();
+  const take = (o) => {
+    if (!o) return;
+    if (norm(o.vin)) vins.add(norm(o.vin));
+    for (const k of ['unit', 'unitId', 'policyVehicleId']) if (norm(o[k])) units.add(norm(o[k]));
+  };
+  for (const v of input.vehicles ?? []) if (!v.role || v.role === 'insured') take(v);
+  for (const q of questions ?? []) {
+    const a = answers?.[q.id];
+    if (!a || a.value === undefined || a.value === null || a.value === '') continue;
+    if (q.type === 'disclosure' || q.type === 'media') continue;
+    const o = asObj(a.value);
+    if (o) { if (q.type === 'vehicle' || /^vehicles\[/.test(String(q.mapsTo ?? ''))) take(o); continue; }
+    if (typeof a.value !== 'string' && typeof a.value !== 'number') continue;
+    const target = String(q.mapsTo ?? '');
+    if (/\.vin$/.test(target) || q.id === 'vin') vins.add(norm(a.value));
+    else if (/\.(unit|unitId)$/.test(target) || q.id === 'unit' || q.id === 'unit_id') units.add(norm(a.value));
+    else if (q.type === 'vehicle') { vins.add(norm(a.value)); units.add(norm(a.value)); }
+  }
+  return { vins, units, any: vins.size + units.size > 0 };
+}
+
+function pickVehicle(snapshot, ids) {
+  const list = Array.isArray(snapshot.vehicles) ? snapshot.vehicles : [];
+  if (ids.any) return list.find((pv) => (norm(pv.vin) && ids.vins.has(norm(pv.vin))) || (norm(pv.unitId) && ids.units.has(norm(pv.unitId)))) ?? null;
+  return list.length === 1 ? list[0] : null; // no identifier given: a single-vehicle policy identifies itself
+}
+
+function applyVehicle(out, pv) {
+  const vehicles = out.vehicles ?? [];
+  let entry = vehicles.find((v) => !v.role || v.role === 'insured');
+  if (!entry) { entry = { role: 'insured' }; vehicles.push(entry); }
+  entry.role = 'insured';
+  if (pv.vin) entry.vin = pv.vin;
+  for (const k of ['year', 'make', 'model']) if (entry[k] === undefined && pv[k] !== undefined) entry[k] = pv[k];
+  entry.policyVehicleId = pv.unitId;
+  out.vehicles = vehicles;
+}
+
+function pickLocation(snapshot, entry) {
+  const list = Array.isArray(snapshot.properties) ? snapshot.properties : [];
+  const id = norm(entry?.policyLocationId);
+  if (id) return list.find((l) => norm(l.locationId) === id) ?? null;
+  const zip = norm(entry?.address?.postalCode);
+  const line1 = norm(entry?.address?.line1);
+  if (line1 || zip) {
+    const hit = list.filter((l) => (line1 && norm(l.address?.line1) === line1) || (!line1 && zip && norm(l.address?.postalCode) === zip));
+    if (hit.length === 1) return hit[0];
+    return null;
+  }
+  return list.length === 1 ? list[0] : null;
+}
+
+function applyProperty(out, loc) {
+  const properties = out.properties ?? [];
+  let entry = properties.find((p) => !p.role || p.role === 'insured_location');
+  if (!entry) { entry = { role: 'insured_location' }; properties.push(entry); }
+  entry.role = 'insured_location';
+  entry.policyLocationId = loc.locationId;
+  if (entry.address === undefined && loc.address) entry.address = structuredClone(loc.address);
+  if (entry.dwellingType === undefined && loc.dwellingType) entry.dwellingType = loc.dwellingType;
+  out.properties = properties;
+}
+
+/**
+ * Add policy number and the matched insured vehicle / insured location to a ClaimCreate. Never throws.
+ * Policy number: an answer mapped to policyNumber, else session.policyNumber. Vehicle: matched by VIN
+ * (case-insensitive) or unit id against snapshot.vehicles; with no identifier a single-vehicle policy is used.
+ * Property LOBs: the matched snapshot location becomes properties[role=insured_location]. When there is no
+ * policy number, no snapshot, or no match, the input is returned unchanged. The returned object carries a
+ * non-enumerable `enrichment` = { policyNumber, vehicle|property: 'matched'|'unmatched'|'skipped' }.
+ * @param {object} input ClaimCreate from toClaimCreate
+ * @param {{ session?: object, answers?: object, questions?: object[], getSnapshot?: (q: {policyNumber: string, asOf?: string}) => Promise<object|null>|object|null }} deps
+ */
+export async function enrichClaimCreate(input, { session, answers, questions, getSnapshot } = {}) {
+  const meta = { policyNumber: false, vehicle: 'skipped', property: 'skipped' };
+  try {
+    if (!input || typeof input !== 'object') return input;
+    const out = structuredClone(input);
+    const fromAnswer = (questions ?? [])
+      .filter((q) => q.mapsTo === 'policyNumber')
+      .map((q) => answers?.[q.id]?.value)
+      .find((v) => typeof v === 'string' && v.trim());
+    const policyNumber = (fromAnswer ?? out.policyNumber ?? session?.policyNumber ?? '').toString().trim();
+    if (!policyNumber) return setMeta(out, meta);
+    out.policyNumber = policyNumber;
+    meta.policyNumber = true;
+    if (typeof getSnapshot !== 'function') return setMeta(out, meta);
+
+    let snapshot = null;
+    try { snapshot = await getSnapshot({ policyNumber, asOf: out.lossEvent?.lossDate }); } catch { snapshot = null; } // lookup failure is not an intake failure
+    if (!snapshot || typeof snapshot !== 'object') return setMeta(out, meta);
+
+    if (isAutoLob(out.lob) || (!out.lob && Array.isArray(snapshot.vehicles))) {
+      const pv = pickVehicle(snapshot, vehicleIds(out, answers, questions));
+      if (pv) { applyVehicle(out, pv); meta.vehicle = 'matched'; } else meta.vehicle = 'unmatched';
+    } else {
+      const entry = (out.properties ?? []).find((p) => !p.role || p.role === 'insured_location');
+      const loc = pickLocation(snapshot, entry);
+      if (loc) { applyProperty(out, loc); meta.property = 'matched'; } else meta.property = 'unmatched';
+    }
+    return setMeta(out, meta);
+  } catch {
+    return input; // never throw; nothing from answers or the snapshot is logged
+  }
+}

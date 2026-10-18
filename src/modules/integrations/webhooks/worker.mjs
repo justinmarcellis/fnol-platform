@@ -1,5 +1,5 @@
 import { buildHeaders } from './signing.mjs';
-import { validateWebhookUrl, checkResolvedHost } from './url-guard.mjs';
+import { validateWebhookUrl, resolveAndPin, checkAllowedHost, pinnedRequest } from './url-guard.mjs';
 import { toEnvelope } from './outbox.mjs';
 import { DEFAULT_MAX_ATTEMPTS } from './service.mjs';
 
@@ -32,10 +32,14 @@ function truncate(s, n = 200) {
  *  - tick(): retries due deliveries (call from a timer; tests call it directly with a fake clock).
  * Deliveries are idempotent per (subscription, event id): a unique index plus a pre-check.
  * @param {object} root root ctx (needs db, clock, log, crypto, tenants, forTenant)
- * @param {{ fetch?: Function, resolveHost?: Function, timeoutMs?: number, backoffMs?: number[], tickMs?: number, staleMs?: number }} [opts]
+ * Connection: the host is resolved once (`resolveHost`, default dns.lookup all:true), every address is validated, and the
+ * request goes to the pinned address via `transport({ url, address, family, headers, body, signal, timeoutMs })` (default: node:https).
+ * `fetch` is a legacy test seam: it receives the original URL plus `init.dispatcher = { pinned: { address, family } }`.
+ * @param {{ transport?: Function, fetch?: Function, resolveHost?: Function, timeoutMs?: number, backoffMs?: number[], tickMs?: number, staleMs?: number }} [opts]
  */
 export function createWorker(root, opts = {}) {
   const cfg = {
+    transport: null,
     fetch: null,
     resolveHost: undefined,
     timeoutMs: 5000,
@@ -82,25 +86,35 @@ export function createWorker(root, opts = {}) {
       try {
         const v = validateWebhookUrl(sub.url, { devMode });
         if (!v.ok) throw new Error(`blocked: ${v.reason}`);
-        if (!v.loopback) {
-          const blocked = await checkResolvedHost(v.url, cfg.resolveHost);
-          if (blocked) throw new Error(`blocked: ${blocked}`);
-        }
+        const notAllowed = checkAllowedHost(v.url.hostname, tctx.tenant?.config?.notifications?.webhooks?.allowedHosts, { devMode, loopback: v.loopback });
+        if (notAllowed) throw new Error(`blocked: ${notAllowed}`);
+        // Resolve once; the connection below goes to this address, never to a second DNS answer.
+        const pin = await resolveAndPin(v.url, { resolveHost: cfg.resolveHost, allowLoopback: v.loopback });
+        if (!pin.ok) throw new Error(`blocked: ${pin.reason}`);
         const secret = tctx.crypto.decryptPii(sub.secret_enc);
         const headers = buildHeaders({ secret, body, eventId: d.event_id, eventType: d.event_type, deliveryId: d.id, attempt: n });
         const ac = new AbortController();
         const timeout = setTimeout(() => ac.abort(), cfg.timeoutMs);
         try {
-          // redirect: 'manual' so a 3xx can never bounce the signed body to an unvalidated host.
-          const res = await (cfg.fetch ?? globalThis.fetch)(v.url.toString(), {
-            method: 'POST', headers, body, redirect: 'manual', signal: ac.signal,
-          });
+          // Never follow redirects: a 3xx could bounce the signed body to an unvalidated host.
+          let res;
+          if (cfg.fetch && !cfg.transport) {
+            res = await cfg.fetch(v.url.toString(), {
+              method: 'POST', headers, body, redirect: 'manual', signal: ac.signal,
+              dispatcher: { pinned: { address: pin.address, family: pin.family } },
+            });
+            try { await res.body?.cancel?.(); } catch { /* body already consumed */ }
+          } else {
+            res = await (cfg.transport ?? pinnedRequest)({
+              url: v.url, address: pin.address, family: pin.family, method: 'POST', headers, body, signal: ac.signal, timeoutMs: cfg.timeoutMs,
+            });
+          }
           status = res.status;
-          try { await res.body?.cancel?.(); } catch { /* body already consumed */ }
         } finally {
           clearTimeout(timeout);
         }
-        if (!(status >= 200 && status < 300)) error = `http_${status}`;
+        if (status >= 300 && status < 400) error = `redirect_${status}`;
+        else if (!(status >= 200 && status < 300)) error = `http_${status}`;
       } catch (e) {
         error = e?.name === 'AbortError' ? 'timeout' : truncate(e?.cause?.code ?? e?.message ?? e);
       }

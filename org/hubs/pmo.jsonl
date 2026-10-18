@@ -7,3 +7,5 @@
 {"at":"2026-10-18T21:05:56.022Z","hub":"pmo","type":"status","from":"ceo","text":"Sprint 2 planning started"}
 {"at":"2026-10-18T21:29:53.619Z","hub":"pmo","type":"status","from":"mgr-pmo","text":"Sprint 2 closed: all tickets done, tests 948/948 runnable green, 7 security highs + 4 UI defects carried to Sprint 3"}
 {"at":"2026-10-18T21:31:10.827Z","hub":"pmo","type":"status","from":"ceo","text":"Sprint 3 planning started; security gate (IMP-9) on for module tickets"}
+{"at":"2026-10-18T21:47:22.318Z","hub":"pmo","type":"status","from":"ceo","text":"Sprint 4 started early (disjoint paths from Sprint 3 follow-ups)"}
+{"at":"2026-10-18T21:50:35.409Z","hub":"pmo","type":"status","from":"mgr-pmo","text":"Sprint 3 closed; Sprint 4 in progress"}

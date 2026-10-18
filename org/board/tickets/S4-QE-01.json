@@ -1,0 +1,49 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:48:51.068Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:50:04.830Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S4-QE-01",
+  "team": "quality",
+  "title": "Automate the 10-minute demo as an API-level e2e test",
+  "story": "As a sales engineer I want the demo script run automatically through the HTTP API so the demo never regresses.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-quality-e2e-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 4,
+  "paths": [
+    "tests/e2e/demo-script.test.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml",
+    "architecture/core-runtime-api.md",
+    "docs/demo-script.md"
+  ],
+  "valueDrivers": [
+    "VD-1",
+    "VD-3",
+    "VD-4",
+    "VD-5",
+    "VD-6"
+  ],
+  "requirements": [
+    "REQ-01"
+  ],
+  "acceptance": [
+    "tests/e2e/demo-script.test.mjs exists and runs with: node --test --disable-warning=ExperimentalWarning tests/e2e/demo-script.test.mjs, with 0 failures",
+    "It boots createApp on port 0 with the real seed and demo data, uses a temp data dir, and closes the server in an after hook",
+    "One subtest per beat in docs/demo-script.md: (1) Aurelia glass claim via csr_phone with vehicle from policy snapshot is queue fast_track fastTrack=true, plus Spanish locale session; (2) same glass claim at Kestrel has fastTrack=false with reason 'fraud score 15 above fast-track limit 10' and queue personal_auto_claims; (3) Kestrel rear-end injury claim routes to queue injury with subrogation flag rear_ended_by_other and adjuster first-view summary; (4) PUT /config raising Kestrel fastTrack.maxFraudScore 10 to 20 flips the next glass claim to fast_track; (5) GET /kpis returns non-null stp_rate and acknowledgment-time metrics; (6) webhook subscription created, claim.routed in outbox, and core-claims-suite adapter preview payload differs between Aurelia and Kestrel",
+    "Uses the same tenants, dev users/roles and steps as the script; assertions cite beat numbers in subtest names",
+    "Any beat blocked by an in-flight Sprint 4 fix (intake-to-claim mapping, structured party answers, adapter profiles, seeding) is t.todo with the blocking ticket id in the message, never a silent skip or weakened assertion; todos are listed in the ticket result",
+    "Only synthetic data; no real carrier names; no file outside tests/e2e/demo-script.test.mjs written"
+  ],
+  "brief": "Write one ES-module test file, tests/e2e/demo-script.test.mjs, using node:test and node:assert/strict. Treat docs/demo-script.md as the spec; port the stage-claims.mjs script and the run-of-show steps to in-process fetch calls. Look at tests/e2e/harness.mjs (runStep, NotImplemented -> t.todo, requireImplemented) and tests/e2e/dod.test.mjs / tenant-differences.test.mjs for how existing tests boot createApp (port 0, temp dir) and seed; reuse patterns by importing harness.mjs (read only; do not edit it). Check architecture/core-runtime-api.md for createApp options and how seed + demo data are loaded; if a seed function needs a tenants dir, use REAL_TENANTS_DIR from the harness. Auth: POST /api/v1/auth/token with {tenantId, sub, userId, roles, name} for roles csr, adjuster, tenant_admin/carrier_admin, supervisor; send idempotency-key on POST/PUT. Pick an in-force policy older than 75 days (pickPolicy in the script) so fraud score stays exactly 15, and set lossDate 21 days ago for glass (LATE_REPORT). Wait briefly (poll GET /claims/:id/routing up to ~3s rather than fixed sleeps) for async triage/routing. Beat 1 Spanish: create the session with locale es per openapi.yaml and assert the locale is persisted; fast track via csr_phone claim. Beat 4: GET /config, change fastTrack.maxFraudScore 10->20 in the document and PUT /config with the version/etag the API requires, assert version increments, then stage a new Kestrel glass claim. Run beats in order in one shared app since beat 4 mutates Kestrel config (restore to 10 in an after hook). Beat 5: assert metrics stp_rate value and acknowledgment-time metric are non-null (not undefined). Beat 6: create webhook subscription to a .example URL, assert claim.routed event in outbox (GET /integrations/outbox), and compare payloads from /integrations/adapters/core-claims-suite/preview/:id for both tenants (differ). Pitfall: use t.todo(reason mentioning ticket id) via NotImplemented for beats failing only due to in-flight fixes; do not use t.todo to hide real assertion failures in working beats. If a contract is wrong, post a contract-change to architecture and add the smallest compatible workaround.",
+  "startedAt": "2026-10-18T21:50:04.830Z"
+}

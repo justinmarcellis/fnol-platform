@@ -1,0 +1,48 @@
+{
+  "status": "review",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:48:18.957Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:49:03.794Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:49:48.788Z",
+      "from": "in_progress",
+      "to": "review"
+    }
+  ],
+  "id": "S4-AI-02",
+  "team": "ai",
+  "title": "Evidence DoS hardening: PDF scan deadline and multipart caps",
+  "story": "As a platform operator I want evidence parsing bounded in time and size so a malicious upload cannot stall the event loop for every tenant.",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-ai-extraction-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 4,
+  "paths": [
+    "src/modules/evidence/",
+    "tests/unit/evidence/"
+  ],
+  "contracts": [
+    "architecture/security-gate-s3.json",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "scanSection in src/modules/evidence/parse.mjs checks the shared deadline and a per-section parts cap inside its loops; an adversarial ~10-12 MB PDF with '%PDF-BT ' + '[(a)' repeated + 'ET' returns in under 200 ms (test in tests/unit/evidence/dos.test.mjs).",
+    "parseMultipart caps parts at 20 (exported constant MAX_MULTIPART_PARTS) and enforces a total parse time budget; ~16 MB of '--a\\r\\n\\r\\n' repeated with boundary=a is rejected with a 400 validation error in under 200 ms (test).",
+    "Legitimate multipart uploads with a few parts and normal PDFs still parse; existing tests pass: node --test --disable-warning=ExperimentalWarning tests/unit/evidence/"
+  ],
+  "brief": "Work only in src/modules/evidence/parse.mjs (plus routes/service only if error mapping needs it) and tests/unit/evidence/dos.test.mjs. Today scanContent(content, lines, deadline) checks the deadline but scanSection(sec, lines) does not; thread the deadline in as a parameter, check performance.now() every N iterations (e.g. every 256) in each loop of scanSection (readString/skipWs scanning, TJ array loop), cap the parts array length (e.g. 2000) and cap the section length sliced from the content (e.g. 256 KB) so an unterminated TJ array cannot accumulate. Ensure the work is also bounded when extract() and readableText() call it again (single deadline per call, or cheap early exit). For parseMultipart: add MAX_MULTIPART_PARTS = 20 and MAX_MULTIPART_MS (e.g. 100); count parts as you split rather than splitting everything up front if it currently builds a full array; throw ctx-compatible validation error (look at how the existing code/routes surface errors, 400 'validation_error'). Pitfalls: measure with time assertions under 200 ms but build inputs inside the test outside the timed region; do not use whole-suite runs; avoid regex backtracking. Keep existing exported names (MAX_BYTES, MAX_STREAMS etc.). Do not edit src/ai.",
+  "valueDrivers": [
+    "security",
+    "availability"
+  ],
+  "requirements": [
+    "Close S3 medium findings for PDF scan and multipart parse"
+  ],
+  "startedAt": "2026-10-18T21:49:03.794Z"
+}

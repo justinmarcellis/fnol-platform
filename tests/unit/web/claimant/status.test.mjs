@@ -90,3 +90,18 @@ test('timeline view-model', () => {
   assert.equal(isTerminal('withdrawn'), true);
   assert.equal(isTerminal('in_review'), false);
 });
+
+test('default timers schedule without Illegal invocation', async () => {
+  // Browser setTimeout throws when called with a non-window receiver; emulate that guard.
+  const real = { st: globalThis.setTimeout, ct: globalThis.clearTimeout };
+  const guard = (fn) => function guarded(...a) { if (this !== globalThis && this !== undefined) throw new TypeError('Illegal invocation'); return fn.apply(globalThis, a); };
+  globalThis.setTimeout = guard(real.st); globalThis.clearTimeout = guard(real.ct);
+  try {
+    const api = sequenceApi(['reported', 'closed']);
+    const p = createStatusPoller({ api, claimId: 'c1', intervalMs: 5 });
+    await p.start();
+    await new Promise((r) => real.st(r, 60));
+    assert.equal(p.state.status, 'closed', 'poll fired via default timers');
+    p.stop();
+  } finally { globalThis.setTimeout = real.st; globalThis.clearTimeout = real.ct; }
+});

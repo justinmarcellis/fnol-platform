@@ -53,7 +53,7 @@ const api = {
     return kitApi.upload(path, file, fields);
   }
 };
-const app = { tenant: null, config: null, mode: 'guided', lob: null, flow: null, chat: null, poller: null, uploader: null, unsubs: [], view: 'boot' };
+const app = { tenant: null, config: null, mode: 'guided', lob: null, lossType: null, flow: null, chat: null, poller: null, uploader: null, unsubs: [], view: 'boot' };
 
 const announce = (msg) => { const live = $('live'); live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 30); };
 const focusMain = (el) => { (el ?? main).focus({ preventScroll: false }); };
@@ -141,13 +141,24 @@ function showStart() {
     return $('view-title').focus();
   }
   app.lob ??= lobs[0].id;
+  if (!lobs.some((l) => l.id === app.lob)) app.lob = lobs[0].id;
+  // Loss type is asked first: it selects the tenant question set (e.g. auto glass). Re-rendered when the line changes.
+  const lossFs = h('fieldset', { id: 'loss-fs' });
+  const renderLoss = () => {
+    const types = lobs.find((l) => l.id === app.lob)?.lossTypes ?? [];
+    if (!types.some((x) => x.id === app.lossType)) app.lossType = types[0]?.id ?? null;
+    lossFs.hidden = !types.length;
+    lossFs.replaceChildren(h('legend', { text: t('claimant.start.lossType') }),
+      ...types.map((x) => h('label', { class: 'opt' }, h('input', { type: 'radio', name: 'lossType', value: x.id, checked: x.id === app.lossType || null, onchange: () => { app.lossType = x.id; } }), h('span', { text: localText(x.label, locale) || x.id }))));
+  };
   const lobFs = h('fieldset', {}, h('legend', { text: t('claimant.start.lob') }),
-    lobs.map((l, i) => h('label', { class: 'opt' }, h('input', { type: 'radio', name: 'lob', value: l.id, checked: l.id === app.lob || null, onchange: () => { app.lob = l.id; } }), h('span', { text: localText(l.label, locale) || l.id }))));
+    lobs.map((l) => h('label', { class: 'opt' }, h('input', { type: 'radio', name: 'lob', value: l.id, checked: l.id === app.lob || null, onchange: () => { app.lob = l.id; renderLoss(); } }), h('span', { text: localText(l.label, locale) || l.id }))));
+  renderLoss();
   const modeFs = h('fieldset', {}, h('legend', { text: t('claimant.start.mode') }),
     [['guided', 'claimant.start.guided', 'claimant.start.guidedHelp'], ['chat', 'claimant.start.chat', 'claimant.start.chatHelp']].map(([v, a, b]) =>
       h('label', { class: 'opt' }, h('input', { type: 'radio', name: 'mode', value: v, checked: app.mode === v || null, onchange: () => { app.mode = v; } }), h('span', {}, t(a), h('small', { text: t(b) })))));
   const err = h('p', { class: 'field-error', id: 'start-error', role: 'alert' });
-  const form = h('form', { onsubmit: (e) => { e.preventDefault(); startSession(); } }, lobFs, modeFs, err, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, t('claimant.start.go'))));
+  const form = h('form', { onsubmit: (e) => { e.preventDefault(); startSession(); } }, lobFs, lossFs, modeFs, err, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, t('claimant.start.go'))));
   main.replaceChildren(h('h1', { id: 'view-title', tabindex: '-1', text: t('claimant.start.heading') }), h('p', { class: 'muted', text: t('claimant.start.intro') }), form);
   app.startError = err;
   $('view-title').focus();
@@ -159,7 +170,7 @@ async function startSession() {
   app.chat = app.mode === 'chat' ? createChat({ flow, t: (k, p) => t(k, p), locale: getLocale }) : null;
   teardown();
   app.unsubs.push(flow.subscribe(onFlow));
-  await flow.start({ lob: app.lob, locale: getLocale() });
+  await flow.start({ lob: app.lob, lossType: app.lossType ?? undefined, locale: getLocale() });
 }
 
 let lastQid = null;

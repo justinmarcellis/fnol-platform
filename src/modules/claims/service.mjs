@@ -240,6 +240,7 @@ export function createService(ctx) {
         scanned++;
         const claim = { ...JSON.parse(r.doc), status: r.status, version: r.version, updatedAt: r.updated_at };
         if (filter.flag && !claim.flags?.includes(filter.flag)) continue;
+        if (filter.reportedById !== undefined && claim.reportedBy?.id !== filter.reportedById) continue;
         if (items.length === limit) { more = true; scanned--; break; }
         items.push(claim);
       }
@@ -262,19 +263,40 @@ export function createService(ctx) {
     return from;
   }
 
-  function recordStatus(claim, from, actor, reason, extra = {}) {
+  /**
+   * History keeps the free-text reason encrypted (with its code); the event and audit carry only the
+   * machine-readable reasonCode, never free text.
+   */
+  function recordStatus(claim, from, actor, reason, extra = {}, reasonCode) {
+    const sealed = reason || reasonCode ? ctx.crypto.encryptPii(JSON.stringify({ v: { code: reasonCode ?? null, text: reason ?? null } })) : null;
     db.insert('claim_status_history', {
       id: db.id('sth'), claim_id: claim.id, seq: nextSeq('claim_status_history', claim.id), from_status: from, to_status: claim.status, version: claim.version,
-      actor: label(actor), reason: reason ?? null, at: claim.updatedAt,
+      actor: label(actor), reason: sealed, at: claim.updatedAt,
     });
-    audit(actor, 'claim.status.changed', claim.id, { from, to: claim.status, version: claim.version, ...extra });
+    audit(actor, 'claim.status.changed', claim.id, { from, to: claim.status, version: claim.version, ...(reasonCode ? { reasonCode } : {}), ...extra });
     ctx.bus.publish('claim.status.changed', claim.id, {
-      claimId: claim.id, from, to: claim.status, ...(reason ? { reason } : {}), version: claim.version, actor: publicActor(actor),
+      claimId: claim.id, from, to: claim.status, ...(reasonCode ? { reasonCode } : {}), version: claim.version, actor: publicActor(actor),
     });
   }
 
-  function changeStatusSync(claimId, { to, reason, closeReason, expectedVersion, actor } = {}) {
+  /** Status history, oldest first. Reasons are decrypted only when requested (staff PII roles). */
+  function listStatusHistorySync(claimId, { decrypt = false } = {}) {
+    load(claimId);
+    return db.all('SELECT * FROM claim_status_history WHERE claim_id = ? ORDER BY seq', claimId).map((r) => {
+      let reasonCode = null;
+      let reason = null;
+      if (r.reason) {
+        try { const v = JSON.parse(ctx.crypto.decryptPii(r.reason)).v; reasonCode = v.code ?? null; if (decrypt) reason = v.text ?? null; } catch { /* legacy plain text is never returned */ }
+      }
+      return { seq: r.seq, from: r.from_status, to: r.to_status, version: r.version, actor: r.actor, at: r.at, reasonCode, ...(decrypt ? { reason } : {}) };
+    });
+  }
+
+  function changeStatusSync(claimId, { to, reason, reasonCode, closeReason, expectedVersion, actor } = {}) {
     actor = normalizeActor(actor);
+    if (reasonCode != null && !(typeof reasonCode === 'string' && /^[a-z][a-z0-9_]{1,39}$/.test(reasonCode))) {
+      throw bad(ctx, 'reasonCode must be a lowercase token such as awaiting_documents');
+    }
     if (reason != null && String(reason).length > 500) throw bad(ctx, 'reason is limited to 500 characters');
     return db.transaction(() => {
       const claim = load(claimId);
@@ -283,7 +305,7 @@ export function createService(ctx) {
       }
       const from = transition(claim, to, { actor, reason, closeReason });
       save(claim);
-      recordStatus(claim, from, actor, reason, closeReason ? { closeReason } : {});
+      recordStatus(claim, from, actor, reason, closeReason ? { closeReason } : {}, reasonCode);
       return present(claim);
     });
   }
@@ -527,7 +549,7 @@ export function createService(ctx) {
 
   const impl = {
     createClaim: createClaimSync, getClaim: getClaimSync, listClaims: listClaimsSync, getClaimBundle: getClaimBundleSync,
-    changeStatus: changeStatusSync, addFlag: addFlagSync, addNote: addNoteSync, listNotes: listNotesSync,
+    changeStatus: changeStatusSync, listStatusHistory: listStatusHistorySync, addFlag: addFlagSync, addNote: addNoteSync, listNotes: listNotesSync,
     addTask: addTaskSync, updateTask: updateTaskSync, listTasks: listTasksSync,
     listTimers: (claimId) => { load(claimId); return timers.list(claimId); },
     suggestReserve: suggestReserveSync, setExternalRef: setExternalRefSync,

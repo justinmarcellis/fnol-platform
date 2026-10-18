@@ -230,8 +230,7 @@
       "claimant",
       "csr",
       "agent",
-      "integration",
-      "carrier_admin"
+      "integration"
     ],
     "module": "intake",
     "public": false
@@ -242,8 +241,7 @@
       "claimant",
       "csr",
       "agent",
-      "integration",
-      "carrier_admin"
+      "integration"
     ],
     "module": "intake",
     "public": false
@@ -428,8 +426,7 @@
     "op": "POST /claims/{claimId}/routing",
     "roles": [
       "supervisor",
-      "adjuster",
-      "carrier_admin"
+      "adjuster"
     ],
     "module": "rules",
     "public": false
@@ -468,8 +465,7 @@
       "claimant",
       "csr",
       "agent",
-      "integration",
-      "carrier_admin"
+      "integration"
     ],
     "module": "intake",
     "public": false
@@ -480,8 +476,7 @@
       "claimant",
       "csr",
       "agent",
-      "integration",
-      "carrier_admin"
+      "integration"
     ],
     "module": "intake",
     "public": false
@@ -492,8 +487,7 @@
       "claimant",
       "csr",
       "agent",
-      "integration",
-      "carrier_admin"
+      "integration"
     ],
     "module": "intake",
     "public": false
@@ -504,8 +498,7 @@
       "claimant",
       "csr",
       "agent",
-      "integration",
-      "carrier_admin"
+      "integration"
     ],
     "module": "intake",
     "public": false

@@ -24,7 +24,6 @@ async function deliverOnce(app, { host = 'hooks.example.test', resolveHost, stat
 }
 
 test('SEC2-007: webhook delivery connects to the address it validated (no DNS rebinding window)', async (t) => {
-  t.todo('SEC2-007: checkResolvedHost resolves once, then global fetch resolves again; the connection is not pinned to the validated IP');
   const app = await bootReal();
   try {
     const { calls } = await deliverOnce(app);
@@ -36,7 +35,6 @@ test('SEC2-007: webhook delivery connects to the address it validated (no DNS re
 });
 
 test('SEC2-019: IPv6 transition-mechanism literals that embed private IPv4 are classified private', async (t) => {
-  t.todo('SEC2-019: 6to4 (2002::/16), NAT64 local-use (64:ff9b:1::/48), SIIT (::ffff:0:a.b.c.d), Teredo and site-local literals are classified public');
   for (const ip of ['2002:7f00:1::', '2002:a9fe:a9fe::', '64:ff9b:1::a9fe:a9fe', '::ffff:0:7f00:1', 'fec0::1']) {
     assert.notEqual(classifyAddress(ip), 'public', `${ip} is classified public`);
   }

@@ -81,3 +81,10 @@ export async function startReceiver(respond = () => 200) {
     close: () => new Promise((r) => { server.close(() => r()); server.closeAllConnections?.(); }),
   };
 }
+
+/** Set notifications.webhooks.allowedHosts on a tenant (SEC2-015). */
+export function allowHosts(app, hosts, tenantId = 'alpha') {
+  const cfg = structuredClone(app.ctx.tenants.get(tenantId));
+  cfg.notifications = { ...(cfg.notifications ?? {}), webhooks: { ...(cfg.notifications?.webhooks ?? {}), allowedHosts: hosts } };
+  app.ctx.tenants.put(tenantId, cfg, 'test');
+}

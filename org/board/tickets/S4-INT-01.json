@@ -1,0 +1,51 @@
+{
+  "status": "review",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:48:07.764Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:46.783Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:49:28.646Z",
+      "from": "in_progress",
+      "to": "review"
+    }
+  ],
+  "id": "S4-INT-01",
+  "team": "integrations",
+  "title": "Adapter fieldMapProfile fix and webhook allowed-host validation",
+  "story": "Integrations fixes: adapters must honour settings.fieldMapProfile so tenants get distinct mappings; webhook create/update must reject hosts outside notifications.webhooks.allowedHosts.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-integrations-adapter-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 4,
+  "paths": [
+    "src/modules/integrations/",
+    "tests/unit/integrations/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "profileOf in src/modules/integrations/adapters/index.mjs reads settings.fieldMapProfile first, falls back to settings.profile alias, then default A; the tenants' values (mapping-a, mapping-b) are normalised to the adapter's profile ids (A/B)",
+    "New test in tests/unit/integrations/adapters/ shows aurelia-mutual and kestrel-point configs yield different mapped payloads for the same claim bundle; alias profile still works; unsupported value gives 422 invalid_adapter_settings",
+    "POST and PATCH/PUT /integrations/webhooks return 422 with a clear message naming the host when the URL host is not in notifications.webhooks.allowedHosts, using checkAllowedHost from webhooks/url-guard.mjs; allowed hosts still succeed",
+    "Tests in tests/unit/integrations/webhooks/service.test.mjs cover create deny, update deny, allow, and empty/missing allowedHosts behaviour",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/integrations passes"
+  ],
+  "brief": "Part 1: in src/modules/integrations/adapters/index.mjs (~line 75) profileOf reads settings.profile, but tenants/aurelia-mutual.json (~1358) and tenants/kestrel-point.json (~1181) set settings.fieldMapProfile ('mapping-a'/'mapping-b'), so everyone gets default A. Read fieldMapProfile first, keep profile as alias. Check what adapter.profiles contains and how adapter.map uses profile (adapters/*); add a small normaliser (mapping-a -> A, mapping-b -> B, case-insensitive, also accept bare A/B) rather than editing tenant files (not your paths). Keep the existing 422 invalid_adapter_settings behaviour for unknown values. Add a test using the two tenant configs (load the JSON from tenants/ read-only, or inline minimal fakes via existing fixtures.mjs / fake-core-authz pattern) and assert the mapped payloads differ; update golden tests only if they relied on the bug, and explain why. Part 2: src/modules/integrations/webhooks/service.mjs already has checkUrl calling checkAllowedHost (line ~83); first verify whether create AND update both call it (and the route layer in routes.mjs / any webhooks routes), and reproduce the reported gap with a test (check how the tenant config path notifications.webhooks.allowedHosts is read from ctx.tenant.config, devMode/loopback bypass, empty list semantics, wildcard handling in url-guard.mjs). Fix whichever path skips validation; error must be 422 (invalid_request style via invalid(ctx,...)) with message including the host. Do not weaken the delivery-time check in worker.mjs. Use helpers.mjs in tests/unit/integrations/webhooks. If a contract is wrong, post a contract-change to architecture hub and document it. Do not edit package.json or tenants/.",
+  "valueDrivers": [
+    "tenant-distinct field mapping",
+    "SSRF/egress control"
+  ],
+  "requirements": [
+    "Adapter honours fieldMapProfile",
+    "Webhook target host allow-list enforced at create/update"
+  ],
+  "startedAt": "2026-10-18T21:48:46.783Z"
+}

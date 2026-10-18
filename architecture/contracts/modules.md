@@ -70,7 +70,7 @@ Synchronous calls only go downstream and are read-mostly. The only synchronous w
 - `IntakeStep` (1.2.0, openapi `IntakeStep`): `sessionId, done, question, prompt, locale, progress, missing[{questionId,text}], optional[Question], blocked[]?, errors[]?, suggestions[]?, disclosures[]`. `question` is null when no required question is left, even if optional ones remain. `missing[]` lists required questions (static `required`, `requiredIf` true, or forced by an intake `require_question` rule) not yet answered, localized to the session locale
 - Channel alias: `startSession` accepts `channel: 'csr'` and stores `csr_phone` (the `Channel` enum is unchanged)
 - `mapsTo` accepts the root `loss.*` as an alias of `lossEvent.*` (tenant sample question sets use it)
-- Roles: `claimant, csr, agent, integration, carrier_admin` on every intake route; a claimant reaches only the sessions it started
+- Roles: `claimant, csr, agent, integration` on every intake route; a claimant reaches only the sessions it started
 - Calls: `config.getQuestionSet`, `rules.evaluateCondition` and `rules.evaluate({stage:'intake'})`, `claims.createClaim`, and optionally `ctx.ai.run('extract_narrative')` for AI-prefilled suggestions (corrected in 1.2.0: `next_question` is not an AI task; the AI tasks are `extract_narrative, extract_document, classify_photo, severity, fraud_signals, subrogation, summarize, next_best_actions`)
 - Publishes: none (claims publishes `claim.reported`)
 - Consumes: `tenant.config.updated`, to expire active sessions only if their question-set version was removed

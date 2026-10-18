@@ -7,6 +7,8 @@ import { applyBranding } from '/shared/theme.js';
 import { registerCsrStrings } from './strings.js';
 import { createPolicySearch } from './search.js';
 import { createAssistedIntake, claimLink } from './assisted.js';
+import { isDisclosure, fieldType, coerceAnswer, disclosureAccepted } from './answers.js';
+import { renderMissing } from './panel.js';
 import { createRecent, recentColumns, claimSummary } from './recent.js';
 
 registerCsrStrings(registerStrings);
@@ -100,24 +102,48 @@ async function beginIntake(row) {
 }
 
 // ---- intake rendering
+function buildDisclosure(q, slot) {
+  // A native required checkbox: its checked state is sent as boolean true, never a string.
+  const wrap = document.createElement('div'); wrap.className = 'fx-check'; wrap.dataset.qtype = q.type;
+  const id = `disc-${q.id}`;
+  const cb = document.createElement('input');
+  cb.type = 'checkbox'; cb.id = id; cb.name = q.id; cb.required = true; cb.setAttribute('aria-required', 'true');
+  const lab = document.createElement('label'); lab.setAttribute('for', id); lab.textContent = resolveText(q.text);
+  const err = document.createElement('p'); err.id = `${id}-err`; err.className = 'fx-error'; err.setAttribute('role', 'alert'); err.hidden = true;
+  err.textContent = t('kit.field.required', { label: resolveText(q.text) });
+  cb.addEventListener('change', () => { err.hidden = cb.checked; cb.removeAttribute('aria-invalid'); });
+  wrap.append(cb, lab, err);
+  const help = resolveText(q.help);
+  if (help) { const h = document.createElement('p'); h.id = `${id}-hint`; h.className = 'muted'; h.textContent = help; cb.setAttribute('aria-describedby', h.id); wrap.appendChild(h); }
+  slot.appendChild(wrap);
+}
 function buildInput(q) {
   const slot = $('answer-slot'); slot.textContent = '';
   if (!q) return;
+  if (isDisclosure(q)) return buildDisclosure(q, slot);
   const f = document.createElement('fx-field');
   f.setAttribute('name', q.id); f.setAttribute('label', resolveText(q.text));
   const help = resolveText(q.help); if (help) f.setAttribute('hint', help);
   if (q.required) f.setAttribute('required', '');
-  const type = { number: 'number', currency: 'number', date: 'date', time: 'time', phone: 'tel', email: 'email', datetime: 'datetime-local', longtext: 'textarea', select: 'select', boolean: 'select' }[q.type] ?? 'text';
-  f.setAttribute('type', type);
+  f.setAttribute('type', fieldType(q.type));
   if (q.type === 'select') f.options = (q.options ?? []).map((o) => ({ value: o.value, label: resolveText(o.label) }));
   if (q.type === 'boolean') f.options = [{ value: 'true', label: t('csr.intake.yes') }, { value: 'false', label: t('csr.intake.no') }];
   slot.appendChild(f);
   f.dataset.qtype = q.type;
 }
-function coerce(q, v) {
-  if (q.type === 'boolean') return v === 'true';
-  if (q.type === 'number' || q.type === 'currency') return v === '' ? v : Number(v);
-  return v;
+/** Read the current answer control. Returns { ok, value }. */
+function readAnswer(q) {
+  const slot = $('answer-slot');
+  if (isDisclosure(q)) {
+    const cb = slot.querySelector('input[type=checkbox]');
+    if (!cb) return { ok: false };
+    const ok = disclosureAccepted(q, cb.checked);
+    if (!ok) { cb.setAttribute('aria-invalid', 'true'); slot.querySelector('.fx-error').hidden = false; cb.focus(); }
+    return { ok, value: coerceAnswer(q, cb.checked) };
+  }
+  const f = slot.querySelector('fx-field');
+  if (!f || !f.validate()) return { ok: false };
+  return { ok: true, value: coerceAnswer(q, f.value) };
 }
 let renderedQ = null;
 intake.subscribe((s) => {
@@ -127,9 +153,7 @@ intake.subscribe((s) => {
   $('progress').textContent = s.done ? t('csr.intake.ready') : t('csr.intake.progress', { answered: s.progress.answered ?? 0, remaining: s.progress.requiredRemaining ?? 0 });
   const dis = $('disclosures'); dis.textContent = '';
   if (s.disclosures.length) { const h = document.createElement('h3'); h.textContent = t('csr.intake.disclosures'); dis.appendChild(h); for (const d of s.disclosures) { const p = document.createElement('p'); p.textContent = d; dis.appendChild(p); } }
-  const ul = $('missing'); ul.textContent = '';
-  if (!s.missing.length && !s.unlisted) { const li = document.createElement('li'); li.textContent = t('csr.panel.none'); ul.appendChild(li); }
-  for (const m of s.missing) { const li = document.createElement('li'); li.textContent = m.text; if (s.question?.id === m.id) li.setAttribute('aria-current', 'true'); ul.appendChild(li); }
+  renderMissing(document, $('missing'), s, t);
   $('unlisted').textContent = s.unlisted ? t('csr.panel.more', { count: s.unlisted }) : '';
   $('script').textContent = s.script.text;
   if (renderedQ !== (s.question?.id ?? null)) { renderedQ = s.question?.id ?? null; buildInput(s.question); $('answer-slot').querySelector('input,select,textarea')?.focus(); }
@@ -140,9 +164,10 @@ intake.subscribe((s) => {
 });
 $('answer-form').addEventListener('submit', (e) => {
   e.preventDefault();
-  const q = intake.state.question; const f = $('answer-slot').querySelector('fx-field');
-  if (!q || !f || !f.validate()) return;
-  intake.answer(q.id, coerce(q, f.value));
+  const q = intake.state.question;
+  if (!q) return;
+  const a = readAnswer(q);
+  if (a.ok) intake.answer(q.id, a.value);
 });
 $('submit-go').addEventListener('click', () => intake.submit());
 

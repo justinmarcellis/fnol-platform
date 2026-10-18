@@ -1,0 +1,112 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:59.927Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:39:38.736Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:42:47.873Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:44:03.224Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-PLT-01",
+  "team": "platform",
+  "title": "Demo data script, npm start auto-populate, demo:reset, setup docs",
+  "story": "Demo-ready one command: a fresh clone runs npm start and the adjuster inbox, admin KPIs and dashboards are populated with realistic synthetic claims for both tenants.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-platform-runtime-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "scripts/demo-data.mjs",
+    "scripts/dev.mjs",
+    "package.json",
+    "docs/setup.md",
+    "tests/unit/scripts/demo-data.test.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#intake",
+    "architecture/contracts/modules.md#claims",
+    "architecture/contracts/modules.md#adjuster-read-models",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "scripts/demo-data.mjs exports demoData(opts) and runs as a CLI; it creates claims through ctx.forTenant(tenantId).modules (intake.startSession/answer/submit or claims.createClaim), never by writing SQL",
+    "For every tenant in tenants/*.json, every scenario in SCENARIOS (tests/synthetic/index.mjs) whose lob is enabled for that tenant is generated at least once, with extra varied claims so each tenant has about 12 or more; seeds are fixed so output is deterministic",
+    "Claims are spread across statuses (some left reported/triaged/assigned, some moved with claims.changeStatus, a few notes/tasks) so inbox queues, KPI metrics and the dashboard show non-zero values",
+    "Policies for each scenario are seeded via coverage.seedPolicies before claims are created; a scenario failure is logged and skipped, never aborts the run, and the summary reports created/failed counts per tenant",
+    "Idempotent: running twice does not duplicate claims (guard by externalRef synthetic/<scenario>-<seed> or a skip when claims already exist)",
+    "npm start (scripts/dev.mjs) runs seed then demo-data only when the database is new/empty; an existing database is left untouched",
+    "package.json adds scripts demo (node scripts/demo-data.mjs) and demo:reset (wipes data/ db files and dev-users but keeps .secrets/, then runs seed and demo-data); no new dependencies",
+    "npm start prints demo URLs and the dev users and tokens after startup (tokens may come from the seed output or ctx.auth.issueToken)",
+    "docs/setup.md documents exact demo URLs (/, /csr, /adjuster, /admin, /healthz, dashboard :8090), the demo users and token printing, demo:reset steps, and the verified clean-clone procedure",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/scripts/demo-data.test.mjs passes using a temp DB, covering both tenants, scenario coverage, idempotency and failure isolation",
+    "Verified from a clean clone in a temp dir: git clone /home/user/fnol-platform /tmp/<dir>; npm start in background; poll /healthz; curl /, /csr, /adjuster, /admin and an authenticated adjuster inbox and KPI endpoint returning populated data; stop the process; result reported in the ticket summary",
+    "Existing tests/unit/scripts/seed.test.mjs still passes"
+  ],
+  "brief": "Build scripts/demo-data.mjs. Mirror the structure of scripts/seed.mjs: export an async function demoData(opts) accepting createApp, appOpts, importSynthetic, log, seed injectables so tests can use fakes and a temp DB (FNOL_DB_PATH); the CLI branch runs when argv[1] is this file. Boot createApp({port:0}), iterate ctx.tenants.list(), and per tenant use ctx.forTenant(tenantId).modules. Import tests/synthetic/index.mjs (SCENARIOS, generateScenario, generatePolicies) defensively like seed.mjs does. For each enabled lob state (config.lobs[].states[0]) call generateScenario({name, seed, tenantId, state}); seed its scenario.policy through coverage.seedPolicies([policy]) first (verify the policy shape accepted by reading src/modules/coverage). Create the claim via intake (startSession with actor of the tenant's csr dev user, answer intakeAnswers mapped to question ids, submit with idempotencyKey) falling back to claims.createClaim(claimCreate with channel) if intake rejects; use claims.createClaim as the primary if intake is brittle, and document the choice. Read src/modules/claims and intake service signatures and src/core/tenant-context.mjs for the actor shape. Events are processed by the bus asynchronously: after creating claims, wait for the outbox to drain (see architecture/core-runtime-api.md for bus drain/flush helpers) before changing statuses, otherwise triage/routing may race. Vary seeds 1..N per scenario to reach about 12 claims per tenant. Move some claims through legal transitions only (overview.md section 7 state machine) and add a couple of notes/tasks. Wrap each claim in try/catch. Tenants may have different enabled LOBs; skip scenarios whose lob is not enabled. In scripts/dev.mjs, after the existing seed spawn on dbEmpty, spawn demo-data the same way (non-fatal on failure) and print URLs plus tokens (seed already logs tokens; reprint a compact table or point to them). demo:reset must stop nothing; document that the server must be stopped first. Pitfalls: do not touch src/; AI providers may be absent so rely on the local tier; never commit; keep data synthetic and use the .example email domain.",
+  "valueDrivers": [
+    "Sales demo readiness: one command yields a populated product",
+    "Lower evaluator time-to-value on a fresh clone",
+    "Reproducible demos via deterministic seeds"
+  ],
+  "requirements": [
+    "Demo data created only through the module service layer",
+    "Both tenants populated across all scenarios",
+    "npm start auto-populates a new database; npm run demo:reset wipes and reseeds",
+    "docs/setup.md lists demo URLs, users, tokens and reset steps",
+    "Clean-clone verification"
+  ],
+  "startedAt": "2026-10-18T21:39:38.736Z",
+  "doneAt": "2026-10-18T21:44:03.224Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:44:03.224Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Criteria met: demo-data via ctx.forTenant modules, idempotent, dev.mjs seeds demo only on empty DB, demo/demo:reset scripts, setup docs; tests 9/9 pass; clean-copy npm start healthy, app paths 200"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.8225,
+    "inputTokens": 62,
+    "cacheWriteTokens": 96642,
+    "cacheReadTokens": 2824874,
+    "outputTokens": 1574,
+    "agents": {
+      "a7a32616ca0db8a0f": {
+        "label": "S3-PLT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 22237,
+        "cacheReadTokens": 286312,
+        "outputTokens": 849,
+        "usd": 0.1214
+      },
+      "ac96da405eed642c3": {
+        "label": "S3-PLT-01 ic-platform-runtime-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 52,
+        "cacheWriteTokens": 74405,
+        "cacheReadTokens": 2538562,
+        "outputTokens": 725,
+        "usd": 0.7011
+      }
+    }
+  }
+}

@@ -27,9 +27,10 @@ async function open(path = '/claimant') {
 }
 
 /** Walk the guided flow with synthetic answers until the review step. Returns the questions seen. */
-async function completeGuided(page, t) {
+async function completeGuided(page, t, lossType) {
   const asked = [];
   await page.check('input[name="lob"][value="personal_auto"]');
+  if (lossType) await page.check(`input[name="lossType"][value="${lossType}"]`);
   await page.check('input[name="mode"][value="guided"]');
   await page.click('form button[type="submit"]');
   for (let i = 0; i < 25; i += 1) {
@@ -75,7 +76,7 @@ test('claimant (Aurelia) completes guided intake to a claim number and status pa
   }
 });
 
-test('claimant UI raises no browser errors after submit (status poller)', { todo: 'blocker S2-EXP-03-1: status.js timers.setTimeout Illegal invocation' }, async (t) => {
+test('claimant UI raises no browser errors after submit (status poller)', async (t) => {
   if (skip) return t.skip(skip);
   const page = await open();
   try {
@@ -91,11 +92,11 @@ test('claimant UI raises no browser errors after submit (status poller)', { todo
   }
 });
 
-test('claimant can reach the personal auto glass question set (loss type)', { todo: 'blocker S2-EXP-03-2: claimant app sends no lossType' }, async (t) => {
+test('claimant can reach the personal auto glass question set (loss type)', async (t) => {
   if (skip) return t.skip(skip);
   const page = await open();
   try {
-    const asked = await completeGuided(page, t);
+    const asked = await completeGuided(page, t, 'glass');
     // BUG S2-EXP-03-2: app.js never sends lossType, so config.getQuestionSet always picks auto-general and the
     // tenant's auto-glass set (glass_location question) cannot be reached from the claimant UI.
     const glass = asked.some((q) => /glass|windshield|window/i.test(q ?? '') && /where|which|location|part/i.test(q ?? ''));
@@ -122,7 +123,7 @@ test('Spanish toggle switches labels on Aurelia', async (t) => {
   }
 });
 
-test('English-only tenant (Kestrel) does not show the language picker', { todo: 'blocker S2-EXP-03-3: .ctl display:flex overrides [hidden]' }, async (t) => {
+test('English-only tenant (Kestrel) does not show the language picker', async (t) => {
   if (skip) return t.skip(skip);
   const page = await open('/claimant?tenant=kestrel-point');
   try {

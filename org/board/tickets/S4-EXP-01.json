@@ -1,0 +1,57 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:48:22.460Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:49:55.860Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S4-EXP-01",
+  "team": "experience",
+  "title": "Structured party/vehicle/address answers and insured-vehicle pick in CSR and claimant UIs",
+  "story": "Structured answers in the UIs: CSR and claimant render party, vehicle and address question types as small structured sub-forms and send the object the intake API validates; both let the user pick the insured vehicle from the policy so the claim carries it; Playwright proves a CSR rear-end claim at Aurelia with an at-fault other driver reaches a subrogation flag in the adjuster view.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-csr-portal-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 4,
+  "paths": [
+    "src/web/csr/",
+    "src/web/claimant/",
+    "tests/unit/web/csr/",
+    "tests/unit/web/claimant/",
+    "tests/ui/csr.test.mjs",
+    "tests/ui/claimant.test.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md (intake, coverage/PolicySnapshot, triage subrogation)",
+    "architecture/contracts/openapi.yaml (/intake/sessions/{id}/answers, GET /policies?q=)",
+    "architecture/contracts/domain/Party.schema.json",
+    "architecture/contracts/domain/Vehicle.schema.json",
+    "architecture/contracts/domain/PolicySnapshot.schema.json"
+  ],
+  "acceptance": [
+    "src/web/csr/answers.js and a new src/web/claimant/structured.js (pure, no DOM) export buildStructured/coerce helpers; unit tests tests/unit/web/csr/structured.test.mjs and tests/unit/web/claimant/structured.test.mjs pass (node --test --disable-warning=ExperimentalWarning)",
+    "For question type party the CSR and claimant UIs render a sub-form (name, roles select incl. third_party/driver/witness, phone, optional insurer/policy no., at-fault flag) and POST answers with value as an object (not a string); type vehicle renders year/make/model/VIN/plate, type address renders street/city/state/postal; each sub-form has labelled controls and passes existing a11y checks",
+    "The server's 422 for an incomplete structured value is shown inline next to the sub-form",
+    "After policy selection both apps list the policy's vehicles (from GET /policies?q= summary or the coverage snapshot) and the chosen vehicle is sent as the insured vehicle answer including policyVehicleId and VIN so the claim carries vehicles[role=insured]; a policy with no vehicles hides the picker",
+    "tests/ui/csr.test.mjs has a Playwright test: CSR at Aurelia, rear-end personal_auto claim, other_party_involved=true, other driver party with at-fault, submit, then adjuster view (/adjuster) shows the subrogation flag/subrogation_review task; skips cleanly without Playwright",
+    "tests/ui/claimant.test.mjs covers a party sub-form and the vehicle picker in the claimant app",
+    "No edits outside owned paths; existing csr/claimant unit and UI tests still pass"
+  ],
+  "brief": "Read src/web/csr/app.js, answers.js, assisted.js and src/web/claimant/{app,flow,chat,view}.js to see how a question becomes a control; today unknown types fall to a text fx-field and send a string. Server side (src/modules/intake/questions.js, mapping.js): types party/vehicle/address/location only require a non-null object value; mapping.js turns a party answer into parties[] with roles (default ['third_party']) and kind 'person', and a vehicle answer into vehicles[] with role 'insured'; unmapped fields pass through, so use Party/Vehicle schema field names (name {first,last}? check Party.schema.json, phone, roles array; Vehicle vin, year, make, model, policyVehicleId). Do not invent fields. Add answers-style pure helpers (CSR: extend answers.js coerceAnswer without breaking its existing tests; claimant: new structured.js) that map form-field values to the object, drop empty keys and set roles from a select; keep DOM rendering in app.js using the shared kit fx-* components already used (see existing fx-field usage). The Aurelia rule PR-SUBRO-AUTO fires on answers.other_party_involved == true and the question other_party_info (type party, requiredIf) must be answerable, so that is the demo path; the boolean answer must be sent as boolean true (coerceAnswer already does). For the insured vehicle: policy search (GET /policies?q=, {items,matchedOn}) returns PolicySummary with vehicleCount only; fetch the vehicle list from the policy snapshot / coverage endpoint exposed in openapi (check the coverage and policy routes there) when a policy is selected; if no endpoint lists vehicles for the role, post a contract-change to the architecture hub and fall back to reading the snapshot via the smallest compatible existing route, documenting it. Send the pick as the answer to the insured-vehicle (vehicle type) question if the tenant config has one, otherwise as the session-level vehicle the intake API accepts; verify via GET /claims/{id}?include=vehicles in the UI test. For UI tests reuse tests/ui/a11y-harness.mjs (launchBrowser, bootApp, answerCsrQuestion; extend only inside your own test files, harness is shared and read-only) and the adjuster URL/selectors from tests/ui/adjuster.test.mjs. Pitfalls: Idempotency-Key on claimant submit (existing); i18n strings go in strings.js for en and es; PII values never logged; use only synthetic data (names like Pat Example); [hidden] CSS rule for new controls; run only your own tests.",
+  "valueDrivers": [
+    "Faster, complete intake",
+    "Subrogation recovery",
+    "Coverage verification accuracy"
+  ],
+  "requirements": [
+    "Party, vehicle and address questions answerable in both UIs",
+    "Insured vehicle carried on the claim from the policy",
+    "Aurelia subrogation flag reachable end to end from the CSR portal"
+  ],
+  "startedAt": "2026-10-18T21:49:55.860Z"
+}

@@ -1,3 +1,4 @@
+import { pinnedRequest } from '../webhooks/url-guard.mjs';
 import { mapProfileA } from './profiles/profile-a.mjs';
 import { mapProfileB } from './profiles/profile-b.mjs';
 
@@ -28,7 +29,7 @@ export const coreClaimsSuite = {
 
   /**
    * Deliver a payload.
-   * target `{ kind: 'inprocess', receive(payload) }` calls the fake core; `{ kind: 'http', url, fetch?, timeoutMs? }` POSTs JSON
+   * target `{ kind: 'inprocess', receive(payload) }` calls the fake core; `{ kind: 'http', url, pinned: { address, family }, transport?, fetch?, timeoutMs? }` POSTs JSON
    * and expects `{ coreClaimNumber }` back.
    * @returns {Promise<{ externalId: string, raw?: object }>}
    */
@@ -38,17 +39,30 @@ export const coreClaimsSuite = {
       return { externalId: res.coreClaimNumber, raw: res };
     }
     if (target?.kind === 'http') {
-      const doFetch = target.fetch ?? globalThis.fetch;
-      const res = await doFetch(target.url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify(payload),
-        redirect: 'error',
-        signal: AbortSignal.timeout(target.timeoutMs ?? 10000),
-      });
-      if (res.status < 200 || res.status >= 300) throw new Error(`core system responded ${res.status}`);
-      const body = await res.json().catch(() => null);
-      const externalId = body?.coreClaimNumber ?? body?.claimNumber;
+      const headers = { 'content-type': 'application/json', accept: 'application/json' };
+      const body = JSON.stringify(payload);
+      let status;
+      let text;
+      if (target.fetch) {
+        // Test seam. Redirects are never followed; a 3xx is a failed delivery.
+        const res = await target.fetch(target.url, { method: 'POST', headers, body, redirect: 'manual', signal: AbortSignal.timeout(target.timeoutMs ?? 10000) });
+        status = res.status;
+        text = status >= 200 && status < 300 ? await res.text?.().catch(() => null) ?? JSON.stringify(await res.json?.().catch(() => null)) : null;
+      } else if (target.pinned) {
+        // Connect to the address validated by resolveTarget (resolved once), never to a second DNS answer.
+        const res = await (target.transport ?? pinnedRequest)({
+          url: new URL(target.url), address: target.pinned.address, family: target.pinned.family, method: 'POST', headers, body, timeoutMs: target.timeoutMs ?? 10000,
+        });
+        status = res.status;
+        text = res.body?.toString('utf8');
+      } else {
+        throw new TypeError('http target must carry a pinned address');
+      }
+      if (status >= 300 && status < 400) throw new Error(`core system redirected (${status}); redirects are not followed`);
+      if (status < 200 || status >= 300) throw new Error(`core system responded ${status}`);
+      let parsed = null;
+      try { parsed = JSON.parse(text); } catch { /* not json */ }
+      const externalId = parsed?.coreClaimNumber ?? parsed?.claimNumber;
       if (!externalId) throw new Error('core system response has no coreClaimNumber');
       return { externalId: String(externalId), raw: { coreClaimNumber: String(externalId) } };
     }

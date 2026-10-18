@@ -1,0 +1,93 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:19.743Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:37:11.557Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:40:40.509Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:41:31.396Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-PRD-03",
+  "team": "product",
+  "title": "COTS readiness assessment",
+  "story": "As a product director I can see honest readiness by area and a path to a first carrier pilot.",
+  "points": 5,
+  "tier": "strong",
+  "owner": "ic-product-competitive-analyst",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "docs/cots-readiness.md"
+  ],
+  "contracts": [
+    "architecture/overview.md"
+  ],
+  "valueDrivers": [
+    "VD-3",
+    "VD-7"
+  ],
+  "requirements": [
+    "REQ-01"
+  ],
+  "acceptance": [
+    "One-page docs/cots-readiness.md with a table for: multi-tenancy, configurability, integrations/adapters, AI layer, security and compliance, operability, scalability, data platform, UX/accessibility, licensing; each rated ready for pilot / gaps / not started",
+    "Each gap has a cited file as evidence and an S/M/L effort estimate",
+    "Includes specific gaps: SQLite and in-process bus vs Cloud SQL/Pub/Sub, local master key vs Cloud KMS, dev tokens vs IdP/SSO, open medium/low findings from architecture/security-review-s2.md, Spanish native review, no real Vertex runs, illustrative regulatory timers need counsel, no load testing, no SOC 2 evidence - each verified against code",
+    "Recommended path to first carrier pilot with ordered phases",
+    "No claim without a cited file; quality figures match org/quality.json"
+  ],
+  "brief": "Write docs/cots-readiness.md only; keep it to roughly one page of dense tables. Read architecture/overview.md, architecture/security-review-s2.md, docs/security-overview.md, docs/setup.md, docs/api-reference.md, org/quality.json, org/decisions/*.md, product/value-propositions.md, tenants/*.json and skim src/ for storage, bus, crypto/key handling, auth, AI provider, adapters. Verify every gap by reading code (e.g. grep for sqlite, KMS, token handling, vertex) rather than assuming the examples listed in the acceptance. Rate honestly: ready for pilot only where code and tests back it. Columns: area, rating, evidence files, gaps, effort S/M/L. Then 'Recommended path to first carrier pilot' as 3-4 phases with exit criteria, and a short list of open security findings by id with status as the review states. Pitfalls: do not overstate AI or compliance; no real carrier names; list unknowns as unknown.",
+  "startedAt": "2026-10-18T21:37:11.557Z",
+  "doneAt": "2026-10-18T21:41:31.396Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:41:31.395Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "10-area table with ratings, file-cited S/M/L gaps spot-verified against code, 4-phase pilot path, figures match quality.json"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.2789,
+    "inputTokens": 52,
+    "cacheWriteTokens": 161162,
+    "cacheReadTokens": 2610243,
+    "outputTokens": 280,
+    "agents": {
+      "af61d8296634c88be": {
+        "label": "S3-PRD-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 21786,
+        "cacheReadTokens": 161136,
+        "outputTokens": 31,
+        "usd": 0.087
+      },
+      "af7ce1c1de84ac538": {
+        "label": "S3-PRD-03 ic-product-competitive-analyst",
+        "model": "claude-opus-5-5",
+        "inputTokens": 46,
+        "cacheWriteTokens": 139376,
+        "cacheReadTokens": 2449107,
+        "outputTokens": 249,
+        "usd": 1.1919
+      }
+    }
+  }
+}

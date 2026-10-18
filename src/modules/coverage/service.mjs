@@ -45,21 +45,46 @@ export function createService(ctx) {
   /** Per-tenant insertion order, so "latest" is stable when timestamps tie (fixed test clock). */
   const nextSeq = (table) => ctx.db.get(`SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM ${table}`).n;
 
+  /** Seal / open the whole snapshot document. Lookup columns (id, policy_number, as_of, seq) stay clear. */
+  const sealDoc = (snap) => ctx.crypto.encryptPii(JSON.stringify(snap));
+  const openDoc = (tctx, stored) => JSON.parse(ctx.crypto.isEncrypted(stored) ? tctx.crypto.decryptPii(stored) : stored);
+
+  /** Decode a policy_snapshots row; a legacy plaintext row is rewritten encrypted on first read. */
+  function readRow(row) {
+    if (!row) return null;
+    const encrypted = ctx.crypto.isEncrypted(row.doc);
+    const snap = openDoc(ctx, row.doc);
+    if (!encrypted) ctx.db.run('UPDATE policy_snapshots SET doc = ? WHERE id = ?', sealDoc(snap), row.id);
+    return snap;
+  }
+
   /** Store a snapshot in policy_snapshots unless an identical one is already cached. Returns the snapshot with id. */
   function cacheSnapshot(policy, asOf) {
     const { retrievedAt: _r, id: _i, ...content } = policy;
     const latest = ctx.db.get('SELECT * FROM policy_snapshots WHERE policy_number = ? AND as_of = ? ORDER BY seq DESC LIMIT 1',
       policy.policyNumber, asOf);
     if (latest) {
-      const { retrievedAt: _r2, id: _i2, ...old } = JSON.parse(latest.doc);
-      if (JSON.stringify(old) === JSON.stringify(content)) return JSON.parse(latest.doc);
+      const cached = readRow(latest);
+      const { retrievedAt: _r2, id: _i2, ...old } = cached;
+      if (JSON.stringify(old) === JSON.stringify(content)) return cached;
     }
     const snap = { ...content, id: ctx.db.id('psn'), retrievedAt: ctx.clock.nowIso() };
     ctx.db.insert('policy_snapshots', {
-      id: snap.id, policy_number: policy.policyNumber, as_of: asOf, doc: JSON.stringify(snap), retrieved_at: snap.retrievedAt,
+      id: snap.id, policy_number: policy.policyNumber, as_of: asOf, doc: sealDoc(snap), retrieved_at: snap.retrievedAt,
       seq: nextSeq('policy_snapshots'),
     });
     return snap;
+  }
+
+  /** Idempotent: encrypt every legacy plaintext snapshot row of this tenant. Returns rows rewritten. */
+  function sweepLegacySnapshots() {
+    let n = 0;
+    for (const row of ctx.db.all('SELECT id, doc FROM policy_snapshots')) {
+      if (ctx.crypto.isEncrypted(row.doc)) continue;
+      ctx.db.run('UPDATE policy_snapshots SET doc = ? WHERE id = ?', sealDoc(JSON.parse(row.doc)), row.id);
+      n++;
+    }
+    return n;
   }
 
   const svc = {
@@ -197,8 +222,7 @@ export function createService(ctx) {
 
     /** Cached snapshot by id (used by GET /claims/{id}/coverage), or null. */
     async getSnapshotById(id) {
-      const row = ctx.db.get('SELECT doc FROM policy_snapshots WHERE id = ?', id);
-      return row ? JSON.parse(row.doc) : null;
+      return readRow(ctx.db.get('SELECT id, doc FROM policy_snapshots WHERE id = ?', id));
     },
 
     /** Most recent verification for a claim, or null. */
@@ -221,5 +245,22 @@ export function createService(ctx) {
       return out;
     },
   };
+  // Boot sweep (root ctx only): migrate legacy plaintext rows for every tenant through its tenant-bound ctx.
+  if (!ctx.tenant && typeof ctx.forTenant === 'function') {
+    for (const t of ctx.tenants.list()) {
+      const id = typeof t === 'string' ? t : t.id;
+      try {
+        const tctx = ctx.forTenant(id);
+        const rows = tctx.db.all('SELECT id, doc FROM policy_snapshots');
+        for (const row of rows) {
+          if (tctx.crypto.isEncrypted(row.doc)) continue;
+          tctx.db.run('UPDATE policy_snapshots SET doc = ? WHERE id = ?', tctx.crypto.encryptPii(row.doc), row.id);
+        }
+      } catch (e) {
+        ctx.log.error('snapshot sweep failed', { tenantId: id, error: e.message });
+      }
+    }
+  }
+  svc.sweepLegacySnapshots = sweepLegacySnapshots;
   return svc;
 }

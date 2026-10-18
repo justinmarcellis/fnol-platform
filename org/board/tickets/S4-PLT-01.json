@@ -1,0 +1,54 @@
+{
+  "status": "review",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:48:35.636Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:49.065Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:49:13.772Z",
+      "from": "in_progress",
+      "to": "review"
+    }
+  ],
+  "id": "S4-PLT-01",
+  "team": "platform",
+  "title": "Seed-once tenant loading with seedVersion",
+  "story": "Tenant seeding must not overwrite console edits: boot re-puts every tenants/*.json so an admin-console change is lost on restart.",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-platform-tenancy-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 4,
+  "paths": [
+    "src/core/tenants.mjs",
+    "tests/unit/core/tenants.test.mjs",
+    "docs/setup.md"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "loadDir() puts a tenants/*.json file only when the tenant has no stored config, or when the file's top-level seedVersion (missing = 0) is greater than the stored config's seedVersion (missing = 0)",
+    "A tenant whose stored config was changed via put() (e.g. console edit) is NOT overwritten on a later loadDir() when the file seedVersion is not greater; a higher file seedVersion does overwrite",
+    "loadDir() logs per tenant whether it was applied (new / seedVersion upgrade) or skipped (kept stored config), and still returns the list of tenant ids present (applied or skipped) so existing callers keep working",
+    "docs/setup.md documents seed-once semantics, the seedVersion field, how to force a re-seed by bumping it, and that npm run demo:reset wipes data/ and therefore reseeds from files",
+    "New tests in tests/unit/core/tenants.test.mjs cover: first boot, restart with console edit preserved, seedVersion bump applied, missing seedVersion treated as 0, invalid file still rejected; run: node --test --disable-warning=ExperimentalWarning tests/unit/core/tenants.test.mjs",
+    "All existing core tests stay green (tests/unit/core/*.test.mjs that touch tenants, e.g. server.test.mjs, tenant-context.test.mjs)"
+  ],
+  "brief": "Edit loadDir() in src/core/tenants.mjs (about line 73). For each file: parse JSON, id = config.id ?? basename. Read stored = latest(id). Decide: apply if no stored row; else apply if Number(config.seedVersion ?? 0) > Number(parse(stored.config).seedVersion ?? 0); else skip. Use db.parseJson(stored.config). Apply via api.put(id, config, 'boot'); put already no-ops when identical, so a bump with identical content is fine. Log with ctx.log if present (check src/core/log.mjs and core-runtime-api.md for the logger shape; guard with optional chaining since loadDir may run before the logger is wired in tests), e.g. 'tenant seed applied' / 'tenant seed skipped' with {tenantId, reason, fileSeedVersion, storedSeedVersion}. Do not log config contents. Keep returning all ids. A console edit that goes through put() keeps the stored config's seedVersion only if the editor preserves the field; if an edit drops it, stored is treated as 0, so a file with seedVersion >= 1 would re-apply: document this and note that console edits should carry seedVersion forward (do not change other files; if the admin console strips it, post a note to the architecture hub with node org/cli.mjs post architecture contract-change). Do not add seedVersion to tenants/*.json (not your paths; absent equals 0 and that is fine) and do not edit package.json. Tests: build ctx via the helper in tests/unit/core/helpers.mjs, write temp tenants dir with os.tmpdir, create tenants twice over the same DB to simulate restart. Validators: register none or a minimal one; check how existing tests construct createTenants. Only write your three paths; run only your test file plus the core tests that touch tenants.",
+  "valueDrivers": [
+    "Admin console edits survive restarts",
+    "Safe, explicit config upgrades for licensed insurers"
+  ],
+  "requirements": [
+    "Seed-once tenant loading",
+    "seedVersion upgrade path",
+    "demo:reset reseed documented"
+  ],
+  "startedAt": "2026-10-18T21:48:49.065Z"
+}

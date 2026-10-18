@@ -43,7 +43,7 @@ test('production accepts public https and rejects everything else', () => {
 });
 
 test('public addresses are allowed, including IPv4 just outside private ranges', () => {
-  for (const ok of ['https://8.8.8.8/x', 'https://172.15.0.1/x', 'https://172.32.0.1/x', 'https://100.63.0.1/x', 'https://[2001:db8::1]/x']) {
+  for (const ok of ['https://8.8.8.8/x', 'https://172.15.0.1/x', 'https://172.32.0.1/x', 'https://100.63.0.1/x', 'https://[2606:4700::1111]/x']) {
     assert.equal(prod(ok).ok, true, ok);
   }
 });

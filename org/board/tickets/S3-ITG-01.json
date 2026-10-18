@@ -1,0 +1,84 @@
+{
+  "status": "done",
+  "sprint": 3,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:46:32.694Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:47:04.107Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:48:43.004Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:49:24.655Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "reviewer": "qe-acceptance",
+  "id": "S3-ITG-01",
+  "team": "integration",
+  "title": "Recalibrate triage after estimate-total fix",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-integration-lead",
+  "paths": [
+    "src/modules/triage/",
+    "tests/unit/triage/",
+    "tests/synthetic/",
+    "tests/e2e/scenarios.test.mjs",
+    "tests/e2e/harness.test.mjs"
+  ],
+  "acceptance": [
+    "tests/e2e/*.test.mjs all pass",
+    "tests/unit/triage pass",
+    "Root cause and the calibration choice recorded in the result and per ADR-003"
+  ],
+  "brief": "S3-AI-01 fixed estimate extraction (grand total now includes parts+labor+tax instead of the parts subtotal). Since then auto_rear_end_injury (both tenants) triages \"severe\" where the scenario expects \"major\". Per ADR-003 decide: tune the estimate-amount contribution in triage severity (likely the dollar weight or cut-off was calibrated against the wrong, lower total) or change the expectation with a one-line rationale. Prefer tuning, since a towed rear-end with soft-tissue injury is major, not severe. Keep every other scenario passing.",
+  "startedAt": "2026-10-18T21:47:04.107Z",
+  "doneAt": "2026-10-18T21:49:24.655Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:49:24.655Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "e2e, triage unit, e2e+security gate pass with no new failures; root cause and ADR-003 tuning recorded; scenario expectations unchanged"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.4525,
+    "inputTokens": 44,
+    "cacheWriteTokens": 60236,
+    "cacheReadTokens": 1447936,
+    "outputTokens": 1230,
+    "agents": {
+      "a91c371a66b5ef5a8": {
+        "label": "S3-ITG-01 ic-integration-lead",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 36,
+        "cacheWriteTokens": 37749,
+        "cacheReadTokens": 1224725,
+        "outputTokens": 1184,
+        "usd": 0.3512
+      },
+      "aa07f4fa20c6b078f": {
+        "label": "S3-ITG-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 22487,
+        "cacheReadTokens": 223211,
+        "outputTokens": 46,
+        "usd": 0.1013
+      }
+    }
+  }
+}

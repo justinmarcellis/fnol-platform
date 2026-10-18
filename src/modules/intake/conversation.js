@@ -51,7 +51,7 @@ export function keywordExtract(text, today) {
 async function extract(ctx, text, today) {
   if (ctx.ai?.run) {
     try {
-      const res = await ctx.ai.run('extract_narrative', { text });
+      const res = await ctx.ai.run('extract_narrative', { text }, { tenantId: ctx.tenant?.id });
       if (res?.output && typeof res.confidence === 'number') {
         const o = res.output;
         // Injuries are safety-relevant: a keyword hit also counts even if the model missed it.

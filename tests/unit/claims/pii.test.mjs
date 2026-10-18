@@ -73,11 +73,15 @@ test('notes: body encrypted, returned decrypted to PII roles and redacted to oth
   assert.equal(asCsr.json.items[0].body, 'Call Zelda back');
   const asAuditor = await call(app, 'GET', `/api/v1/claims/${c.id}/notes`, { token: app.token(['integration']) });
   assert.equal(asAuditor.status, 403);
-  const adminRedacted = await call(app, 'GET', `/api/v1/claims/${c.id}`, { token: app.token(['claimant']) });
-  assert.equal(adminRedacted.json.lossEvent.description, '[redacted]');
+  // Claimants get the whitelist projection (no description at all) and only for claims they reported (S3-WFL-02).
+  assert.equal((await call(app, 'GET', `/api/v1/claims/${c.id}`, { token: app.token(['claimant'], 'alpha', 'cl-other') })).status, 404);
+  const own = await app.claims().createClaim(claimInput(), { actor: { type: 'user', id: 'cl-own', role: 'claimant', roles: ['claimant'] } });
+  const projected = await call(app, 'GET', `/api/v1/claims/${own.id}`, { token: app.token(['claimant'], 'alpha', 'cl-own') });
+  assert.equal(projected.status, 200);
+  assert.equal(projected.json.lossEvent.description, undefined);
   const full = await call(app, 'GET', `/api/v1/claims/${c.id}?include=parties`, { token: csr });
   assert.equal(full.json.parties[0].lastName, 'Quartz');
-  assert.ok(!(await call(app, 'GET', `/api/v1/claims/${c.id}`, { token: app.token(['claimant']) })).text.includes('Quartz'));
+  assert.ok(!projected.text.includes('Quartz'));
 });
 
 test('location.description and location.geo are x-pii: round-trip, encrypted at rest, redactable', async (t) => {

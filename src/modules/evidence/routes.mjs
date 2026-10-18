@@ -8,9 +8,26 @@ const SOURCE = { claimant: 'claimant_upload', csr: 'csr_upload' };
 const actorOf = (req) => ({ type: req.user.roles?.includes('integration') ? 'integration' : 'user', id: req.user.sub, role: req.user.roles?.[0] });
 const isClaimantOnly = (req) => req.user.roles?.includes('claimant') && req.user.roles.length === 1;
 
-/** Claimants never see storage keys or extracted fields. */
+const PII_ROLES = ['csr', 'adjuster', 'supervisor', 'carrier_admin', 'platform_admin'];
+const canSeePii = (req) => req.user.roles?.some((r) => PII_ROLES.includes(r));
+const MASK = '[redacted]';
+
+/** SEC2-017: mask pii:true extraction fields (value, normalizedValue, provenance span) for roles without PII access. */
+function maskExtraction(ext) {
+  if (!ext || !Array.isArray(ext.fields)) return ext;
+  return {
+    ...ext,
+    fields: ext.fields.map((f) => {
+      if (!f.pii) return f;
+      const { span: _s, ...prov } = f.provenance ?? {};
+      return { ...f, value: MASK, ...(f.normalizedValue !== undefined ? { normalizedValue: MASK } : {}), provenance: prov };
+    }),
+  };
+}
+
+/** Claimants never see storage keys or extracted fields; roles without PII access get pii fields masked. */
 function shape(req, d) {
-  if (!isClaimantOnly(req)) return d;
+  if (!isClaimantOnly(req)) return canSeePii(req) || !d.extraction ? d : { ...d, extraction: maskExtraction(d.extraction) };
   const { storageKey: _s, extraction, ...rest } = d;
   return extraction ? { ...rest, extraction: { id: extraction.id, status: extraction.status } } : rest;
 }
@@ -18,6 +35,27 @@ function shape(req, d) {
 function parseJsonField(v, name, AppError) {
   if (v === undefined || v === '') return undefined;
   try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { throw new AppError('validation_error', `${name} must be valid JSON`, 400); }
+}
+
+/** Max base64 length for the largest allowed upload (10 MB -> ~13.4 MB) plus whitespace slack. */
+const MAX_B64_CHARS = 16 * 1024 * 1024;
+
+/** SEC2-006: length check, then a single linear charCode pass (no regex). Whitespace is ignored. */
+function decodeBase64(s, AppError) {
+  const bad = () => new AppError('validation_error', 'contentBase64 is not valid base64', 400);
+  if (s.length > MAX_B64_CHARS) throw new AppError('payload_too_large', 'contentBase64 is too large', 413);
+  let data = 0;
+  let pad = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c === 32 || c === 10 || c === 13 || c === 9) continue;
+    if (c === 61) { pad++; if (pad > 2) throw bad(); continue; }
+    if (pad > 0) throw bad(); // data after '='
+    if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) || c === 43 || c === 47) data++;
+    else throw bad();
+  }
+  if (data === 0) throw bad();
+  return Buffer.from(s, 'base64');
 }
 
 /** Normalize either upload encoding into addDocument input. */
@@ -38,9 +76,9 @@ function readUpload(req) {
   const b = req.body;
   if (b && typeof b === 'object' && !Array.isArray(b)) {
     if (typeof b.contentBase64 !== 'string' || !b.contentBase64) throw new AppError('validation_error', 'contentBase64 is required', 400);
-    if (!/^[A-Za-z0-9+/\s]*={0,2}\s*$/.test(b.contentBase64)) throw new AppError('validation_error', 'contentBase64 is not valid base64', 400);
+    const bytes = decodeBase64(b.contentBase64, AppError);
     return {
-      kind: b.kind, filename: b.filename, contentType: b.contentType, bytes: Buffer.from(b.contentBase64, 'base64'),
+      kind: b.kind, filename: b.filename, contentType: b.contentType, bytes,
       metadata: b.metadata, description: b.description,
     };
   }
@@ -73,7 +111,7 @@ export function registerRoutes(router) {
 
   router.get(`${BASE}/:documentId/extraction`, async (req, res) => {
     const d = await req.ctx.modules.evidence.getDocument(req.params.claimId, req.params.documentId);
-    res.json(200, d.extraction);
+    res.json(200, canSeePii(req) ? d.extraction : maskExtraction(d.extraction));
   }, { roles: ['csr', 'adjuster', 'supervisor', 'auditor', 'integration'] });
 
   router.post(`${BASE}/:documentId/extraction`, async (req, res) => {

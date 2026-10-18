@@ -14,7 +14,6 @@ import { bootReal, call, createClaimWithPii, timed, PII, T1 } from './sec2-helpe
 const BUDGET_MS = 300;
 
 test('SEC2-005: PDF text extraction is bounded (quadratic regex scans and unbounded inflate)', async (t) => {
-  t.todo('SEC2-005: extractPdfText scans BT/stream with lazy regexes (O(n^2)) and inflates streams without a size cap');
   const bt = Buffer.from('BT '.repeat(40000), 'latin1'); // 120 KB with no ET
   const stream = Buffer.from('stream\n'.repeat(20000), 'latin1'); // 140 KB with no endstream
   const bomb = Buffer.concat([Buffer.from('%PDF-1.4\nstream\n', 'latin1'), zlib.deflateSync(Buffer.alloc(64 * 1024 * 1024)), Buffer.from('\nendstream\n', 'latin1')]);
@@ -23,7 +22,6 @@ test('SEC2-005: PDF text extraction is bounded (quadratic regex scans and unboun
 });
 
 test('SEC2-006: the contentBase64 validity check cannot be used to stall the event loop', async (t) => {
-  t.todo('SEC2-006: /^[A-Za-z0-9+/\\s]*={0,2}\\s*$/ backtracks quadratically on whitespace followed by an invalid character');
   const app = await bootReal();
   try {
     const id = await createClaimWithPii(app, T1, 'A');
@@ -60,7 +58,6 @@ test('SEC2-010: AI calls made through a tenant-bound ctx are attributed to the t
 });
 
 test('SEC2-012: facts from a claimant-uploaded document are not auto-accepted into triage', async (t) => {
-  t.todo('SEC2-012: getAcceptedFacts trusts any AI field with confidence >= 0.8, so claimant text drives subrogation indicators');
   const app = await bootReal();
   try {
     const id = await createClaimWithPii(app, T1, 'A');
@@ -81,7 +78,6 @@ test('SEC2-013: isSafeRegex rejects ambiguous alternation under a quantifier', a
 });
 
 test('SEC2-015: webhook subscriptions respect the tenant notifications.webhooks.allowedHosts list', async (t) => {
-  t.todo('SEC2-015: allowedHosts is in TenantConfig but never read; any public https host is accepted');
   const app = await bootReal();
   try {
     const r = await call(app, 'POST', '/api/v1/integrations/webhooks', {

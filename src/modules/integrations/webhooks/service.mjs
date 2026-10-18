@@ -1,5 +1,5 @@
 import { generateSecret } from './signing.mjs';
-import { validateWebhookUrl } from './url-guard.mjs';
+import { validateWebhookUrl, checkAllowedHost } from './url-guard.mjs';
 
 const EVENT_TYPE_RE = /^(?:(?:claim|tenant)\.[a-z_.]+|\*)$/;
 const KNOWN_INPUT = new Set(['url', 'eventTypes', 'description', 'active', 'retryPolicy', 'tenantId']);
@@ -80,6 +80,8 @@ export function createWebhookService(ctx) {
   function checkUrl(url) {
     const v = validateWebhookUrl(url, { devMode: devMode() });
     if (!v.ok) throw invalid(ctx, v.reason);
+    const denied = checkAllowedHost(v.url.hostname, ctx.tenant?.config?.notifications?.webhooks?.allowedHosts, { devMode: devMode(), loopback: v.loopback });
+    if (denied) throw invalid(ctx, `url host "${v.url.hostname}" not allowed: ${denied}`);
     return v.url.toString();
   }
 

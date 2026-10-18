@@ -1,0 +1,26 @@
+{
+  "id": "S4-INT-00",
+  "team": "integrations",
+  "title": "Sprint 4 planning: INT",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-integrations",
+  "reviewer": "ceo",
+  "status": "review",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:47:22.316Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:07.817Z",
+      "from": "ready",
+      "to": "review"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

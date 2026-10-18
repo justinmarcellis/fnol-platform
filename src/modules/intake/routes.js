@@ -1,9 +1,9 @@
 // HTTP routes for /intake (openapi.yaml tag intake). Claimants use a no-login bearer token with role
 // `claimant` and can only reach sessions they started (enforced in the service). Additive route:
 // POST /intake/sessions/{id}/narrative for conversational prefill.
-const ROLES = ['claimant', 'csr', 'agent', 'integration', 'carrier_admin'];
+const ROLES = ['claimant', 'csr', 'agent', 'integration'];
 const START_KEYS = new Set(['tenantId', 'lob', 'lossType', 'channel', 'locale', 'policyNumber']);
-const ROLE_ORDER = ['csr', 'agent', 'integration', 'carrier_admin', 'platform_admin', 'claimant'];
+const ROLE_ORDER = ['csr', 'agent', 'integration', 'platform_admin', 'claimant'];
 
 const actorOf = (req) => {
   const role = ROLE_ORDER.find((r) => (req.user.roles ?? []).includes(r)) ?? req.user.roles?.[0];

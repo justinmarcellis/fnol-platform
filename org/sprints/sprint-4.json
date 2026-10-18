@@ -1,0 +1,14 @@
+{
+  "number": 4,
+  "name": "Sprint 4: close the demo gaps",
+  "status": "active",
+  "startedAt": "2026-10-18T21:47:22.316Z",
+  "budgetUsd": 30,
+  "goal": "Fix the product gaps found while rehearsing the demo and assessing COTS readiness; close Sprint 3 security-gate mediums; automate the demo as a test",
+  "targets": {
+    "firstPassAcceptance": 0.85,
+    "budgetUsd": 30,
+    "testPassRate": 1
+  },
+  "committed": []
+}

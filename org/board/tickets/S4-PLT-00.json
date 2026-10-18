@@ -1,0 +1,26 @@
+{
+  "id": "S4-PLT-00",
+  "team": "platform",
+  "title": "Sprint 4 planning: PLT",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-platform",
+  "reviewer": "ceo",
+  "status": "review",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:47:22.316Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:35.689Z",
+      "from": "ready",
+      "to": "review"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

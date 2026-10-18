@@ -7,7 +7,6 @@ import { dumpText } from './helpers.mjs';
 import { bootReal, call, createClaimWithPii, PII, T1, T2 } from './sec2-helpers.mjs';
 
 test('SEC2-001: an agent token cannot read or modify another user\'s intake session', async (t) => {
-  t.todo('SEC2-001: intake routes admit role "agent" (not in openapi x-roles) and assertAccess only restricts claimants');
   const app = await bootReal();
   try {
     const victim = app.as(T1, ['claimant'], 'sec2-victim');
@@ -25,7 +24,6 @@ test('SEC2-001: an agent token cannot read or modify another user\'s intake sess
 });
 
 test('SEC2-002: policy snapshots cached by coverage hold no plaintext x-pii (insured and driver names)', async (t) => {
-  t.todo('SEC2-002: coverage cacheSnapshot stores JSON.stringify(snapshot) with names and addresses in policy_snapshots.doc');
   const app = await bootReal();
   try {
     await app.ctx.forTenant(T1).modules.coverage.seedPolicies(policies);
@@ -38,7 +36,6 @@ test('SEC2-002: policy snapshots cached by coverage hold no plaintext x-pii (ins
 });
 
 test('SEC2-003: the integration role cannot read unmasked claim PII from the fake core receiver', async (t) => {
-  t.todo('SEC2-003: GET /integrations/fake-core/claims (not in openapi) returns decrypted pushed payloads to integration and supervisor');
   const app = await bootReal();
   try {
     await createClaimWithPii(app, T1, 'A');
@@ -51,16 +48,21 @@ test('SEC2-003: the integration role cannot read unmasked claim PII from the fak
   } finally { await app.close(); }
 });
 
-test('SEC2-004: a claimant-readable claim carries no fraud score, SIU flag or adjuster routing', async (t) => {
-  t.todo('SEC2-004: GET /claims/{id} returns the whole claim doc (triage.fraudScore, flags, routing.adjusterId) to claimant tokens');
+test('SEC2-004: claimant claim reads are projected and limited to the claim the claimant reported', async () => {
   const app = await bootReal();
   try {
-    const id = await createClaimWithPii(app, T1, 'A');
-    const r = await call(app, 'GET', `/api/v1/claims/${id}`, { token: app.as(T1, ['claimant'], 'sec2-any-claimant') });
-    assert.equal(r.status, 200);
-    assert.ok(!r.json.triage || !('fraudScore' in r.json.triage), 'fraudScore is visible to a claimant');
-    assert.ok(!(r.json.flags ?? []).includes('siu'), 'SIU flag is visible to a claimant');
-    assert.ok(!r.json.routing?.adjusterId, 'adjuster assignment detail is visible to a claimant');
+    const id = await createClaimWithPii(app, T1, 'A'); // reportedBy.id is the csr sub below
+    const csr = app.as(T1, ['csr'], 'sec2-csr');
+    await call(app, 'POST', `/api/v1/claims/${id}/triage`, { token: csr, body: {} });
+    await app.ctx.bus.drain();
+    const owner = await call(app, 'GET', `/api/v1/claims/${id}`, { token: app.as(T1, ['claimant'], 'sec2-csr') });
+    assert.equal(owner.status, 200);
+    assert.ok(!owner.json.triage, 'triage block is visible to a claimant');
+    assert.ok(!('fraudScore' in (owner.json.triage ?? {})) && !JSON.stringify(owner.json).includes('fraudScore'), 'fraudScore is visible to a claimant');
+    assert.ok(!(owner.json.flags ?? []).includes('siu'), 'SIU flag is visible to a claimant');
+    assert.ok(!owner.json.routing?.adjusterId, 'adjuster assignment detail is visible to a claimant');
+    const other = await call(app, 'GET', `/api/v1/claims/${id}`, { token: app.as(T1, ['claimant'], 'sec2-any-claimant') });
+    assert.equal(other.status, 404, 'an unrelated claimant can read the claim');
   } finally { await app.close(); }
 });
 
@@ -88,7 +90,6 @@ test('SEC2-017: auditor and integration roles do not see decrypted names in cove
 });
 
 test('SEC2-008: free-text status reasons do not travel in events (outbox / webhooks)', async (t) => {
-  t.todo('SEC2-008: claim.status.changed copies the staff-typed reason (up to 500 chars) into the event and webhook body');
   const app = await bootReal();
   try {
     const id = await createClaimWithPii(app, T1, 'A');
@@ -103,7 +104,6 @@ test('SEC2-008: free-text status reasons do not travel in events (outbox / webho
 });
 
 test('SEC2-016: a note cannot claim AI provenance through the request body', async (t) => {
-  t.todo('SEC2-016: POST /claims/{id}/notes passes req.body.ai through, so any user can forge ai provenance and aiGenerated=true events');
   const app = await bootReal();
   try {
     const id = await createClaimWithPii(app, T1, 'A');

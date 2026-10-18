@@ -1,3 +1,4 @@
+import { viewSnapshot } from './redact.mjs';
 // HTTP routes, matching architecture/contracts/openapi.yaml (coverage tag).
 const READ = ['csr', 'adjuster', 'supervisor', 'integration'];
 
@@ -14,7 +15,7 @@ export function registerRoutes(router) {
     const verification = await cov.getLatestVerification(req.params.claimId);
     if (!verification) throw new req.ctx.AppError('not_found', 'No coverage verification for this claim', 404);
     const policy = verification.policySnapshotId ? await cov.getSnapshotById(verification.policySnapshotId) : null;
-    res.json(200, { verification, policy });
+    res.json(200, { verification, policy: viewSnapshot(req.user, policy) });
   }, { roles: [...READ, 'auditor'] });
 
   // Free-text policy search: ?q= is a VIN, phone, postal code, policy-number prefix or last name.
@@ -26,6 +27,6 @@ export function registerRoutes(router) {
 
   router.get('/api/v1/policies/:policyNumber/snapshot', async (req, res) => {
     const snap = await req.ctx.modules.coverage.getPolicySnapshot({ policyNumber: req.params.policyNumber, asOf: req.query.asOf });
-    res.json(200, snap);
+    res.json(200, viewSnapshot(req.user, snap));
   }, { roles: READ });
 }

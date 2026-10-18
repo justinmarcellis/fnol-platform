@@ -10,6 +10,7 @@ import { TASKS } from './schemas.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const GOLDEN_DIR = resolve(HERE, '../../tests/fixtures/ai/golden');
+const TENANT_SETTINGS_DOC = "## Tenant AI settings\n\nRead from the tenant config `ai` block on every `ai.run`. Callers should pass `claimId` in the run options.\n\n- `ai.humanConfirmRequired` (boolean). When `true`, every `cascade.run` result carries `unconfirmed: true`, including early returns where confidence cleared the threshold. When `false` or absent, behaviour is unchanged.\n- `ai.redactPiiBeforeModel` (boolean). Cloud providers always receive redacted input (default `true`); an explicit `false` is honoured for the local provider only and never lowers cloud redaction. An explicit `true` also redacts input for the local provider and for injected (unguarded) providers; placeholders are restored in the returned output.\n- `ai.maxTokensPerClaim` (number). Tokens per claim are summed from `ai_inference` rows for the tenant whose `usage.claimId` matches (`inputTokens + outputTokens`; the claim id is stored inside the usage JSON, there is no schema change). Once the total reaches the limit, cloud entries are skipped and logged with `usage.skipped = 'budget'`, the local provider is used, and the result has `unconfirmed: true`. Counts are per tenant; another tenant's usage is never included. Without a `claimId` the budget is not enforced.\n\n";
 export const DOC_PATH = resolve(HERE, '../../docs/ai-evaluation.md');
 /** Fraud score at or above this counts as "flagged". */
 export const FRAUD_FLAG_THRESHOLD = 40;
@@ -245,6 +246,7 @@ export function renderReport(result, { date }) {
     else L.push('The local provider receives the full, un-redacted text by design.', '');
     void name;
   }
+  L.push(TENANT_SETTINGS_DOC);
   L.push('## Limits', '');
   L.push('- Golden sets are small and written for this proof of concept; treat the numbers as regression guards, not benchmarks.');
   L.push('- Recorded vertex responses are hand-written to exercise scoring and the guardrails, including one deliberately invalid reply.');

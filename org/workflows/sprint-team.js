@@ -119,7 +119,8 @@ ${JSON.stringify(security.findings.filter((f) => f.severity === 'high' || f.seve
 
 const results = await pipeline(
   args.teams,
-  (team) => agent(managerPrompt(team), { label: `S${S}-${team.code}-00 ${team.manager} planning`, phase: 'Plan', model: 'sonnet', schema: TICKETS }),
+  // Pre-planned tickets (orchestrator follow-ups) skip the manager stage.
+  (team) => team.tickets ? { tickets: team.tickets } : agent(managerPrompt(team), { label: `S${S}-${team.code}-00 ${team.manager} planning`, phase: 'Plan', model: 'sonnet', schema: TICKETS }),
   (plan, team) => {
     if (!plan || !plan.tickets?.length) { log(`${team.id}: manager returned no tickets`); return [] }
     log(`${team.id}: ${plan.tickets.length} tickets, ${plan.tickets.reduce((a, t) => a + t.points, 0)} pts`)

@@ -48,6 +48,18 @@ export function calibrationAdjustments(f = {}) {
   return out;
 }
 
+/**
+ * Estimate-amount tiers (ADR-003, S3-ITG-01). Since S3-AI-01 the estimate is the grand total (parts + labor + tax),
+ * about 1.9x the parts subtotal the original tiers were set against, so the platform cut-offs moved up with it.
+ * AI_ESTIMATE_TIERS mirrors what the AI severity pass awards; the difference is applied as a calibration factor.
+ */
+export const ESTIMATE_TIERS = Object.freeze([{ min: 25000, points: 25 }, { min: 12500, points: 15 }, { min: 5000, points: 8 }]);
+export const AI_ESTIMATE_TIERS = Object.freeze([{ min: 15000, points: 25 }, { min: 7500, points: 15 }, { min: 2500, points: 8 }]);
+export function estimateTier(total, tiers) {
+  const n = Number(total);
+  return Number.isFinite(n) ? tiers.find((t) => n >= t.min) ?? null : null;
+}
+
 /** Deterministic baseline, used when the AI layer is unavailable. */
 export function baselineSeverity(f) {
   let score = 5;
@@ -60,9 +72,8 @@ export function baselineSeverity(f) {
   else if (f.cause === 'theft') add(20, 'theft loss');
   else if (f.cause === 'glass') add(-5, 'glass-only loss');
   else if (/collision|single_vehicle|hit_and_run|liability/.test(f.cause ?? '')) add(10, 'collision loss');
-  if ((f.estimateTotal ?? 0) >= 15000) add(25, 'estimate at or above $15,000');
-  else if ((f.estimateTotal ?? 0) >= 7500) add(15, 'estimate at or above $7,500');
-  else if ((f.estimateTotal ?? 0) >= 2500) add(8, 'estimate at or above $2,500');
+  const tier = estimateTier(f.estimateTotal, ESTIMATE_TIERS);
+  if (tier) add(tier.points, `estimate at or above $${tier.min.toLocaleString('en-US')}`);
   return { score: clamp(score), drivers };
 }
 
@@ -78,7 +89,12 @@ export function computeSeverity(ai, deltas, facts, cuts) {
   const factors = [{ name: base.src === 'ai' ? 'ai_severity' : 'baseline_severity', contribution: base.score, detail: base.drivers.join('; ') }];
   const drivers = [...base.drivers];
   let total = base.score;
-  for (const c of calibrationAdjustments(facts)) {
+  const calib = calibrationAdjustments(facts);
+  if (base.src === 'ai' && base.drivers.some((d) => /estimate at or above/.test(d))) {
+    const diff = (estimateTier(facts?.estimateTotal, ESTIMATE_TIERS)?.points ?? 0) - (estimateTier(facts?.estimateTotal, AI_ESTIMATE_TIERS)?.points ?? 0);
+    if (diff !== 0) calib.push({ points: diff, why: 'estimate tier re-based to grand total (parts + labor + tax)' });
+  }
+  for (const c of calib) {
     total += c.points;
     factors.push({ name: 'calibration', contribution: c.points, detail: c.why });
     drivers.push(c.why);
