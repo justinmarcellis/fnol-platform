@@ -1,0 +1,20 @@
+{
+  "id": "S2-SEC-00",
+  "team": "security",
+  "title": "Sprint 2 planning: SEC",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-security",
+  "reviewer": "ceo",
+  "status": "ready",
+  "sprint": 2,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:05:56.019Z",
+  "history": [],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

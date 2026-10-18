@@ -1,0 +1,15 @@
+{
+  "number": 2,
+  "name": "Sprint 2: integrate and complete",
+  "status": "active",
+  "startedAt": "2026-10-18T21:05:56.019Z",
+  "budgetUsd": 60,
+  "goal": "All e2e scenarios green for both tenants; adjuster + admin UIs; KPI instrumentation; contracts reconciled; Playwright UI smoke tests",
+  "targets": {
+    "firstPassAcceptance": 0.8,
+    "budgetUsd": 60,
+    "testPassRate": 1,
+    "openContractRequests": 0
+  },
+  "committed": []
+}

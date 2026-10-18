@@ -1,0 +1,20 @@
+{
+  "id": "S2-WFL-00",
+  "team": "workflow",
+  "title": "Sprint 2 planning: WFL",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-workflow",
+  "reviewer": "ceo",
+  "status": "ready",
+  "sprint": 2,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:05:56.019Z",
+  "history": [],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

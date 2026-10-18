@@ -4,3 +4,4 @@
 {"at":"2026-10-18T20:54:44.797Z","hub":"pmo","type":"handoff","text":"Scorecards engine ready; config keys are owner+tier, shape {sprint,generatedAt,medians,agents,configs,teams}","from":"ic-pmo-metrics-analyst","ticket":"S1-PMO-01","link":"org/scorecards.mjs"}
 {"at":"2026-10-18T20:56:52.014Z","hub":"pmo","type":"handoff","text":"sprint.mjs plan/close and dashboard upgrades (review/retro, improvements, scorecards, tier mix, VD panel) ready; 28 tests pass","from":"ic-pmo-dashboard-dev","ticket":"S1-PMO-02","link":"org/sprint.mjs"}
 {"at":"2026-10-18T21:04:42.901Z","hub":"pmo","type":"status","from":"mgr-pmo","text":"Sprint 1 closed: 166/166 pts, $20.54, 8.1 pts/$, tests 696/757 (e2e calibration open)"}
+{"at":"2026-10-18T21:05:56.022Z","hub":"pmo","type":"status","from":"ceo","text":"Sprint 2 planning started"}

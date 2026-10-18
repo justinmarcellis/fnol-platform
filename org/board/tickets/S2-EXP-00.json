@@ -1,0 +1,20 @@
+{
+  "id": "S2-EXP-00",
+  "team": "experience",
+  "title": "Sprint 2 planning: EXP",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-experience",
+  "reviewer": "ceo",
+  "status": "ready",
+  "sprint": 2,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:05:56.019Z",
+  "history": [],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

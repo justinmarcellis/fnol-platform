@@ -1,0 +1,54 @@
+        not ok 4 - triage
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 1 - e2e-demo / auto_rear_end_injury
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 2 - e2e-demo / auto_glass_only
+        not ok 4 - triage
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 3 - e2e-demo / auto_theft_late_report
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 4 - e2e-demo / auto_hit_and_run
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 5 - e2e-demo / home_water_small
+        not ok 4 - triage
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 6 - e2e-demo / home_fire_large
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 7 - e2e-demo / home_loss_before_inception
+        not ok 4 - triage
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 8 - e2e-demo / commercial_auto_fleet_collision
+not ok 7 - matrix with a temp tenant: missing modules map to todo and nothing fails
+        not ok 4 - triage
+        not ok 6 - adjuster first view
+    not ok 1 - aurelia-mutual / auto_rear_end_injury
+        not ok 4 - triage
+        not ok 6 - adjuster first view
+    not ok 3 - aurelia-mutual / auto_theft_late_report
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 5 - aurelia-mutual / home_water_small
+        not ok 4 - triage
+        not ok 6 - adjuster first view
+    not ok 6 - aurelia-mutual / home_fire_large
+        not ok 4 - triage
+        not ok 6 - adjuster first view
+    not ok 8 - kestrel-point / auto_rear_end_injury
+        not ok 5 - routing / STP
+        not ok 6 - adjuster first view
+    not ok 9 - kestrel-point / auto_glass_only
+        not ok 4 - triage
+        not ok 6 - adjuster first view
+    not ok 10 - kestrel-point / auto_theft_late_report
+        not ok 4 - triage
+        not ok 6 - adjuster first view
+    not ok 12 - kestrel-point / commercial_auto_fleet_collision
+not ok 1 - E2E scenario matrix
