@@ -87,29 +87,29 @@ test('a party answer is POSTed as an object; a 422 puts errors[] in state for in
   assert.equal(f.state.done, true);
 });
 
-const snap = { vehicles: [
-  { unitId: 'veh-1', vin: '5YZNE4CN0SJ747389', year: 2025, make: 'Tamsin', model: 'Compact' },
+const snap = [
+  { unitId: 'veh-1', vinLast4: '7389', year: 2025, make: 'Tamsin', model: 'Compact' },
   { unitId: 'veh-2', year: 2019, make: 'Orbit', model: 'Wagon' },
-  { vin: 'no-unit' },
-] };
+  { vinLast4: '0000' },
+];
 
-test('policy vehicles become picker options carrying policyVehicleId and VIN', () => {
+test('policy-vehicles rows become picker options carrying policyVehicleId (no full VIN)', () => {
   const opts = policyVehicleOptions(snap);
   assert.equal(opts.length, 2);
-  assert.deepEqual(opts[0].answer, { year: 2025, make: 'Tamsin', model: 'Compact', vin: '5YZNE4CN0SJ747389', policyVehicleId: 'veh-1' });
+  assert.deepEqual(opts[0].answer, { year: 2025, make: 'Tamsin', model: 'Compact', policyVehicleId: 'veh-1' });
   assert.match(opts[0].label, /2025 Tamsin Compact/);
+  assert.match(opts[0].label, /7389/);
   assert.equal(opts[1].answer.policyVehicleId, 'veh-2');
   assert.deepEqual(policyVehicleOptions({}), []);
   assert.deepEqual(policyVehicleOptions(null), []);
 });
 
-test('fetchPolicyVehicles reads the snapshot and hides the picker on failure or no vehicles', async () => {
-  const api = fakeApi({ 'GET /policies/AUT-100001/snapshot': snap, 'GET /policies/NONE/snapshot': { vehicles: [] } });
-  assert.equal((await fetchPolicyVehicles(api, 'AUT-100001', '2026-10-18')).length, 2);
-  assert.deepEqual(api.calls[0].body, { asOf: '2026-10-18' });
-  assert.deepEqual(await fetchPolicyVehicles(api, 'NONE', '2026-10-18'), []);
-  assert.deepEqual(await fetchPolicyVehicles(api, 'MISSING', '2026-10-18'), []);
-  assert.deepEqual(await fetchPolicyVehicles(api, '', '2026-10-18'), []);
+test('fetchPolicyVehicles reads GET /intake/sessions/{id}/policy-vehicles and hides the picker on failure or no vehicles', async () => {
+  const api = fakeApi({ 'GET /intake/sessions/s1/policy-vehicles': snap, 'GET /intake/sessions/s0/policy-vehicles': [] });
+  assert.equal((await fetchPolicyVehicles(api, 's1')).length, 2);
+  assert.deepEqual(await fetchPolicyVehicles(api, 's0'), []);
+  assert.deepEqual(await fetchPolicyVehicles(api, 'missing'), []);
+  assert.deepEqual(await fetchPolicyVehicles(api, ''), []);
 });
 
 test('setInsuredVehicle posts the vehicle answer; a rejection is kept in state as insuredVehicleError', async () => {
@@ -124,7 +124,6 @@ test('setInsuredVehicle posts the vehicle answer; a rejection is kept in state a
   const sent = api.calls.at(-1).body;
   assert.equal(sent.questionId, 'insured_vehicle');
   assert.equal(sent.value.policyVehicleId, 'veh-1');
-  assert.equal(sent.value.vin, '5YZNE4CN0SJ747389');
   assert.equal(f.state.insuredVehicleSent, true);
 
   const api2 = fakeApi({ 'POST /intake/sessions': step({ question: q('a') }), 'POST /intake/sessions/s1/answers': () => { throw new FakeApiError(422, 'validation_failed', 'x'); } });

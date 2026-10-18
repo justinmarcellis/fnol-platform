@@ -209,7 +209,7 @@ test('CSR rear-end claim with an at-fault other driver reaches the subrogation f
     await signIn(page);
     await lookupAndStart(page);
 
-    // Insured vehicle picker lists the policy vehicles; the pick carries policyVehicleId and VIN.
+    // Insured vehicle picker lists the policy vehicles; the pick carries policyVehicleId (list comes from GET /intake/sessions/{id}/policy-vehicles).
     await page.waitForSelector('#vehicle-pick:not([hidden]) select');
     const options = await page.locator('#vehicle-pick select option[value]:not([value=""])').count();
     assert.ok(options >= 1, 'policy vehicles are listed');
@@ -218,7 +218,6 @@ test('CSR rear-end claim with an at-fault other driver reaches the subrogation f
     await page.waitForFunction(() => document.querySelector('#vehicle-picked')?.textContent.trim().length > 0);
     const veh = sent.find((b) => b.value && b.value.policyVehicleId === unit.unitId);
     assert.ok(veh, 'insured vehicle answer was sent');
-    assert.equal(veh.value.vin, unit.vin);
 
     let sawParty = false;
     for (let i = 0; i < 25 && !(await page.locator('#submit-go:not([hidden])').count()); i += 1) {
@@ -294,44 +293,15 @@ test('CSR party sub-form shows the server 422 inline', async (t) => {
   }
 });
 
-// ---- S4-EXP-01 rework: the insured-vehicle pick must reach the claim, and a failed pick must be visible
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { generatePolicies } from '../synthetic/index.mjs';
-
-/**
- * Boot an app on a copy of the shipped tenants whose personal_auto question sets also carry the optional
- * 'insured_vehicle' (type vehicle) question requested from the architecture hub. Synthetic data only.
- */
-async function bootWithVehicleQuestion() {
-  const { createApp } = await import('../../src/server.mjs');
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fnol-csr-veh-'));
-  const tenantsDir = path.join(root, 'tenants');
-  fs.mkdirSync(tenantsDir);
-  const src = path.resolve(import.meta.dirname, '..', '..', 'tenants');
-  for (const f of fs.readdirSync(src).filter((x) => x.endsWith('.json'))) {
-    const cfg = JSON.parse(fs.readFileSync(path.join(src, f), 'utf8'));
-    for (const qs of cfg.questionSets ?? []) {
-      if (qs.lob === 'personal_auto') qs.questions.push({ id: 'insured_vehicle', text: { en: 'Which insured vehicle was involved?', es: 'Que vehiculo asegurado estuvo involucrado?' }, type: 'vehicle', required: false, order: 5, section: 'loss' });
-    }
-    fs.writeFileSync(path.join(tenantsDir, f), JSON.stringify(cfg));
-  }
-  const app = await createApp({ dbPath: path.join(root, 'ui.db'), port: 0, secretsDir: path.join(root, 'secrets'), tenantsDir, logLevel: 'silent', devMode: true });
-  const pols = generatePolicies({ tenantId: TENANT, lob: 'personal_auto', count: 3, seed: 7, state: 'WI' });
-  await app.ctx.forTenant(TENANT).modules.coverage.seedPolicies(pols);
-  return { app, pols, async close() { try { await app.close(); } finally { fs.rmSync(root, { recursive: true, force: true }); } } };
-}
-
-test('CSR insured-vehicle pick is stored on the claim as vehicles[role=insured] (tenant with an insured_vehicle question)', async (t) => {
+// ---- S4-EXP-01 round 3: the insured-vehicle pick (shipped tenants) must reach the claim
+test('CSR insured-vehicle pick is stored on the claim as vehicles[role=insured] (shipped tenants)', async (t) => {
   if (skip) return t.skip(skip);
-  const alt = await bootWithVehicleQuestion();
   const page = await browser.newPage();
   try {
-    const pol = alt.pols[0];
-    const unit = pol.vehicles[pol.vehicles.length - 1]; // not the default first unit, so enrichment alone cannot explain a match
+    const pol = policy;
+    const unit = pol.vehicles[pol.vehicles.length - 1]; // not necessarily the default first unit
     const ln = pol.namedInsureds[0].name.split(' ').pop();
-    await page.goto(`${alt.app.url}/csr?tenant=${TENANT}`);
+    await page.goto(`${server.app.url}/csr?tenant=${TENANT}`);
     await page.waitForSelector('#dev-form:not([hidden])');
     await page.selectOption('#dev-tenant', TENANT);
     await page.click('#dev-go');
@@ -349,27 +319,12 @@ test('CSR insured-vehicle pick is stored on the claim as vehicles[role=insured] 
     await page.click('#submit-go');
     await page.waitForSelector('#done-sec:not([hidden])');
     const claimId = decodeURIComponent((await page.getAttribute('#done-link', 'href')).split('claim=')[1]);
-    const claim = await alt.app.ctx.forTenant(TENANT).modules.claims.getClaim(claimId, { include: ['vehicles'] });
+    const claim = await server.app.ctx.forTenant(TENANT).modules.claims.getClaim(claimId, { include: ['vehicles'] });
     const insured = (claim.vehicles ?? []).filter((v) => v.role === 'insured');
     assert.equal(insured.length, 1, 'claim carries one insured vehicle');
     assert.equal(insured[0].vin, unit.vin);
   } finally {
     await page.close();
-    await alt.close();
   }
 });
 
-test('CSR shows an alert when the insured-vehicle pick is rejected (shipped tenants have no such question)', async (t) => {
-  if (skip) return t.skip(skip);
-  const page = await browser.newPage();
-  try {
-    await signIn(page);
-    await lookupAndStart(page);
-    await page.waitForSelector('#vehicle-pick:not([hidden]) select');
-    await page.selectOption('#vehicle-pick select', policy.vehicles[0].unitId);
-    await page.waitForFunction(() => document.querySelector('#vehicle-picked')?.getAttribute('role') === 'alert');
-    assert.match(await page.textContent('#vehicle-picked'), /could not be recorded/i);
-  } finally {
-    await page.close();
-  }
-});

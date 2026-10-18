@@ -68,5 +68,32 @@
       }
     ],
     "firstPass": true
+  },
+  "spend": {
+    "usd": 0.7805,
+    "inputTokens": 58,
+    "cacheWriteTokens": 93679,
+    "cacheReadTokens": 2601279,
+    "outputTokens": 2600,
+    "agents": {
+      "a99f1611b8f6d208e": {
+        "label": "S4-QE-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 23521,
+        "cacheReadTokens": 161939,
+        "outputTokens": 903,
+        "usd": 0.1002
+      },
+      "ab09bbb5c487a79fd": {
+        "label": "S4-QE-01 ic-quality-e2e-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 52,
+        "cacheWriteTokens": 70158,
+        "cacheReadTokens": 2439340,
+        "outputTokens": 1697,
+        "usd": 0.6803
+      }
+    }
   }
 }

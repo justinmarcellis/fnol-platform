@@ -28,9 +28,9 @@ Snippets below are copied verbatim from the tenant files. The `file:line` tag ab
 
 ## 2. Where the file goes and when it loads
 
-Put the file in `tenants/`. Name the file after the tenant id: the registry key is the file's `id` field, or the file name when there is none (the demo files have only `tenantId`, so the file name is the key), and `tenantId` must match `^[a-z][a-z0-9-]{2,39}$`. At every server start the platform reads every `tenants/*.json` and stores it as a new version if its bytes differ from the latest stored version.
+Put the file in `tenants/`. Name the file after the tenant id: the registry key is the file's `id` field, or the file name when there is none (the demo files have only `tenantId`, so the file name is the key), and `tenantId` must match `^[a-z][a-z0-9-]{2,39}$`. At every server start the platform reads every `tenants/*.json` and applies it **only once** (seed-once, `loadDir` in `src/core/tenants.mjs`): a file is stored when the tenant has no stored configuration yet, or when the file's top-level `seedVersion` (missing counts as 0) is higher than the stored configuration's. Otherwise the file is skipped and the boot log says so (`tenant config skipped`), so a console save survives a restart. Versions applied at boot are recorded with actor `boot`.
 
-Warning, verified by restarting a server on a database that held a console edit: the stored copy of a console-saved config carries `version`, `updatedAt` and `updatedBy`, so it never byte-matches the file. The next restart therefore saves the file as a new version (actor `boot`) and the console edit is no longer current. It stays in history. Treat the file in git as the source of truth: after a console save, copy the change back into the file (`GET /api/v1/config` returns the saved document) or accept that a restart reverts it.
+To push a changed file to a tenant that already has a stored configuration, raise `seedVersion` in the file. Caution, verified by running it: `seedVersion` is not in the TenantConfig schema, so the config validator rejects it (`additionalProperties`, 422) on `POST /config/validate` and `PUT /config`. Boot accepts it, but once the stored copy carries `seedVersion`, every console save of that tenant fails until the key is removed from the saved document. The two demo files do not set it, so today a restart never overwrites a console edit. A contract change was requested (section 10).
 
 ## 3. Section-by-section walkthrough
 
@@ -411,6 +411,8 @@ Aurelia, `tenants/aurelia-mutual.json:1410-1414`:
     "dataRetentionDays": 2555
   }
 ```
+
+Instant acknowledgment (REQ-12): when `notifications.claimant.channels` is non-empty and `onEvents` is absent or includes `claim.reported`, every new claim is acknowledged through the first channel: the platform records an audit entry, a completed `acknowledge_claimant` task (which also meets an `acknowledge` timer whose `stopOn` is that task type) and a `claim.acknowledged` event (`acknowledgeClaim` in `src/modules/claims/service.mjs`). In this PoC nothing is actually sent (`delivery: recorded_only`). With no channel configured nothing is recorded. The KPI `median_minutes_to_acknowledgment` reads that event first, then the timer's met time.
 
 See sections 4.7 and 4.8. In `security`, only `sessionTtlMinutes` (intake session lifetime) is read by the code paths this guide checked; `piiKeyRef` is a reference to a data key, never the key itself.
 
@@ -801,7 +803,11 @@ Kestrel, `tenants/kestrel-point.json:1192-1229`:
 - Task names the runtime recognises (`src/ai/schemas.mjs`): `extract_narrative`, `extract_document`, `classify_photo`, `severity`, `fraud_signals`, `subrogation`, `summarize`, `next_best_actions`. The schema comments mention `next_question`, and both demo tenants set it, but no runtime AI task has that name, so that entry has no effect today. Use the names above.
 - Input showing an injury, fatality, litigation or catastrophe code is a "hard escalation": the chain is limited to the strongest cloud entry (or the last cloud entry if none is marked strong), then `local`.
 - Question-level `aiAssist: true` lets AI prefill that answer from a narrative or documents.
-- `redactPiiBeforeModel`, `humanConfirmRequired`, `region` and `maxTokensPerClaim` are in the schema and must be valid types, but a search of `src/` finds no code that reads them. In this release, redaction of personal data before any cloud model call is applied by the AI guardrails regardless of the setting, and results below the final threshold come back marked unconfirmed. Do not present these four as switches.
+- Three of the safety settings are read on every AI call (`src/ai/cascade.mjs`, from the tenant's `ai` block):
+  - `humanConfirmRequired: true` marks every result `unconfirmed: true`, including high-confidence ones that return early. Unset or false leaves results as they were (results below the final threshold are still marked unconfirmed).
+  - `redactPiiBeforeModel`: cloud providers always receive redacted input and the setting cannot lower that. An explicit `true` also redacts input for the local provider and for injected providers; an explicit `false` is honoured for the local provider only.
+  - `maxTokensPerClaim`: tokens already spent on the claim (input plus output, summed from the tenant's AI inference log by claim id) are checked before each cloud call. At or over the limit, cloud entries are skipped, the local provider answers, and the result is marked `unconfirmed`. Fail closed: with a limit set but no claim id on the call, cloud calls are skipped. The check is best-effort under concurrency: two simultaneous calls on one claim can each pass the check before either is logged, so the limit can be overshot by in-flight calls.
+- `region` is still not read by any code (the Vertex Claude client is created with region `global`, `src/ai/providers/vertex-claude.mjs`). Do not present it as a switch.
 - A cloud provider that is unavailable, refuses, or returns an invalid answer is skipped and the cascade moves to the next entry, ending with `local`, which is always available. If nothing can answer, the call fails with `ai_unavailable`.
 
 ### 4.8 Webhooks and adapters
@@ -846,7 +852,8 @@ Verified behaviour:
 - URLs must be `https`, without credentials, and not point at loopback, private, link-local or internal hosts. Plain `http` loopback is allowed only in dev mode.
 - Deliveries are signed with HMAC-SHA256 of the raw body in the `X-FNOL-Signature` header; other headers are `X-FNOL-Event-Id`, `X-FNOL-Event-Type`, `X-FNOL-Delivery-Id`, `X-FNOL-Attempt`.
 - `notifications.webhooks.includePii` must be `false` (validation fails with `pii_not_allowed` otherwise). Events never carry personal data.
-- Not enforced today: a search of `src/` finds nothing that reads `notifications.webhooks.enabled`, `allowedHosts` or `signingAlgorithm`. The URL rules above are what protect the endpoint. Keep `allowedHosts` accurate as documentation, but do not treat it as an allow-list control.
+- `notifications.webhooks.allowedHosts` is enforced (`checkAllowedHost`, `src/modules/integrations/webhooks/url-guard.mjs`). Entries are an exact host or `*.suffix`. `POST` and `PATCH` of a subscription return 422 naming the host when it is not in the list, and delivery checks it again. An empty or missing list denies every host, except in dev mode, where it allows any host and loopback. Both demo tenants list their own example host and `*.example.test` for test receivers.
+- Still not read by any code: `notifications.webhooks.enabled` and `signingAlgorithm` (signing is always HMAC-SHA256).
 
 Adapters (`integrations`), Kestrel `tenants/kestrel-point.json:1176-1191`:
 
@@ -871,8 +878,8 @@ Adapters (`integrations`), Kestrel `tenants/kestrel-point.json:1176-1191`:
 
 - `claimsPort.adapter` selects the claims-system adapter; the only registered adapter is `core-claims-suite` (also the default). `policyPort.adapter` selects the policy-system adapter; the demo uses `mock-pas`.
 - `claimsPort.pushOn` is `claim.reported`, `claim.routed` (default) or `manual`; `manual` turns off event pushes (use the push route instead).
-- `claimsPort.settings.profile` chooses the field-mapping profile, `A` (default) or `B`; any other value is refused with `invalid_adapter_settings`. Optional `settings.target` is a URL for an HTTP receiver; if absent, the built-in in-process receiver is used. `settings.causeCodes` overrides loss-cause code mapping.
-- The demo files contain `fieldMapProfile` ("mapping-a" and "mapping-b") and `policyNumberFormat`. Those keys are accepted (the schema leaves `settings` open) but no code reads them; the profile that actually applies is `settings.profile`, which the demo files do not set, so both tenants currently use profile `A`. Set `"profile": "B"` for Kestrel to use the second mapping.
+- `claimsPort.settings.fieldMapProfile` chooses the field-mapping profile (`profileOf`, `src/modules/integrations/adapters/index.mjs`). Accepted values are `mapping-a` and `mapping-b` (also `A` and `B`); the legacy key `settings.profile` is still read when `fieldMapProfile` is absent; default `A`. Any other value is refused with 422 `invalid_adapter_settings`. Aurelia uses `mapping-a` (nested ACORD-style JSON) and Kestrel `mapping-b` (flat), and the preview route shows a different payload for each (tested in `tests/e2e/demo-script.test.mjs` beat 6). Optional `settings.target` is a URL for an HTTP receiver; if absent, the built-in in-process receiver is used. `settings.causeCodes` overrides loss-cause code mapping.
+- The demo files also contain `policyNumberFormat`. It is accepted (the schema leaves `settings` open) but no code reads it.
 - Routes: `GET /api/v1/integrations/adapters`, `GET /api/v1/integrations/adapters/{adapterId}/preview/{claimId}`, `POST /api/v1/integrations/adapters/{adapterId}/push/{claimId}` (returns 202).
 
 ## 5. Validate before you save: POST /api/v1/config/validate
@@ -932,8 +939,9 @@ Each was reproduced with the validator and gives the error shown.
 | Extra key anywhere the schema is closed (for example a new top-level key) | `additionalProperties` |
 | `require_question` for a question id that does not exist in any set | `unknown_question` |
 | Timer citation without "illustrative" | warning only |
-| Editing the console and then restarting the server | file overrides the console edit (section 2) |
-| Setting `slaHours`, `skills`, `allowedHosts`, `humanConfirmRequired` and expecting behaviour | accepted, but not read today (sections 4.5, 4.7, 4.8) |
+| Adding `seedVersion` to a tenant file to push a change | boot applies it, but later console saves fail `additionalProperties` (section 2) |
+| Setting `slaHours`, `skills`, `region`, `webhooks.enabled` and expecting behaviour | accepted, but not read today (sections 4.5, 4.7, 4.8) |
+| Creating a webhook for a host not in `allowedHosts` | 422 naming the host (section 4.8) |
 | Raising `fastTrack.maxSeverity` but not the rule's own severity threshold | claims still not fast tracked (4.6) |
 | `PUT` without `If-Match` | silently overwrites a newer version |
 
@@ -950,11 +958,23 @@ Each was reproduced with the validator and gives the error shown.
 
 In the code the admin role is issued as `carrier_admin`; the contract calls it `tenant_admin`, and both are accepted. Get a dev token with `POST /api/v1/auth/token` (dev mode only), as described in `docs/setup.md`.
 
-## 10. Gaps recorded for the product team
+## 10. Contract vs code gaps (re-verified for Sprint 4)
 
-These are differences between the contract and the running code that a carrier would notice. They are documented, not changed, because this guide owns documentation only:
-1. Tenant-file restart overrides console edits (section 2).
-2. AI task `next_question` appears in the schema comment and both tenants but is not a runtime task.
-3. AI safety settings (`humanConfirmRequired`, `redactPiiBeforeModel`, `region`, `maxTokensPerClaim`) and webhook `enabled`, `allowedHosts` are not read by code.
-4. Queue `skills`, `slaHours` and `maxSeverity` are not read by routing.
-5. Demo `integrations.*.settings.fieldMapProfile` is not read; `settings.profile` is.
+Differences between the contract and the running code that a carrier would notice. Documentation only; the owners were told through the hubs.
+
+Closed in Sprint 4, each re-read in code:
+1. Restart overwrote console edits: closed. Seed-once loading with `seedVersion` (`src/core/tenants.mjs`, section 2). See open item 4.
+2. AI safety settings unread: closed for `humanConfirmRequired`, `redactPiiBeforeModel`, `maxTokensPerClaim` (`src/ai/cascade.mjs`, section 4.7). `region` is still unread.
+3. Webhook `allowedHosts` unread: closed. Enforced at create, update and delivery (section 4.8). `enabled` and `signingAlgorithm` are still unread.
+4. `fieldMapProfile` unread: closed. It is the primary key and `profile` the alias (section 4.8).
+5. Intake did not carry policy number or insured vehicle into the claim: closed. `enrichClaimCreate` (`src/modules/intake/mapping.js`) maps the policy number (an answer mapped to `policyNumber`, else the policy number the session was started with) and the insured vehicle from the policy snapshot (by picked unit id or VIN; a single-vehicle policy matches itself). Both tenants have an optional `insured_vehicle` question. Property lines get the matched insured location.
+6. Intake submit idempotency: a client `Idempotency-Key` is now namespaced `intake:<sessionId>:<key>` (`src/modules/intake/security.js`).
+7. `POST /claims` silently dropped an `answers` property: closed. Unknown properties are now a 400.
+
+Still open:
+1. AI task `next_question` appears in the schema comment and both tenants but is not a runtime task.
+2. AI `region`, webhook `enabled` and `signingAlgorithm` are not read by code.
+3. Queue `skills`, `slaHours` and `maxSeverity` are not read by routing.
+4. `seedVersion` is used by the loader but missing from `TenantConfig.schema.json`; the validator rejects it, so a console save fails on a tenant whose stored copy carries it. Contract change requested.
+5. `maxTokensPerClaim` is best-effort under concurrent calls on one claim (section 4.7).
+6. Webhook signing has no timestamp header (SEC2-020), so receivers cannot reject replays from the header alone.

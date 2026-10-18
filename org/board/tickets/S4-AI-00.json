@@ -6,7 +6,7 @@
   "tier": "mid",
   "owner": "mgr-ai",
   "reviewer": "ceo",
-  "status": "review",
+  "status": "done",
   "sprint": 4,
   "dependsOn": [],
   "createdAt": "2026-10-18T21:47:22.316Z",
@@ -15,6 +15,11 @@
       "at": "2026-10-18T21:48:19.012Z",
       "from": "ready",
       "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:20:54.956Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "paths": [
@@ -22,5 +27,36 @@
   ],
   "acceptance": [
     "Disjoint, parallel, testable tickets"
-  ]
+  ],
+  "spend": {
+    "usd": 0.1353,
+    "inputTokens": 10,
+    "cacheWriteTokens": 24567,
+    "cacheReadTokens": 281320,
+    "outputTokens": 1760,
+    "agents": {
+      "a8415b60ac1160a1a": {
+        "label": "S4-AI-00 mgr-ai planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 24567,
+        "cacheReadTokens": 281320,
+        "outputTokens": 1760,
+        "usd": 0.1353
+      }
+    }
+  },
+  "doneAt": "2026-10-18T22:20:54.956Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:20:54.956Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
 }

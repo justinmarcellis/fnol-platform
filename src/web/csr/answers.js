@@ -128,31 +128,31 @@ export function errorFor(errors, questionId) {
   return e?.message ? String(e.message) : '';
 }
 
-// ---- insured vehicle from the policy snapshot
+// ---- insured vehicle from the policy (GET /intake/sessions/{sessionId}/policy-vehicles)
 
-/** Vehicles on a PolicySnapshot as picker options: { unitId, label, answer }. Units without a unitId are skipped. */
-export function policyVehicleOptions(snapshot) {
-  const list = Array.isArray(snapshot?.vehicles) ? snapshot.vehicles : [];
+/** Rows from the policy-vehicles endpoint as picker options: { unitId, label, answer }. Rows without a unitId are skipped. */
+export function policyVehicleOptions(rows) {
+  const list = Array.isArray(rows) ? rows : [];
   return list.filter((v) => v && typeof v.unitId === 'string' && v.unitId).map((v) => ({
     unitId: v.unitId,
-    label: [v.year, v.make, v.model].filter(Boolean).join(' ') + (v.vin ? ` (${v.vin})` : '') || v.unitId,
-    answer: buildStructured('vehicle', { year: v.year, make: v.make, model: v.model, vin: v.vin, policyVehicleId: v.unitId }),
+    label: ([v.year, v.make, v.model].filter(Boolean).join(' ') + (v.vinLast4 ? ` (VIN ...${v.vinLast4})` : '')).trim() || v.unitId,
+    answer: buildStructured('vehicle', { year: v.year, make: v.make, model: v.model, policyVehicleId: v.unitId }),
   }));
 }
 
 /**
- * Load the policy's vehicles through GET /policies/{n}/snapshot?asOf=. Any failure (role not allowed, 404, network)
+ * Load the session policy's vehicles through GET /intake/sessions/{sessionId}/policy-vehicles. Any failure (404, network)
  * yields [] so the picker stays hidden.
  * @param {{ get: (path: string, query?: object) => Promise<any> }} api
  */
-export async function fetchPolicyVehicles(api, policyNumber, asOf) {
-  if (!policyNumber) return [];
+export async function fetchPolicyVehicles(api, sessionId) {
+  if (!sessionId) return [];
   try {
-    return policyVehicleOptions(await api.get(`/policies/${encodeURIComponent(policyNumber)}/snapshot`, { asOf }));
+    return policyVehicleOptions(await api.get(`/intake/sessions/${encodeURIComponent(sessionId)}/policy-vehicles`));
   } catch {
     return [];
   }
 }
 
-/** Question id used for the insured vehicle pick when the tenant question set has no vehicle-type question. */
+/** Question id of the shipped tenants' insured-vehicle question. */
 export const INSURED_VEHICLE_QUESTION = 'insured_vehicle';

@@ -6,7 +6,7 @@
   "tier": "mid",
   "owner": "mgr-experience",
   "reviewer": "ceo",
-  "status": "review",
+  "status": "done",
   "sprint": 4,
   "dependsOn": [],
   "createdAt": "2026-10-18T21:47:22.316Z",
@@ -15,6 +15,11 @@
       "at": "2026-10-18T21:48:22.527Z",
       "from": "ready",
       "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:20:55.014Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "paths": [
@@ -22,5 +27,36 @@
   ],
   "acceptance": [
     "Disjoint, parallel, testable tickets"
-  ]
+  ],
+  "spend": {
+    "usd": 0.1768,
+    "inputTokens": 14,
+    "cacheWriteTokens": 31250,
+    "cacheReadTokens": 433404,
+    "outputTokens": 1201,
+    "agents": {
+      "a6ce1a731c6e5fe90": {
+        "label": "S4-EXP-00 mgr-experience planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 31250,
+        "cacheReadTokens": 433404,
+        "outputTokens": 1201,
+        "usd": 0.1768
+      }
+    }
+  },
+  "doneAt": "2026-10-18T22:20:55.014Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:20:55.013Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
 }

@@ -77,6 +77,12 @@
         "severity": "high",
         "summary": "Fake-core listing bypasses integration redaction",
         "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "DEF-S4-1",
+        "severity": "medium",
+        "summary": "Adapter read settings.profile, tenants set fieldMapProfile: both tenants pushed the same mapping",
+        "foundIn": "S3-PRD-03"
       }
     ]
   },

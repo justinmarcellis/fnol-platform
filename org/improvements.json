@@ -148,6 +148,21 @@
     "metric": "product gaps found in the final sprint",
     "before": 6,
     "target": 0,
-    "status": "active"
+    "status": "done",
+    "after": null,
+    "result": "adopted for next phase",
+    "note": "Not measurable inside this PoC (no further sprint); playbook updated so rehearsal is a standing ticket from Sprint 2"
+  },
+  {
+    "id": "IMP-12",
+    "sprint": 4,
+    "area": "performance",
+    "hypothesis": "Two bottom-10% configurations (PI-1, PI-2) were diagnosed as dependency/context problems, not capability; interventions are context fixes, not tier changes or retirement",
+    "owner": "dir-pmo",
+    "metric": "first-pass acceptance of the two configurations",
+    "before": 0.667,
+    "target": 1,
+    "status": "active",
+    "note": "Recorded in org/scorecards/interventions.json"
   }
 ]

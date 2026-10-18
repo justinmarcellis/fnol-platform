@@ -81,6 +81,12 @@
         "severity": "high",
         "summary": "Intake agent role can read/write any session",
         "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "DEF-S4-3",
+        "severity": "high",
+        "summary": "UI intake did not carry policy number / insured vehicle: UI claims could never verify coverage or fast-track",
+        "foundIn": "S3-PRD-02"
       }
     ]
   },

@@ -28,3 +28,13 @@
 4. Tenant isolation respected; no PII in logs.
 5. Contract conformance: request/response/event shapes match `architecture/contracts/`.
 6. No secrets, no real-world data or brands.
+
+## Changes from the self-improvement loop (v2, after Sprints 1-4)
+- Reviewers run tests/e2e and tests/security for any ticket touching src/modules, src/core or src/ai, and must record the verdict in the fabric (IMP-4, IMP-7).
+- UI tickets ship a Playwright smoke test in Chromium (IMP-6).
+- Module tickets get a mid-tier security review; high findings trigger a security rework (IMP-9).
+- Contract-version-sensitive tests read the version from the contract (IMP-8).
+- An architecture-hub triage ticket runs at the start of every sprint (IMP-5).
+- From Sprint 2, a standing ticket rehearses the demo against the running system (IMP-11).
+- A feature that needs both UI and server changes is one squad ticket, not two cross-team tickets.
+- Cross-module calibration (scores, thresholds) has one owner: the integration squad (ADR-003).

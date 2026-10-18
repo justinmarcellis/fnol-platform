@@ -249,29 +249,19 @@ test('claimant party sub-form: labelled controls, object value, 422 shown inline
   }
 });
 
-test('claimant insured-vehicle picker lists policy vehicles and sends policyVehicleId and VIN; hidden without vehicles', async (t) => {
+test('claimant insured-vehicle picker lists policy vehicles and sends policyVehicleId from the session policy-vehicles endpoint', async (t) => {
   if (skip) return t.skip(skip);
   const policy = server.policies['aurelia-mutual'][0];
   const unit = policy.vehicles[0];
-  for (const withVehicles of [true, false]) {
+  {
     const page = await open('/claimant?tenant=aurelia-mutual');
     const sent = [];
     page.on('request', (r) => { if (r.method() === 'POST' && /\/intake\/sessions\/[^/]+\/answers$/.test(r.url())) sent.push(r.postDataJSON()); });
-    // The claimant role cannot read policy snapshots, so the snapshot is stubbed (synthetic).
-    await page.route(`**/api/v1/policies/${policy.policyNumber}/snapshot*`, (route) => route.fulfill({
-      status: 200, contentType: 'application/json',
-      body: JSON.stringify({ policyNumber: policy.policyNumber, vehicles: withVehicles ? policy.vehicles : [] }),
-    }));
     try {
       await page.check('input[name="lob"][value="personal_auto"]');
       await page.fill('#policy-number', policy.policyNumber);
       await page.click('form button[type="submit"]');
       await page.waitForSelector('main form');
-      if (!withVehicles) {
-        await page.waitForTimeout(300);
-        assert.equal(await page.locator('#vehicle-pick').count(), 0, 'picker hidden when the policy has no vehicles');
-        continue;
-      }
       await page.waitForSelector('#insured-vehicle');
       assert.equal(await page.locator('label[for="insured-vehicle"]').count(), 1, 'picker is labelled');
       assert.equal(await page.locator('#insured-vehicle option[value]:not([value=""])').count(), policy.vehicles.length);
@@ -279,7 +269,6 @@ test('claimant insured-vehicle picker lists policy vehicles and sends policyVehi
       await page.waitForFunction(() => document.activeElement?.id === 'insured-vehicle');
       const pick = sent.find((b) => b.value?.policyVehicleId === unit.unitId);
       assert.ok(pick, 'insured vehicle answer sent');
-      assert.equal(pick.value.vin, unit.vin);
       assert.equal(await page.locator('#insured-vehicle').inputValue(), unit.unitId, 'selection survives the re-render');
       const a11y = await reportPageA11y(page, 'claimant vehicle picker', t);
       t.diagnostic(`a11y warnings: ${a11y.findings.length}`);
@@ -289,35 +278,7 @@ test('claimant insured-vehicle picker lists policy vehicles and sends policyVehi
   }
 });
 
-// ---- S4-EXP-01 rework: the pick must reach the claim, a failed pick must be visible, and real claimant tokens must not break the page
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { generatePolicies } from '../synthetic/index.mjs';
-
-async function bootWithVehicleQuestion() {
-  const { createApp } = await import('../../src/server.mjs');
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fnol-clm-veh-'));
-  const tenantsDir = path.join(root, 'tenants');
-  fs.mkdirSync(tenantsDir);
-  const src = path.resolve(import.meta.dirname, '..', '..', 'tenants');
-  for (const f of fs.readdirSync(src).filter((x) => x.endsWith('.json'))) {
-    const cfg = JSON.parse(fs.readFileSync(path.join(src, f), 'utf8'));
-    for (const qs of cfg.questionSets ?? []) {
-      if (qs.lob === 'personal_auto') qs.questions.push({ id: 'insured_vehicle', text: { en: 'Which insured vehicle was involved?', es: 'Que vehiculo asegurado estuvo involucrado?' }, type: 'vehicle', required: false, order: 5, section: 'loss' });
-    }
-    fs.writeFileSync(path.join(tenantsDir, f), JSON.stringify(cfg));
-  }
-  const app = await createApp({ dbPath: path.join(root, 'ui.db'), port: 0, secretsDir: path.join(root, 'secrets'), tenantsDir, logLevel: 'silent', devMode: true });
-  const pols = generatePolicies({ tenantId: 'aurelia-mutual', lob: 'personal_auto', count: 3, seed: 7, state: 'WI' });
-  await app.ctx.forTenant('aurelia-mutual').modules.coverage.seedPolicies(pols);
-  return { app, pols, async close() { try { await app.close(); } finally { fs.rmSync(root, { recursive: true, force: true }); } } };
-}
-
-const stubSnapshot = (page, policy) => page.route(`**/api/v1/policies/${policy.policyNumber}/snapshot*`, (route) => route.fulfill({
-  status: 200, contentType: 'application/json', body: JSON.stringify({ policyNumber: policy.policyNumber, vehicles: policy.vehicles }),
-}));
-
+// ---- S4-EXP-01 round 3: the pick (shipped tenants) must reach the claim
 async function startWithPolicy(page, policy) {
   await page.check('input[name="lob"][value="personal_auto"]');
   await page.fill('#policy-number', policy.policyNumber);
@@ -325,16 +286,12 @@ async function startWithPolicy(page, policy) {
   await page.waitForSelector('main form');
 }
 
-test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insured] (tenant with an insured_vehicle question)', async (t) => {
+test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insured] (shipped tenants)', async (t) => {
   if (skip) return t.skip(skip);
-  const alt = await bootWithVehicleQuestion();
-  const pol = alt.pols[0];
+  const pol = server.policies['aurelia-mutual'][0];
   const unit = pol.vehicles[pol.vehicles.length - 1];
-  const page = await browser.newPage();
+  const page = await open('/claimant?tenant=aurelia-mutual');
   try {
-    await page.goto(`${alt.app.url}/claimant?tenant=aurelia-mutual`);
-    await page.waitForSelector('input[name="lob"]');
-    await stubSnapshot(page, pol); // claimants cannot read snapshots yet (contract-change pending): synthetic stub
     await startWithPolicy(page, pol);
     await page.waitForSelector('#insured-vehicle');
     await page.selectOption('#insured-vehicle', unit.unitId);
@@ -350,45 +307,15 @@ test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insu
     await page.click('#review-title ~ button');
     await page.waitForSelector('#claim-number');
     const number = (await page.textContent('#claim-number')).trim();
-    const list = await alt.app.ctx.forTenant('aurelia-mutual').modules.claims.listClaims({});
+    const list = await server.app.ctx.forTenant('aurelia-mutual').modules.claims.listClaims({});
     const row = (list.items ?? list).find((c) => c.claimNumber === number);
     assert.ok(row, 'claim found');
-    const claim = await alt.app.ctx.forTenant('aurelia-mutual').modules.claims.getClaim(row.id, { include: ['vehicles'] });
+    const claim = await server.app.ctx.forTenant('aurelia-mutual').modules.claims.getClaim(row.id, { include: ['vehicles'] });
     const insured = (claim.vehicles ?? []).filter((v) => v.role === 'insured');
     assert.equal(insured.length, 1, 'claim carries one insured vehicle');
-    assert.equal(insured[0].vin, unit.vin);
-  } finally {
-    await page.close();
-    await alt.close();
-  }
-});
-
-test('claimant sees an alert when the vehicle pick is rejected (shipped tenants have no such question)', async (t) => {
-  if (skip) return t.skip(skip);
-  const policy = server.policies['aurelia-mutual'][0];
-  const page = await open('/claimant?tenant=aurelia-mutual');
-  try {
-    await stubSnapshot(page, policy);
-    await startWithPolicy(page, policy);
-    await page.waitForSelector('#insured-vehicle');
-    await page.selectOption('#insured-vehicle', policy.vehicles[0].unitId);
-    await page.waitForSelector('#vehicle-error[role="alert"]:not([hidden])');
-    assert.match(await page.textContent('#vehicle-error'), /could not save your vehicle choice/i);
+    assert.equal(insured[0].vin, unit.vin, 'matches the policy unit');
   } finally {
     await page.close();
   }
 });
 
-test('claimant with a real token (no snapshot access) sees no picker and no error', async (t) => {
-  if (skip) return t.skip(skip);
-  const policy = server.policies['aurelia-mutual'][0];
-  const page = await open('/claimant?tenant=aurelia-mutual');
-  try {
-    await startWithPolicy(page, policy);
-    await page.waitForTimeout(400);
-    assert.equal(await page.locator('#vehicle-pick').count(), 0, 'picker hidden when the claimant cannot read the policy');
-    assert.equal(page.pageErrors.length, 0);
-  } finally {
-    await page.close();
-  }
-});

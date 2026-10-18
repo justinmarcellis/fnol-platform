@@ -116,7 +116,7 @@ async function beginIntake(row) {
   renderVehiclePicker();
   await intake.start({ lob, policyNumber: row.policyNumber, locale: document.documentElement.lang || 'en' });
   $('intake-h').focus();
-  pickerVehicles = await fetchPolicyVehicles(api, row.policyNumber, isoDate());
+  pickerVehicles = await fetchPolicyVehicles(api, intake.state.sessionId);
   renderVehiclePicker();
 }
 

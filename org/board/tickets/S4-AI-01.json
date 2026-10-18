@@ -67,5 +67,41 @@
       }
     ],
     "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6866,
+    "inputTokens": 54,
+    "cacheWriteTokens": 116253,
+    "cacheReadTokens": 1927509,
+    "outputTokens": 1031,
+    "agents": {
+      "a2a7491c1cfc52503": {
+        "label": "S4-AI-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 18,
+        "cacheWriteTokens": 44944,
+        "cacheReadTokens": 636117,
+        "outputTokens": 106,
+        "usd": 0.2407
+      },
+      "a89a855b55e73fec2": {
+        "label": "S4-AI-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 23340,
+        "cacheReadTokens": 287851,
+        "outputTokens": 748,
+        "usd": 0.1234
+      },
+      "af26f41f674aa692a": {
+        "label": "S4-AI-01 ic-ai-provider-integrator",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 26,
+        "cacheWriteTokens": 47969,
+        "cacheReadTokens": 1003541,
+        "outputTokens": 177,
+        "usd": 0.3225
+      }
+    }
   }
 }

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "PI-1", "sprint": 4, "config": "ic-experience-csr-portal-dev (mid tier)",
+    "signal": "composite 0.62, first-pass 2/3, bottom 10%",
+    "evidence": ["S1-EXP-03: CSR disclosure checkbox defect escaped (UI never run in a browser)", "S4-EXP-01: 3 rounds; rounds 1-2 blocked on server pieces owned by another team"],
+    "diagnosis": "bad dependency + missing context, not a capability limit",
+    "intervention": "1. fix the ticket/context: UI+server features become one squad ticket (playbook v2); Playwright gate already applied (IMP-6). No tier change, no retirement.",
+    "outcome": "Round 3 accepted first time once the dependency existed; re-measure next phase"
+  },
+  {
+    "id": "PI-2", "sprint": 4, "config": "ic-quality-e2e-engineer (mid tier)",
+    "signal": "composite 0.77, first-pass 2/3, bottom 10%",
+    "evidence": ["S3-QE-01: rework because POST /intake/.../submit returns a summary while openapi says full Claim"],
+    "diagnosis": "unclear ticket/contract drift (contract said one thing, code another), not a capability limit",
+    "intervention": "1. fix the context: architecture-hub triage each sprint (IMP-5) reconciles contract vs code before QE writes against it",
+    "outcome": "Rework fixed in one round; re-measure next phase"
+  }
+]

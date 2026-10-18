@@ -993,6 +993,11 @@
           "description": "Per-file upload cap in bytes (default 10 MB). Core refuses request bodies over 15 MB regardless."
         }
       }
+    },
+    "seedVersion": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Seed-once loader version (src/core/tenants.mjs): a tenants/*.json file is re-applied at boot only when this is greater than the stored config's seedVersion."
     }
   }
 }

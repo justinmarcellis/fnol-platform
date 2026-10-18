@@ -81,6 +81,12 @@
         "severity": "high",
         "summary": "Claimants can see fraud score and SIU flags",
         "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "DEF-S4-4",
+        "severity": "medium",
+        "summary": "No instant acknowledgment (REQ-12): acknowledge timer never met, KPI acknowledgment time null",
+        "foundIn": "S4-QE-01"
       }
     ]
   },

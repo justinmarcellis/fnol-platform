@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-18T21:48:22.460Z",
   "history": [
@@ -27,6 +27,16 @@
       "at": "2026-10-18T22:00:56.430Z",
       "from": "review",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:16:29.174Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:16:59.314Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S4-EXP-01",
@@ -88,8 +98,78 @@
         "by": "qe-acceptance",
         "verdict": "rework",
         "reason": "Tests pass (94/94) but on shipped tenants insured_vehicle is rejected so claim has no vehicles[role=insured], and claimant picker stays hidden with real tokens; needs tenants personal_auto insured_vehicle question and claimant-readable vehicles source (plus Party.atFault) before criterion is met"
+      },
+      {
+        "at": "2026-10-18T22:16:59.313Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 91 web/UI tests pass incl. shipped-tenant Playwright picks and Aurelia subrogation path"
       }
     ],
     "firstPass": false
+  },
+  "doneAt": "2026-10-18T22:16:59.314Z",
+  "spend": {
+    "usd": 2.8942,
+    "inputTokens": 182,
+    "cacheWriteTokens": 370911,
+    "cacheReadTokens": 9556287,
+    "outputTokens": 5537,
+    "agents": {
+      "a488cbc082117b397": {
+        "label": "S4-EXP-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 20017,
+        "cacheReadTokens": 219315,
+        "outputTokens": 46,
+        "usd": 0.0944
+      },
+      "a564a5b45948a7d8c": {
+        "label": "S4-EXP-01 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 24342,
+        "cacheReadTokens": 164740,
+        "outputTokens": 1001,
+        "usd": 0.1038
+      },
+      "a89b6855523e54b5b": {
+        "label": "S4-EXP-01 ic-experience-csr-portal-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 92,
+        "cacheWriteTokens": 144075,
+        "cacheReadTokens": 6196975,
+        "outputTokens": 3003,
+        "usd": 1.6298
+      },
+      "ab82ddfb69f0396f6": {
+        "label": "S4-EXP-01 ic-experience-csr-portal-dev rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 48,
+        "cacheWriteTokens": 67732,
+        "cacheReadTokens": 2045663,
+        "outputTokens": 249,
+        "usd": 0.581
+      },
+      "a1959f05b4c4a88e8": {
+        "label": "S4-EXP-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 61948,
+        "cacheReadTokens": 115852,
+        "outputTokens": 27,
+        "usd": 0.1783
+      },
+      "a3f1bb26b485cfce7": {
+        "label": "S4-EXP-01 ic-experience-csr-portal-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 22,
+        "cacheWriteTokens": 52797,
+        "cacheReadTokens": 813742,
+        "outputTokens": 1211,
+        "usd": 0.3069
+      }
+    }
   }
 }

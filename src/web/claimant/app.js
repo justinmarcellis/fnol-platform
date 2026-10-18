@@ -189,7 +189,7 @@ async function startSession() {
   app.vehicles = []; app.pickedUnit = null; app.draft = null;
   await flow.start({ lob: app.lob, lossType: app.lossType ?? undefined, locale: getLocale(), policyNumber: app.policyNumber || undefined });
   if (app.policyNumber && flow.state.sessionId) {
-    app.vehicles = await fetchPolicyVehicles(api, app.policyNumber, new Date().toISOString().slice(0, 10));
+    app.vehicles = await fetchPolicyVehicles(api, flow.state.sessionId);
     if (app.view === 'guided' && app.vehicles.length) showGuided(flow.state);
   }
 }

@@ -1,7 +1,7 @@
 {
   "number": 4,
   "name": "Sprint 4: close the demo gaps",
-  "status": "active",
+  "status": "closed",
   "startedAt": "2026-10-18T21:47:22.316Z",
   "budgetUsd": 30,
   "goal": "Fix the product gaps found while rehearsing the demo and assessing COTS readiness; close Sprint 3 security-gate mediums; automate the demo as a test",
@@ -10,5 +10,47 @@
     "budgetUsd": 30,
     "testPassRate": 1
   },
-  "committed": []
+  "committed": [],
+  "review": {
+    "shipped": [
+      "UI-entered claims verify coverage and fast-track (intake-to-claim mapping, insured-vehicle pick from policy)",
+      "Instant acknowledgment (REQ-12) so cycle-time KPIs populate",
+      "Adapter mapping profiles differ per tenant; webhook hosts validated at create",
+      "Seed-once tenant config: admin edits survive restart",
+      "Tenant AI settings honoured (human confirmation, redaction, per-claim budget)",
+      "ReDoS and DoS fixes in guardrails, local extractor, evidence parser; intake idempotency namespacing and encrypted suggestions",
+      "Demo script automated: 6/6 beats pass",
+      "COTS readiness, demo script and configuration guide refreshed"
+    ],
+    "risks": [
+      "Open: SEC medium/low findings (see architecture/security-review-s2.md), policy-vehicles policy-number oracle (medium)",
+      "GCP deployment not run (no credentials)"
+    ],
+    "completedPoints": 64,
+    "committedPoints": 64,
+    "usd": 13.44,
+    "pointsPerDollar": 4.8,
+    "firstPassAcceptance": 0.882,
+    "reworkRate": 0.118,
+    "testPassRate": 0.9899,
+    "testsPassed": "1278/1291"
+  },
+  "retro": {
+    "went_well": [
+      "Every demo gap found in Sprint 3 is closed and proved by an automated demo test",
+      "Security gate caught a high in an untouched Sprint 1 file while reviewing a neighbour, before release",
+      "Pre-planned ticket mode let the orchestrator dispatch follow-ups without manager overhead"
+    ],
+    "went_badly": [
+      "5 more Sprint 0-1 escapes surfaced (product gaps found only by rehearsal); IMP-11 is the fix",
+      "A UI ticket needed 3 rounds because its server dependency was a cross-team request with no owner: should have been one squad ticket",
+      "Gate fix verification is still partly manual (orchestrator re-timed the ReDoS inputs)"
+    ],
+    "manager_retros": [
+      "experience: cross-team UI+server features need a single owner or a paired ticket",
+      "ai: duplicated tier constants with triage remain a fragility",
+      "workflow: acknowledgment should have been in the claims ticket from Sprint 1 (REQ-12 says instant)"
+    ]
+  },
+  "closedAt": "2026-10-18T22:21:16.090Z"
 }

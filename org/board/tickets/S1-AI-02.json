@@ -65,7 +65,15 @@
         "reason": "All criteria met: 23/23 provider tests pass on rerun, Vertex request shapes/refusal check/availability fallbacks verified, no carrier names/secrets/budget_tokens in code, in-scope paths only"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC4-001",
+        "severity": "high",
+        "summary": "Local provider extraction regexes backtrack polynomially on whitespace floods (event-loop DoS)",
+        "foundIn": "S4-AI-03 security gate"
+      }
+    ]
   },
   "spend": {
     "usd": 0.4624,

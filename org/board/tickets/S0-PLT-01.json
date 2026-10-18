@@ -88,6 +88,12 @@
         "summary": "Tenant scope bypass via quoted/qualified table names and tenant_id updates",
         "fixedBy": "ceo (core hotfix)",
         "test": "tests/unit/core/store-scope-guard.test.mjs"
+      },
+      {
+        "id": "DEF-S4-2",
+        "severity": "medium",
+        "summary": "Boot re-applied tenants/*.json, overwriting admin-console edits",
+        "foundIn": "S3-PRD-03"
       }
     ]
   }

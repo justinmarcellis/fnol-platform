@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "sprint": 4,
   "dependsOn": [],
   "createdAt": "2026-10-18T22:02:02.257Z",
@@ -28,6 +28,11 @@
       "at": "2026-10-18T22:11:30.692Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:21:15.959Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "reviewer": "qe-acceptance",
@@ -48,7 +53,7 @@
     "See workflow args: linear sanitizer, claimId passed, usage on refusal, placeholder forgery"
   ],
   "startedAt": "2026-10-18T22:03:09.517Z",
-  "doneAt": "2026-10-18T22:05:23.669Z",
+  "doneAt": "2026-10-18T22:21:15.959Z",
   "review": {
     "reworkCount": 0,
     "verdicts": [
@@ -57,8 +62,59 @@
         "by": "qe-acceptance",
         "verdict": "accept",
         "reason": "All criteria met: ReDoS/cap/email linear tests, claimId+tenantId passed, fail-closed budget, refusal/invalid/throw usage counted, placeholder forging neutralised; ai/triage/adjuster/evidence unit tests (115+23) and e2e (194) pass; security failures are TODO items plus an openapi drift unrelated to this ticket"
+      },
+      {
+        "at": "2026-10-18T22:21:15.959Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Accepted r1 by QE; security rework fixed local.mjs ReDoS (verified 3 ms); orchestrator bounded RE_PLATE_LABELED"
       }
     ],
     "firstPass": true
+  },
+  "spend": {
+    "usd": 1.5374,
+    "inputTokens": 110,
+    "cacheWriteTokens": 243723,
+    "cacheReadTokens": 4485921,
+    "outputTokens": 3065,
+    "agents": {
+      "a21d590f73f3f58d1": {
+        "label": "S4-AI-03 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 36,
+        "cacheWriteTokens": 113873,
+        "cacheReadTokens": 1664219,
+        "outputTokens": 158,
+        "usd": 0.6192
+      },
+      "a56c09bc02b61d476": {
+        "label": "S4-AI-03 ic-ai-provider-integrator",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 36,
+        "cacheWriteTokens": 71804,
+        "cacheReadTokens": 1619839,
+        "outputTokens": 1943,
+        "usd": 0.523
+      },
+      "a8febe05b1c805f03": {
+        "label": "S4-AI-03 ic-ai-provider-integrator security rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 20,
+        "cacheWriteTokens": 31055,
+        "cacheReadTokens": 642440,
+        "outputTokens": 851,
+        "usd": 0.2147
+      },
+      "aa9b4c4672af65fba": {
+        "label": "S4-AI-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 18,
+        "cacheWriteTokens": 26991,
+        "cacheReadTokens": 559423,
+        "outputTokens": 113,
+        "usd": 0.1805
+      }
+    }
   }
 }
