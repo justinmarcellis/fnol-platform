@@ -68,7 +68,7 @@ test('submit is idempotent: repeats and retries return the same claim and create
   const c = await call(app, 'POST', `${base}/${id}/submit`, { token });
   assert.equal(c.body.id, a.body.id);
   assert.equal(store.claims.size, 1);
-  assert.equal(store.calls[0].opts.idempotencyKey, 'abc-123');
+  assert.equal(store.calls[0].opts.idempotencyKey, `intake:${id}:abc-123`);
   // Answers are frozen after submit.
   const late = await call(app, 'POST', `${base}/${id}/answers`, { token, body: A('injuries', true) });
   assert.equal(late.status, 409);

@@ -1,0 +1,64 @@
+{
+  "status": "review",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T22:02:02.257Z",
+  "history": [
+    {
+      "at": "2026-10-18T22:03:09.517Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:03:57.984Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:05:23.669Z",
+      "from": "review",
+      "to": "done"
+    },
+    {
+      "at": "2026-10-18T22:10:40.709Z",
+      "from": "done",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:11:30.692Z",
+      "from": "in_progress",
+      "to": "review"
+    }
+  ],
+  "reviewer": "qe-acceptance",
+  "id": "S4-AI-03",
+  "team": "ai",
+  "title": "Guardrail ReDoS fix and per-claim AI budget enforcement",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-ai-provider-integrator",
+  "paths": [
+    "src/ai/",
+    "src/modules/triage/service.mjs",
+    "src/modules/adjuster/service.mjs",
+    "src/modules/evidence/service.mjs",
+    "src/modules/intake/conversation.js"
+  ],
+  "acceptance": [
+    "See workflow args: linear sanitizer, claimId passed, usage on refusal, placeholder forgery"
+  ],
+  "startedAt": "2026-10-18T22:03:09.517Z",
+  "doneAt": "2026-10-18T22:05:23.669Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:05:23.668Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: ReDoS/cap/email linear tests, claimId+tenantId passed, fail-closed budget, refusal/invalid/throw usage counted, placeholder forging neutralised; ai/triage/adjuster/evidence unit tests (115+23) and e2e (194) pass; security failures are TODO items plus an openapi drift unrelated to this ticket"
+      }
+    ],
+    "firstPass": true
+  }
+}

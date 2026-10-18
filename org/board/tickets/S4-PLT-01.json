@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-18T21:48:35.636Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-18T21:49:13.772Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:52:39.891Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S4-PLT-01",
@@ -50,5 +55,18 @@
     "seedVersion upgrade path",
     "demo:reset reseed documented"
   ],
-  "startedAt": "2026-10-18T21:48:49.065Z"
+  "startedAt": "2026-10-18T21:48:49.065Z",
+  "doneAt": "2026-10-18T21:52:39.891Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:52:39.891Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 11 tenant/server/context tests pass; e2e+security 382 tests, 0 fail (no new failures vs baseline); no config contents logged"
+      }
+    ],
+    "firstPass": true
+  }
 }

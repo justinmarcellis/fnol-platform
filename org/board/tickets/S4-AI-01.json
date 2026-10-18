@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-18T21:48:18.950Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-18T21:49:37.515Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:52:36.010Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S4-AI-01",
@@ -49,5 +54,18 @@
     "PII never reaches cloud model unredacted",
     "per-claim token budget"
   ],
-  "startedAt": "2026-10-18T21:48:35.842Z"
+  "startedAt": "2026-10-18T21:48:35.842Z",
+  "doneAt": "2026-10-18T21:52:36.010Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:52:36.010Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 3 settings implemented and tested (58/58 AI tests pass), docs updated; note callers do not yet pass opts.claimId (out of scope)"
+      }
+    ],
+    "firstPass": true
+  }
 }

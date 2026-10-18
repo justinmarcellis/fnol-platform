@@ -48,10 +48,10 @@ export function keywordExtract(text, today) {
   };
 }
 
-async function extract(ctx, text, today) {
+async function extract(ctx, text, today, claimId) {
   if (ctx.ai?.run) {
     try {
-      const res = await ctx.ai.run('extract_narrative', { text }, { tenantId: ctx.tenant?.id });
+      const res = await ctx.ai.run('extract_narrative', { text }, { tenantId: ctx.tenant?.id, ...(claimId ? { claimId } : {}) });
       if (res?.output && typeof res.confidence === 'number') {
         const o = res.output;
         // Injuries are safety-relevant: a keyword hit also counts even if the model missed it.
@@ -82,9 +82,9 @@ const mapsKey = (q) => String(q.mapsTo ?? '').replace(/^lossEvent\./, 'loss.');
  * @param {{ questions: object[], answers: object, locale?: string, skipQuestionId?: string }} o
  * @returns {Promise<{ questionId: string, value: *, ai: object }[]>}
  */
-export async function suggestFromNarrative(ctx, text, { questions, answers = {}, locale = 'en', skipQuestionId } = {}) {
+export async function suggestFromNarrative(ctx, text, { questions, answers = {}, locale = 'en', skipQuestionId, claimId } = {}) {
   const today = ctx.clock.nowIso().slice(0, 10);
-  const r = await extract(ctx, text, today);
+  const r = await extract(ctx, text, today, claimId);
   const ai = { provider: r.provider, model: r.model, confidence: r.confidence, explanation: r.explanation };
   const out = [];
   const push = (q, value) => {

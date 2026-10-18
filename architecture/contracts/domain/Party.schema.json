@@ -105,6 +105,10 @@
     "injured": {
       "type": "boolean"
     },
+    "atFault": {
+      "type": "boolean",
+      "description": "Added 1.3.0 (additive, optional). Whether this party was at fault for the loss as reported at intake; not a liability determination."
+    },
     "injuryDescription": {
       "type": "string",
       "x-pii": true

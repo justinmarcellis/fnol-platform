@@ -8,7 +8,11 @@ const MODEL = 'local-rules-v1';
 
 const has = (re, s) => re.test(s ?? '');
 const uniq = (a) => [...new Set(a)];
-const toStr = (v) => (typeof v === 'string' ? v : v == null ? '' : String(v));
+// ReDoS hardening: every provider regex runs on a length-capped window whose whitespace runs are
+// squeezed to at most 8 chars, so no quantifier can backtrack over more than a few chars.
+export const MAX_TEXT = 20000;
+const squeeze = (s) => s.slice(0, MAX_TEXT).replace(/\s{9,}/g, (m) => m.slice(0, 8));
+const toStr = (v) => squeeze(typeof v === 'string' ? v : v == null ? '' : String(v));
 const snip = (text, m) => {
   if (!m) return '';
   const i = m.index ?? 0;
@@ -89,7 +93,7 @@ function extractNarrative({ text = '' } = {}) {
   else if (has(RE.atFaultSelf, t)) atFault = 'insured';
   else if (has(RE.atFaultOther, t)) atFault = 'other';
   const d = findDate(t, /\b(on|date of loss|happened|occurred)\b/i);
-  const locM = /\b(?:at|on|near|in)\s+((?:the\s+)?(?:intersection of\s+)?\d*\s*[A-Z][\w.]*(?:\s+[A-Z][\w.]*)*\s+(?:St|Street|Ave|Avenue|Rd|Road|Blvd|Dr|Drive|Hwy|Highway|Way|Lane|Ln)\b[^.,;]*)/.exec(t);
+  const locM = /\b(?:at|on|near|in)\s{1,8}((?:the\s{1,8})?(?:intersection of\s{1,8})?\d{0,6}\s{0,8}[A-Z][\w.]{0,30}(?:\s{1,8}[A-Z][\w.]{0,30}){0,6}\s{1,8}(?:St|Street|Ave|Avenue|Rd|Road|Blvd|Dr|Drive|Hwy|Highway|Way|Lane|Ln)\b[^.,;]{0,100})/.exec(t);
   const location = locM ? locM[1].trim() : '';
   const strong = lossType !== 'other' || cues.length > 0;
   const confidence = strong && (d || location || cues.length) ? STRONG : strong ? WEAK : NONE;
@@ -103,29 +107,29 @@ function extractNarrative({ text = '' } = {}) {
 // ---------- documents ----------
 const FIELD_SPECS = {
   policeReportNumber: (t) => {
-    const m = /(?:report|case|incident|complaint)\s*(?:no\.?|number|#)\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{4,})/i.exec(t) ?? /\bPR[- ]?\d{4,}[\w-]*/i.exec(t);
+    const m = /(?:report|case|incident|complaint)\s{0,8}(?:no\.?|number|#)[\s:#]{0,9}([A-Z0-9][A-Z0-9-]{4,60})/i.exec(t) ?? /\bPR[- ]?\d{4,}[\w-]*/i.exec(t);
     return m ? { value: (m[1] ?? m[0]).toUpperCase(), conf: STRONG, m } : null;
   },
   citedParty: (t) => {
-    const m = /(?:cited|citation issued to|ticketed|cited party)\s*[:\-]?\s*(?:driver\s*)?(?:#?\s*)?(Unit\s*\d+|Driver\s*\d+|Party\s*[A-Z0-9]|[A-Z][a-z]+\s+[A-Z][a-z]+)/i.exec(t);
+    const m = /(?:cited|citation issued to|ticketed|cited party)[\s:\-]{0,9}(?:driver[\s#]{0,9})?(Unit\s{0,8}\d{1,6}|Driver\s{0,8}\d{1,6}|Party\s{0,8}[A-Z0-9]|[A-Z][a-z]{1,40}\s{1,8}[A-Z][a-z]{1,40})/i.exec(t);
     return m ? { value: m[1], conf: STRONG, m } : null;
   },
   atFaultParty: (t) => {
-    const m = /(?:at[- ]fault(?: party| driver)?|contributing factor(?:s)?|primary fault|fault)\s*[:\-]\s*(Unit\s*\d+|Driver\s*\d+|Party\s*[A-Z0-9]|[A-Z][a-z]+\s+[A-Z][a-z]+|insured|other(?: party| driver)?)/i.exec(t);
+    const m = /(?:at[- ]fault(?: party| driver)?|contributing factor(?:s)?|primary fault|fault)\s{0,8}[:\-]\s{0,8}(Unit\s{0,8}\d{1,6}|Driver\s{0,8}\d{1,6}|Party\s{0,8}[A-Z0-9]|[A-Z][a-z]{1,40}\s{1,8}[A-Z][a-z]{1,40}|insured|other(?: party| driver)?)/i.exec(t);
     return m ? { value: m[1], conf: STRONG, m } : null;
   },
   estimateTotal: (t) => {
-    const m = /(?:grand total|total (?:estimate|repair|cost|due)?|estimate total|net total|total)\s*[:\-]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i.exec(t);
+    const m = /(?:grand total|total (?: ?(?:estimate|repair|cost|due))?|estimate total|net total|total)[\s:\-$]{0,10}([\d,]{1,20}(?:\.\d{2})?)/i.exec(t);
     if (m) return { value: money(m[1]), conf: STRONG, m };
-    const w = /\$\s*([\d,]+\.\d{2})/.exec(t);
+    const w = /\$\s{0,8}([\d,]{1,20}\.\d{2})/.exec(t);
     return w ? { value: money(w[1]), conf: WEAK, m: w } : null;
   },
   repairShop: (t) => {
-    const m = /(?:repair (?:shop|facility)|shop|body shop|facility|repairer)\s*[:\-]\s*([^\n\r]+?)(?=\s{2,}|\s+(?:Phone|Tel|Address|Estimate|Date)\b|[\n\r]|$)/i.exec(t);
+    const m = /(?:repair (?:shop|facility)|shop|body shop|facility|repairer)\s*[:\-]\s*([^\n\r]{1,200}?)(?=\s{2,}|\s+(?:Phone|Tel|Address|Estimate|Date)\b|[\n\r]|$)/i.exec(t);
     return m ? { value: m[1].trim(), conf: STRONG, m } : null;
   },
   lossDate: (t) => {
-    const label = /(?:date of (?:loss|accident|incident)|loss date|accident date|incident date|date of occurrence)\s*[:\-]?/i;
+    const label = /(?:date of (?:loss|accident|incident)|loss date|accident date|incident date|date of occurrence)[\s:\-]{0,9}/i;
     const lm = label.exec(t);
     const d = findDate(t, label);
     if (!d) return null;

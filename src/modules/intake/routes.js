@@ -50,6 +50,10 @@ export function registerRoutes(router) {
     res.json(200, step);
   }, { roles: ROLES });
 
+  router.get('/api/v1/intake/sessions/:sessionId/policy-vehicles', async (req, res) => {
+    res.json(200, await svc(req).policyVehicles(req.params.sessionId, { actor: actorOf(req) }));
+  }, { roles: ['claimant', 'csr', 'agent'] });
+
   router.post('/api/v1/intake/sessions/:sessionId/narrative', async (req, res) => {
     const text = req.body?.text;
     if (typeof text !== 'string') throw bad(req, 'text is required');

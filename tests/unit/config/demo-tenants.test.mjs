@@ -104,3 +104,15 @@ test('Kestrel never fast-tracks commercial auto, even when triage marks the clai
   const subro = filterRules(K.rules, { stage: 'post_routing', lob: 'commercial_auto' });
   assert.deepEqual(runRules(subro, ca({ triage: { subrogation: { flag: true } } })).fired.map((f) => f.ruleId), ['PR-SUBRO-CA']);
 });
+
+test('S4-WFL-03: every personal_auto question set has an optional unconditional insured_vehicle question (type vehicle)', () => {
+  for (const cfg of [A, K]) {
+    assert.deepEqual(validateTenantConfig(cfg).errors ?? [], []);
+    for (const set of cfg.questionSets.filter((s) => s.lob === 'personal_auto')) {
+      const q = set.questions.find((x) => x.id === 'insured_vehicle');
+      assert.ok(q, `${cfg.tenantId}/${set.id} has insured_vehicle`);
+      assert.equal(q.type, 'vehicle');
+      assert.ok(!q.required && !q.showIf && !q.requiredIf, 'optional and unconditional');
+    }
+  }
+});

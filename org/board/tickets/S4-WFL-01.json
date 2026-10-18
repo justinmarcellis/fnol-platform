@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-18T21:48:33.939Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-18T21:49:24.228Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:52:01.357Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:53:21.675Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S4-WFL-01",
@@ -40,5 +50,18 @@
     "No files outside listed paths changed; existing intake and claims tests still pass"
   ],
   "brief": "Gap: intake submit calls toClaimCreate (src/modules/intake/mapping.js) which never sets the insured vehicle, and policyNumber only if a question maps to it. Coverage then cannot match and stays needs_review, blocking STP. Build: (1) in mapping.js add exported async enrichClaimCreate(input,{session,answers,questions,getSnapshot}). Policy number: first an answer whose question mapsTo policyNumber (already handled in toClaimCreate), else session.policyNumber (session start). Then call getSnapshot(policyNumber) (injected; real impl is mod('coverage').getPolicySnapshot via ctx; check its exact signature in architecture/core-runtime-api.md and modules.md coverage section). Find the selected vehicle: a vehicle-type answer or an answer carrying vin/unit; match case-insensitive on VIN, or on unit id, against snapshot.vehicles; copy vin, year/make/model and unit onto the insured vehicle entry (role insured). For property LOBs map the loss location/insured property into properties[role=insured_location] using the snapshot property if one exists. Never throw on lookup failure: log and return input unchanged. Do not store PII in logs. (2) Wiring: ic-workflow-security-hardening (ticket S4-WFL-02) owns service.js and will call mapping.enrichClaimCreate if it exists via namespace import; you must not edit service.js. Therefore your glass-fasttrack integration test must run after both tickets merge; also unit-test enrichClaimCreate directly with a small local fake snapshot in mapping-enrich.test.js so you are not blocked. Use tests/unit/intake/fakes.mjs and helpers.mjs, read only. (3) POST /claims in src/modules/claims/routes.mjs silently drops `answers`. Check ClaimCreate in the openapi/Claim schema: if answers is a defined property persist it (encrypted if x-pii), else reject unknown properties with 400 and the standard error envelope. Post the decision to the workflow hub. Pitfalls: Aurelia glass fast-track depends on a policy with glass coverage in tenants/ seeds; use only synthetic seed data; do not hardcode tenant ids.",
-  "startedAt": "2026-10-18T21:49:24.228Z"
+  "startedAt": "2026-10-18T21:49:24.228Z",
+  "doneAt": "2026-10-18T21:53:21.675Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:53:21.675Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 98 intake/claims unit tests pass, e2e+security 368 pass 0 fail; intake-to-claim idempotency test failure is S4-WFL-02's, flagged to its owner"
+      }
+    ],
+    "firstPass": true
+  }
 }

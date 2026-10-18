@@ -1,5 +1,6 @@
 // Browser-only DOM helpers for the claimant app. All user/server text goes through textContent.
 import { localText } from './strings.js';
+import { isStructured, structuredFields, buildStructured, missingStructured } from './structured.js';
 
 /** Tiny element builder: attrs with `on*` become listeners, `text` sets textContent. */
 export function h(tag, attrs = {}, ...kids) {
@@ -20,7 +21,8 @@ let uid = 0;
  * Build the input for one question. Returns { el, get(), focus() }.
  * Value types follow the Question schema; the server validates.
  */
-export function buildInput(question, { locale, t, errorId }) {
+export function buildInput(question, { locale, t, errorId, initial }) {
+  if (isStructured(question)) return buildStructuredInput(question, { locale, t, errorId, initial });
   const id = `q-${++uid}`;
   const label = localText(question.text, locale);
   const help = localText(question.help, locale);
@@ -76,6 +78,66 @@ export function buildInput(question, { locale, t, errorId }) {
     help ? h('p', { class: 'help', id: helpId, text: help }) : null,
     control);
   return { el, get, focus: () => control.focus() };
+}
+
+/**
+ * Structured sub-form for party, vehicle and address questions: one labelled control per field in a fieldset.
+ * get() returns the answer object (undefined when every field is empty); check() shows an inline message and returns false
+ * when a required field is empty; raw() returns the entered values so a re-render after a server 422 keeps them.
+ */
+export function buildStructuredInput(question, { locale, t, errorId, initial = {} }) {
+  const id = `sf-${++uid}`;
+  const label = localText(question.text, locale) || t(`claimant.sf.legend.${question.type}`);
+  const help = localText(question.help, locale);
+  const msgId = `${id}-msg`;
+  const msg = h('p', { class: 'field-error', id: msgId, role: 'alert', hidden: true });
+  const fs = h('fieldset', { id, class: 'sf', 'data-qtype': question.type, 'aria-describedby': [errorId, msgId].filter(Boolean).join(' ') });
+  fs.append(h('legend', { text: label }));
+  if (help) fs.append(h('p', { class: 'help', text: help }));
+  const ctl = {};
+  for (const fd of structuredFields(question.type)) {
+    const cid = `${id}-${fd.key}`;
+    const text = t(`claimant.sf.${fd.key}`);
+    if (fd.input === 'checkbox') {
+      const cb = h('input', { type: 'checkbox', id: cid, name: fd.key, checked: initial[fd.key] === true || null });
+      ctl[fd.key] = cb;
+      fs.append(h('label', { class: 'opt', for: cid }, cb, h('span', { text })));
+      continue;
+    }
+    let c;
+    if (fd.input === 'select') {
+      c = h('select', { id: cid, name: fd.key, 'aria-required': fd.required ? 'true' : null },
+        fd.options.map((o) => h('option', { value: o, text: t(`claimant.sf.role.${o}`), selected: (initial[fd.key] ?? fd.options[0]) === o || null })));
+    } else {
+      c = h('input', { type: fd.input === 'number' ? 'number' : fd.input, id: cid, name: fd.key, autocomplete: fd.autocomplete ?? 'off', value: initial[fd.key] ?? null, 'aria-required': fd.required ? 'true' : null });
+    }
+    ctl[fd.key] = c;
+    fs.append(h('div', { class: 'sf-field' }, h('label', { for: cid, text: text + (fd.required ? '' : ` (${t('claimant.sf.optional')})`) }), c));
+  }
+  fs.append(msg);
+  const raw = () => Object.fromEntries(Object.entries(ctl).map(([k, c]) => [k, c.type === 'checkbox' ? c.checked : c.value]));
+  const show = (text, first) => {
+    msg.textContent = text || ''; msg.hidden = !text;
+    for (const [k, c] of Object.entries(ctl)) { if (k === first) c.setAttribute('aria-invalid', 'true'); else c.removeAttribute('aria-invalid'); }
+  };
+  return {
+    el: fs,
+    raw,
+    get() {
+      const r = raw();
+      if (!Object.entries(r).some(([k, v]) => v === true || (typeof v === 'string' && v.trim() && !(k === 'role')))) return undefined;
+      return buildStructured(question.type, r);
+    },
+    check() {
+      const { ok, missing } = missingStructured(question.type, raw());
+      if (!ok) {
+        show(t('claimant.sf.required', { label: missing.map((k) => t(`claimant.sf.${k}`)).join(', ') }), missing[0]);
+        ctl[missing[0]]?.focus();
+      } else show('');
+      return ok;
+    },
+    focus: () => Object.values(ctl)[0]?.focus()
+  };
 }
 
 /**

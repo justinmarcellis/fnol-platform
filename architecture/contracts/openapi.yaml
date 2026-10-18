@@ -258,6 +258,37 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /intake/sessions/{sessionId}/policy-vehicles:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    get:
+      tags: [intake]
+      operationId: listIntakePolicyVehicles
+      summary: Vehicles on the session's policy, for the insured-vehicle picker (added 1.3.0)
+      description: |
+        Returns the vehicles on the policy attached to the session (policy snapshot as of the session start), so the caller can
+        pick one and answer the `insured_vehicle` question with `{ policyVehicleId: unitId, ... }`.
+        Only `unitId`, `year`, `make`, `model` and the last four VIN characters are returned: never the full VIN or any insured PII.
+        Readable by the session owner: the claimant who started it, the agent who owns it (started it or produces the policy), or a csr.
+        Any other caller gets 404. A session without a policy, or a policy with no vehicles, returns `[]`.
+      x-roles: [claimant, csr, agent]
+      x-module: intake
+      responses:
+        '200':
+          description: Policy vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [unitId]
+                  properties:
+                    unitId: { type: string }
+                    year: { type: integer }
+                    make: { type: string }
+                    model: { type: string }
+                    vinLast4: { type: string, maxLength: 4 }
+        '404': { $ref: '#/components/responses/NotFound' }
   /intake/sessions/{sessionId}/submit:
     parameters: [{ $ref: '#/components/parameters/SessionId' }]
     post:

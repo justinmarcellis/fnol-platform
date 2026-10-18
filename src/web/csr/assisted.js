@@ -1,6 +1,7 @@
 // Assisted intake controller for CSRs. Pure logic: inject { api, t, clock, random }. No kit imports.
 // The server owns showIf/requiredIf; this module only follows the IntakeStep it returns.
 import { isUnavailable, resolveI18n } from './errors.js';
+import { INSURED_VEHICLE_QUESTION } from './answers.js';
 
 /** Contract channel for CSR-assisted calls (common.schema.json Channel enum). */
 export const CSR_CHANNEL = 'csr_phone';
@@ -53,6 +54,7 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
     question: null, progress: { answered: 0, requiredRemaining: 0, percent: 0 },
     missing: [], unlisted: 0, script: { ask: '', help: '', text: '' },
     disclosures: [], errors: [], done: false, claim: null, error: null, busy: false,
+    insuredVehicle: null, insuredVehicleSent: false, insuredVehicleError: null,
   };
   const snap = () => ({ ...state, progress: { ...state.progress }, missing: [...state.missing], errors: [...state.errors], disclosures: [...state.disclosures] });
   const emit = () => { const s = snap(); for (const l of listeners) l(s); };
@@ -64,7 +66,7 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
     state.progress = step.progress ?? state.progress;
     state.errors = Array.isArray(step.errors) ? step.errors : [];
     if (Array.isArray(step.disclosures) && step.disclosures.length) state.disclosures = step.disclosures;
-    if (state.question) seen.set(state.question.id, { id: state.question.id, text: state.question.text, required: state.question.required !== false });
+    if (state.question) seen.set(state.question.id, { id: state.question.id, type: state.question.type, text: state.question.text, required: state.question.required !== false });
     const m = deriveMissing(step, seen, answered, state.locale);
     state.missing = m.items; state.unlisted = m.unlisted;
     state.script = scriptedPrompt(state.question, { t, locale: state.locale });
@@ -83,6 +85,8 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
     } catch (err) {
       state.busy = false;
       state.error = { code: err?.code ?? 'error', message: err?.message ?? String(err), status: err?.status };
+      // A 422 carries the step with per-question errors[]; the app adapter attaches them as err.errors.
+      if (Array.isArray(err?.errors)) state.errors = err.errors;
       if (isUnavailable(err)) { pending = { kind, args, before }; state.phase = 'unavailable'; }
       else { pending = null; state.phase = before; }
       emit();
@@ -113,6 +117,27 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
       if (step) { answered.add(questionId); apply(step); }
       emit();
       return step;
+    },
+
+    /**
+     * Record the insured vehicle picked from the policy (answer carries policyVehicleId and VIN). Sent as the answer to the
+     * tenant's vehicle-type question when one has been seen (else the 'insured_vehicle' id). A rejected answer is kept in state
+     * (`insuredVehicleError`, `insuredVehicleSent` false) so the UI can show it; it never throws.
+     */
+    async setInsuredVehicle(answer, questionId = INSURED_VEHICLE_QUESTION) {
+      state.insuredVehicle = answer ?? null; state.insuredVehicleSent = false; state.insuredVehicleError = null;
+      if (!answer || !state.sessionId) { emit(); return null; }
+      const qid = [...seen.values()].find((x) => x.type === 'vehicle')?.id ?? questionId;
+      try {
+        const step = await api.post(`/intake/sessions/${state.sessionId}/answers`, { questionId: qid, value: answer });
+        answered.add(qid); apply(step); state.insuredVehicleSent = true; state.insuredVehicleError = null;
+        emit();
+        return step;
+      } catch (err) {
+        state.insuredVehicleError = err?.errors?.[0]?.message ?? err?.message ?? 'Request failed.';
+        emit();
+        return null;
+      }
     },
 
     /** Re-fetch the current step. */
@@ -149,7 +174,7 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
 
     reset() {
       seen.clear(); answered.clear(); submitKey = null; pending = null;
-      Object.assign(state, { phase: 'idle', sessionId: null, policyNumber: null, lob: null, question: null, missing: [], unlisted: 0, script: { ask: '', help: '', text: '' }, disclosures: [], errors: [], done: false, claim: null, error: null, busy: false, progress: { answered: 0, requiredRemaining: 0, percent: 0 } });
+      Object.assign(state, { phase: 'idle', sessionId: null, policyNumber: null, lob: null, question: null, missing: [], unlisted: 0, script: { ask: '', help: '', text: '' }, disclosures: [], errors: [], done: false, claim: null, error: null, busy: false, insuredVehicle: null, insuredVehicleSent: false, insuredVehicleError: null, progress: { answered: 0, requiredRemaining: 0, percent: 0 } });
       emit();
     },
   };

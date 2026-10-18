@@ -55,6 +55,8 @@ export default {
     for (const type of FACT_EVENTS) {
       bus.on(type, safe(type, (evt, tctx) => svc(evt, tctx).applyEvent(evt)), { name: `claims:${type}` });
     }
+    // REQ-12: acknowledge the claimant as soon as the claim is reported.
+    bus.on('claim.reported', safe('acknowledge', (evt, tctx) => svc(evt, tctx).acknowledgeClaim(evt.data.claimId)), { name: 'claims:acknowledge' });
     // Timer starts and stops are driven by tenant config (startOn / stopOn), so listen to every event.
     bus.on('*', safe('timers', (evt, tctx) => svc(evt, tctx).applyTimerEvent(evt)), { name: 'claims:timers' });
 

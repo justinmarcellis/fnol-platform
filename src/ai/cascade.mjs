@@ -93,12 +93,15 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
     const redactSetting = aiConfig.redactPiiBeforeModel; // cloud is always redacted; only an explicit true affects local
     const maxTokens = Number(aiConfig.maxTokensPerClaim);
     const claimId = opts.claimId ?? undefined;
-    const budgeted = Number.isFinite(maxTokens) && maxTokens > 0 && !!claimId && !!tenantId && typeof log?.tokensForClaim === 'function';
+    const budgetConfigured = Number.isFinite(maxTokens) && maxTokens > 0;
     let budgetHit = false;
+    // Fail closed: a configured budget that cannot be measured (no claim, tenant or log) blocks cloud calls.
     const overBudget = () => {
-      if (!budgeted) return false;
-      try { return log.tokensForClaim(tenantId, claimId) >= maxTokens; } catch { return false; }
+      if (!budgetConfigured) return false;
+      if (!claimId || !tenantId || typeof log?.tokensForClaim !== 'function') return true;
+      try { return log.tokensForClaim(tenantId, claimId) >= maxTokens; } catch { return true; }
     };
+    const spent = (u) => (u && typeof u === 'object' ? u : {});
     const finish = (o) => (humanConfirm || budgetHit ? { ...o, unconfirmed: true } : o);
     const flags = hardFlags(input, opts.flags ?? []);
     const hard = flags.length > 0;
@@ -137,23 +140,23 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
           const r = redactValue(input ?? {});
           sendInput = r.value; map = r.map;
         }
-        res = await p.run(task, sendInput, { tier: entry.tier, schema, model: entry.model, tenantId, ...(explicitRedact ? { forceRedact: true } : {}) });
+        res = await p.run(task, sendInput, { tier: entry.tier, schema, model: entry.model, tenantId, ...(claimId ? { claimId } : {}), ...(explicitRedact ? { forceRedact: true } : {}) });
         if (res && !res.refusal && explicitRedact && !p.guarded && Object.keys(map).length) {
           res = { ...res, output: restore(res.output, map), explanation: restore(res.explanation ?? '', map) };
         }
         if (!res || res.refusal) {
           tried.push(entry.provider);
-          logIt({ usage: { skipped: 'refusal' } });
+          logIt({ model: res?.model, usage: { ...spent(res?.usage), skipped: 'refusal' } });
           continue;
         }
         if (!hasRequiredShape(task, res.output) || typeof res.confidence !== 'number') {
           tried.push(entry.provider);
-          logIt({ model: res.model, usage: { skipped: 'invalid_output' } });
+          logIt({ model: res.model, usage: { ...spent(res.usage), skipped: 'invalid_output' } });
           continue;
         }
       } catch (e) {
         tried.push(entry.provider);
-        logIt({ usage: { skipped: 'error', error: String(e.message ?? e).slice(0, 120) } });
+        logIt({ usage: { ...spent(e?.usage), skipped: 'error', error: String(e?.message ?? e).slice(0, 120) } });
         continue;
       }
       const out = {

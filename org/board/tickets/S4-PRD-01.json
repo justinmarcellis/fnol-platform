@@ -1,0 +1,30 @@
+{
+  "id": "S4-PRD-01",
+  "team": "product",
+  "title": "Refresh COTS readiness, demo script and configuration guide for Sprint 4 fixes",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-product-requirements-analyst",
+  "reviewer": "qe-acceptance",
+  "status": "in_progress",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T22:13:42.953Z",
+  "history": [
+    {
+      "at": "2026-10-18T22:14:01.306Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "paths": [
+    "docs/cots-readiness.md",
+    "docs/demo-script.md",
+    "docs/configuration-guide.md"
+  ],
+  "acceptance": [
+    "Every gap fixed in Sprint 4 is re-verified in code and its row updated",
+    "Demo script beats match tests/e2e/demo-script.test.mjs"
+  ],
+  "startedAt": "2026-10-18T22:14:01.306Z"
+}

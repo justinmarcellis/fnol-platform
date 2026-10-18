@@ -7,6 +7,12 @@ export const TIER_MODELS = Object.freeze({
   strong: 'gemini-2.5-pro',
 });
 
+/** Token usage of a Gemini response, or null when the provider returned none. */
+function usageOf(res) {
+  const u = res?.usageMetadata;
+  return u ? { inputTokens: u.promptTokenCount ?? 0, outputTokens: u.candidatesTokenCount ?? 0 } : null;
+}
+
 /** Convert a sanitised JSON schema to the Gemini responseSchema dialect (upper-case types, no additionalProperties). */
 export function toGeminiSchema(s) {
   if (Array.isArray(s)) return s.map(toGeminiSchema);
@@ -46,6 +52,7 @@ export default function createVertexGemini(ctx, opts = {}) {
       try { return !!projectFrom(env, opts) && !!(await getClient()); } catch { return false; }
     },
     async run(task, input, { tier = 'cheap', schema, model } = {}) {
+      let seen;
       try {
         const client = await getClient();
         if (!client) return { refusal: true, error: 'unavailable' };
@@ -59,15 +66,16 @@ export default function createVertexGemini(ctx, opts = {}) {
             responseSchema: toGeminiSchema(envelopeSchema(schema)),
           },
         });
+        seen = res;
         const cand = res?.candidates?.[0];
-        if (res?.promptFeedback?.blockReason || cand?.finishReason === 'SAFETY' || cand?.finishReason === 'PROHIBITED_CONTENT') return { refusal: true };
+        if (res?.promptFeedback?.blockReason || cand?.finishReason === 'SAFETY' || cand?.finishReason === 'PROHIBITED_CONTENT') return { refusal: true, ...(usageOf(res) ? { usage: usageOf(res) } : {}) };
         const text = typeof res?.text === 'string' ? res.text : (cand?.content?.parts ?? []).map((p) => p.text ?? '').join('');
         const parsed = parseEnvelope(text);
-        const u = res.usageMetadata ?? {};
-        return { ...parsed, usage: { inputTokens: u.promptTokenCount ?? 0, outputTokens: u.candidatesTokenCount ?? 0 }, model: res.modelVersion ?? useModel };
+        return { ...parsed, usage: usageOf(res) ?? { inputTokens: 0, outputTokens: 0 }, model: res.modelVersion ?? useModel };
       } catch (e) {
         ctx?.log?.debug?.('vertex-gemini failed', { error: String(e?.message ?? e).slice(0, 160) });
-        return { refusal: true, error: String(e?.message ?? e).slice(0, 160) };
+        const usage = usageOf(seen);
+        return { refusal: true, error: String(e?.message ?? e).slice(0, 160), ...(usage ? { usage } : {}) };
       }
     },
   };

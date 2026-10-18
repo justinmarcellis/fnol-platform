@@ -547,7 +547,36 @@ export function createService(ctx) {
     });
   }
 
+  /**
+   * REQ-12 instant acknowledgment (PoC: recorded, nothing is sent). On claim.reported the platform acknowledges the
+   * claimant through the tenant's first configured claimant channel: an audit entry, a completed acknowledge_claimant
+   * task (which meets the acknowledge timer), and a claim.acknowledged event. Idempotent per claim.
+   */
+  function acknowledgeClaim(claimId, { actor } = {}) {
+    actor = normalizeActor(actor);
+    const c = ctx.tenant.config ?? {};
+    const claimantCfg = c.notifications?.claimant ?? {};
+    if (!claimantCfg.channels?.length) return null; // no claimant channel configured: nothing to acknowledge through
+    if (claimantCfg.onEvents && !claimantCfg.onEvents.includes('claim.reported')) return null;
+    return db.transaction(() => {
+      load(claimId);
+      const prior = db.get("SELECT 1 AS x FROM claim_tasks WHERE claim_id = ? AND type = 'other' AND doc LIKE '%\"requestedType\":\"acknowledge_claimant\"%'", claimId);
+      if (prior) return null;
+      const channel = claimantCfg.channels[0];
+      const at = ctx.clock.nowIso();
+      const task = addTaskSync(claimId, {
+        type: 'acknowledge_claimant', title: `Acknowledge claimant via ${channel}`, priority: 'normal',
+        description: 'Automatic acknowledgment recorded by the platform (PoC: no message is sent).',
+      }, { actor });
+      audit(actor, 'claim.acknowledged', claimId, { channel, taskId: task.id, acknowledgedAt: at, delivery: 'recorded_only' });
+      updateTaskSync(claimId, task.id, { status: 'done' }, { actor });
+      ctx.bus.publish('claim.acknowledged', claimId, { claimId, channel, taskId: task.id, acknowledgedAt: at });
+      return { claimId, channel, taskId: task.id, acknowledgedAt: at };
+    });
+  }
+
   const impl = {
+    acknowledgeClaim,
     createClaim: createClaimSync, getClaim: getClaimSync, listClaims: listClaimsSync, getClaimBundle: getClaimBundleSync,
     changeStatus: changeStatusSync, listStatusHistory: listStatusHistorySync, addFlag: addFlagSync, addNote: addNoteSync, listNotes: listNotesSync,
     addTask: addTaskSync, updateTask: updateTaskSync, listTasks: listTasksSync,

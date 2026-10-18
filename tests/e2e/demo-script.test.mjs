@@ -178,11 +178,10 @@ test('Beat 2: same glass claim at Kestrel routes to a queue (fraud 15 above limi
   assert.ok(whyFastTrack(s.route).some((r) => /fast track blocked: fraud score 15 above fast-track limit 10/.test(r)), JSON.stringify(s.route.reasons));
   // The cue the adjuster is shown: LATE_REPORT, reported 21 days after the loss.
   const triage = await call('GET', `/claims/${s.claim.id}/triage`, K, 'adjuster');
-  if (triage.status === 200) {
-    const signals = JSON.stringify(triage.json);
-    assert.match(signals, /LATE_REPORT/);
-    assert.match(signals, /21 days/);
-  }
+  assert.equal(triage.status, 200, triage.text);
+  const signals = JSON.stringify(triage.json);
+  assert.match(signals, /LATE_REPORT/);
+  assert.match(signals, /21 days/);
 });
 
 test('Beat 3: Kestrel rear-end injury claim, subrogation flag, adjuster first view', async (t) => {
@@ -198,17 +197,21 @@ test('Beat 3: Kestrel rear-end injury claim, subrogation flag, adjuster first vi
   assert.equal(sub?.flag, true, 'subrogation flag set at first notice');
   assert.equal(sub?.potential ?? sub?.reason ?? 'rear_ended_by_other', 'rear_ended_by_other');
 
-  // Adjuster first view: AI summary and next best actions.
+  // Adjuster first view (GET /adjuster/claims/{id}/view): AI summary, next best actions, triage, routing, tasks.
   await runStep(t, async () => {
-    const sum = requireImplemented(await call('GET', `/claims/${s.claim.id}/summary`, K, 'adjuster'), 'GET /claims/{id}/summary');
-    assert.equal(sum.status, 200, sum.text);
-    assert.ok(JSON.stringify(sum.json).length > 20, 'summary has content');
+    const v = requireImplemented(await call('GET', `/adjuster/claims/${s.claim.id}/view`, K, 'adjuster'), 'GET /adjuster/claims/{id}/view');
+    assert.equal(v.status, 200, v.text);
+    const text = JSON.stringify(v.json);
+    assert.match(text, /summary/i, 'AI summary present');
+    assert.match(text, /rear_ended_by_other/, 'subrogation potential shown');
+    assert.match(text, /RT-INJURY-01/, 'routing rule shown');
   });
+
+  // The recovery task (PR-SUBRO-PA) is shown on the staged claim in the script (beat 3 step 7).
   await runStep(t, async () => {
     const tasks = requireImplemented(await call('GET', `/claims/${s.claim.id}/tasks`, K, 'adjuster'), 'GET /claims/{id}/tasks');
     assert.equal(tasks.status, 200, tasks.text);
-    const text = JSON.stringify(tasks.json);
-    assert.match(text, /PR-SUBRO-PA|third-party recovery/i, 'recovery task from PR-SUBRO-PA');
+    assert.match(JSON.stringify(tasks.json), /PR-SUBRO-PA|third-party recovery/i, 'recovery task from PR-SUBRO-PA');
   });
 });
 
@@ -242,18 +245,24 @@ test('Beat 5: KPIs show stp_rate and acknowledgment time', async () => {
   const stp = byId.stp_rate;
   assert.ok(stp, 'stp_rate present');
   assert.notEqual(stp.value, null, `stp_rate non-null (${stp.note ?? ''})`);
+  // Script: numerator 1 after beat 4; denominator is every Kestrel claim so far (3 staged here, 4 with the live CSR claim).
   assert.equal(stp.numerator, 1, 'one Kestrel claim fast tracked (after beat 4)');
-  assert.equal(stp.denominator, 4, 'every Kestrel claim so far');
-  assert.equal(stp.value, 0.25);
-  const ack = metrics.filter((m) => /acknowledg/.test(m.id ?? m.key ?? ''));
-  assert.ok(ack.length > 0, `an acknowledgment-time metric exists: ${metrics.map((m) => m.id ?? m.key).join(', ')}`);
-  assert.ok(ack.some((m) => m.value !== null && m.value !== undefined), `acknowledgment time non-null: ${JSON.stringify(ack)}`);
+  assert.equal(stp.denominator, 3, 'every Kestrel claim so far');
   for (const id of ['subrogation_flag_rate', 'coverage_verified_at_intake_rate']) assert.ok(byId[id], `${id} present`);
-
   const a = await call('GET', '/kpis', A, 'tenant_admin');
   assert.equal(a.status, 200, a.text);
   const aById = Object.fromEntries(a.json.metrics.map((m) => [m.id ?? m.key, m]));
   assert.ok(aById.spanish_session_share && aById.digital_self_service_share, 'Aurelia has VD-6 metrics');
+
+  // Acknowledgment time (VD-2, REQ-12): claims auto-acknowledge on claim.reported, which meets the acknowledge timer.
+  const ack = metrics.filter((m) => /acknowledg/.test(m.id ?? m.key ?? ''));
+  assert.ok(ack.length > 0, `an acknowledgment-time metric exists: ${metrics.map((m) => m.id ?? m.key).join(', ')}`);
+  const ackValue = (await waitFor(async () => {
+    const r = await call('GET', '/kpis', K, 'tenant_admin');
+    const m = (r.json?.metrics ?? []).find((x) => /acknowledg/.test(x.id ?? x.key ?? ''));
+    return m && m.value !== null && m.value !== undefined ? { value: m.value } : null; // 0 minutes is a valid value
+  }, 'acknowledgment time is non-null after the demo flow')).value;
+  assert.ok(Number.isFinite(Number(ackValue)), `acknowledgment time is a number (${ackValue})`);
 });
 
 test('Beat 6: webhook outbox event and core adapter payload differ per tenant', async () => {

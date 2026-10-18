@@ -30,9 +30,9 @@ export function createService(ctx) {
 
   const row2doc = (r) => (r ? ctx.db.parseJson(r.doc, null) : null);
 
-  async function runAi(task, facts) {
+  async function runAi(task, facts, claimId) {
     if (!ctx.ai || typeof ctx.ai.run !== 'function') return null;
-    return safe(`ai.${task}`, () => ctx.ai.run(task, { facts }, { tenantId: ctx.tenant.id }));
+    return safe(`ai.${task}`, () => ctx.ai.run(task, { facts }, { tenantId: ctx.tenant.id, ...(claimId ? { claimId } : {}) }));
   }
 
   async function gather(claimId) {
@@ -85,7 +85,7 @@ export function createService(ctx) {
     if (prior && !force && prior.input_hash === inputsHash) return row2doc(prior);
 
     // AI passes in parallel; any failure degrades to deterministic logic.
-    const [sevAi, fraudAi, subAi] = await Promise.all([runAi('severity', facts), runAi('fraud_signals', facts), runAi('subrogation', facts)]);
+    const [sevAi, fraudAi, subAi] = await Promise.all([runAi('severity', facts, claimId), runAi('fraud_signals', facts, claimId), runAi('subrogation', facts, claimId)]);
 
     const tenantCfg = ctx.tenant.config ?? {};
     const cfg = tenantCfg.triage ?? {};

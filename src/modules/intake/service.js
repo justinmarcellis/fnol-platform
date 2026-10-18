@@ -317,6 +317,24 @@ export function createService(ctx, opts = {}) {
     }
   }
 
+  /**
+   * Vehicles on the session's policy for the insured_vehicle picker. Same access rule as the rest of the session
+   * (404 for anyone else). Only unitId, year, make, model and vinLast4 leave the service: no full VIN, no insured PII.
+   */
+  async function policyVehicles(sessionId, { actor } = {}) {
+    const { doc } = await load(sessionId, actor);
+    if (!doc.policyNumber) return [];
+    let snap = null;
+    try {
+      snap = await mod('coverage')?.getPolicySnapshot?.({ policyNumber: doc.policyNumber, asOf: (doc.startedAt ?? nowIso()).slice(0, 10) }) ?? null;
+    } catch { snap = null; }
+    return (Array.isArray(snap?.vehicles) ? snap.vehicles : []).filter((v) => v && v.unitId).map((v) => ({
+      unitId: v.unitId,
+      ...(v.year !== undefined ? { year: v.year } : {}), ...(v.make ? { make: v.make } : {}), ...(v.model ? { model: v.model } : {}),
+      ...(typeof v.vin === 'string' && v.vin ? { vinLast4: v.vin.slice(-4) } : {}),
+    }));
+  }
+
   /** Submit a complete session: map to ClaimCreate and call claims.createClaim. Idempotent. */
   async function submit(sessionId, { actor = SYSTEM_ACTOR, idempotencyKey } = {}) {
     const { doc, set, answers } = await load(sessionId, actor);
@@ -360,5 +378,5 @@ export function createService(ctx, opts = {}) {
     return n;
   }
 
-  return { startSession, getSession, nextQuestion, answer, narrative, submit, expireOrphaned };
+  return { startSession, getSession, nextQuestion, answer, narrative, submit, policyVehicles, expireOrphaned };
 }

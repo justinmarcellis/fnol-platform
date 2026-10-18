@@ -1,0 +1,69 @@
+{
+  "status": "done",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T22:02:02.257Z",
+  "history": [
+    {
+      "at": "2026-10-18T22:04:56.029Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:04:56.093Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:05:56.874Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:06:08.143Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:06:50.522Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "reviewer": "qe-acceptance",
+  "id": "S4-WFL-03",
+  "team": "workflow",
+  "title": "Instant acknowledgment, insured-vehicle question and claimant policy vehicles",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "paths": [
+    "src/modules/claims/",
+    "src/modules/intake/",
+    "tenants/",
+    "architecture/contracts/"
+  ],
+  "acceptance": [
+    "See workflow args: REQ-12 acknowledgment, demo beat 5, insured_vehicle, policy-vehicles, Party.atFault, idempotency test"
+  ],
+  "startedAt": "2026-10-18T22:04:56.029Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:05:56.874Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "All criteria met and 321 ticket tests pass, but new regression: tests/security/routes.test.mjs 'openapi role matrix has not drifted' fails because the new policy-vehicles operation is not in tests/security/routes.snapshot.json (not in baseline); security-review the x-roles and refresh the snapshot (or ask its owner)"
+      },
+      {
+        "at": "2026-10-18T22:06:50.522Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 130 ticket tests pass (explicit files), e2e+security gate 0 failures (only known TODOs)"
+      }
+    ],
+    "firstPass": false
+  },
+  "doneAt": "2026-10-18T22:06:50.522Z"
+}

@@ -83,6 +83,8 @@ test('extract is idempotent unless force', async (t) => {
   const doc = await ev.addDocument(CLAIM, { kind: 'police_report', filename: 'r.txt', contentType: 'text/plain', bytes: textBytes(REPORT) });
   await app.ctx.bus.drain();
   assert.equal(app.ai.calls.length, 1);
+  assert.equal(app.ai.calls[0].opts.claimId, CLAIM);
+  assert.equal(app.ai.calls[0].opts.tenantId, 'alpha');
   await ev.extract(doc.id);
   assert.equal(app.ai.calls.length, 1);
   await ev.extract(doc.id, { force: true });

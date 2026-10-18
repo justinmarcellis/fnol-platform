@@ -13,8 +13,8 @@ export function makeFakeAi(overrides = {}) {
   const env = (output, confidence = 0.9) => ({ output, provider: 'local', model: 'fake-v1', confidence, explanation: 'fake extraction', usage: {} });
   return {
     calls,
-    async run(task, input) {
-      calls.push({ task, input });
+    async run(task, input, opts) {
+      calls.push({ task, input, opts });
       if (overrides[task]) return overrides[task](input);
       if (task === 'extract_document') {
         const t = input.text.toLowerCase();

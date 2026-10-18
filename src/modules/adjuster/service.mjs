@@ -70,7 +70,7 @@ export function createService(ctx) {
     return names.map((name) => ({ name, value: facts[name] }));
   }
 
-  const aiRun = (task, facts) => ctx.ai.run(task, { facts }, { tenantId: tenantId() });
+  const aiRun = (task, facts, claimId) => ctx.ai.run(task, { facts }, { tenantId: tenantId(), ...(claimId ? { claimId } : {}) });
 
   /** Summary cached per triage attempt in adjuster_summaries. */
   async function getSummary(claimId, attempt, facts, { refresh = false } = {}) {
@@ -80,7 +80,7 @@ export function createService(ctx) {
     }
     if (!ctx.ai) return null;
     let r;
-    try { r = await aiRun('summarize', facts); } catch (e) { ctx.log?.warn?.('adjuster summary failed', { error: e.message }); return null; }
+    try { r = await aiRun('summarize', facts, claimId); } catch (e) { ctx.log?.warn?.('adjuster summary failed', { error: e.message }); return null; }
     const body = [r.output.summary, ...(r.output.bullets ?? []).map((b) => `- ${b}`)].join('\n');
     const citedFacts = citeFacts(facts, body);
     const text = citedFacts.length ? `${body}\nFacts used: ${citedFacts.map((f) => `${f.name}=${f.value}`).join(', ')}` : body;
@@ -169,7 +169,7 @@ export function createService(ctx) {
       const summary = await getSummary(claimId, triage?.attempt ?? 0, facts, { refresh: opts.refresh });
 
       const rules = ruleActions({ claim, triage, coverage, timers, documents });
-      const aiActions = ctx.ai ? await safe(async () => (await aiRun('next_best_actions', facts)).output.actions, []) : [];
+      const aiActions = ctx.ai ? await safe(async () => (await aiRun('next_best_actions', facts, claimId)).output.actions, []) : [];
       const nextActions = mergeActions(rules, aiActions);
 
       const view = {

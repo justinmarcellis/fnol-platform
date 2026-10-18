@@ -26,7 +26,7 @@ test('runTriage returns a schema-valid result with AI provenance and publishes c
   assert.ok(r.explanation.length > 40);
   assert.equal(typeof r.subrogation.confidence, 'number');
   assert.deepEqual(ai.calls.map((c) => c.task).sort(), ['fraud_signals', 'severity', 'subrogation']);
-  assert.ok(ai.calls.every((c) => c.opts.tenantId === 'alpha' && c.input.facts));
+  assert.ok(ai.calls.every((c) => c.opts.tenantId === 'alpha' && c.opts.claimId === ID && c.input.facts));
   assert.ok(!JSON.stringify(ai.calls).includes('Synthetic narrative'));
   const [evt] = app.events('claim.triaged');
   assert.equal(evt.data.triageResultId, r.id);

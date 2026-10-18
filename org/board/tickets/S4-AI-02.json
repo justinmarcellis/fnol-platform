@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-18T21:48:18.957Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-18T21:49:48.788Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:53:14.144Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S4-AI-02",
@@ -44,5 +49,18 @@
   "requirements": [
     "Close S3 medium findings for PDF scan and multipart parse"
   ],
-  "startedAt": "2026-10-18T21:49:03.794Z"
+  "startedAt": "2026-10-18T21:49:03.794Z",
+  "doneAt": "2026-10-18T21:53:14.144Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:53:14.143Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: 29 evidence tests pass, DoS inputs <200ms, 20-part cap with 400 validation_error, e2e/security 368 pass 0 fail"
+      }
+    ],
+    "firstPass": true
+  }
 }

@@ -161,6 +161,14 @@
           "section": "loss"
         },
         {
+          "id": "insured_vehicle",
+          "text": "Which vehicle on the policy was involved?",
+          "type": "vehicle",
+          "required": false,
+          "order": 35,
+          "section": "vehicle"
+        },
+        {
           "id": "vehicle_drivable",
           "text": "Is the vehicle drivable?",
           "type": "boolean",
@@ -233,6 +241,14 @@
           "mapsTo": "loss.injuriesReported",
           "order": 20,
           "section": "loss"
+        },
+        {
+          "id": "insured_vehicle",
+          "text": "Which vehicle on the policy was involved?",
+          "type": "vehicle",
+          "required": false,
+          "order": 35,
+          "section": "vehicle"
         },
         {
           "id": "vehicle_drivable",

@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-18T21:48:07.764Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-18T21:49:28.646Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:52:48.588Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S4-INT-01",
@@ -47,5 +52,18 @@
     "Adapter honours fieldMapProfile",
     "Webhook target host allow-list enforced at create/update"
   ],
-  "startedAt": "2026-10-18T21:48:46.783Z"
+  "startedAt": "2026-10-18T21:48:46.783Z",
+  "doneAt": "2026-10-18T21:52:48.588Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:52:48.588Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "profileOf fieldMapProfile/alias/normalise verified, host-named 422 on create/update, 82 integration tests and e2e/security gate pass (0 fail)"
+      }
+    ],
+    "firstPass": true
+  }
 }

@@ -35,7 +35,10 @@ export function createIntakeFlow({ api, clock = { now: () => Date.now() }, rando
     done: false,
     claim: null,
     error: null,
-    busy: false
+    busy: false,
+    insuredVehicle: null,
+    insuredVehicleSent: false,
+    insuredVehicleError: null
   };
 
   const snapshot = () => ({ ...state, progress: { ...state.progress }, suggestions: [...state.suggestions], errors: [...state.errors] });
@@ -65,6 +68,8 @@ export function createIntakeFlow({ api, clock = { now: () => Date.now() }, rando
     } catch (err) {
       state.busy = false;
       state.error = { code: err?.code ?? 'error', message: err?.message ?? String(err), status: err?.status };
+      // A 422 carries the step with per-question errors[]; the app adapter attaches them as err.errors.
+      if (Array.isArray(err?.errors)) state.errors = err.errors;
       if (isUnavailable(err, { sessionScoped: kind !== 'start' })) {
         pending = { kind, args, before };
         state.phase = 'unavailable';
@@ -100,6 +105,26 @@ export function createIntakeFlow({ api, clock = { now: () => Date.now() }, rando
       if (step) applyStep(step);
       emit();
       return step;
+    },
+
+    /**
+     * Record the insured vehicle picked from the policy (policyVehicleId and VIN included). Sent to the tenant's vehicle-type
+     * question when it is the current one, else to 'insured_vehicle'. A rejection (no such question) is not an error here.
+     */
+    async setInsuredVehicle(answer, questionId = 'insured_vehicle') {
+      state.insuredVehicle = answer ?? null; state.insuredVehicleSent = false; state.insuredVehicleError = null;
+      if (!answer || !state.sessionId) { emit(); return null; }
+      const qid = state.question?.type === 'vehicle' ? state.question.id : questionId;
+      try {
+        const step = await api.post(`/intake/sessions/${state.sessionId}/answers`, { questionId: qid, value: answer });
+        applyStep(step); state.insuredVehicleSent = true; state.insuredVehicleError = null;
+        emit();
+        return step;
+      } catch (err) {
+        state.insuredVehicleError = err?.errors?.[0]?.message ?? err?.message ?? 'Request failed.';
+        emit();
+        return null;
+      }
     },
 
     /** Answer several at once (used to confirm AI suggestions). */

@@ -2,9 +2,14 @@
 import { evaluateCondition } from '../../../src/modules/rules/condition.js';
 
 export const store = { claims: new Map(), byKey: new Map(), calls: [] };
-export const reset = () => { store.claims.clear(); store.byKey.clear(); store.calls.length = 0; };
+export const snapshots = new Map(); // policyNumber -> fake policy snapshot
+export const reset = () => { store.claims.clear(); store.byKey.clear(); store.calls.length = 0; snapshots.clear(); };
 
 export const fakes = {
+  coverage: {
+    name: 'coverage',
+    service: () => ({ async getPolicySnapshot({ policyNumber }) { return snapshots.has(policyNumber) ? structuredClone(snapshots.get(policyNumber)) : null; } }),
+  },
   rules: {
     name: 'rules',
     service: (ctx) => ({

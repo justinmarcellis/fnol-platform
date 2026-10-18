@@ -175,7 +175,7 @@ export function createService(ctx) {
         let result;
         if (row.kind === 'photo' && isImage) {
           const sidecar = docMeta.sidecar ?? undefined;
-          result = await ctx.ai.run('classify_photo', { filename: docMeta.filename, ...(sidecar ? { metadata: sidecar } : {}) }, { tenantId: tid() });
+          result = await ctx.ai.run('classify_photo', { filename: docMeta.filename, ...(sidecar ? { metadata: sidecar } : {}) }, { tenantId: tid(), claimId: row.claim_id });
           return finish(photoExtraction(result, documentId, !!sidecar));
         }
         if (isImage) return finish({ status: 'skipped', fields: [], needsReview: true, summary: 'Image is not a photo kind; no text layer to read' });
@@ -188,7 +188,7 @@ export function createService(ctx) {
         }
         result = await ctx.ai.run('extract_document', {
           ...(docMeta.autoKind ? {} : { kind: row.kind }), text: text.slice(0, TEXT_CAP), filename: docMeta.filename,
-        }, { tenantId: tid() });
+        }, { tenantId: tid(), claimId: row.claim_id });
         const ext = textExtraction(result, documentId, text);
         if (docMeta.autoKind && KINDS.includes(result.output?.kind) && result.output.kind !== row.kind) {
           ctx.db.update('documents', row.id, { kind: result.output.kind });

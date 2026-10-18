@@ -9,6 +9,7 @@ import { createChat } from './chat.js';
 import { createStatusPoller, buildTimeline, DEFAULT_INTERVAL_MS } from './status.js';
 import { createUploader, KINDS, MAX_BYTES, ACCEPT_ATTR } from './upload.js';
 import { h, buildInput, renderTimeline } from './view.js';
+import { fetchPolicyVehicles, errorFor } from './structured.js';
 
 try { await import('/shared/components/index.js'); } catch { /* kit components are optional; fallbacks render */ }
 
@@ -37,11 +38,14 @@ const kitApi = createApiClient({
     const key = `${init.method} ${new URL(url, location.href).pathname}`;
     const extra = extraHeaders.get(key);
     extraHeaders.delete(key);
-    return fetch(url, extra ? { ...init, headers: { ...init.headers, ...extra } } : init);
+    return fetch(url, extra ? { ...init, headers: { ...init.headers, ...extra } } : init).then(async (res) => {
+      if (res.status === 422) { try { last422 = await res.clone().json(); } catch { last422 = null; } }
+      return res;
+    });
   }
 });
 const api = {
-  get: (path) => kitApi.get(path),
+  get: (path, query) => kitApi.get(path, query),
   post(path, body, opts) {
     if (opts?.headers) extraHeaders.set(`POST /api/v1${path}`, opts.headers);
     return kitApi.post(path, body);
@@ -53,7 +57,17 @@ const api = {
     return kitApi.upload(path, file, fields);
   }
 };
-const app = { tenant: null, config: null, mode: 'guided', lob: null, lossType: null, flow: null, chat: null, poller: null, uploader: null, unsubs: [], view: 'boot' };
+// The shared client drops the body of a 422; keep the intake step so per-question errors[] reach the sub-form.
+let last422 = null;
+const rawApiPost = api.post.bind(api);
+api.post = async (path, body, opts) => {
+  last422 = null;
+  try { return await rawApiPost(path, body, opts); } catch (err) {
+    if (err?.status === 422 && Array.isArray(last422?.errors)) err.errors = last422.errors;
+    throw err;
+  }
+};
+const app = { policyNumber: '', vehicles: [], pickedUnit: null, draft: null, tenant: null, config: null, mode: 'guided', lob: null, lossType: null, flow: null, chat: null, poller: null, uploader: null, unsubs: [], view: 'boot' };
 
 const announce = (msg) => { const live = $('live'); live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 30); };
 const focusMain = (el) => { (el ?? main).focus({ preventScroll: false }); };
@@ -158,7 +172,9 @@ function showStart() {
     [['guided', 'claimant.start.guided', 'claimant.start.guidedHelp'], ['chat', 'claimant.start.chat', 'claimant.start.chatHelp']].map(([v, a, b]) =>
       h('label', { class: 'opt' }, h('input', { type: 'radio', name: 'mode', value: v, checked: app.mode === v || null, onchange: () => { app.mode = v; } }), h('span', {}, t(a), h('small', { text: t(b) })))));
   const err = h('p', { class: 'field-error', id: 'start-error', role: 'alert' });
-  const form = h('form', { onsubmit: (e) => { e.preventDefault(); startSession(); } }, lobFs, lossFs, modeFs, err, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, t('claimant.start.go'))));
+  const policyIn = h('input', { type: 'text', id: 'policy-number', name: 'policyNumber', autocomplete: 'off', 'aria-describedby': 'policy-number-help', value: app.policyNumber || null, onchange: (e) => { app.policyNumber = e.target.value.trim(); } });
+  const policyBox = h('div', {}, h('label', { for: 'policy-number', text: t('claimant.start.policy') }), h('p', { class: 'help', id: 'policy-number-help', text: t('claimant.start.policyHelp') }), policyIn);
+  const form = h('form', { onsubmit: (e) => { e.preventDefault(); app.policyNumber = policyIn.value.trim(); startSession(); } }, lobFs, lossFs, policyBox, modeFs, err, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, t('claimant.start.go'))));
   main.replaceChildren(h('h1', { id: 'view-title', tabindex: '-1', text: t('claimant.start.heading') }), h('p', { class: 'muted', text: t('claimant.start.intro') }), form);
   app.startError = err;
   $('view-title').focus();
@@ -170,7 +186,26 @@ async function startSession() {
   app.chat = app.mode === 'chat' ? createChat({ flow, t: (k, p) => t(k, p), locale: getLocale }) : null;
   teardown();
   app.unsubs.push(flow.subscribe(onFlow));
-  await flow.start({ lob: app.lob, lossType: app.lossType ?? undefined, locale: getLocale() });
+  app.vehicles = []; app.pickedUnit = null; app.draft = null;
+  await flow.start({ lob: app.lob, lossType: app.lossType ?? undefined, locale: getLocale(), policyNumber: app.policyNumber || undefined });
+  if (app.policyNumber && flow.state.sessionId) {
+    app.vehicles = await fetchPolicyVehicles(api, app.policyNumber, new Date().toISOString().slice(0, 10));
+    if (app.view === 'guided' && app.vehicles.length) showGuided(flow.state);
+  }
+}
+
+/** Insured vehicle picker: only rendered when the policy lists vehicles. */
+function vehiclePicker() {
+  if (!app.vehicles.length) return null;
+  const sel = h('select', { id: 'insured-vehicle', name: 'insured_vehicle', onchange: (e) => {
+    const opt = app.vehicles.find((v) => v.unitId === e.target.value);
+    app.pickedUnit = opt?.unitId ?? null;
+    if (opt) { app.refocusPicker = true; app.flow.setInsuredVehicle(opt.answer); }
+  } }, h('option', { value: '', text: t('claimant.sf.vehicle.choose') }),
+  app.vehicles.map((v) => h('option', { value: v.unitId, text: v.label, selected: v.unitId === app.pickedUnit || null })));
+  const failure = app.flow?.state?.insuredVehicleError;
+  const err = h('p', { id: 'vehicle-error', class: 'field-error', role: 'alert', hidden: failure ? null : true, text: failure ? t('claimant.sf.vehicle.failed', { message: failure }) : '' });
+  return h('div', { id: 'vehicle-pick', class: 'card' }, h('label', { for: 'insured-vehicle', text: t('claimant.sf.vehicle.label') }), sel, err);
 }
 
 let lastQid = null;
@@ -211,15 +246,19 @@ function submitBlock(s) {
 /** Guided mode: exactly the question the server returned, one at a time. */
 function showGuided(s) {
   app.view = 'guided';
-  const root = [h('h1', { id: 'view-title', tabindex: '-1', text: t('claimant.title') }), progressBar(s), ...disclosures(s)];
+  const root = [h('h1', { id: 'view-title', tabindex: '-1', text: t('claimant.title') }), progressBar(s), ...disclosures(s), vehiclePicker()].filter(Boolean);
   let focusTarget = $('view-title');
   if (s.question) {
     const errId = 'q-error';
-    const input = buildInput(s.question, { locale: getLocale(), t, errorId: s.errors.length ? errId : null });
-    const errs = s.errors.length ? h('p', { class: 'field-error', id: errId, role: 'alert', text: s.errors.map((e) => e.message).join(' ') }) : null;
+    const draft = app.draft?.qid === s.question.id ? app.draft.raw : undefined;
+    const input = buildInput(s.question, { locale: getLocale(), t, errorId: s.errors.length ? errId : null, initial: draft });
+    const own = errorFor(s.errors, s.question.id);
+    const errs = s.errors.length ? h('p', { class: 'field-error', id: errId, role: 'alert', text: own || s.errors.map((e) => e.message).join(' ') }) : null;
     const missing = h('p', { class: 'field-error', role: 'alert', hidden: true, text: t('claimant.guided.required') });
     const form = h('form', { onsubmit: (e) => {
       e.preventDefault();
+      if (input.raw) app.draft = { qid: s.question.id, raw: input.raw() };
+      if (input.check && !input.check()) return;
       const v = input.get();
       if (v === undefined) {
         if (s.question.required) { missing.hidden = false; return input.focus(); }
@@ -235,7 +274,7 @@ function showGuided(s) {
     focusTarget = { focus: () => $('review-title')?.focus() };
   }
   main.replaceChildren(...root);
-  focusTarget.focus();
+  if (app.refocusPicker && $('insured-vehicle')) { app.refocusPicker = false; $('insured-vehicle').focus(); } else focusTarget.focus();
 }
 
 /** Conversational mode. */

@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-18T21:48:33.942Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-18T21:49:39.251Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:51:55.524Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:53:17.270Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S4-WFL-02",
@@ -43,5 +53,18 @@
     "All named tests pass plus existing tests/unit/intake/*.test.js; only listed paths changed"
   ],
   "brief": "Read architecture/security-gate-s3.json intake entries (service.js idempotency ~265, suggestions plaintext, questions.js isSafePattern lines 12-40 and 121-124). Build helpers in new src/modules/intake/security.js and wire them. (1) Idempotency: in service.submit use `intake:${sessionId}:${key}` when a client key is given (key capped to 128 chars, charset-limited), else `intake:${sessionId}`. (2) Suggestions: mergeSuggestions/saveDoc store doc.suggestions plaintext. Seal values via ctx.crypto.encryptPii when saving and open on read in conversation/service; delete doc.suggestions on submit and in the expiry sweep. Verify the encryptPii signature in core-runtime-api.md; follow how intake_answers already encrypts. (3) Pattern guard: strengthen isSafePattern: reject nested/adjacent/repeated unbounded quantifiers (*,+,{n,}) and groups with optional bodies under counts; cap pattern length; cap tested input to 200 chars (answers longer than that fail validation for pattern questions); time-box: run the regex in a bounded way (precheck is primary; node:vm with timeout option is acceptable for a hard bound). Keep existing valid patterns working (phone, postal code). (4) Size caps: reject any structured (object/array) answer whose JSON length exceeds 16384 bytes and any session whose summed answer size exceeds 524288 bytes, via the existing per-question errors[] 400 envelope. (5) Hook: story 1 (ticket S4-WFL-01, parallel) adds async mapping.enrichClaimCreate(input,{session,answers,questions,getSnapshot}) in mapping.js. In submit do `import * as mapping from './mapping.js'` and `const enriched = typeof mapping.enrichClaimCreate === 'function' ? await mapping.enrichClaimCreate(...) : input`. Do not edit mapping.js. Reuse tests/unit/intake/helpers.mjs and fakes.mjs (read only; add your own helpers inside your new test files). Pitfalls: never log answer or narrative content; keep ES module style; do not change response shapes.",
-  "startedAt": "2026-10-18T21:49:39.251Z"
+  "startedAt": "2026-10-18T21:49:39.251Z",
+  "doneAt": "2026-10-18T21:53:17.270Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:53:17.269Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 58 intake tests (15 new security) pass; e2e+security gate 368 pass 0 fail"
+      }
+    ],
+    "firstPass": true
+  }
 }

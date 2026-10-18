@@ -97,7 +97,7 @@ test('summary is cached per triage attempt', async () => {
   put('triage', 'alpha', CLAIM_ID, makeTriage(2));
   await adj().getFirstView(CLAIM_ID);
   assert.equal(aiCalls.filter((c) => c.task === 'summarize').length, 2);
-  assert.ok(aiCalls.every((c) => c.opts.tenantId === 'alpha'));
+  assert.ok(aiCalls.every((c) => c.opts.tenantId === 'alpha' && c.opts.claimId === CLAIM_ID));
 });
 
 test('unverified coverage and missing police report produce rule actions; no PII in AI facts', async () => {

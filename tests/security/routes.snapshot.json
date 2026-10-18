@@ -247,6 +247,16 @@
     "public": false
   },
   {
+    "op": "GET /intake/sessions/{sessionId}/policy-vehicles",
+    "roles": [
+      "claimant",
+      "csr",
+      "agent"
+    ],
+    "module": "intake",
+    "public": false
+  },
+  {
     "op": "GET /integrations/adapters",
     "roles": [
       "tenant_admin",

@@ -8,15 +8,17 @@ import { schemaFor } from './schemas.mjs';
 
 export const REMOVED = '[removed-instruction]';
 export const DEFAULT_MAX_CHARS = 20000;
+/** Hard ceiling on a single string handed to the sanitizer (defence in depth against pathological input). */
+export const SANITIZE_MAX_CHARS = 200000;
 
 // ---------- sanitize ----------
 const INJECTION_PATTERNS_RAW = [
   // fenced blocks whose info string is a privileged role
   /```[ \t]*(?:system|assistant|developer)[^\n]*\n[\s\S]*?(?:```|$)/gi,
   // role tags
-  /<\|?\s*\/?\s*(?:system|assistant|developer|im_start|im_end|user)\s*\|?>/gi,
-  /<<\s*\/?\s*SYS\s*>>/gi,
-  /\[\s*\/?\s*INST\s*\]/gi,
+  /<\|?\s*(?:\/\s*)?(?:system|assistant|developer|im_start|im_end|user)\s*\|?>/gi,
+  /<<\s*(?:\/\s*)?SYS\s*>>/gi,
+  /\[\s*(?:\/\s*)?INST\s*\]/gi,
   // markdown role headings
   /^[ \t]*#{1,6}[ \t]*(?:system|assistant|developer)\b[^\n]*/gim,
   // "system:" style role prefixes at line start, or inline when followed by an imperative
@@ -41,13 +43,15 @@ const INJECTION_PATTERNS = [...INJECTION_PATTERNS_RAW.slice(-6), ...INJECTION_PA
  */
 export function sanitizeText(text) {
   let s = typeof text === 'string' ? text : text == null ? '' : String(text);
+  if (s.length > SANITIZE_MAX_CHARS) s = s.slice(0, SANITIZE_MAX_CHARS);
   for (const re of INJECTION_PATTERNS) s = s.replace(re, REMOVED);
   return s.replace(/(?:\[removed-instruction\][ \t]*){2,}/g, `${REMOVED} `).replace(/\[removed-instruction\] (?=\n|$)/g, REMOVED);
 }
 
 /** @returns {number} how many markers sanitizeText would neutralise in text */
 export function countInjections(text) {
-  const s = typeof text === 'string' ? text : '';
+  let s = typeof text === 'string' ? text : '';
+  if (s.length > SANITIZE_MAX_CHARS) s = s.slice(0, SANITIZE_MAX_CHARS);
   let n = 0;
   for (const re of INJECTION_PATTERNS) n += (s.match(new RegExp(re.source, re.flags)) ?? []).length;
   return n;
@@ -109,11 +113,13 @@ const MBI_KEY = /^(?:mbi|medicareId|medicareNumber)$/i;
 const PLATE_KEY = /^(?:plate|licensePlate|license_plate|plateNumber|licencePlate|tag)$/i;
 
 const MBI_C = 'AC-HJKMNP-RT-Y';
-const RE_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+// Lookbehind pins the start to the beginning of a local-part run so scanning is linear, not quadratic.
+const RE_EMAIL = /(?<![A-Z0-9._%+-])[A-Z0-9._%+-]+@[A-Z0-9.-]{1,255}\.[A-Z]{2,}\b/gi;
 const RE_SSN = /\b(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b/g;
 const RE_MBI = new RegExp(`\\b[1-9]-?[${MBI_C}][${MBI_C}0-9]\\d-?[${MBI_C}][${MBI_C}0-9]\\d-?[${MBI_C}]{2}\\d{2}\\b`, 'g');
 const RE_PHONE = /(?<![\w$])(?:\+?1[\s.-]?)?(?:\(\d{3}\)\s?|\d{3}[\s.-])\d{3}[\s.-]\d{4}(?!\d)/g;
-const RE_PLATE_LABELED = /\b((?:license|licence)?\s*(?:plate|tag)(?:\s*(?:no\.?|number|#))?\s*[:#-]?\s*)([A-Z0-9][A-Z0-9 -]{1,8}[A-Z0-9])\b/gi;
+// Whitespace runs are bounded ({0,3}) so a whitespace flood cannot backtrack quadratically.
+const RE_PLATE_LABELED = /\b((?:license|licence)?[ \t]{0,3}(?:plate|tag)(?:[ \t]{0,3}(?:no\.?|number|#))?[ \t]{0,3}[:#-]?[ \t]{0,3})([A-Z0-9][A-Z0-9 -]{1,8}[A-Z0-9])\b/gi;
 const RE_PLATE_BARE = /\b(?:[A-Z]{3}[ -]?\d{3,4}|\d[A-Z]{3}\d{3})\b/g;
 const HONORIFIC = /\b(?:Mr|Mrs|Ms|Mx|Miss|Dr|Prof|Officer|Sgt|Det)\.?\s+((?:[A-Z][a-z'-]+)(?:\s+[A-Z][a-z'-]+){0,2})/g;
 const LABELED_NAME = /\b(?:name|claimant|insured|policyholder|driver|owner|witness|passenger|reported by|contact|caller|adjuster)\b(?:\s+name)?\s*[:\-]\s*([A-Za-z][\w'-]+(?:\s+[A-Za-z][\w'-]+){1,3})/gi;
@@ -141,6 +147,7 @@ function token(state, kind, original) {
   return t;
 }
 
+const RE_PLACEHOLDER_LIKE = /\[(NAME|PHONE|EMAIL|SSN|MBI|PLATE)_(\d+)\]/g;
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function plainName(s) {
@@ -167,6 +174,8 @@ export function redact(text, opts = {}) {
   const state = opts.state ?? createRedactionState();
   for (const n of opts.knownNames ?? []) learnName(state, n);
   let s = typeof text === 'string' ? text : text == null ? '' : String(text);
+  // Input that already looks like one of our placeholders must not be restorable to a real value.
+  s = s.replace(RE_PLACEHOLDER_LIKE, '($1_$2)');
   s = s.replace(RE_EMAIL, (m) => token(state, 'EMAIL', m));
   s = s.replace(RE_SSN, (m) => token(state, 'SSN', m));
   s = s.replace(RE_MBI, (m) => token(state, 'MBI', m));
@@ -308,11 +317,11 @@ export function guard(provider, task, opts = {}) {
     async run(callTask, input, runOpts = {}) {
       const t = callTask ?? task;
       const report = { task: t, provider: provider.name, cloud, neutralised: 0, truncated: false, redacted: 0, valid: null, errors: [] };
-      const done = (res, skipped) => {
+      const done = (res, skipped, usage) => {
         opts.onGuard?.(report);
         if (skipped && opts.log) {
           try {
-            opts.log.record(runOpts.tenantId, { task: t, provider: provider.name, model: res?.model, tier: runOpts.tier, input, usage: { skipped, guard: true } });
+            opts.log.record(runOpts.tenantId, { task: t, provider: provider.name, model: res?.model, tier: runOpts.tier, input, claimId: runOpts.claimId, usage: { ...(usage ?? {}), skipped, guard: true } });
           } catch { /* telemetry must never break a claim flow */ }
         }
         return res;
@@ -320,12 +329,13 @@ export function guard(provider, task, opts = {}) {
       try {
         if (!schemaFor(t)) { report.errors.push(`unknown task '${t}'`); return done({ refusal: true, error: 'unknown_task' }, 'guard_unknown_task'); }
         let safe = input ?? {};
-        report.neutralised = countInjections(JSON.stringify(safe));
-        safe = sanitizeValue(safe);
+        // Cap first so the sanitizer only ever sees bounded input.
         const capped = capValue(safe, maxChars);
         report.truncated = capped.truncated;
         if (capped.truncated && opts.onOversize === 'reject') return done({ refusal: true, error: 'input_too_large' }, 'guard_input_too_large');
         safe = capped.value;
+        report.neutralised = countInjections(JSON.stringify(safe));
+        safe = sanitizeValue(safe);
         let map = {};
         const redactOn = cloud || opts.forceRedact === true || runOpts.forceRedact === true;
         if (redactOn) {
@@ -340,13 +350,14 @@ export function guard(provider, task, opts = {}) {
         report.valid = v.valid && conf;
         if (!report.valid) {
           report.errors = conf ? v.errors : [...v.errors, '$.confidence: must be a number in [0,1]'];
-          return done({ refusal: true, error: 'invalid_output', model: res.model }, 'guard_invalid_output');
+          return done({ refusal: true, error: 'invalid_output', model: res.model, ...(res.usage ? { usage: res.usage } : {}) }, 'guard_invalid_output', res.usage);
         }
         const out = redactOn && report.redacted ? { ...res, output: restore(res.output, map), explanation: restore(res.explanation ?? '', map) } : res;
         return done(opts.restoreOutput === false ? res : out, null);
       } catch (e) {
         report.errors.push(String(e?.message ?? e).slice(0, 120));
-        return done({ refusal: true, error: 'provider_error' }, 'guard_provider_error');
+        const usage = e?.usage && typeof e.usage === 'object' ? e.usage : undefined;
+        return done({ refusal: true, error: 'provider_error', ...(usage ? { usage } : {}) }, 'guard_provider_error', usage);
       }
     },
   };

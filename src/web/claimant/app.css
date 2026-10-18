@@ -75,3 +75,9 @@ ol.timeline li.attention::before { border-color: var(--c-danger); }
 @media (min-width: 40rem) { main { padding: 32px 16px; } h1 { font-size: 1.875rem; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 @media (prefers-reduced-motion: no-preference) { .log { scroll-behavior: smooth; } }
+fieldset.sf { margin: 0 0 var(--gap); }
+.sf-field { margin-top: 8px; }
+.sf-field label { display: block; font-weight: 600; }
+.sf-field input, .sf-field select { width: 100%; min-height: 44px; font: inherit; }
+.field-error[hidden] { display: none; }
+#insured-vehicle { width: 100%; min-height: 44px; font: inherit; }

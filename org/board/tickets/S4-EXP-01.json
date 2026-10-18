@@ -7,6 +7,26 @@
       "at": "2026-10-18T21:49:55.860Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:56:48.810Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:57:44.619Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:00:26.989Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:00:56.430Z",
+      "from": "review",
+      "to": "in_progress"
     }
   ],
   "id": "S4-EXP-01",
@@ -53,5 +73,23 @@
     "Insured vehicle carried on the claim from the policy",
     "Aurelia subrogation flag reachable end to end from the CSR portal"
   ],
-  "startedAt": "2026-10-18T21:49:55.860Z"
+  "startedAt": "2026-10-18T21:49:55.860Z",
+  "review": {
+    "reworkCount": 2,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:57:44.618Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Insured-vehicle pick never reaches the claim on shipped tenants (server rejects insured_vehicle, error swallowed), and claimant picker is hidden with real claimant tokens; UI tests only prove the request/stub, not vehicles[role=insured]"
+      },
+      {
+        "at": "2026-10-18T22:00:56.429Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Tests pass (94/94) but on shipped tenants insured_vehicle is rejected so claim has no vehicles[role=insured], and claimant picker stays hidden with real tokens; needs tenants personal_auto insured_vehicle question and claimant-readable vehicles source (plus Party.atFault) before criterion is met"
+      }
+    ],
+    "firstPass": false
+  }
 }

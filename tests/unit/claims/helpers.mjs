@@ -44,6 +44,7 @@ export async function bootClaimsApp() {
   fs.mkdirSync(tenantsDir);
   const tenants = {
     alpha: { id: 'alpha', displayName: 'Alpha Mutual', claimNumberPrefix: 'ALP', holidays: ['2026-03-05'], timers },
+    gamma: { id: 'gamma', displayName: 'Gamma Insurance', claimNumberPrefix: 'GAM', timers: timers.filter((x) => x.id === 'IL-ACK'), notifications: { claimant: { channels: ['sms', 'email'], onEvents: ['claim.reported'] } } },
     beta: { id: 'beta', displayName: 'Beta Casualty', claimNumberPrefix: 'BET', timers: [] },
   };
   for (const [id, cfg] of Object.entries(tenants)) fs.writeFileSync(path.join(tenantsDir, `${id}.json`), JSON.stringify(cfg));

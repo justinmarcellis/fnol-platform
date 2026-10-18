@@ -7,6 +7,12 @@ export const TIER_MODELS = Object.freeze({
   strong: 'claude-opus-5-5',
 });
 
+/** Token usage of a Claude response, or null when the provider returned none. */
+function usageOf(res) {
+  const u = res?.usage;
+  return u ? { inputTokens: u.input_tokens ?? 0, outputTokens: u.output_tokens ?? 0 } : null;
+}
+
 /**
  * @param {object} ctx
  * @param {{sdk?: {AnthropicVertex?: Function, client?: object}, env?: object, projectId?: string, maxTokens?: number}} [opts]
@@ -34,6 +40,7 @@ export default function createVertexClaude(ctx, opts = {}) {
       try { return !!projectFrom(env, opts) && !!(await getClient()); } catch { return false; }
     },
     async run(task, input, { tier = 'cheap', schema, model } = {}) {
+      let seen;
       try {
         const client = await getClient();
         if (!client) return { refusal: true, error: 'unavailable' };
@@ -46,17 +53,19 @@ export default function createVertexClaude(ctx, opts = {}) {
           output_config: { format: { type: 'json_schema', schema: envelopeSchema(schema) } },
           messages: [{ role: 'user', content: buildPrompt(task, input) }],
         });
-        if (res?.stop_reason === 'refusal') return { refusal: true };
+        seen = res;
+        if (res?.stop_reason === 'refusal') return { refusal: true, ...(usageOf(res) ? { usage: usageOf(res) } : {}) };
         const text = (res?.content ?? []).filter((b) => b?.type === 'text').map((b) => b.text).join('');
         const parsed = parseEnvelope(text);
         return {
           ...parsed,
-          usage: { inputTokens: res.usage?.input_tokens ?? 0, outputTokens: res.usage?.output_tokens ?? 0 },
+          usage: usageOf(res) ?? { inputTokens: 0, outputTokens: 0 },
           model: res.model ?? useModel,
         };
       } catch (e) {
         ctx?.log?.debug?.('vertex-claude failed', { error: String(e?.message ?? e).slice(0, 160) });
-        return { refusal: true, error: String(e?.message ?? e).slice(0, 160) };
+        const usage = usageOf(seen);
+        return { refusal: true, error: String(e?.message ?? e).slice(0, 160), ...(usage ? { usage } : {}) };
       }
     },
   };

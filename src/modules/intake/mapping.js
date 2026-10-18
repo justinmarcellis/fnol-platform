@@ -127,17 +127,22 @@ function vehicleIds(input, answers, questions) {
 
 function pickVehicle(snapshot, ids) {
   const list = Array.isArray(snapshot.vehicles) ? snapshot.vehicles : [];
+  // A picked unit id (insured_vehicle picker) wins over a VIN that may have been typed or prefilled.
+  if (ids.units.size) {
+    const byUnit = list.find((pv) => norm(pv.unitId) && ids.units.has(norm(pv.unitId)));
+    if (byUnit) return byUnit;
+  }
   if (ids.any) return list.find((pv) => (norm(pv.vin) && ids.vins.has(norm(pv.vin))) || (norm(pv.unitId) && ids.units.has(norm(pv.unitId)))) ?? null;
   return list.length === 1 ? list[0] : null; // no identifier given: a single-vehicle policy identifies itself
 }
 
-function applyVehicle(out, pv) {
+function applyVehicle(out, pv, picked = false) {
   const vehicles = out.vehicles ?? [];
   let entry = vehicles.find((v) => !v.role || v.role === 'insured');
   if (!entry) { entry = { role: 'insured' }; vehicles.push(entry); }
   entry.role = 'insured';
   if (pv.vin) entry.vin = pv.vin;
-  for (const k of ['year', 'make', 'model']) if (entry[k] === undefined && pv[k] !== undefined) entry[k] = pv[k];
+  for (const k of ['year', 'make', 'model']) if ((picked || entry[k] === undefined) && pv[k] !== undefined) entry[k] = pv[k]; // a picked unit's policy data wins
   entry.policyVehicleId = pv.unitId;
   out.vehicles = vehicles;
 }
@@ -175,7 +180,7 @@ function applyProperty(out, loc) {
  * policy number, no snapshot, or no match, the input is returned unchanged. The returned object carries a
  * non-enumerable `enrichment` = { policyNumber, vehicle|property: 'matched'|'unmatched'|'skipped' }.
  * @param {object} input ClaimCreate from toClaimCreate
- * @param {{ session?: object, answers?: object, questions?: object[], getSnapshot?: (q: {policyNumber: string, asOf?: string}) => Promise<object|null>|object|null }} deps
+ * @param {{ session?: object, answers?: object, questions?: object[], getSnapshot?: (policyNumber: string, asOf?: string) => Promise<object|null>|object|null }} deps
  */
 export async function enrichClaimCreate(input, { session, answers, questions, getSnapshot } = {}) {
   const meta = { policyNumber: false, vehicle: 'skipped', property: 'skipped' };
@@ -193,12 +198,13 @@ export async function enrichClaimCreate(input, { session, answers, questions, ge
     if (typeof getSnapshot !== 'function') return setMeta(out, meta);
 
     let snapshot = null;
-    try { snapshot = await getSnapshot({ policyNumber, asOf: out.lossEvent?.lossDate }); } catch { snapshot = null; } // lookup failure is not an intake failure
+    try { snapshot = await getSnapshot(policyNumber, out.lossEvent?.lossDate); } catch { snapshot = null; } // lookup failure is not an intake failure
     if (!snapshot || typeof snapshot !== 'object') return setMeta(out, meta);
 
     if (isAutoLob(out.lob) || (!out.lob && Array.isArray(snapshot.vehicles))) {
-      const pv = pickVehicle(snapshot, vehicleIds(out, answers, questions));
-      if (pv) { applyVehicle(out, pv); meta.vehicle = 'matched'; } else meta.vehicle = 'unmatched';
+      const ids = vehicleIds(out, answers, questions);
+      const pv = pickVehicle(snapshot, ids);
+      if (pv) { applyVehicle(out, pv, ids.units.has(norm(pv.unitId))); meta.vehicle = 'matched'; } else meta.vehicle = 'unmatched';
     } else {
       const entry = (out.properties ?? []).find((p) => !p.role || p.role === 'insured_location');
       const loc = pickLocation(snapshot, entry);

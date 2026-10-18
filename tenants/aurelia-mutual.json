@@ -211,6 +211,17 @@
           "section": "loss"
         },
         {
+          "id": "insured_vehicle",
+          "text": {
+            "en": "Which vehicle on your policy was involved?",
+            "es": "Cual vehiculo de su poliza estuvo involucrado?"
+          },
+          "type": "vehicle",
+          "required": false,
+          "order": 35,
+          "section": "vehicle"
+        },
+        {
           "id": "vehicle_drivable",
           "text": {
             "en": "Can the vehicle be driven?",
@@ -360,6 +371,17 @@
           "mapsTo": "loss.injuriesReported",
           "order": 30,
           "section": "loss"
+        },
+        {
+          "id": "insured_vehicle",
+          "text": {
+            "en": "Which vehicle on your policy was involved?",
+            "es": "Cual vehiculo de su poliza estuvo involucrado?"
+          },
+          "type": "vehicle",
+          "required": false,
+          "order": 35,
+          "section": "vehicle"
         },
         {
           "id": "vehicle_drivable",

@@ -57,6 +57,7 @@ export async function bootIntakeApp({ tenants = [sampleTenant('tn-one'), sampleT
   wrap('config', path.join(root, 'src/modules/config/index.mjs'));
   wrap('rules', path.join(here, 'fakes.mjs'), 'rules');
   wrap('claims', path.join(here, 'fakes.mjs'), 'claims');
+  wrap('coverage', path.join(here, 'fakes.mjs'), 'coverage');
   const tenantsDir = path.join(dir, 'tenants');
   fs.mkdirSync(tenantsDir);
   for (const cfg of tenants) fs.writeFileSync(path.join(tenantsDir, `${cfg.tenantId}.json`), JSON.stringify(cfg));
