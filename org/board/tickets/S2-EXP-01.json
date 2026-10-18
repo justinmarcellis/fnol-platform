@@ -1,0 +1,100 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:26.107Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:07:40.123Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:14:30.284Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:26:09.942Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-EXP-01",
+  "team": "experience",
+  "title": "Adjuster first view at /adjuster",
+  "story": "REQ-15 adjuster first view with overridable AI (REQ-25)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-adjuster-view-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/web/adjuster/",
+    "tests/unit/web/adjuster/",
+    "tests/ui/adjuster.test.mjs",
+    "tests/ui/adjuster-harness.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "GET /adjuster serves the app; dev login as adjuster works",
+    "Inbox lists claims from GET adjuster inbox with severity, flag and timer-status chips",
+    "Claim view renders header, AI summary (provider/model/confidence + explain disclosure), timeline, fraud indicators, subrogation reasons, coverage summary, documents with extracted fields and confidence, regulatory timers (due/breached), next-best-action checklist, routing decision",
+    "Each fraud indicator and subrogation reason has accept/dismiss control that records a note via API (REQ-25)",
+    "node --test tests/unit/web/adjuster/*.test.mjs passes using a local fake of the adjuster view API",
+    "node --test tests/ui/adjuster.test.mjs passes (or skips cleanly without playwright): creates claim via API, opens /adjuster, logs in, sees claim summary",
+    "Does not modify files outside listed paths"
+  ],
+  "brief": "Build a vanilla-JS ES module app in src/web/adjuster/ (index.html, app.js, view modules, styles) reusing src/web/shared (api.js, devlogin.js, i18n.js, theme.js, tokens.css, components/). Read src/web/claimant for how a Sprint 1 app is wired and how createApp serves web folders (do not edit it); follow the same convention for the /adjuster mount. Use the adjuster inbox and adjuster claim-view endpoints as defined in architecture/contracts/modules.md; build pure render functions (data in, DOM/HTML string out) so unit tests can run with a small local fake payload matching the contract, without the server. Accept/dismiss posts a note and updates UI state optimistically with error rollback. Explain is a details/summary disclosure. Timers show due date and breached badge. Next best actions are checkboxes. Accessibility: labelled controls, landmarks, aria-live for status. Use only synthetic data. UI test: boot createApp on port 0 against a temp db with real tenants and modules, seed policies via ctx.forTenant(t).modules.coverage.seedPolicies(generatePolicies(...)) from tests/synthetic, create a claim through the public API, launch chromium via require('playwright') (createRequire from /opt/node-tools/node_modules), t.skip if import fails. Put the boot helper in tests/ui/adjuster-harness.mjs (own copy; other tickets have their own). Pitfall: other teams may not have finished adjuster endpoints; if a field is missing, render a graceful placeholder and post a contract-change request to the architecture hub. Run only your tests. Do not git commit.",
+  "valueDrivers": [
+    "adjuster handle time",
+    "AI transparency and override"
+  ],
+  "requirements": [
+    "REQ-15",
+    "REQ-25"
+  ],
+  "startedAt": "2026-10-18T21:07:40.123Z",
+  "doneAt": "2026-10-18T21:26:09.942Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:26:09.941Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; 24/24 tests pass incl. real Playwright smoke; in-scope paths only; fraud/subro decision workaround documented via contract-change request"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.0534,
+    "inputTokens": 64,
+    "cacheWriteTokens": 136975,
+    "cacheReadTokens": 3415780,
+    "outputTokens": 2761,
+    "agents": {
+      "aea3d50375c3c0be7": {
+        "label": "S2-EXP-01 ic-experience-adjuster-view-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 56,
+        "cacheWriteTokens": 117351,
+        "cacheReadTokens": 3195731,
+        "outputTokens": 2013,
+        "usd": 0.9528
+      },
+      "af443fd08f5b5dec1": {
+        "label": "S2-EXP-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19624,
+        "cacheReadTokens": 220049,
+        "outputTokens": 748,
+        "usd": 0.1006
+      }
+    }
+  }
+}

@@ -1,479 +1,541 @@
 [
- {
-  "op": "DELETE /integrations/webhooks/{webhookId}",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "GET /adjuster/claims/{claimId}/view",
-  "roles": [
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "adjuster",
-  "public": false
- },
- {
-  "op": "GET /adjuster/inbox",
-  "roles": [
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "adjuster",
-  "public": false
- },
- {
-  "op": "GET /audit",
-  "roles": [
-   "auditor",
-   "tenant_admin",
-   "supervisor"
-  ],
-  "module": "core",
-  "public": false
- },
- {
-  "op": "GET /auth/me",
-  "roles": [
-   "claimant",
-   "csr",
-   "adjuster",
-   "supervisor",
-   "tenant_admin",
-   "integration",
-   "auditor"
-  ],
-  "module": "core",
-  "public": false
- },
- {
-  "op": "GET /claims",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor",
-   "integration"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}",
-  "roles": [
-   "claimant",
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor",
-   "integration"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/coverage",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor"
-  ],
-  "module": "coverage",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/documents",
-  "roles": [
-   "claimant",
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor",
-   "integration"
-  ],
-  "module": "evidence",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/documents/{documentId}",
-  "roles": [
-   "claimant",
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor",
-   "integration"
-  ],
-  "module": "evidence",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/documents/{documentId}/content",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "evidence",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/documents/{documentId}/extraction",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor",
-   "integration"
-  ],
-  "module": "evidence",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/notes",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/routing",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor"
-  ],
-  "module": "rules",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/tasks",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/timers",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "auditor"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "GET /claims/{claimId}/triage",
-  "roles": [
-   "adjuster",
-   "supervisor",
-   "auditor",
-   "csr"
-  ],
-  "module": "triage",
-  "public": false
- },
- {
-  "op": "GET /config",
-  "roles": [
-   "tenant_admin",
-   "supervisor",
-   "auditor"
-  ],
-  "module": "config",
-  "public": false
- },
- {
-  "op": "GET /config/public",
-  "roles": [
-   "claimant",
-   "csr",
-   "adjuster",
-   "supervisor",
-   "tenant_admin",
-   "integration",
-   "auditor"
-  ],
-  "module": "config",
-  "public": false
- },
- {
-  "op": "GET /health",
-  "roles": [],
-  "module": "health",
-  "public": true
- },
- {
-  "op": "GET /intake/sessions/{sessionId}",
-  "roles": [
-   "claimant",
-   "csr",
-   "integration"
-  ],
-  "module": "intake",
-  "public": false
- },
- {
-  "op": "GET /intake/sessions/{sessionId}/next-question",
-  "roles": [
-   "claimant",
-   "csr",
-   "integration"
-  ],
-  "module": "intake",
-  "public": false
- },
- {
-  "op": "GET /integrations/adapters",
-  "roles": [
-   "tenant_admin",
-   "supervisor"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "GET /integrations/adapters/{adapterId}/preview/{claimId}",
-  "roles": [
-   "tenant_admin",
-   "supervisor",
-   "adjuster"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "GET /integrations/outbox",
-  "roles": [
-   "tenant_admin",
-   "auditor",
-   "integration"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "GET /integrations/webhooks",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "GET /integrations/webhooks/{webhookId}",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "GET /integrations/webhooks/{webhookId}/deliveries",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "GET /policies/{policyNumber}/snapshot",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "integration"
-  ],
-  "module": "coverage",
-  "public": false
- },
- {
-  "op": "PATCH /claims/{claimId}/tasks/{taskId}",
-  "roles": [
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "PATCH /integrations/webhooks/{webhookId}",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "POST /auth/token",
-  "roles": [],
-  "module": "core",
-  "public": true
- },
- {
-  "op": "POST /claims",
-  "roles": [
-   "integration",
-   "csr"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/coverage/verify",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor",
-   "integration"
-  ],
-  "module": "coverage",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/documents",
-  "roles": [
-   "claimant",
-   "csr",
-   "adjuster",
-   "integration"
-  ],
-  "module": "evidence",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/documents/{documentId}/extraction",
-  "roles": [
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "evidence",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/documents/{documentId}/extraction/review",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "evidence",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/notes",
-  "roles": [
-   "csr",
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/routing",
-  "roles": [
-   "supervisor",
-   "adjuster"
-  ],
-  "module": "rules",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/status",
-  "roles": [
-   "adjuster",
-   "supervisor",
-   "csr"
-  ],
-  "module": "claims",
-  "public": false
- },
- {
-  "op": "POST /claims/{claimId}/triage",
-  "roles": [
-   "adjuster",
-   "supervisor"
-  ],
-  "module": "triage",
-  "public": false
- },
- {
-  "op": "POST /config/validate",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "config",
-  "public": false
- },
- {
-  "op": "POST /intake/sessions",
-  "roles": [
-   "claimant",
-   "csr",
-   "integration"
-  ],
-  "module": "intake",
-  "public": false
- },
- {
-  "op": "POST /intake/sessions/{sessionId}/answers",
-  "roles": [
-   "claimant",
-   "csr",
-   "integration"
-  ],
-  "module": "intake",
-  "public": false
- },
- {
-  "op": "POST /intake/sessions/{sessionId}/submit",
-  "roles": [
-   "claimant",
-   "csr",
-   "integration"
-  ],
-  "module": "intake",
-  "public": false
- },
- {
-  "op": "POST /integrations/adapters/{adapterId}/push/{claimId}",
-  "roles": [
-   "tenant_admin",
-   "supervisor"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "POST /integrations/webhooks",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "integrations",
-  "public": false
- },
- {
-  "op": "PUT /config",
-  "roles": [
-   "tenant_admin"
-  ],
-  "module": "config",
-  "public": false
- }
+  {
+    "op": "DELETE /integrations/webhooks/{webhookId}",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "GET /adjuster/claims/{claimId}/view",
+    "roles": [
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "adjuster",
+    "public": false
+  },
+  {
+    "op": "GET /adjuster/inbox",
+    "roles": [
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "adjuster",
+    "public": false
+  },
+  {
+    "op": "GET /audit",
+    "roles": [
+      "auditor",
+      "tenant_admin",
+      "supervisor"
+    ],
+    "module": "core",
+    "public": false
+  },
+  {
+    "op": "GET /auth/me",
+    "roles": [
+      "claimant",
+      "csr",
+      "adjuster",
+      "supervisor",
+      "tenant_admin",
+      "integration",
+      "auditor"
+    ],
+    "module": "core",
+    "public": false
+  },
+  {
+    "op": "GET /claims",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor",
+      "integration"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}",
+    "roles": [
+      "claimant",
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor",
+      "integration"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/coverage",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "integration",
+      "auditor"
+    ],
+    "module": "coverage",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/documents",
+    "roles": [
+      "claimant",
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor",
+      "integration"
+    ],
+    "module": "evidence",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/documents/{documentId}",
+    "roles": [
+      "claimant",
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor",
+      "integration"
+    ],
+    "module": "evidence",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/documents/{documentId}/content",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "evidence",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/documents/{documentId}/extraction",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor",
+      "integration"
+    ],
+    "module": "evidence",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/notes",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/routing",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor",
+      "carrier_admin"
+    ],
+    "module": "rules",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/tasks",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/timers",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "auditor"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "GET /claims/{claimId}/triage",
+    "roles": [
+      "adjuster",
+      "supervisor",
+      "auditor",
+      "csr"
+    ],
+    "module": "triage",
+    "public": false
+  },
+  {
+    "op": "GET /config",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin",
+      "supervisor",
+      "auditor"
+    ],
+    "module": "config",
+    "public": false
+  },
+  {
+    "op": "GET /config/public",
+    "roles": [
+      "claimant",
+      "agent",
+      "csr",
+      "adjuster",
+      "supervisor",
+      "tenant_admin",
+      "carrier_admin",
+      "integration",
+      "auditor"
+    ],
+    "module": "config",
+    "public": false
+  },
+  {
+    "op": "GET /healthz",
+    "roles": [],
+    "module": "health",
+    "public": true
+  },
+  {
+    "op": "GET /intake/sessions/{sessionId}",
+    "roles": [
+      "claimant",
+      "csr",
+      "agent",
+      "integration",
+      "carrier_admin"
+    ],
+    "module": "intake",
+    "public": false
+  },
+  {
+    "op": "GET /intake/sessions/{sessionId}/next-question",
+    "roles": [
+      "claimant",
+      "csr",
+      "agent",
+      "integration",
+      "carrier_admin"
+    ],
+    "module": "intake",
+    "public": false
+  },
+  {
+    "op": "GET /integrations/adapters",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin",
+      "supervisor"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "GET /integrations/adapters/{adapterId}/preview/{claimId}",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin",
+      "supervisor",
+      "adjuster"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "GET /integrations/outbox",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin",
+      "auditor",
+      "integration"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "GET /integrations/webhooks",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "GET /integrations/webhooks/{webhookId}",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "GET /integrations/webhooks/{webhookId}/deliveries",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "GET /kpis",
+    "roles": [
+      "supervisor",
+      "tenant_admin",
+      "carrier_admin",
+      "auditor"
+    ],
+    "module": "kpi",
+    "public": false
+  },
+  {
+    "op": "GET /policies",
+    "roles": [
+      "csr",
+      "agent",
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "coverage",
+    "public": false
+  },
+  {
+    "op": "GET /policies/{policyNumber}/snapshot",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "integration"
+    ],
+    "module": "coverage",
+    "public": false
+  },
+  {
+    "op": "PATCH /claims/{claimId}/tasks/{taskId}",
+    "roles": [
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "PATCH /integrations/webhooks/{webhookId}",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "POST /auth/token",
+    "roles": [],
+    "module": "core",
+    "public": true
+  },
+  {
+    "op": "POST /claims",
+    "roles": [
+      "integration",
+      "csr"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/coverage/verify",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor",
+      "integration"
+    ],
+    "module": "coverage",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/documents",
+    "roles": [
+      "claimant",
+      "csr",
+      "adjuster",
+      "integration"
+    ],
+    "module": "evidence",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/documents/{documentId}/extraction",
+    "roles": [
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "evidence",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/documents/{documentId}/extraction/review",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "evidence",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/notes",
+    "roles": [
+      "csr",
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/routing",
+    "roles": [
+      "supervisor",
+      "adjuster",
+      "carrier_admin"
+    ],
+    "module": "rules",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/status",
+    "roles": [
+      "adjuster",
+      "supervisor",
+      "csr"
+    ],
+    "module": "claims",
+    "public": false
+  },
+  {
+    "op": "POST /claims/{claimId}/triage",
+    "roles": [
+      "adjuster",
+      "supervisor"
+    ],
+    "module": "triage",
+    "public": false
+  },
+  {
+    "op": "POST /config/validate",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "config",
+    "public": false
+  },
+  {
+    "op": "POST /intake/sessions",
+    "roles": [
+      "claimant",
+      "csr",
+      "agent",
+      "integration",
+      "carrier_admin"
+    ],
+    "module": "intake",
+    "public": false
+  },
+  {
+    "op": "POST /intake/sessions/{sessionId}/answers",
+    "roles": [
+      "claimant",
+      "csr",
+      "agent",
+      "integration",
+      "carrier_admin"
+    ],
+    "module": "intake",
+    "public": false
+  },
+  {
+    "op": "POST /intake/sessions/{sessionId}/narrative",
+    "roles": [
+      "claimant",
+      "csr",
+      "agent",
+      "integration",
+      "carrier_admin"
+    ],
+    "module": "intake",
+    "public": false
+  },
+  {
+    "op": "POST /intake/sessions/{sessionId}/submit",
+    "roles": [
+      "claimant",
+      "csr",
+      "agent",
+      "integration",
+      "carrier_admin"
+    ],
+    "module": "intake",
+    "public": false
+  },
+  {
+    "op": "POST /integrations/adapters/{adapterId}/push/{claimId}",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin",
+      "supervisor"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "POST /integrations/webhooks",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "integrations",
+    "public": false
+  },
+  {
+    "op": "PUT /config",
+    "roles": [
+      "tenant_admin",
+      "carrier_admin"
+    ],
+    "module": "config",
+    "public": false
+  }
 ]

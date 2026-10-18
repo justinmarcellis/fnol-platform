@@ -1,0 +1,185 @@
+{
+  "task": "extract_document",
+  "synthetic": true,
+  "description": "Police report and repair estimate text (synthetic). Scored on name=value fields.",
+  "cases": [
+    {
+      "id": "doc-police",
+      "input": {
+        "kind": "police_report",
+        "filename": "police-report.txt",
+        "text": "SAMPLE COUNTY SHERIFF - TRAFFIC CRASH REPORT (SYNTHETIC)\nReport No: SC-2026-004417\nDate of Loss: 2026-03-09\nLocation: Main St and 4th Ave, Fairhaven, WI\nUnit 1: 2021 Maple sedan, VIN 1HGCM82633A004352, insured driver\nUnit 2: 2019 Cedar pickup\nCited: Unit 2 - failure to keep proper lookout\nContributing factors: Unit 2 followed too closely\nDamage: rear bumper and trunk on Unit 1"
+      },
+      "expected": {
+        "fields": {
+          "policeReportNumber": "SC-2026-004417",
+          "lossDate": "2026-03-09",
+          "vin": "1HGCM82633A004352",
+          "citedParty": "Unit 2",
+          "atFaultParty": "Unit 2"
+        }
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "kind": "police_report",
+            "needsReview": false,
+            "fields": [
+              {
+                "name": "policeReportNumber",
+                "value": "SC-2026-004417",
+                "confidence": 0.97
+              },
+              {
+                "name": "lossDate",
+                "value": "2026-03-09",
+                "confidence": 0.96
+              },
+              {
+                "name": "vin",
+                "value": "1HGCM82633A004352",
+                "confidence": 0.95
+              },
+              {
+                "name": "citedParty",
+                "value": "Unit 2",
+                "confidence": 0.9
+              },
+              {
+                "name": "atFaultParty",
+                "value": "Unit 2",
+                "confidence": 0.85
+              }
+            ]
+          },
+          "confidence": 0.93,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "doc-estimate",
+      "input": {
+        "kind": "estimate",
+        "filename": "repair-estimate.txt",
+        "text": "LAKESIDE COLLISION REPAIR - ESTIMATE (SYNTHETIC)\nRepair Shop: Lakeside Collision Center\nDate: 03/12/2026\nLabor: $1,240.00\nParts: $2,310.55\nPaint: $640.00\nDamage areas: rear bumper, trunk lid, left quarter panel\nEstimate Total: $4,190.55"
+      },
+      "expected": {
+        "fields": {
+          "estimateTotal": 4190.55,
+          "repairShop": "Lakeside Collision Center"
+        }
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "kind": "estimate",
+            "needsReview": false,
+            "fields": [
+              {
+                "name": "estimateTotal",
+                "value": 4190.55,
+                "confidence": 0.98
+              },
+              {
+                "name": "repairShop",
+                "value": "Lakeside Collision Center",
+                "confidence": 0.95
+              }
+            ]
+          },
+          "confidence": 0.95,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        },
+        "vertex-gemini": {
+          "output": {
+            "kind": "estimate",
+            "needsReview": true,
+            "fields": [
+              {
+                "name": "estimateTotal",
+                "value": 4190.55,
+                "confidence": 0.9
+              },
+              {
+                "name": "repairShop",
+                "value": "Lakeside Collision",
+                "confidence": 0.6
+              }
+            ]
+          },
+          "confidence": 0.75,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "doc-pii-police",
+      "input": {
+        "kind": "police_report",
+        "filename": "crash.txt",
+        "text": "SAMPLE CITY POLICE - INCIDENT REPORT (SYNTHETIC)\nReport No: SC-2026-009001\nDate of Loss: 2026-09-02\nDriver: Jordan Reyes, licence plate QWE4567, phone (555) 010-7788, SSN 123-45-6789\nCited: Unit 2"
+      },
+      "pii": [
+        "Jordan Reyes",
+        "QWE4567",
+        "(555) 010-7788",
+        "123-45-6789"
+      ],
+      "expected": {
+        "fields": {
+          "policeReportNumber": "SC-2026-009001",
+          "lossDate": "2026-09-02",
+          "citedParty": "Unit 2"
+        }
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "kind": "police_report",
+            "needsReview": false,
+            "fields": [
+              {
+                "name": "policeReportNumber",
+                "value": "SC-2026-009001",
+                "confidence": 0.95
+              },
+              {
+                "name": "lossDate",
+                "value": "2026-09-02",
+                "confidence": 0.95
+              },
+              {
+                "name": "citedParty",
+                "value": "Unit 2",
+                "confidence": 0.9
+              }
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    }
+  ]
+}

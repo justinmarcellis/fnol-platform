@@ -8,13 +8,39 @@ export function fastTrackSettings(config) {
   return { enabled: true, ...DEFAULT_FT, ...(config?.fastTrack ?? {}) };
 }
 
-/** Queue used when no rule picked one: config.defaultQueue, else the first queue serving the LOB. */
+/** Queue used by a tenant that configures no queues at all (platform default, see knownQueues). */
+export const PLATFORM_DEFAULT_QUEUE = 'general';
+
+/**
+ * Queue ids a decision may resolve to: the configured queues, or, for a tenant with no queues
+ * (a bare tenant such as the e2e-demo harness tenant), the implicit platform default and fast-track queues.
+ * @returns {string[]}
+ */
+export function knownQueues(config) {
+  const queues = config?.queues ?? [];
+  if (queues.length) return queues.map((q) => q.id);
+  return [config?.defaultQueue || PLATFORM_DEFAULT_QUEUE, fastTrackSettings(config).queue];
+}
+
+/**
+ * Queue used when no rule picked one (or a route_queue action named no queue): config.defaultQueue,
+ * else the first queue serving the LOB, else any non fast-track queue, else the platform default.
+ */
 export function defaultQueueFor(config, lob) {
   const queues = config?.queues ?? [];
   const ft = fastTrackSettings(config).queue;
-  if (config?.defaultQueue && queues.some((q) => q.id === config.defaultQueue)) return config.defaultQueue;
+  if (config?.defaultQueue && (queues.some((q) => q.id === config.defaultQueue) || !queues.length)) return config.defaultQueue;
   const forLob = queues.find((q) => q.id !== ft && (!q.lobs?.length || q.lobs.includes(lob)));
-  return (forLob ?? queues.find((q) => q.id !== ft) ?? queues[0])?.id;
+  return (forLob ?? queues.find((q) => q.id !== ft) ?? queues[0])?.id ?? PLATFORM_DEFAULT_QUEUE;
+}
+
+/**
+ * Platform default routing actions for a tenant that defines no routing-stage rules: fast track when
+ * triage marked the claim eligible (the fast-track guard still applies), otherwise the default queue.
+ * @returns {object[]} actions in the same shape the rule engine emits
+ */
+export function platformDefaultActions(triage) {
+  return triage?.fastTrackEligible === true ? [{ type: 'fast_track', ruleId: 'PLATFORM-STP-DEFAULT' }] : [];
 }
 
 /**
@@ -53,7 +79,10 @@ export function decideRouting({ actions, config, lob, triage, coverage, estimate
   let wantsFt = false;
   const denials = [];
   for (const a of actions) {
-    if (a.type === 'route_queue') { queues.push(a.queue); reasons.push(`${a.ruleId}: route to ${a.queue}`); }
+    if (a.type === 'route_queue') {
+      if (typeof a.queue === 'string' && a.queue) { queues.push(a.queue); reasons.push(`${a.ruleId}: route to ${a.queue}`); }
+      else reasons.push(`${a.ruleId}: route_queue names no queue; tenant default applies`);
+    }
     else if (a.type === 'assign_adjuster') { adjusterId = a.adjusterId; reasons.push(`${a.ruleId}: assign ${a.adjusterId}`); }
     else if (a.type === 'fast_track') { wantsFt = true; reasons.push(`${a.ruleId}: fast track requested`); }
     else if (a.type === 'deny_fast_track') { denials.push(a.reason ?? 'denied'); reasons.push(`${a.ruleId}: fast track denied (${a.reason ?? 'no reason given'})`); }

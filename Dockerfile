@@ -1,0 +1,28 @@
+# FNOL platform image for Cloud Run. Zero-dependency core; optional AI SDKs are
+# installed from package-lock.json when present.
+FROM node:22-slim
+
+ENV NODE_ENV=production \
+    PORT=8080 \
+    FNOL_DB_PATH=/data/fnol.db
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund || npm install --omit=dev --ignore-scripts --no-audit --no-fund
+
+COPY src ./src
+COPY scripts ./scripts
+
+# /data holds the SQLite file (ephemeral on Cloud Run, see docs/deployment.md);
+# /app/.secrets receives master.key from a Secret Manager volume mount.
+RUN mkdir -p /data /app/.secrets && chown -R node:node /app /data
+USER node
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+# createApp binds 127.0.0.1 unless host is passed, and Cloud Run needs 0.0.0.0.
+CMD ["node", "--disable-warning=ExperimentalWarning", "--input-type=module", "-e", "const { createApp } = await import('./src/server.mjs'); const app = await createApp({ port: Number(process.env.PORT || 8080), host: '0.0.0.0' }); console.log('FNOL platform listening on ' + app.url); for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => app.close().then(() => process.exit(0)));"]

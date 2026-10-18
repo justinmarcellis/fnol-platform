@@ -70,7 +70,15 @@
         "reason": "All criteria met; 33 unit+integration tests pass (golden A/B, preview, fake core, failure recording, once-per-event, tenant isolation)"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-003",
+        "severity": "high",
+        "summary": "Fake-core listing bypasses integration redaction",
+        "foundIn": "S2-SEC-01"
+      }
+    ]
   },
   "spend": {
     "usd": 1.1299,

@@ -87,8 +87,10 @@ export function createService(ctx) {
     // AI passes in parallel; any failure degrades to deterministic logic.
     const [sevAi, fraudAi, subAi] = await Promise.all([runAi('severity', facts), runAi('fraud_signals', facts), runAi('subrogation', facts)]);
 
-    const cfg = ctx.tenant.config?.triage ?? {};
-    const severity = computeSeverity(sevAi?.output ?? null, rules.deltas, facts, cfg.severityBands);
+    const tenantCfg = ctx.tenant.config ?? {};
+    const cfg = tenantCfg.triage ?? {};
+    // Band cut-offs: TenantConfig.severityBands (contract), legacy triage.severityBands, else 25/50/75.
+    const severity = computeSeverity(sevAi?.output ?? null, rules.deltas, facts, tenantCfg.severityBands ?? cfg.severityBands);
     const complexity = computeComplexity(facts, rules.complexity);
     const fraud = mergeFraud(deterministicIndicators(facts, cfg.fraud), fraudAi?.output ?? null, cfg.fraud);
     const subrogation = computeSubrogation(facts, subAi?.output ?? null);
@@ -112,6 +114,10 @@ export function createService(ctx) {
         subrogation: { flag: subrogation.flag, reasons: subrogation.reasons, confidence: subrogation.confidence },
         factors: severity.factors, fastTrackEligible, explanation, ai, inputsHash, createdAt: now,
       };
+      // Initial reserve suggestion: the accepted estimate total from evidence, when one exists.
+      if (typeof facts.estimateTotal === 'number' && facts.estimateTotal >= 0) {
+        doc.suggestedReserve = { amount: facts.estimateTotal, currency: 'USD' };
+      }
       ctx.db.insert('triage_results', {
         id: doc.id, claim_id: claimId, attempt, severity_score: doc.severityScore, complexity: doc.complexity,
         fraud_score: fraud.score, subrogation: subrogation.flag ? 1 : 0, doc: JSON.stringify(doc),

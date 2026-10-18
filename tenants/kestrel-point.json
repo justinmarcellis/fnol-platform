@@ -263,7 +263,7 @@
     {
       "id": "commauto-general",
       "lob": "commercial_auto",
-      "version": 1,
+      "version": 2,
       "questions": [
         {
           "id": "loss_date",
@@ -275,6 +275,13 @@
           },
           "mapsTo": "loss.lossDate",
           "order": 10,
+          "section": "loss"
+        },
+        {
+          "id": "loss_time",
+          "text": "Approximate time of loss",
+          "type": "time",
+          "order": 12,
           "section": "loss"
         },
         {
@@ -325,6 +332,36 @@
           "required": true,
           "mapsTo": "loss.injuriesReported",
           "order": 40,
+          "section": "loss"
+        },
+        {
+          "id": "police_report_number",
+          "text": "Police report number, if a report was made",
+          "type": "text",
+          "validation": {
+            "maxLength": 40
+          },
+          "order": 42,
+          "section": "loss"
+        },
+        {
+          "id": "other_party_involved",
+          "text": "Was another vehicle or party involved?",
+          "type": "boolean",
+          "required": true,
+          "order": 43,
+          "section": "loss"
+        },
+        {
+          "id": "other_party_insurer",
+          "text": "Other party insurer, if known",
+          "type": "text",
+          "showIf": {
+            "fact": "answers.other_party_involved",
+            "op": "eq",
+            "value": true
+          },
+          "order": 44,
           "section": "loss"
         },
         {
@@ -381,6 +418,18 @@
           "section": "vehicle"
         },
         {
+          "id": "unit_towed",
+          "text": "Was the unit towed from the scene?",
+          "type": "boolean",
+          "showIf": {
+            "fact": "answers.vehicle_drivable",
+            "op": "eq",
+            "value": false
+          },
+          "order": 66,
+          "section": "vehicle"
+        },
+        {
           "id": "fraud_disclosure",
           "text": "I understand that knowingly giving false information is a crime.",
           "type": "disclosure",
@@ -416,7 +465,7 @@
     },
     {
       "id": "TR-INJURY-SEV",
-      "name": "Injury raises severity",
+      "name": "Injury raises complexity (triage already scores injury severity)",
       "stage": "triage",
       "priority": 10,
       "when": {
@@ -425,10 +474,6 @@
         "value": true
       },
       "then": [
-        {
-          "type": "add_severity",
-          "points": 40
-        },
         {
           "type": "set_complexity",
           "complexity": "high"
@@ -589,6 +634,28 @@
       ]
     },
     {
+      "id": "RT-CA-NO-STP",
+      "name": "Commercial auto is never fast tracked",
+      "stage": "routing",
+      "priority": 5,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": true,
+      "then": [
+        {
+          "type": "deny_fast_track",
+          "reason": "commercial lines are never fast tracked"
+        },
+        {
+          "type": "add_flag",
+          "flag": "commercial_review"
+        }
+      ]
+    },
+    {
       "id": "RT-CA-DEFAULT",
       "name": "Commercial auto default queue",
       "stage": "routing",
@@ -603,10 +670,6 @@
         {
           "type": "route_queue",
           "queue": "commercial_auto_claims"
-        },
-        {
-          "type": "deny_fast_track",
-          "reason": "commercial lines are not fast tracked"
         }
       ]
     },
@@ -699,9 +762,11 @@
             "value": "covered"
           },
           {
-            "fact": "answers.prior_damage",
-            "op": "eq",
-            "value": false
+            "not": {
+              "fact": "answers.prior_damage",
+              "op": "eq",
+              "value": true
+            }
           }
         ]
       },
@@ -744,6 +809,45 @@
             "title": "Check third-party recovery",
             "dueInHours": 96,
             "queue": "personal_auto_claims"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PR-SUBRO-CA",
+      "name": "Fleet collision: third-party recovery review",
+      "stage": "post_routing",
+      "priority": 10,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": {
+        "all": [
+          {
+            "fact": "loss.cause",
+            "op": "in",
+            "value": [
+              "collision",
+              "hit_and_run"
+            ]
+          },
+          {
+            "fact": "triage.subrogation.flag",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "then": [
+        {
+          "type": "add_task",
+          "task": {
+            "type": "subrogation_review",
+            "title": "Review fleet third-party recovery",
+            "dueInHours": 48,
+            "queue": "commercial_auto_claims"
           }
         }
       ]
@@ -863,9 +967,9 @@
     "queue": "fast_track"
   },
   "severityBands": {
-    "moderate": 20,
-    "major": 45,
-    "severe": 70
+    "moderate": 25,
+    "major": 50,
+    "severe": 75
   },
   "timers": [
     {

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carrier admin console</title>
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/components.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <a class="fx-btn skip" href="#main" id="skip">Skip to main content</a>
+  <header class="bar">
+    <h1 id="title">Carrier admin console</h1>
+    <span id="whoami" class="muted" aria-live="polite"></span>
+    <button type="button" class="fx-btn secondary small" id="signout" hidden>Sign out</button>
+  </header>
+  <fx-toast id="toast"></fx-toast>
+  <main id="main" tabindex="-1">
+    <section id="dev-panel" hidden aria-labelledby="dev-h">
+      <h2 id="dev-h">Developer sign-in</h2>
+      <form id="dev-form">
+        <p><label for="dev-tenant">Tenant</label>
+          <select id="dev-tenant" name="tenant"><option value="aurelia-mutual">aurelia-mutual</option><option value="kestrel-point">kestrel-point</option></select></p>
+        <p class="muted">Signs in with the tenant_admin role.</p>
+        <button class="fx-btn" type="submit" id="dev-go">Sign in as tenant admin</button>
+      </form>
+    </section>
+    <section id="no-login" hidden><h2>Sign in required</h2><p>Open this console from your carrier identity provider. Developer sign-in is available only on localhost.</p></section>
+
+    <section id="unavailable" role="alert" hidden>
+      <h2>Service unavailable</h2>
+      <p id="un-body">The configuration service did not respond. Nothing was changed.</p>
+      <button class="fx-btn" type="button" id="un-retry">Retry</button>
+    </section>
+
+    <section id="conflict" role="alert" hidden>
+      <h2>Configuration changed elsewhere</h2>
+      <p id="conflict-body"></p>
+      <button class="fx-btn" type="button" id="conflict-reload">Discard my edits and reload</button>
+    </section>
+
+    <section id="console" hidden aria-label="Configuration editor">
+      <div class="toolbar">
+        <span id="version-label" class="chip" role="status"></span>
+        <span id="dirty-label" class="muted" role="status"></span>
+        <button class="fx-btn secondary" type="button" id="validate">Validate</button>
+        <button class="fx-btn" type="button" id="save">Validate and save</button>
+        <button class="fx-btn secondary" type="button" id="revert">Revert edits</button>
+      </div>
+      <div id="summary" tabindex="-1"></div>
+      <div id="tabs" role="tablist" aria-label="Configuration sections"></div>
+      <div id="panel" role="tabpanel" aria-live="polite"></div>
+    </section>
+  </main>
+  <script type="module" src="/admin/app.js"></script>
+</body>
+</html>

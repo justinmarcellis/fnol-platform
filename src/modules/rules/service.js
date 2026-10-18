@@ -2,7 +2,7 @@
 // Rules are read from the live tenant config on every call, so rule changes apply without a restart.
 import { evaluateCondition } from './condition.js';
 import { filterRules, runRules, validateRules } from './engine.js';
-import { decideRouting } from './routing.js';
+import { decideRouting, knownQueues, platformDefaultActions } from './routing.js';
 
 const SYSTEM_ACTOR = { type: 'system', id: 'rules-engine' };
 const OVERRIDE_ROLES = ['supervisor', 'carrier_admin', 'platform_admin'];
@@ -177,16 +177,20 @@ export function createService(ctx) {
     const ftQueue = config.fastTrack?.queue ?? 'fast_track';
     const fastTrack = override.fastTrack === true;
     const queue = override.queue ?? (fastTrack ? ftQueue : claim.routing?.queue ?? queues.find((q) => q.id !== ftQueue)?.id);
-    if (!queues.some((q) => q.id === queue)) throw new ctx.AppError('unknown_queue', `Queue "${queue}" is not configured`, 422);
+    if (!knownQueues(config).includes(queue)) throw new ctx.AppError('unknown_queue', `Queue "${queue}" is not configured`, 422);
     return { queue, adjusterId: override.adjusterId, fastTrack, reasons: [`supervisor override: ${override.reason.trim()}`], actions: [], ruleIds: [] };
   }
 
   async function rulesProposal(inputs, facts, config) {
     const routing = await evaluate({ stage: 'routing', facts });
+    // A tenant with no routing-stage rules at all gets the platform default (triage-eligible fast track, default queue).
+    const hasRoutingRules = (config.rules ?? []).some((r) => r?.stage === 'routing' && r.enabled !== false);
+    const defaults = hasRoutingRules ? [] : platformDefaultActions(inputs.triage);
+    if (defaults.length) routing.fired.push(...defaults.map((a) => ({ ruleId: a.ruleId, actions: [a] })));
     const estimate = inputs.triage?.suggestedReserve
       ?? (typeof facts.answers?.estimated_damage === 'number' ? { amount: facts.answers.estimated_damage } : undefined);
-    const d = decideRouting({ actions: routing.actions, config, lob: inputs.claim.lob, triage: inputs.triage, coverage: inputs.coverage, estimate });
-    if (!d.queue || !(config.queues ?? []).some((q) => q.id === d.queue)) {
+    const d = decideRouting({ actions: [...routing.actions, ...defaults], config, lob: inputs.claim.lob, triage: inputs.triage, coverage: inputs.coverage, estimate });
+    if (!d.queue || !knownQueues(config).includes(d.queue)) {
       throw new ctx.AppError('routing_misconfigured', `Routing resolved to unknown queue "${d.queue}"`, 422);
     }
     const afterFacts = { ...facts, claim: { ...facts.claim, queue: d.queue } };
@@ -221,7 +225,7 @@ export function createService(ctx) {
     const outcome = p.fastTrack ? 'fast_tracked' : 'assigned';
     if (auto && prior && prior.queue === p.queue && Boolean(prior.fast_track) === p.fastTrack && !override) return rowToDecision(prior);
 
-    const queueDef = config.queues.find((q) => q.id === p.queue);
+    const queueDef = (config.queues ?? []).find((q) => q.id === p.queue);
     const decision = ctx.db.transaction(() => {
       const adjusterId = p.adjusterId ?? pickAdjuster(queueDef);
       const id = ctx.db.id('rte');

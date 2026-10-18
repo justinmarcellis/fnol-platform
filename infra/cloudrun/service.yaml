@@ -1,0 +1,80 @@
+# Cloud Run (Knative serving v1) service for the FNOL platform, dev environment.
+# Project jmfnol-app-dev (infra/2-env). Not applied; see docs/deployment.md.
+# Secrets come only from Secret Manager references; never put values in this file.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: fnol-platform
+  labels:
+    app: fnol-platform
+    env: dev
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        # SQLite on local disk is single-writer: keep one instance (PoC).
+        autoscaling.knative.dev/maxScale: "1"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/vpc-access-egress: private-ranges-only
+    spec:
+      # Runtime SA created in infra/2-env/identities.tf (account_id fnol-intake-api).
+      serviceAccountName: fnol-intake-api@jmfnol-app-dev.iam.gserviceaccount.com
+      containerConcurrency: 80
+      timeoutSeconds: 60
+      containers:
+        - name: fnol-platform
+          image: us-central1-docker.pkg.dev/jmfnol-cicd/fnol/fnol-platform:latest
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: LOG_LEVEL
+              value: info
+            - name: FNOL_DB_PATH
+              value: /data/fnol.db
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: pii-master-key
+              mountPath: /app/.secrets
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 20
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 512Mi
+        # Secret Manager secret in jmfnol-sec-dev holding the 32-byte master key,
+        # exposed as the file master.key that src/core/crypto.mjs reads.
+        - name: pii-master-key
+          secret:
+            secretName: projects/jmfnol-sec-dev/secrets/fnol-pii-master-key
+            items:
+              - key: latest
+                path: master.key
+                mode: 256
+  traffic:
+    - percent: 100
+      latestRevision: true

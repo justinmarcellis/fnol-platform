@@ -163,4 +163,46 @@ export const policies = [
     vehicles: [{ unitId: 'V1', vin: '1FNOL00000F600007', year: 2023, make: 'Fabrikam', model: 'Roadster', garagingPostalCode: '60614',
       coverages: [{ code: 'COLL', deductible: usd(500) }, { code: 'COMP', deductible: usd(500) }] }],
   },
+  {
+    // Commercial fleet: three scheduled units (one trailer), HNOA liability, no cargo endorsement.
+    policyNumber: 'CAU-300001',
+    lob: 'commercial_auto',
+    status: 'in_force',
+    period: term('2026-01-01', '2027-01-01'),
+    ratingState: 'IL',
+    namedInsureds: [{ name: 'Northwind Haulage Example LLC', lastName: 'Northwind', relation: 'primary', phone: '555-010-0301' }],
+    drivers: [],
+    coverages: [
+      ...autoCoverages(),
+      { code: 'HNOA', description: 'Hired and non-owned auto liability', limitPerOccurrence: usd(1000000) },
+    ],
+    vehicles: [
+      { unitId: 'F1', unitType: 'power_unit', vin: '1FNOL00000G300011', year: 2022, make: 'Fabrikam', model: 'Hauler 450', garagingPostalCode: '60638',
+        coverages: [{ code: 'COLL', deductible: usd(2500) }, { code: 'COMP', deductible: usd(1000) }] },
+      { unitId: 'F2', unitType: 'power_unit', vin: '1FNOL00000G300012', year: 2020, make: 'Fabrikam', model: 'Hauler 450', garagingPostalCode: '60638',
+        coverages: [{ code: 'COLL', deductible: usd(2500) }, { code: 'COMP', deductible: usd(1000) }] },
+      { unitId: 'F3', unitType: 'trailer', vin: '1FNOL00000G300013', year: 2019, make: 'Contoso', model: 'Box Trailer 53', garagingPostalCode: '60638',
+        coverages: [{ code: 'COLL', deductible: usd(1500) }], removedDate: '2026-08-01' },
+    ],
+    endorsements: [],
+  },
+  {
+    // Commercial fleet with the motor truck cargo endorsement; no HNOA purchased.
+    policyNumber: 'CAU-300002',
+    lob: 'commercial_auto',
+    status: 'in_force',
+    period: term('2026-02-01', '2027-02-01'),
+    ratingState: 'WI',
+    namedInsureds: [{ name: 'Lakeshore Freight Sample Inc', lastName: 'Lakeshore', relation: 'primary', phone: '555-010-0302' }],
+    drivers: [],
+    coverages: [
+      ...autoCoverages(),
+      { code: 'CARGO', description: 'Motor truck cargo', limit: usd(100000), deductible: usd(2500) },
+    ],
+    vehicles: [
+      { unitId: 'F1', unitType: 'power_unit', vin: '1FNOL00000H400021', year: 2023, make: 'Contoso', model: 'Freightline', garagingPostalCode: '53203',
+        coverages: [{ code: 'COLL', deductible: usd(3000) }, { code: 'COMP', deductible: usd(1000) }] },
+    ],
+    endorsements: [{ code: 'CARGO', description: 'Motor truck cargo endorsement' }],
+  },
 ];

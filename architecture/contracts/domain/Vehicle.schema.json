@@ -26,7 +26,8 @@
         "insured",
         "third_party",
         "non_owned",
-        "rental"
+        "rental",
+        "hired"
       ]
     },
     "vin": {
@@ -103,6 +104,16 @@
     },
     "provenance": {
       "$ref": "common.schema.json#/$defs/FieldProvenance"
+    },
+    "ownership": {
+      "type": "string",
+      "enum": [
+        "owned",
+        "leased",
+        "hired",
+        "non_owned"
+      ],
+      "description": "Added 1.2.0 (commercial_auto). hired and non_owned vehicles are matched against HNOA coverage instead of the fleet schedule."
     }
   }
 }

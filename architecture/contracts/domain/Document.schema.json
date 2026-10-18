@@ -171,6 +171,10 @@
         },
         "completedAt": {
           "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "needsReview": {
+          "type": "boolean",
+          "description": "Added 1.2.0. True when a person must review: unreadable PDF, low-confidence photo, no fields found, or extraction failed. Usually paired with status partial (or skipped/failed)."
         }
       }
     }

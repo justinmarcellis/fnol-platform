@@ -1,6 +1,6 @@
 // Evidence service (modules.md#evidence). ctx is tenant-bound. Never logs bytes or extracted PII.
 import crypto from 'node:crypto';
-import { KINDS, MAX_BYTES, ALLOWED_TYPES, baseType, readableText, detectKind } from './parse.mjs';
+import { KINDS, DEFAULT_MAX_BYTES, ALLOWED_TYPES, baseType, readableText, detectKind, sniffContentType } from './parse.mjs';
 import { blobKey, putBlob, getBlob } from './blobs.mjs';
 
 const TEXT_CAP = 20000;
@@ -17,6 +17,12 @@ const clamp = (n) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
 export function createService(ctx) {
   const AppError = ctx.AppError;
   const tid = () => ctx.tenant.id;
+
+  /** Per-tenant upload cap: config.evidence.maxUploadBytes (positive integer), else 10 MB. */
+  function maxUploadBytes() {
+    const v = ctx.tenant?.config?.evidence?.maxUploadBytes;
+    return Number.isInteger(v) && v > 0 ? v : DEFAULT_MAX_BYTES;
+  }
 
   function rowToDoc(row) {
     const d = ctx.db.parseJson(row.doc, {});
@@ -62,9 +68,12 @@ export function createService(ctx) {
     async addDocument(claimId, { kind, filename, contentType, bytes, source, metadata, description } = {}, { actor } = {}) {
       await assertClaim(claimId);
       if (!Buffer.isBuffer(bytes) || bytes.length === 0) throw new AppError('validation_error', 'File content is empty', 400);
-      if (bytes.length > MAX_BYTES) throw new AppError('payload_too_large', `File exceeds ${MAX_BYTES} bytes`, 413);
+      const limit = maxUploadBytes();
+      if (bytes.length > limit) throw new AppError('payload_too_large', `File exceeds ${limit} bytes`, 413);
       const ct = baseType(contentType);
       if (!ALLOWED_TYPES.includes(ct)) throw new AppError('unsupported_media_type', `Content type not allowed: ${ct || 'none'}`, 415);
+      const sniffed = sniffContentType(bytes);
+      if (sniffed !== ct) throw new AppError('unsupported_media_type', `Content does not match declared type ${ct}`, 415);
       if (kind && !KINDS.includes(kind)) throw new AppError('validation_error', `kind must be one of ${KINDS.join(', ')}`, 400);
       if (metadata !== undefined && (metadata === null || typeof metadata !== 'object' || Array.isArray(metadata))) {
         throw new AppError('validation_error', 'metadata must be an object', 400);

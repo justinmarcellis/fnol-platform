@@ -5,3 +5,4 @@
 {"at":"2026-10-18T20:56:52.014Z","hub":"pmo","type":"handoff","text":"sprint.mjs plan/close and dashboard upgrades (review/retro, improvements, scorecards, tier mix, VD panel) ready; 28 tests pass","from":"ic-pmo-dashboard-dev","ticket":"S1-PMO-02","link":"org/sprint.mjs"}
 {"at":"2026-10-18T21:04:42.901Z","hub":"pmo","type":"status","from":"mgr-pmo","text":"Sprint 1 closed: 166/166 pts, $20.54, 8.1 pts/$, tests 696/757 (e2e calibration open)"}
 {"at":"2026-10-18T21:05:56.022Z","hub":"pmo","type":"status","from":"ceo","text":"Sprint 2 planning started"}
+{"at":"2026-10-18T21:29:53.619Z","hub":"pmo","type":"status","from":"mgr-pmo","text":"Sprint 2 closed: all tickets done, tests 948/948 runnable green, 7 security highs + 4 UI defects carried to Sprint 3"}

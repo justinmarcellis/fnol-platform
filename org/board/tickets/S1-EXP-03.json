@@ -66,7 +66,15 @@
         "reason": "All criteria met; 20/20 tests pass; csr_phone channel (enum has no 'csr') and snapshot-lookup search documented via contract-change; no innerHTML/console, dev panel gated. Note: UI never browser-run."
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-7",
+        "severity": "high",
+        "summary": "CSR disclosure question sends string, server requires boolean: CSRs cannot finish personal_auto intakes",
+        "foundIn": "S2-EXP-03"
+      }
+    ]
   },
   "spend": {
     "usd": 0.6652,

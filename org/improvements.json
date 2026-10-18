@@ -50,7 +50,10 @@
     "metric": "defects found after acceptance per sprint",
     "before": 2,
     "target": 0,
-    "status": "active"
+    "status": "done",
+    "after": 0,
+    "result": "kept",
+    "note": "No defects found after acceptance for Sprint 2 pipeline tickets so far; the 11 found this sprint were Sprint 1 escapes"
   },
   {
     "id": "IMP-5",
@@ -61,7 +64,10 @@
     "metric": "open contract-change requests at sprint close",
     "before": 17,
     "target": 0,
-    "status": "active"
+    "status": "done",
+    "after": 0,
+    "result": "kept",
+    "note": "25/25 contract-change messages answered within the sprint"
   },
   {
     "id": "IMP-6",
@@ -72,6 +78,42 @@
     "metric": "experience first-pass acceptance",
     "before": 0.75,
     "target": 1,
+    "status": "done",
+    "after": 1,
+    "result": "kept",
+    "note": "Experience first-pass acceptance 3/3 with Playwright gate; also caught 4 escaped Sprint 1 defects"
+  },
+  {
+    "id": "IMP-7",
+    "sprint": 3,
+    "area": "review",
+    "hypothesis": "Reviewers must record the verdict themselves; the workflow script also records it from the structured verdict when missing",
+    "owner": "dir-pmo",
+    "metric": "tickets with structured verdict but no fabric review",
+    "before": 1,
+    "target": 0,
+    "status": "active"
+  },
+  {
+    "id": "IMP-8",
+    "sprint": 3,
+    "area": "ownership",
+    "hypothesis": "Contract-version-sensitive tests read the version from openapi.yaml instead of hard-coding it, so contract bumps do not break other teams",
+    "owner": "dir-quality",
+    "metric": "tests broken by a contract bump",
+    "before": 2,
+    "target": 0,
+    "status": "active"
+  },
+  {
+    "id": "IMP-9",
+    "sprint": 3,
+    "area": "security",
+    "hypothesis": "A security reviewer agent runs on every module ticket at mid tier, cutting security escapes to zero",
+    "owner": "dir-security",
+    "metric": "high security findings discovered after acceptance",
+    "before": 7,
+    "target": 0,
     "status": "active"
   }
 ]

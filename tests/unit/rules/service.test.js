@@ -34,10 +34,15 @@ test('validateRules is callable by config through ctx.modules.rules', () => {
 test('evaluate({stage}) fires triage rules from facts and reports a trace', async () => {
   const facts = { claim: { lob: 'personal_auto' }, loss: { injuriesReported: true, cause: 'collision' }, answers: { vehicle_drivable: false } };
   const out = await app.rules().evaluate({ stage: 'triage', facts });
-  assert.deepEqual(out.fired.map((f) => f.ruleId), ['TR-INJURY-SEV', 'TR-NOT-DRIVABLE']);
-  assert.deepEqual(out.actions.filter((a) => a.type === 'add_severity').map((a) => a.points), [35, 15]);
-  assert.equal(out.trace.length, 2);
+  assert.deepEqual(out.fired.map((f) => f.ruleId), ['TR-INJURY-SEV']);
+  // ADR-003: injury and drivability are scored by triage itself, so tenant rules no longer add severity for them.
+  assert.deepEqual(out.actions.filter((a) => a.type === 'add_severity'), []);
+  assert.deepEqual(out.actions.filter((a) => a.type === 'set_complexity').map((a) => a.complexity), ['high']);
+  assert.equal(out.trace.length, 1);
   assert.ok(out.trace.every((t) => t.matched && t.leaves.length));
+  const k = await app.rules('kestrel').evaluate({ stage: 'triage', facts: { ...facts, answers: { prior_damage: true } } });
+  assert.deepEqual(k.fired.map((f) => f.ruleId), ['TR-INJURY-SEV', 'TR-PRIOR-DAMAGE']);
+  assert.deepEqual(k.actions.filter((a) => a.type === 'add_severity').map((a) => a.points), [10], 'tenant-specific escalations keep add_severity');
   const home = await app.rules().evaluate({ stage: 'triage', facts: { claim: { lob: 'homeowners' }, loss: { injuriesReported: false }, answers: { home_livable: false } } });
   assert.deepEqual(home.fired.map((f) => f.ruleId), ['TR-HOME-UNLIVABLE'], 'appliesTo.lobs filters rules');
 });

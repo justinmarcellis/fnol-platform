@@ -6,15 +6,57 @@
   "tier": "mid",
   "owner": "mgr-integrations",
   "reviewer": "ceo",
-  "status": "ready",
+  "status": "done",
   "sprint": 2,
   "dependsOn": [],
   "createdAt": "2026-10-18T21:05:56.019Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-18T21:07:18.936Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:27:17.847Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "paths": [
     "org/board/tickets/"
   ],
   "acceptance": [
     "Disjoint, parallel, testable tickets"
-  ]
+  ],
+  "spend": {
+    "usd": 0.1411,
+    "inputTokens": 12,
+    "cacheWriteTokens": 24188,
+    "cacheReadTokens": 351753,
+    "outputTokens": 1026,
+    "agents": {
+      "a727ff1243f52be2f": {
+        "label": "S2-ARC-00 mgr-integrations planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 24188,
+        "cacheReadTokens": 351753,
+        "outputTokens": 1026,
+        "usd": 0.1411
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:27:17.847Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:27:17.846Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
 }

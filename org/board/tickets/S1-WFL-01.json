@@ -67,7 +67,15 @@
         "reason": "All criteria met; 53/53 config tests pass; routes, event/audit, tenant differentiation, synthetic data verified. Nit: validator test file is .mjs not .js."
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-2",
+        "severity": "medium",
+        "summary": "Demo tenant STP rules did not fast-track glass and home water < $2,500 as specified",
+        "foundIn": "S2-ITG-01"
+      }
+    ]
   },
   "spend": {
     "usd": 0.8828,

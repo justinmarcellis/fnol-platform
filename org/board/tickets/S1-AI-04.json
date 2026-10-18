@@ -69,7 +69,15 @@
         "reason": "All criteria met; 27/27 triage tests pass; routes/roles match openapi; events PII-free; only additive subrogation.confidence (contract-change posted)"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-1",
+        "severity": "medium",
+        "summary": "Triage double-counted injury (AI score + tenant add_severity) and ignored drivability/habitability: severity off by one band",
+        "foundIn": "S2-ITG-01"
+      }
+    ]
   },
   "spend": {
     "usd": 0.9152,

@@ -6,15 +6,57 @@
   "tier": "mid",
   "owner": "mgr-quality",
   "reviewer": "ceo",
-  "status": "ready",
+  "status": "done",
   "sprint": 2,
   "dependsOn": [],
   "createdAt": "2026-10-18T21:05:56.019Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-18T21:07:10.451Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:27:18.007Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "paths": [
     "org/board/tickets/"
   ],
   "acceptance": [
     "Disjoint, parallel, testable tickets"
-  ]
+  ],
+  "spend": {
+    "usd": 0.1967,
+    "inputTokens": 8,
+    "cacheWriteTokens": 61113,
+    "cacheReadTokens": 174194,
+    "outputTokens": 910,
+    "agents": {
+      "a12815db8810b50a6": {
+        "label": "S2-ITG-00 mgr-quality planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 61113,
+        "cacheReadTokens": 174194,
+        "outputTokens": 910,
+        "usd": 0.1967
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:27:18.007Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:27:18.007Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
 }

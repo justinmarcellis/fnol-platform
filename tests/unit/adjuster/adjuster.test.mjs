@@ -13,8 +13,10 @@ const root = path.resolve(here, '../../..');
 const adjusterEntry = pathToFileURL(path.join(root, 'src/modules/adjuster/index.mjs')).href;
 const fakesUrl = pathToFileURL(path.join(here, 'fakes.mjs')).href;
 const viewSchema = JSON.parse(fs.readFileSync(path.join(root, 'architecture/contracts/domain/AdjusterView.schema.json'), 'utf8'));
+// `timestamps` is an additive field not yet in AdjusterView.schema.json (contract-change requested); validate the rest.
 const assertValid = (doc) => {
-  const r = validate(viewSchema, doc, { resolve: fileResolver() });
+  const { timestamps: _t, ...rest } = doc;
+  const r = validate(viewSchema, rest, { resolve: fileResolver() });
   assert.deepEqual(r.errors, []);
 };
 
@@ -182,4 +184,41 @@ test('routes: roles, inbox mine/queue, view, 404, tenant isolation', async () =>
   assertValid(view.json);
   assert.equal((await get('/api/v1/adjuster/claims/clm_nope/view', tok(['supervisor']))).status, 404);
   assert.equal((await get(`/api/v1/adjuster/claims/${CLAIM_ID}/view`, tok(['adjuster'], 'beta'))).status, 404);
+});
+
+test('view includes reportedAt, acknowledgedAt and assignedAt', async () => {
+  seedClaim();
+  put('timers', 'alpha', CLAIM_ID, [{ id: 'tmr_00000000000000000002', tenantId: 'alpha', claimId: CLAIM_ID, state: 'WI', kind: 'acknowledge', status: 'met', startedAt: TS, dueAt: TS, metAt: '2026-09-16T10:05:00.000Z' }]);
+  put('routing', 'alpha', CLAIM_ID, { id: 'rte_00000000000000000001', tenantId: 'alpha', claimId: CLAIM_ID, outcome: 'assigned', queue: 'auto-std', fastTrack: false, ruleIds: [], decidedAt: '2026-09-16T10:10:00.000Z' });
+  const v = await adj().getFirstView(CLAIM_ID);
+  assert.deepEqual(v.timestamps, { reportedAt: TS, acknowledgedAt: '2026-09-16T10:05:00.000Z', assignedAt: '2026-09-16T10:10:00.000Z' });
+  // a claim.acknowledged event wins over the timer; unrouted claims have no assignedAt
+  put('routing', 'alpha', CLAIM_ID, { outcome: 'pending', queue: 'q' });
+  app.ctx.bus.publish('alpha', 'claim.acknowledged', CLAIM_ID, { claimId: CLAIM_ID });
+  await app.ctx.bus.drain();
+  const v2 = await adj().getFirstView(CLAIM_ID);
+  assert.ok(v2.timestamps.acknowledgedAt && v2.timestamps.acknowledgedAt !== '2026-09-16T10:05:00.000Z');
+  assert.equal(v2.timestamps.assignedAt, undefined);
+  assert.equal(v2.timestamps.reportedAt, TS);
+});
+
+test('summary cites the facts used via citedFacts and text, without extra AI calls', async () => {
+  seedClaim();
+  const v = await adj().getFirstView(CLAIM_ID);
+  assert.ok(Array.isArray(v.summary.citedFacts) && v.summary.citedFacts.length > 0);
+  const byName = Object.fromEntries(v.summary.citedFacts.map((f) => [f.name, f.value]));
+  assert.equal(byName.lossCause, 'collision'); // mentioned in the summary text
+  assert.equal(byName.coverageOutcome, 'covered'); // bullet "Covered"
+  assert.match(v.summary.text, /Facts used: .*lossCause=collision/);
+  assert.equal(aiCalls.filter((c) => c.task === 'summarize').length, 1);
+  assert.ok(!('claimNumber' in byName) || typeof byName.claimNumber === 'string');
+});
+
+test('projection handlers log and return for events without a claim, never throw', async () => {
+  app.ctx.bus.publish('alpha', 'claim.triaged', 'clm_none', {});
+  app.ctx.bus.publish('alpha', 'claim.routed', 'clm_none', { claimId: 'clm_x', queue: null, outcome: undefined, adjusterId: { bad: true } });
+  await app.ctx.bus.drain();
+  const rows = app.ctx.bus.outbox('alpha').filter((r) => r.subject === 'clm_none');
+  assert.equal(rows.length, 2);
+  assert.ok(rows.every((r) => r.status === 'delivered'), JSON.stringify(rows.map((r) => r.last_error)));
 });

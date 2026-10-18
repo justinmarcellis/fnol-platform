@@ -1,4 +1,5 @@
 // Cascade router: provider order, per-task confidence thresholds, hard escalation, fallback to local.
+import { guard } from './guardrails.mjs';
 import { hasRequiredShape, schemaFor, TASKS } from './schemas.mjs';
 
 const KNOWN = ['local', 'vertex-claude', 'vertex-gemini'];
@@ -69,7 +70,10 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
         try {
           const mod = await import(`./providers/${name}.mjs`);
           const make = mod.default ?? mod.createProvider;
-          return typeof make === 'function' ? await make(ctx, {}) : make ?? null;
+          const provider = typeof make === 'function' ? await make(ctx, {}) : make ?? null;
+          // Every real provider runs behind the guardrails (injection stripping, PII redaction
+          // for cloud providers, output validation). Injected test providers are left as given.
+          return provider ? guard(provider) : null;
         } catch (e) {
           ctx.log?.debug?.('ai provider not loadable', { provider: name, error: e.message });
           return null;

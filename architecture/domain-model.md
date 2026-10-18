@@ -1,6 +1,6 @@
 # Domain model
 
-Status: v1.0.0 · Owner: dir-architecture · Schemas: `architecture/contracts/domain/*.schema.json` (JSON Schema 2020-12, `$id` base `https://contracts.fnol-platform.example/domain/`)
+Status: v1.2.0 (additive over v1.0.0, S2-ARC-01) · Owner: dir-architecture · Schemas: `architecture/contracts/domain/*.schema.json` (JSON Schema 2020-12, `$id` base `https://contracts.fnol-platform.example/domain/`)
 
 ## 1. Entities at a glance
 
@@ -54,28 +54,30 @@ classDiagram
 | --- | --- | --- | --- |
 | `common.schema.json` | shared `$defs` | architecture | Id, TenantId, Timestamp, Money, Address, Location, LossCause, Channel, Role, AiProvenance, FieldProvenance, Actor, I18nText, **Condition** |
 | `Claim.schema.json` | Claim | claims | Embeds LossEvent and, on read, parties, vehicles and properties |
-| `LossEvent.schema.json` | LossEvent | claims | Value object inside a Claim |
+| `LossEvent.schema.json` | LossEvent | claims | Value object inside a Claim. 1.2.0: `cargoInvolved` (commercial auto) |
 | `PolicySnapshot.schema.json` | PolicySnapshot | coverage | Coverages, limits, deductibles, vehicles and property, period, status |
-| `CoverageVerification.schema.json` | CoverageVerification | coverage | Added to carry the result of a coverage check |
+| `CoverageVerification.schema.json` | CoverageVerification | coverage | Added to carry the result of a coverage check. 1.1.0: `status`, `deductible`, `limits`, `applicableCoverages`; 1.2.0: commercial auto check codes |
+| `PolicySummary.schema.json` | Policy search row (1.2.0) | coverage | Masked contact only; `GET /policies?q=` |
 | `Party.schema.json` | Party | claims | Roles: insured, claimant, driver, witness, third_party, passenger (plus owner, reporter, attorney, medical_provider) |
-| `Vehicle.schema.json` / `Property.schema.json` | Vehicle / Property | claims | |
-| `Document.schema.json` | Document / media | evidence | Kinds: photo, police_report, estimate, invoice, other. Extraction with field-level confidence and provenance |
+| `Vehicle.schema.json` / `Property.schema.json` | Vehicle / Property | claims | 1.2.0: `Vehicle.ownership`, vehicle role `hired`, property role `cargo` |
+| `Document.schema.json` | Document / media | evidence | Kinds: photo, police_report, estimate, invoice, other. Extraction with field-level confidence and provenance. 1.2.0: `extraction.needsReview` |
 | `Task.schema.json`, `Note.schema.json` | Task, Note | claims | |
 | `Reserve.schema.json` | Reserve (placeholder) | claims | Suggested only; reserving stays in the core system |
-| `TriageResult.schema.json` | TriageResult | triage | |
+| `TriageResult.schema.json` | TriageResult | triage | 1.2.0: `subrogation.confidence` (0-1). Bands: section 3 |
 | `RoutingDecision.schema.json` | RoutingDecision | rules | |
 | `RegulatoryTimer.schema.json` | RegulatoryTimer | claims | |
 | `TenantConfig.schema.json` | TenantConfig | config | The COTS heart (section 3) |
 | `AuditEntry.schema.json` | AuditEntry | core | Hash-chained per tenant |
 | `IntakeSession.schema.json` | IntakeSession | intake | |
-| `AdjusterView.schema.json` | Adjuster first view (read model) | adjuster | Aggregates the entities above |
+| `AdjusterView.schema.json` | Adjuster first view (read model) | adjuster | Aggregates the entities above. 1.2.0: derived `flags`, `nextActions[]` with `priority` and `source` |
 | `WebhookSubscription.schema.json` | Webhook subscription | integrations | |
+| `Kpi.schema.json` | KPI report (1.2.0) | kpi | Metrics tied to value drivers; `GET /kpis` |
 
 ## 2. Conventions
 
 - **Ids** are prefixed opaque strings: `clm_`, `ses_`, `doc_`, `pty_`, `veh_`, `prp_`, `tsk_`, `not_`, `rsv_`, `tri_`, `rte_`, `tmr_`, `cov_`, `pol_`, `aud_`, `whk_`, `evt_`. The human-facing `claimNumber` is `<claimNumberPrefix>-<year>-<6-digit sequence>`, numbered per tenant.
 - **Every tenant-owned entity has `tenantId`.** It always comes from the token, never from client input.
-- **PII is marked `"x-pii": true`** on the property, or on the `$def` in the case of `Address`. Core encrypts these fields with the tenant key before storage (`ctx.crypto.encryptPii`), redacts them in logs and audit diffs (`"[pii]"`), and never puts them in events. PII fields include party names, DOB, phone, email, addresses, driver's licence, licence plate, the loss narrative, note bodies, injury descriptions and audit IPs. VINs are not PII (standards.md).
+- **PII is marked `"x-pii": true`** on the property, or on the `$def` in the case of `Address`. Core encrypts these fields with the tenant key before storage (`ctx.crypto.encryptPii`), redacts them in logs and audit diffs (`"[pii]"`), and never puts them in events. PII fields include party names, DOB, phone, email, addresses, driver's licence, licence plate, the loss narrative, the free-text loss location and its geo point (`Location.description`, `Location.geo`, marked in 1.2.0), note bodies, injury descriptions and audit IPs. VINs are not PII (standards.md).
 - **Money** is `{ amount, currency }` in major units, with USD as the default.
 - **Timestamps** are RFC 3339 UTC. `lossDate` is a calendar date in the loss time zone (`lossTimeZone`).
 - **AI output.** Every AI-produced value carries `AiProvenance` (`provider`, `model`, `confidence`, `tier`, ...) and, at field level, `FieldProvenance` (the source document and quoted span, plus who confirmed it). Unconfirmed AI values have `accepted: null`.
@@ -96,7 +98,7 @@ One document per tenant. The sections are listed in overview.md section 4. Key s
 | `required`, `requiredIf` | A static flag, or a Condition |
 | `showIf` | A Condition. The question is asked only when it is true |
 | `validation` | min, max, pattern, maxLength, notInFuture |
-| `mapsTo` | Domain path the answer fills, e.g. `lossEvent.lossDate` or `vehicles[role=insured].drivable` |
+| `mapsTo` | Domain path the answer fills, e.g. `lossEvent.lossDate` or `vehicles[role=insured].drivable`. The root `loss.` is accepted as an alias of `lossEvent.` (1.2.0) |
 | `pii`, `aiAssist`, `order`, `section` | |
 
 The intake engine picks the next question in `order` whose `showIf` is true and that has no answer yet. It is `done` when no question that is required (or `requiredIf` true) is left unanswered. Rules at the `intake` stage can add questions (`require_question`) or block submission (`block_submit`).
@@ -115,7 +117,11 @@ Example:
 
 **Queues** (`queues[]`): `{ id, label, lobs, skills, adjusters[], assignment: round_robin|least_loaded|manual, slaHours, maxSeverity }`, together with `defaultQueue`, `fastTrack` `{ enabled, maxSeverity, maxFraudScore, maxEstimate, queue }` and `severityBands`.
 
+**Severity bands (ADR-003).** `TriageResult.severityBand` is derived from `severityScore` (0-100) with lower-bound cut-offs: **0-24 `minor`, 25-49 `moderate`, 50-74 `major`, 75-100 `severe`**, unless the tenant overrides them with `severityBands: { moderate, major, severe }` (each the first score of that band; for example `{ "moderate": 20, "major": 45, "severe": 70 }`). The scenario `expected` values in `tests/synthetic/` are the acceptance spec: triage weights and tenant STP rules are tuned to them, and an expectation changes only with a one-line rationale in the scenario file. Fast-track limits (`fastTrack.maxSeverity`, default 25) compare against the score, not the band.
+
 **Timers** (`timers[]`): `{ id, state, lobs, kind: acknowledge|contact|decide, duration: { value, unit: hours|days|business_days }, startOn, stopOn: { event, toStatus[], taskType }, warnBefore, onBreach: Action[], citation }`. Business days skip weekends and the dates in `holidays`.
+
+**Evidence** (`evidence`, added 1.2.0): `{ maxUploadBytes }`, the per-file upload cap (default 10 MB, at most 15 MB).
 
 **AI** (`ai`): `{ provider: local|vertex-claude|vertex-gemini|cascade, cascade: [{ provider, model, minConfidence, tasks }], tasks: { <task>: { threshold, provider, model, enabled } }, region, redactPiiBeforeModel, maxTokensPerClaim, humanConfirmRequired }`.
 
@@ -140,7 +146,7 @@ Condition := { "all": [Condition, ...] }      // AND
 | `policy.*` | PolicySnapshot (`policy.status`, `policy.period.effectiveDate`, ...) |
 | `coverage.*` | CoverageVerification (`coverage.outcome`) |
 | `triage.*` | TriageResult (`triage.severityScore`, `triage.fraud.score`, `triage.subrogation.flag`) |
-| `parties`, `vehicles`, `property`, `evidence` | Arrays. Use `[*]` to project, e.g. `vehicles[*].drivable` |
+| `parties`, `vehicles`, `property`, `evidence` | Arrays. Use `[*]` to project, e.g. `vehicles[*].drivable` (the schema pattern accepts this and the older `vehicles.[*].drivable` since 1.2.0) |
 | `answers.<questionId>` | Intake answers |
 | `session.*` | lob, channel, locale |
 | `tenant.*` | Selected config values |
@@ -165,7 +171,17 @@ Condition := { "all": [Condition, ...] }      // AND
 
 **Actions** (`then[]`): `route_queue {queue}`, `assign_adjuster {adjusterId}`, `fast_track`, `deny_fast_track {reason}`, `add_flag {flag}`, `add_task {task}`, `require_question {questionId}`, `add_severity {points}`, `set_complexity {complexity}`, `refer_siu {reason}`, `start_timer {timerId}`, `notify {template}`, `block_submit {reason}`.
 
-**Evaluation order.** Rules for the stage, filtered by `appliesTo`, run in ascending `priority`. All matching rules fire unless `stopOnMatch` is set. For routing, the last `route_queue` wins, and `deny_fast_track` beats `fast_track`.
+**Evaluation order.** Rules for the stage, filtered by `appliesTo`, run in ascending `priority` (ties by `id`). All matching rules fire unless `stopOnMatch` is set. `evaluateCondition` and `validateRules` are synchronous.
+
+**Routing precedence (corrected in 1.2.0; the v1.0.0 wording had the precedence backwards).**
+
+1. The **first** `route_queue` in ascending priority wins, so specific low-number rules (injury, SIU) beat tenant defaults at high numbers (for example 90).
+2. `deny_fast_track` beats `fast_track`, whatever the priorities.
+3. A requested fast track is approved only when `coverage.outcome` is `covered`, the tenant has not disabled fast track, triage does not set `fastTrackEligible: false`, `triage.severityScore <= fastTrack.maxSeverity`, `triage.fraud.score <= fastTrack.maxFraudScore`, and the estimate does not exceed `fastTrack.maxEstimate` when set.
+4. An approved fast track beats queue rules: the claim goes to the queue named by the fast-track rule, else `fastTrack.queue`.
+5. Without a usable queue the tenant `defaultQueue` applies, else the first non-fast-track queue for the LOB.
+
+With the rules below plus a default rule at priority 90 routing to `auto_general`: an injury claim goes to `injury` (first `route_queue`, fast track denied); a covered glass claim with severity 12 is fast tracked; the same glass claim with coverage `needs_review` goes to `auto_general` with the reason `fast track blocked: coverage outcome is needs_review, not covered`; a claim with fraud score 72 goes to `siu`. More examples are in `contracts/modules.md` (rules).
 
 Example routing rules:
 

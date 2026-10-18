@@ -6,6 +6,7 @@ import { toClaimCreate } from './mapping.js';
 
 const DEFAULT_TTL_MIN = 60;
 const MAX_BATCH = 100;
+const CHANNEL_ALIASES = { csr: 'csr_phone' };
 const SYSTEM_ACTOR = { type: 'system', id: 'intake' };
 
 /** @param {object} ctx tenant-bound ctx */
@@ -115,6 +116,7 @@ export function createService(ctx) {
       locale: doc.locale,
       progress: st.progress,
       optional: st.optional.map((o) => publicQuestion(o)),
+      missing: st.remaining.map((q) => ({ questionId: q.id, text: localize(q.text, doc.locale) })),
       disclosures: disclosures(doc, answers),
     };
     if (st.blocks.length) step.blocked = st.blocks;
@@ -135,6 +137,7 @@ export function createService(ctx) {
   /** Start a session and return the first step. */
   async function startSession({ lob, lossType, channel, locale, policyNumber, actor = SYSTEM_ACTOR } = {}) {
     const c = cfg();
+    channel = CHANNEL_ALIASES[channel] ?? channel;
     if (!lob || !channel) throw err('bad_request', 'lob and channel are required', 400);
     const lobCfg = (c.lobs ?? []).find((l) => l.id === lob);
     if (c.lobs?.length && (!lobCfg || lobCfg.enabled === false)) throw err('unsupported_lob', `Line of business "${lob}" is not available`, 422);

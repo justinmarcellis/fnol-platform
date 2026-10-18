@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contracts.fnol-platform.example/events/envelope.schema.json",
   "title": "Event envelope (CloudEvents 1.0 style)",
-  "description": "Every event on ctx.bus, in the outbox, on Pub/Sub and on webhooks uses this envelope. Events carry ids and codes, never PII; consumers fetch details through the API. On Pub/Sub binary mode the attributes are ce-specversion, ce-type, ce-source, ce-id, ce-time, ce-subject and tenantid (CloudEvents extension names are lowercase).",
+  "description": "Every event on ctx.bus, in the outbox, on Pub/Sub and on webhooks uses this envelope. Events carry ids and codes, never PII; consumers fetch details through the API. On Pub/Sub binary mode the attributes are ce-specversion, ce-type, ce-source, ce-id, ce-time, ce-subject and tenantid (CloudEvents extension names are lowercase). In process (ctx.bus handlers, outbox.event column) core emits the CloudEvents extension attribute `tenantid` and source `/fnol-platform`; every external surface (GET /integrations/outbox, webhooks, adapters) normalises to this schema (`tenantId`, `/tenants/<id>/modules/<module>`, `sequence`).",
   "type": "object",
   "required": [
     "specversion",
@@ -67,10 +67,14 @@
     },
     "sequence": {
       "type": "integer",
-      "description": "Per-tenant monotonic outbox sequence."
+      "description": "Per-tenant monotonic outbox sequence (core outbox.seq column, S2-PLT-01). Strictly increasing per tenant, never reused, may have gaps for filtered reads."
     },
     "data": {
       "type": "object"
+    },
+    "tenantid": {
+      "$ref": "../domain/common.schema.json#/$defs/TenantId",
+      "description": "CloudEvents extension spelling used by the in-process bus. External consumers read tenantId; when both are present they are equal."
     }
   }
 }

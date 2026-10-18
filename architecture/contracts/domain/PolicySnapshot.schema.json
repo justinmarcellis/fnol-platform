@@ -221,6 +221,23 @@
                 }
               }
             }
+          },
+          "unitType": {
+            "type": "string",
+            "examples": [
+              "power_unit",
+              "trailer",
+              "private_passenger"
+            ],
+            "description": "Added 1.2.0 (commercial_auto fleet schedule)."
+          },
+          "addedDate": {
+            "$ref": "common.schema.json#/$defs/Date",
+            "description": "Added 1.2.0. Unit covered from this date (inclusive)."
+          },
+          "removedDate": {
+            "$ref": "common.schema.json#/$defs/Date",
+            "description": "Added 1.2.0. Unit not covered on or after this date."
           }
         }
       }

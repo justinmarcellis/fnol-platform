@@ -5,3 +5,6 @@ import('./pii-leak.test.mjs');
 import('./roles.test.mjs');
 import('./routes.test.mjs');
 import('./tenant-isolation.test.mjs');
+import('./sec2-rbac-pii.test.mjs');
+import('./sec2-availability-ai.test.mjs');
+import('./sec2-webhooks.test.mjs');

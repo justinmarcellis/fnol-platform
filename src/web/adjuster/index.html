@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adjuster workbench</title>
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/components.css">
+  <link rel="stylesheet" href="/adjuster/adjuster.css">
+</head>
+<body>
+  <a class="fx-btn skip" href="#main" id="skip">Skip to main content</a>
+  <header class="bar"><h1 id="title">Adjuster workbench</h1><span id="whoami" class="muted" aria-live="polite"></span></header>
+  <fx-toast id="toast"></fx-toast>
+  <main id="main" tabindex="-1">
+    <section id="dev-panel" hidden aria-labelledby="dev-h">
+      <h2 id="dev-h">Developer sign-in</h2>
+      <form id="dev-form">
+        <p><label for="dev-tenant" id="dev-tenant-l">Tenant</label>
+          <select id="dev-tenant" name="tenant"><option value="aurelia-mutual">aurelia-mutual</option><option value="kestrel-point">kestrel-point</option></select></p>
+        <p><label for="dev-role" id="dev-role-l">Role</label>
+          <select id="dev-role" name="role"><option value="adjuster">adjuster</option><option value="supervisor">supervisor</option></select></p>
+        <button class="fx-btn" type="submit" id="dev-go">Sign in as adjuster</button>
+      </form>
+    </section>
+
+    <section id="unavailable" role="alert" hidden>
+      <h2 id="un-title">Service unavailable</h2>
+      <p id="un-body"></p>
+      <button class="fx-btn" type="button" id="un-retry">Retry</button>
+    </section>
+
+    <section id="inbox-sec" aria-labelledby="inbox-h" hidden>
+      <h2 id="inbox-h" tabindex="-1"></h2>
+      <p class="toolbar">
+        <label><input type="checkbox" id="inbox-mine" checked> <span id="inbox-mine-l"></span></label>
+        <button class="fx-btn secondary" type="button" id="inbox-refresh"></button>
+      </p>
+      <form id="lookup-form" class="toolbar" novalidate>
+        <label for="lookup-id" id="lookup-l"></label>
+        <input id="lookup-id" name="claimId" autocomplete="off">
+        <button class="fx-btn secondary" type="submit" id="lookup-go"></button>
+      </form>
+      <p id="inbox-count" class="muted" role="status"></p>
+      <div id="inbox-body"></div>
+    </section>
+
+    <section id="claim-sec" aria-labelledby="claim-h" hidden>
+      <p><a class="fx-btn secondary" id="claim-back" href="#/"></a></p>
+      <div id="claim-body" aria-live="polite"></div>
+    </section>
+  </main>
+  <script type="module" src="/adjuster/app.js"></script>
+</body>
+</html>

@@ -56,6 +56,20 @@ export function createService(ctx) {
     };
   }
 
+  /** Facts that count as baseline citations when none of the facts is mentioned in the text. */
+  const BASELINE_FACTS = ['lossCause', 'status', 'coverageOutcome', 'severityBand'];
+  const scalar = (v) => (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean');
+  const norm = (s) => String(s).toLowerCase().replace(/[_-]+/g, ' ');
+
+  /** Deterministic: which input facts the summary text mentions (by value). No AI call. */
+  function citeFacts(facts, text) {
+    const hay = norm(text);
+    const named = (k, v) => scalar(v) && v !== '' && v !== false && (typeof v === 'boolean' ? hay.includes(norm(k)) : hay.includes(norm(v)));
+    let names = Object.entries(facts).filter(([k, v]) => named(k, v)).map(([k]) => k);
+    if (!names.length) names = BASELINE_FACTS.filter((k) => scalar(facts[k]) && facts[k] !== '');
+    return names.map((name) => ({ name, value: facts[name] }));
+  }
+
   const aiRun = (task, facts) => ctx.ai.run(task, { facts }, { tenantId: tenantId() });
 
   /** Summary cached per triage attempt in adjuster_summaries. */
@@ -67,8 +81,10 @@ export function createService(ctx) {
     if (!ctx.ai) return null;
     let r;
     try { r = await aiRun('summarize', facts); } catch (e) { ctx.log?.warn?.('adjuster summary failed', { error: e.message }); return null; }
-    const text = [r.output.summary, ...(r.output.bullets ?? []).map((b) => `- ${b}`)].join('\n');
-    const doc = { text, ai: provenance(r), bullets: r.output.bullets ?? [], explanation: r.explanation, ...(r.unconfirmed ? { unconfirmed: true } : {}) };
+    const body = [r.output.summary, ...(r.output.bullets ?? []).map((b) => `- ${b}`)].join('\n');
+    const citedFacts = citeFacts(facts, body);
+    const text = citedFacts.length ? `${body}\nFacts used: ${citedFacts.map((f) => `${f.name}=${f.value}`).join(', ')}` : body;
+    const doc = { text, citedFacts, ai: provenance(r), bullets: r.output.bullets ?? [], explanation: r.explanation, ...(r.unconfirmed ? { unconfirmed: true } : {}) };
     const now = ctx.clock.nowIso();
     const exists = ctx.db.get('SELECT 1 AS x FROM adjuster_summaries WHERE claim_id = ? AND triage_attempt = ?', claimId, attempt);
     if (exists) ctx.db.run('UPDATE adjuster_summaries SET doc = ?, created_at = ? WHERE claim_id = ? AND triage_attempt = ?', JSON.stringify(doc), now, claimId, attempt);
@@ -94,6 +110,32 @@ export function createService(ctx) {
     const audit = await safe(() => ctx.audit.list({ entityId: claimId, order: 'asc', limit: 200 }), []);
     for (const a of audit) items.push({ at: a.at, type: `audit.${a.action}`, label: `Audit: ${a.action}` });
     return items.filter((i) => i.at).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  }
+
+  /** First time a claim event of this type was published (from the outbox), or undefined. */
+  async function firstEventTime(claimId, type) {
+    const rows = await safe(() => ctx.bus.outbox(tenantId()), []);
+    const times = [];
+    for (const r of rows) {
+      const evt = ctx.db.parseJson(r.event, null);
+      if ((evt?.type ?? r.type) !== type) continue;
+      if (evt?.data?.claimId !== claimId && r.subject !== claimId) continue;
+      times.push(evt?.time ?? r.created_at);
+    }
+    return times.filter(Boolean).sort()[0];
+  }
+
+  /** reportedAt / acknowledgedAt / assignedAt; absent when not yet known. */
+  async function lifecycleTimestamps(claim, timers, routing) {
+    const ackTimer = timers.filter((t) => t.kind === 'acknowledge' && t.metAt).map((t) => t.metAt).sort()[0];
+    const assigned = routing && ['assigned', 'fast_tracked'].includes(routing.outcome) ? routing.decidedAt : undefined;
+    const out = {
+      reportedAt: claim.reportedAt ?? claim.createdAt,
+      acknowledgedAt: (await firstEventTime(claim.id, 'claim.acknowledged')) ?? ackTimer,
+      assignedAt: assigned ?? (routing ? undefined : await firstEventTime(claim.id, 'claim.routed')),
+    };
+    for (const k of Object.keys(out)) if (!out[k]) delete out[k];
+    return out;
   }
 
   return {
@@ -134,6 +176,7 @@ export function createService(ctx) {
         claim: { ...claim, flags },
         policy, coverage, triage, routing, documents, timers, tasks, notes,
         summary, nextActions,
+        timestamps: await lifecycleTimestamps(claim, timers, routing),
         timeline: await buildTimeline(claimId),
         generatedAt: ctx.clock.nowIso(),
       };

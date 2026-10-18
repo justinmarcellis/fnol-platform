@@ -12,6 +12,7 @@ import { createTenants, migrations as tenantMigrations } from './core/tenants.mj
 import { createAuth, registerAuthRoutes } from './core/auth.mjs';
 import { createRouter, attachJson } from './core/router.mjs';
 import { HttpError, AppError } from './core/errors.mjs';
+import { createScheduler } from './core/scheduler.mjs';
 import { createTenantBinder } from './core/tenant-context.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -70,6 +71,7 @@ export async function createApp(opts = {}) {
   };
   ctx.db = createStore(dbPath);
   ctx.crypto = createCrypto({ secretsDir });
+  ctx.scheduler = createScheduler({ log });
 
   // Core migrations first, then each module's.
   ctx.db.migrate('core.audit', auditMigrations);
@@ -154,6 +156,7 @@ export async function createApp(opts = {}) {
   return {
     server, ctx, port, url: `http://127.0.0.1:${port}`,
     async close() {
+      ctx.scheduler.stopAll();
       await ctx.bus.drain();
       await new Promise((r) => { server.close(() => r()); server.closeAllConnections?.(); });
       ctx.db.close();

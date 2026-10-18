@@ -74,7 +74,15 @@
         "reason": "All criteria met: 25/25 claims tests pass, lifecycle/PII/timers/checks/routes verified against contracts and openapi x-roles; module boots, sweepTimers exported"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-004",
+        "severity": "high",
+        "summary": "Claimants can see fraud score and SIU flags",
+        "foundIn": "S2-SEC-01"
+      }
+    ]
   },
   "spend": {
     "usd": 1.1841,

@@ -45,8 +45,12 @@ export default {
   subscribe(bus, ctx) {
     // Expire active sessions whose question set was removed from config.
     bus.on('tenant.config.updated', async (evt, tctx) => {
-      const t = tctx ?? ctx.forTenant(evt.tenantid ?? evt.tenantId);
-      t.modules.intake.expireOrphaned();
+      try {
+        const t = tctx ?? ctx.forTenant(evt.tenantid ?? evt.tenantId);
+        t.modules.intake.expireOrphaned();
+      } catch (e) {
+        ctx.log.warn('intake event handler failed', { eventType: evt?.type, eventId: evt?.id, error: e?.message });
+      }
     }, { name: 'intake:tenant.config.updated' });
   },
 };

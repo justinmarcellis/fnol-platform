@@ -6,15 +6,57 @@
   "tier": "mid",
   "owner": "mgr-workflow",
   "reviewer": "ceo",
-  "status": "ready",
+  "status": "done",
   "sprint": 2,
   "dependsOn": [],
   "createdAt": "2026-10-18T21:05:56.019Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-18T21:07:15.654Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:27:18.175Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "paths": [
     "org/board/tickets/"
   ],
   "acceptance": [
     "Disjoint, parallel, testable tickets"
-  ]
+  ],
+  "spend": {
+    "usd": 0.109,
+    "inputTokens": 10,
+    "cacheWriteTokens": 21105,
+    "cacheReadTokens": 277020,
+    "outputTokens": 86,
+    "agents": {
+      "abaccbd1692b6eb66": {
+        "label": "S2-WFL-00 mgr-workflow planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 21105,
+        "cacheReadTokens": 277020,
+        "outputTokens": 86,
+        "usd": 0.109
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:27:18.175Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:27:18.175Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
 }

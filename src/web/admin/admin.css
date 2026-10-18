@@ -1,0 +1,40 @@
+body { margin: 0; background: var(--fx-bg); color: var(--fx-text); font-family: var(--fx-font); }
+.bar { display: flex; gap: var(--fx-space-4); align-items: baseline; padding: var(--fx-space-3) var(--fx-space-4); border-bottom: 2px solid var(--fx-border); }
+.bar h1 { margin: 0; font-size: 1.25rem; }
+main { max-width: 80rem; margin: 0 auto; padding: var(--fx-space-4); }
+.muted { color: var(--fx-text-muted); font-size: var(--fx-font-size-sm); }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: var(--fx-space-2); top: var(--fx-space-2); }
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--fx-space-3); align-items: center; margin-bottom: var(--fx-space-3); }
+.fx-btn.small { min-height: var(--fx-target-min); padding: 2px var(--fx-space-2); font-size: var(--fx-font-size-sm); }
+.fx-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+#tabs { display: flex; flex-wrap: wrap; gap: var(--fx-space-1); border-bottom: 2px solid var(--fx-border); }
+#tabs button { min-height: var(--fx-target); padding: 0 var(--fx-space-3); background: transparent; color: var(--fx-text); border: 2px solid transparent; border-bottom: 0; border-radius: var(--fx-radius) var(--fx-radius) 0 0; font: inherit; cursor: pointer; }
+#tabs button[aria-selected='true'] { background: var(--fx-surface); border-color: var(--fx-border); font-weight: 700; }
+#panel { padding: var(--fx-space-4) 0; }
+#panel h2 { margin-top: 0; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--fx-space-3); }
+.field { margin-bottom: var(--fx-space-3); }
+.field label { display: block; font-weight: 600; margin-bottom: var(--fx-space-1); }
+.field-bool label { display: inline; }
+.field-bool input { width: 1.25rem; height: 1.25rem; vertical-align: middle; }
+.field p { margin: var(--fx-space-1) 0 0; }
+input[type='text'], input[type='number'], select, textarea { width: 100%; box-sizing: border-box; min-height: var(--fx-target); padding: var(--fx-space-2); border: 2px solid var(--fx-border); border-radius: var(--fx-radius); background: var(--fx-bg); color: var(--fx-text); font: inherit; }
+textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--fx-font-size-sm); }
+[aria-invalid='true'] { border-color: var(--fx-danger); }
+:focus-visible { outline: 3px solid var(--fx-focus); outline-offset: 2px; }
+fieldset { border: 2px solid var(--fx-border); border-radius: var(--fx-radius); margin: 0 0 var(--fx-space-4); padding: var(--fx-space-3); background: var(--fx-surface); }
+legend { font-weight: 700; padding: 0 var(--fx-space-2); }
+.item-actions { display: flex; gap: var(--fx-space-2); justify-content: flex-end; margin-bottom: var(--fx-space-2); }
+.err { color: var(--fx-danger); font-size: var(--fx-font-size-sm); }
+.ok { color: var(--fx-success); font-weight: 600; }
+.summary { border: 2px solid var(--fx-danger); border-radius: var(--fx-radius); padding: var(--fx-space-3); margin-bottom: var(--fx-space-3); }
+.summary h2 { margin: 0 0 var(--fx-space-2); font-size: 1.1rem; }
+.summary a { color: var(--fx-brand); font-weight: 600; }
+.badge { display: inline-block; min-width: 1.4em; padding: 0 var(--fx-space-1); border-radius: 999px; background: var(--fx-danger); color: #fff; font-size: var(--fx-font-size-sm); text-align: center; }
+.chip { display: inline-block; padding: 2px var(--fx-space-2); border-radius: 999px; border: 2px solid var(--fx-border); background: var(--fx-surface); font-size: var(--fx-font-size-sm); }
+.grid-table { width: 100%; border-collapse: collapse; }
+.grid-table th, .grid-table td { text-align: left; padding: var(--fx-space-2); border-bottom: 1px solid var(--fx-border); vertical-align: top; overflow-wrap: anywhere; }
+.swatch { display: inline-block; width: 2rem; height: 2rem; border: 2px solid var(--fx-border); border-radius: var(--fx-radius); margin-right: var(--fx-space-2); }
+#unavailable, #conflict { border: 2px solid var(--fx-danger); border-radius: var(--fx-radius); padding: var(--fx-space-3); margin-bottom: var(--fx-space-3); }
+@media (max-width: 40rem) { main { padding: var(--fx-space-3); } #tabs button { flex: 1 1 auto; } }

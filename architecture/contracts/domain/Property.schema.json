@@ -24,8 +24,10 @@
       "type": "string",
       "enum": [
         "insured_location",
-        "third_party"
-      ]
+        "third_party",
+        "cargo"
+      ],
+      "description": "cargo (added 1.2.0, commercial_auto): goods carried in a vehicle; marks the loss as involving cargo for coverage."
     },
     "address": {
       "$ref": "common.schema.json#/$defs/Address"

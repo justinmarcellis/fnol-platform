@@ -1,0 +1,102 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:15.603Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:08:02.395Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:09:10.067Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:18:00.656Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-WFL-01",
+  "team": "workflow",
+  "title": "Intake missing[] panel, csr alias, claims PII for Location, scheduler sweep, safe handlers",
+  "story": "As a CSR I see which required questions remain; as a security owner location data is encrypted; as an operator event handlers never fail on missing claims.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/modules/intake/",
+    "src/modules/claims/",
+    "tests/unit/intake/",
+    "tests/unit/claims/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "IntakeStep returned by intake service includes missing: [{questionId, text}] listing required (incl. requiredIf-resolved) questions not yet answered, localized to session locale; empty array when none; test in tests/unit/intake/missing.test.js",
+    "startSession accepts channel 'csr' and normalizes to 'csr_phone' (stored session and question-set lookup use csr_phone); test covers alias and unchanged canonical values",
+    "claims PII_PATHS.lossEvent includes location.description and location.geo; geo (object) round-trips through encrypt/decrypt, is stored encrypted, and never appears in events/audit; tests in tests/unit/claims/pii.test.mjs and service.test.mjs",
+    "claims timer sweep uses ctx.scheduler.every when ctx.scheduler exists, else setInterval; both paths tested in tests/unit/claims/timers.test.mjs with a fake scheduler; stop/teardown cancels either",
+    "claims and intake event handlers for a missing claim log (ctx.log) and return without throwing; tests assert applyEvent/applyTimerEvent and intake handlers resolve for unknown claim ids",
+    "Only the team's own tests run green: node --test --disable-warning=ExperimentalWarning tests/unit/intake tests/unit/claims"
+  ],
+  "brief": "Work in 4 small parts. (1) Intake: in src/modules/intake/service.js and questions.js, find where the IntakeStep is built (after answering/getStep). Compute missing from the visible question list: questions with required true or requiredIf evaluating true (reuse rules.evaluateCondition as the engine already does, plus intake-stage require_question rules) that have no answer. Return {questionId, text} using the localized text the step already uses. Add to routes response untouched since it serializes the step. (2) Channel alias: normalize at the top of startSession (const CHANNEL_ALIASES = {csr:'csr_phone'}) before the lobCfg.channels check and getQuestionSet call. (3) Claims pii.mjs: add 'location.description' and 'location.geo' to PII_PATHS.lossEvent. wrap() already JSON-stringifies so objects work; verify mapPii handles object values and that isEncrypted guard remains. Check service.mjs for places that build event payloads/audit details from lossEvent and ensure the redact path covers the new fields; check any read path that returns decrypted loss to authorized callers. Existing rows with plaintext must still read (unwrap passes non-encrypted through). (4) Timers/index.mjs line ~54: if (ctx.scheduler?.every) use it with the same interval and handler, keep the returned handle/cancel for shutdown; else setInterval (unref it). Check the scheduler contract in architecture/core-runtime-api.md for the exact signature and cancel return. (5) Handlers: wrap lookups in applyEvent/applyTimerEvent and intake bus handlers; if claim not found, ctx.log.warn and return undefined; do not catch unrelated errors. Pitfall: do not edit package.json; use local fakes for scheduler and crypto in tests (see tests/unit/claims/helpers.mjs, tests/unit/intake/fakes.mjs). Report any contract gaps via architecture hub contract-change.",
+  "valueDrivers": [
+    "Faster CSR handling via required-items panel",
+    "Reduced PII exposure risk",
+    "Operational resilience of event processing"
+  ],
+  "requirements": [
+    "CSR required-items panel data",
+    "Threat-model finding: encrypt location PII",
+    "Scheduler integration",
+    "Non-throwing event handlers"
+  ],
+  "startedAt": "2026-10-18T21:08:02.395Z",
+  "doneAt": "2026-10-18T21:18:00.656Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:18:00.655Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 6 criteria verified; 54 unit tests pass; no new regressions attributable to this ticket (openapi drift failure involves routes from other teams)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5846,
+    "inputTokens": 36,
+    "cacheWriteTokens": 124386,
+    "cacheReadTokens": 1240098,
+    "outputTokens": 2557,
+    "agents": {
+      "a3a2544ec4f0e27cc": {
+        "label": "S2-WFL-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 64877,
+        "cacheReadTokens": 309613,
+        "outputTokens": 958,
+        "usd": 0.2337
+      },
+      "a48ae4a79c1c5fb46": {
+        "label": "S2-WFL-01 ic-workflow-intake-flow-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 59509,
+        "cacheReadTokens": 930485,
+        "outputTokens": 1599,
+        "usd": 0.3509
+      }
+    }
+  }
+}

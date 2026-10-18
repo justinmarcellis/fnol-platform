@@ -1,0 +1,101 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:25.064Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:09:25.778Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:12:17.359Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:19:02.797Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-INT-02",
+  "team": "integrations",
+  "title": "KPI module with GET /api/v1/kpis",
+  "story": "As a supervisor or carrier admin I can see per-tenant operational KPIs tied to value drivers for a date range.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-integrations-reporting-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/modules/kpi/",
+    "tests/unit/kpi/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/openapi.yaml"
+  ],
+  "acceptance": [
+    "src/modules/kpi/index.mjs exports module {name:'kpi', migrations?, init, service(ctx), routes} following the module shape of src/modules/coverage/index.mjs; GET /api/v1/kpis?from&to returns {period:{from,to}, metrics:[{id,label,valueDriver,value,unit,numerator,denominator}]}; 400 on invalid dates or from>to; defaults to last 30 days",
+    "Metrics present with ids and drivers: stp_rate (VD-1), automated_capture_rate (VD-1), median_minutes_to_acknowledgment and median_minutes_to_assignment (VD-2), coverage_verified_at_intake_rate and fraud_flag_rate (VD-4), subrogation_flag_rate (VD-5), digital_self_service_share and spanish_session_share (VD-6), regulatory_timers_met and regulatory_timers_breached (VD-7)",
+    "Zero-denominator metrics return value null (not NaN) with numerator/denominator reported; medians return null when no data",
+    "Allowed roles supervisor, tenant_admin, carrier_admin, auditor; csr/adjuster/claimant get 403; results are computed only from the caller tenant (tenant isolation test with two tenants)",
+    "Computation reads data only via tenant-bound ctx.modules service functions or tenant-scoped reads of outbox; no PII in output; no writes",
+    "tests/unit/kpi/*.test.mjs pass with a fixture tenant (known counts and expected values for every metric) using small local fakes for claims/triage/routing/timers/outbox: node --test --disable-warning=ExperimentalWarning tests/unit/kpi/*.test.mjs"
+  ],
+  "brief": "Build a new module src/modules/kpi/ (REQ-23): index.mjs (module def, routes), service.mjs (compute(period) using the tenant-bound ctx), metrics.mjs (pure metric functions over normalised inputs, easy to unit test), and routes.mjs. Read core-runtime-api.md (tenant-bound ctx addendum) and mimic src/modules/coverage/index.mjs for registration. Inputs: claims in the period (claims service getters; discover the available list/query fn in src/modules/claims/service.mjs and use only documented service functions, with graceful fallback if one is missing), triage (getLatestTriage: fraud and subrogation flags), routing (rules.getRoutingDecision: fast_track/STP and assignment time), timers (claims.listTimers: met vs breached), evidence accepted facts (provenance ai_extraction for automated capture), coverage.getLatestVerification, and outbox events via ctx.bus.outbox(tenantId) filtered by time for claim.acknowledged / claim.assigned / claim.reported timestamps. Definitions: STP = claims fast-tracked and closed or routed with no manual task / total claims; automated capture = claims with at least one accepted AI-extracted fact / claims; median minutes report to acknowledgment/assignment from event times; digital self-service = claims with channel in web/mobile/chat without csr actor / claims; Spanish share = intake sessions or claims with locale es* / total. State each definition in a METRIC_DEFS constant exposed in the result docs. Keep each metric computation failure isolated (one failing source yields value null plus a note, not a 500). Do not invent new events. Tests: tests/unit/kpi/metrics.test.mjs (pure), service.test.mjs (fixture tenant with fakes), routes.test.mjs (roles, validation, isolation). Run with a glob, not a directory (Node 22). Post any contract gaps to the architecture hub as contract-change and document additions; use the smallest compatible choice. Do not edit package.json (platform team registers modules by directory scan; if not, post a request).",
+  "valueDrivers": [
+    "VD-1",
+    "VD-2",
+    "VD-4",
+    "VD-5",
+    "VD-6",
+    "VD-7"
+  ],
+  "requirements": [
+    "REQ-23"
+  ],
+  "startedAt": "2026-10-18T21:09:25.778Z",
+  "doneAt": "2026-10-18T21:19:02.797Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:19:02.797Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met, 25/25 unit tests pass; only regression-gate failure is openapi role-matrix snapshot drift (openapi/architecture change, not KPI files)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6919,
+    "inputTokens": 46,
+    "cacheWriteTokens": 111595,
+    "cacheReadTokens": 1948511,
+    "outputTokens": 2309,
+    "agents": {
+      "a62d732d739534535": {
+        "label": "S2-INT-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 27909,
+        "cacheReadTokens": 296635,
+        "outputTokens": 775,
+        "usd": 0.1369
+      },
+      "af38bbeff5e64f897": {
+        "label": "S2-INT-02 ic-integrations-reporting-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 36,
+        "cacheWriteTokens": 83686,
+        "cacheReadTokens": 1651876,
+        "outputTokens": 1534,
+        "usd": 0.555
+      }
+    }
+  }
+}

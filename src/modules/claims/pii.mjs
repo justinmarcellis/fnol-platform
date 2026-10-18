@@ -8,7 +8,7 @@ export const PII_PATHS = {
   party: ['firstName', 'lastName', 'dateOfBirth', 'phone', 'email', 'address', 'driversLicense', 'injuryDescription'],
   vehicle: ['licensePlate'],
   property: ['address'],
-  lossEvent: ['description', 'location.address'],
+  lossEvent: ['description', 'location.description', 'location.address', 'location.geo'],
   note: ['body'],
 };
 

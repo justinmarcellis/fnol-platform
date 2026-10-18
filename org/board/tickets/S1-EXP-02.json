@@ -88,7 +88,27 @@
         "reason": "All criteria met; 24 tests pass; start-404 not_found now reaches unavailable+retry; server-driven showIf, idempotent submit, polling stop/pause, es toggle, a11y verified; in-scope paths only"
       }
     ],
-    "firstPass": false
+    "firstPass": false,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-4",
+        "severity": "high",
+        "summary": "Claimant status polling throws Illegal invocation after submit (timers.setTimeout unbound)",
+        "foundIn": "S2-EXP-03"
+      },
+      {
+        "id": "DEF-S2-5",
+        "severity": "medium",
+        "summary": "Claimant startSession never sends lossType; glass question set unreachable",
+        "foundIn": "S2-EXP-03"
+      },
+      {
+        "id": "DEF-S2-6",
+        "severity": "low",
+        "summary": "Empty language picker visible for English-only tenants ([hidden] overridden by CSS)",
+        "foundIn": "S2-EXP-03"
+      }
+    ]
   },
   "doneAt": "2026-10-18T20:48:08.231Z",
   "spend": {

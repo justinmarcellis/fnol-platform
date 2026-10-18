@@ -1,0 +1,295 @@
+{
+  "task": "severity",
+  "synthetic": true,
+  "description": "Claim facts to severity band (synthetic). Bands: low <25, medium <50, high <75, severe.",
+  "cases": [
+    {
+      "id": "sev-glass",
+      "input": {
+        "facts": {
+          "lossType": "glass",
+          "glassOnly": true,
+          "drivable": true
+        }
+      },
+      "expected": {
+        "band": "low"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 8,
+            "band": "low",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-minor-collision",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "drivable": true,
+          "damageAreas": [
+            "rear bumper",
+            "trunk",
+            "left quarter panel"
+          ],
+          "estimateTotal": 4190.55
+        }
+      },
+      "expected": {
+        "band": "medium"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 40,
+            "band": "medium",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-injury-towed",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "injuries": true,
+          "drivable": false,
+          "damageAreas": [
+            "driver side"
+          ]
+        }
+      },
+      "expected": {
+        "band": "high"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 80,
+            "band": "severe",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-fire",
+      "input": {
+        "facts": {
+          "lossType": "fire",
+          "drivable": false,
+          "estimateTotal": 22000
+        }
+      },
+      "expected": {
+        "band": "severe"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 90,
+            "band": "severe",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-hail",
+      "input": {
+        "facts": {
+          "lossType": "hail",
+          "estimateTotal": 9000,
+          "damageAreas": [
+            "roof",
+            "hood"
+          ]
+        }
+      },
+      "expected": {
+        "band": "high"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 60,
+            "band": "high",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-theft",
+      "input": {
+        "facts": {
+          "lossType": "theft"
+        }
+      },
+      "expected": {
+        "band": "medium"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 30,
+            "band": "medium",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-fatality",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "fatality": true,
+          "injuries": true
+        }
+      },
+      "expected": {
+        "band": "severe"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 98,
+            "band": "severe",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-scrape",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "drivable": true,
+          "damageAreas": [
+            "front"
+          ],
+          "estimateTotal": 900
+        }
+      },
+      "expected": {
+        "band": "low"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 15,
+            "band": "low",
+            "drivers": [
+              "recorded drivers"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sev-invalid-recording",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "drivable": true
+        }
+      },
+      "expected": {
+        "band": "medium"
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 150,
+            "band": "extreme",
+            "drivers": []
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    }
+  ]
+}

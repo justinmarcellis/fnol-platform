@@ -633,7 +633,7 @@
     },
     {
       "id": "TR-INJURY-SEV",
-      "name": "Injury raises severity",
+      "name": "Injury raises complexity (triage already scores injury severity)",
       "stage": "triage",
       "priority": 10,
       "when": {
@@ -643,40 +643,14 @@
       },
       "then": [
         {
-          "type": "add_severity",
-          "points": 35
-        },
-        {
           "type": "set_complexity",
           "complexity": "high"
         }
       ]
     },
     {
-      "id": "TR-NOT-DRIVABLE",
-      "name": "Undrivable vehicle raises severity",
-      "stage": "triage",
-      "priority": 20,
-      "appliesTo": {
-        "lobs": [
-          "personal_auto"
-        ]
-      },
-      "when": {
-        "fact": "answers.vehicle_drivable",
-        "op": "eq",
-        "value": false
-      },
-      "then": [
-        {
-          "type": "add_severity",
-          "points": 15
-        }
-      ]
-    },
-    {
       "id": "TR-HOME-UNLIVABLE",
-      "name": "Uninhabitable home raises severity",
+      "name": "Uninhabitable home raises complexity (triage already scores habitability)",
       "stage": "triage",
       "priority": 20,
       "appliesTo": {
@@ -690,10 +664,6 @@
         "value": false
       },
       "then": [
-        {
-          "type": "add_severity",
-          "points": 30
-        },
         {
           "type": "set_complexity",
           "complexity": "high"
@@ -836,7 +806,7 @@
     },
     {
       "id": "RT-FT-HOME-SMALL",
-      "name": "Straight-through: home damage under 2500",
+      "name": "Straight-through: home water damage under 2500",
       "stage": "routing",
       "priority": 50,
       "appliesTo": {
@@ -847,14 +817,34 @@
       "when": {
         "all": [
           {
-            "fact": "answers.estimated_damage",
-            "op": "lt",
-            "value": 2500
+            "fact": "loss.cause",
+            "op": "in",
+            "value": [
+              "water_plumbing",
+              "water_weather",
+              "freeze"
+            ]
           },
           {
-            "fact": "answers.home_livable",
-            "op": "eq",
-            "value": true
+            "any": [
+              {
+                "fact": "answers.estimated_damage",
+                "op": "lt",
+                "value": 2500
+              },
+              {
+                "fact": "triage.suggestedReserve.amount",
+                "op": "lt",
+                "value": 2500
+              }
+            ]
+          },
+          {
+            "not": {
+              "fact": "answers.home_livable",
+              "op": "eq",
+              "value": false
+            }
           },
           {
             "fact": "coverage.outcome",

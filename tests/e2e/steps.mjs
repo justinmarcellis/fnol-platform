@@ -167,8 +167,16 @@ export async function runMatrix(t, { h, synthetic, tenants = listTenants() }) {
           await seed.call(tctx.modules.coverage, policies);
         }
 
-        for (const step of STEPS) {
-          await st.test(step.name, (s) => runStep(s, () => step.run(env)));
+        // Report the claim on the scenario's own reported date, so report lag (a fraud cue) is the scenario's,
+        // not the gap between a synthetic loss date and the wall clock. Restored after the scenario.
+        const reportedDate = scenario.meta?.reportedDate;
+        if (reportedDate && typeof h.ctx.clock?.set === 'function') h.ctx.clock.set(`${reportedDate}T15:00:00.000Z`);
+        try {
+          for (const step of STEPS) {
+            await st.test(step.name, (s) => runStep(s, () => step.run(env)));
+          }
+        } finally {
+          if (reportedDate && typeof h.ctx.clock?.reset === 'function') h.ctx.clock.reset();
         }
       });
     }

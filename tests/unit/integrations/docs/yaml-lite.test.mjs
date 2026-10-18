@@ -79,11 +79,11 @@ after: 1
 test('parses the real openapi.yaml', () => {
   const doc = parseYaml(fs.readFileSync(path.join(ROOT, 'architecture/contracts/openapi.yaml'), 'utf8'));
   assert.equal(doc.openapi, '3.1.0');
-  assert.equal(doc.info.version, '1.0.0');
+  assert.equal(doc.info.version, '1.2.0');
   assert.ok(Object.keys(doc.paths).length >= 38);
   const create = doc.paths['/integrations/webhooks'].post;
   assert.equal(create.operationId, 'createWebhook');
-  assert.deepEqual(create['x-roles'], ['tenant_admin']);
+  assert.deepEqual(create['x-roles'], ['tenant_admin', 'carrier_admin']);
   assert.deepEqual(create.requestBody.content['application/json'].schema.required, ['url', 'eventTypes']);
   assert.equal(doc.paths['/integrations/outbox'].get.parameters[3].$ref, '#/components/parameters/Limit');
   assert.equal(doc.components.parameters.Limit.schema.maximum, 200);

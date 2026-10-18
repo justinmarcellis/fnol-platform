@@ -1,7 +1,7 @@
 {
   "number": 2,
   "name": "Sprint 2: integrate and complete",
-  "status": "active",
+  "status": "closed",
   "startedAt": "2026-10-18T21:05:56.019Z",
   "budgetUsd": 60,
   "goal": "All e2e scenarios green for both tenants; adjuster + admin UIs; KPI instrumentation; contracts reconciled; Playwright UI smoke tests",
@@ -11,5 +11,47 @@
     "testPassRate": 1,
     "openContractRequests": 0
   },
-  "committed": []
+  "committed": [],
+  "review": {
+    "shipped": [
+      "All e2e scenarios green for both tenants (149/149); root causes recorded as defects",
+      "Adjuster first view and carrier admin console; Playwright smoke tests for all four apps",
+      "KPI endpoint for VD-1..VD-7; policy search; commercial auto coverage and Kestrel question set",
+      "Contracts v1.2.0: 25 hub requests answered (IMP-5)",
+      "AI guardrails wired into the cascade + offline eval harness",
+      "Dockerfile, Cloud Run manifest, deployment guide; smoke script in CI",
+      "Security code review: 23 findings (0 critical, 7 high)"
+    ],
+    "risks": [
+      "7 high security findings open (tracked as todo tests)",
+      "4 UI defects in claimant/CSR apps",
+      "GCP deployment still blocked on credentials"
+    ],
+    "completedPoints": 102,
+    "committedPoints": 102,
+    "usd": 22.47,
+    "pointsPerDollar": 4.5,
+    "firstPassAcceptance": 1,
+    "reworkRate": 0,
+    "testPassRate": 0.9683,
+    "testsPassed": "948/979"
+  },
+  "retro": {
+    "went_well": [
+      "Integration squad (single strong-tier owner) fixed 54 e2e failures in one ticket: one owner for cross-module behaviour works",
+      "Architecture triage cleared the hub backlog: synapse latency down from a full sprint to same-sprint",
+      "Full suite green: 948 pass / 0 fail"
+    ],
+    "went_badly": [
+      "11 escaped defects from Sprint 1 found this sprint (7 security highs, 4 UI bugs): Sprint 1 reviewers checked unit tests only",
+      "Two test files (route snapshot, YAML parser) broke from a contract version bump; contract owner could not edit them (paths)",
+      "One reviewer did not record its verdict in the fabric"
+    ],
+    "manager_retros": [
+      "experience: Playwright found 4 real bugs in hours; should have existed in Sprint 1",
+      "security: review at mid tier found 7 highs; cost $0.4/pt and worth it",
+      "integration: pinning ctx.clock in e2e removed spurious late-report fraud flags"
+    ]
+  },
+  "closedAt": "2026-10-18T21:29:53.694Z"
 }

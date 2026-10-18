@@ -35,6 +35,14 @@ const AUTO_CAUSES = {
   liability_property_damage: ['PD'],
 };
 
+// commercial_auto: hired / non-owned auto (HNOA) liability and physical damage, and cargo.
+const LIABILITY_CAUSES = ['liability_bodily_injury', 'liability_property_damage'];
+const HNOA_ROLES = ['hired', 'non_owned'];
+const isHnoa = (v) => HNOA_ROLES.includes(v.role) || HNOA_ROLES.includes(v.ownership);
+const isCommercial = (lob) => /commercial/.test(String(lob ?? '').toLowerCase());
+/** Fleet unit is active on the loss date unless added later or removed on/before it (addedDate / removedDate are optional). */
+const unitActive = (u, lossDate) => (!u.addedDate || u.addedDate <= lossDate) && (!u.removedDate || lossDate < u.removedDate);
+
 const PROPERTY_PERILS = ['DWELLING', 'OTHER_STRUCTURES', 'PERSONAL_PROPERTY'];
 const HOME_CAUSES = Object.fromEntries([
   'collision', 'single_vehicle', 'hit_and_run', 'collision_animal', 'vandalism', 'fire', 'lightning', 'wind', 'hail',
@@ -81,7 +89,8 @@ const limitsOf = (cov) => {
  * @property {string} lob claim LOB id
  * @property {string} lossDate YYYY-MM-DD, already in the tenant time zone
  * @property {string} lossCause platform LossCause code
- * @property {{ role?: string, vin?: string, policyVehicleId?: string }[]} [vehicles]
+ * @property {{ role?: string, ownership?: string, vin?: string, policyVehicleId?: string }[]} [vehicles]
+ * @property {boolean} [cargoInvolved] commercial_auto: the loss involves cargo being carried
  * @property {{ role?: string, policyLocationId?: string }[]} [properties]
  */
 
@@ -154,26 +163,46 @@ export function evaluateCoverage(policy, facts) {
   // 4. Insured unit(s) on the policy
   let unitCoverages = [];
   let unitId = null;
+  let hnoaOnly = false;
   if (family === 'auto') {
-    const claimed = (facts.vehicles ?? []).filter((v) => !v.role || v.role === 'insured');
+    const commercial = isCommercial(policy.lob);
+    const claimed = (facts.vehicles ?? []).filter((v) => !v.role || v.role === 'insured' || (commercial && isHnoa(v)));
     if (!claimed.length) {
       reasons.push('no_insured_vehicle: claim does not identify an insured vehicle');
       return done('needs_review', { lossInPeriod });
     }
-    const matches = claimed.map((cv) => (policy.vehicles ?? []).find((pv) => (cv.policyVehicleId && cv.policyVehicleId === pv.unitId)
-      || (cv.vin && pv.vin && cv.vin.toUpperCase() === pv.vin.toUpperCase())));
+    const findUnit = (cv) => (policy.vehicles ?? []).find((pv) => (cv.policyVehicleId && cv.policyVehicleId === pv.unitId)
+      || (cv.vin && pv.vin && cv.vin.toUpperCase() === pv.vin.toUpperCase()));
+    const matches = claimed.map((cv) => {
+      const unit = findUnit(cv);
+      if (unit && !unitActive(unit, facts.lossDate)) {
+        reasons.push(`unit_not_active: fleet unit ${unit.unitId} was not on the policy on the loss date`);
+        return null;
+      }
+      return unit ?? null;
+    });
+    const hnoa = commercial ? claimed.filter((cv, i) => !matches[i] && !findUnit(cv) && isHnoa(cv)) : [];
     const hit = matches.filter(Boolean);
-    check('vehicle_on_policy', hit.length === claimed.length, `${hit.length} of ${claimed.length} insured vehicles matched`);
-    if (!hit.length) {
+    if (commercial) {
+      check('fleet_unit_on_policy', hit.length + hnoa.length === claimed.length,
+        `${hit.length} listed fleet units, ${hnoa.length} hired/non-owned, of ${claimed.length} reported`);
+    } else {
+      check('vehicle_on_policy', hit.length === claimed.length, `${hit.length} of ${claimed.length} insured vehicles matched`);
+    }
+    if (!hit.length && !hnoa.length) {
       reasons.push('vehicle_not_on_policy: the insured vehicle is not listed on the policy');
       return done('excluded', { lossInPeriod });
     }
-    if (hit.length < claimed.length) {
+    if (hit.length + hnoa.length < claimed.length) {
       reasons.push('vehicle_partly_on_policy: some reported insured vehicles are not listed on the policy');
       return done('needs_review', { lossInPeriod });
     }
-    unitId = hit[0].unitId;
-    unitCoverages = hit[0].coverages ?? [];
+    if (hit.length) {
+      unitId = hit[0].unitId;
+      unitCoverages = hit[0].coverages ?? [];
+    } else {
+      hnoaOnly = true;
+    }
   } else {
     const claimed = (facts.properties ?? []).filter((p) => !p.role || p.role === 'insured_location');
     const locations = policy.properties ?? [];
@@ -200,6 +229,43 @@ export function evaluateCoverage(policy, facts) {
       }
       unitId = hit[0].locationId;
       unitCoverages = hit[0].coverages ?? [];
+    }
+  }
+
+  // 4b. commercial_auto: hired / non-owned autos and cargo
+  if (family === 'auto' && isCommercial(policy.lob)) {
+    const policyWide = (policy.coverages ?? []).filter((c) => !c.appliesToUnitIds || !unitId || c.appliesToUnitIds.includes(unitId));
+    const finish = (matchedCovs, extraReason) => {
+      let deductible = null;
+      for (const c of matchedCovs) { deductible = deductibleOf(c, policy); if (deductible) break; }
+      const limits = {};
+      for (const c of matchedCovs) limits[c.code] = limitsOf(c);
+      reasons.push(`covered_under: ${matchedCovs.map((c) => c.code).join(', ')}`);
+      if (extraReason) reasons.push(extraReason);
+      return done('in_force', { lossInPeriod, deductible, limits, applicableCoverages: matchedCovs.map((c) => c.code) });
+    };
+    if (facts.cargoInvolved) {
+      const endorsed = (policy.endorsements ?? []).some((e) => e.code === 'CARGO');
+      const cov = [...unitCoverages, ...policyWide].find((c) => c.code === 'CARGO');
+      check('cargo_endorsed', endorsed && !!cov, 'motor truck cargo endorsement');
+      if (!endorsed || !cov) {
+        reasons.push('cargo_excluded: cargo loss is excluded unless the cargo endorsement is on the policy');
+        return done('excluded', { lossInPeriod });
+      }
+      return finish([cov]);
+    }
+    if (hnoaOnly) {
+      const liability = LIABILITY_CAUSES.includes(facts.lossCause);
+      const wanted = liability ? 'HNOA' : 'HIRED_PD';
+      const cov = policyWide.find((c) => c.code === wanted);
+      check('hnoa_coverage', !!cov, wanted);
+      if (!cov) {
+        reasons.push(liability
+          ? 'hnoa_not_purchased: hired and non-owned auto liability is not on the policy'
+          : 'hnoa_physical_damage_excluded: hired / non-owned autos have liability cover only (no hired physical damage on the policy)');
+        return done('excluded', { lossInPeriod });
+      }
+      return finish([cov], 'hired_non_owned: vehicle is not a scheduled fleet unit');
     }
   }
 

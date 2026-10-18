@@ -1,0 +1,104 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:10.399Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:07:23.184Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:19:20.470Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:23:33.962Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-ITG-01",
+  "team": "integration",
+  "title": "Calibrate triage and tenant rules so all e2e scenarios pass; add Kestrel commercial auto",
+  "story": "As an insurer evaluator I want every e2e scenario to pass for both demo tenants (ADR-003), and commercial auto available for Kestrel Point (REQ-24).",
+  "points": 13,
+  "tier": "strong",
+  "owner": "ic-integration-lead",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/modules/triage/",
+    "src/modules/rules/",
+    "tenants/",
+    "tests/e2e/",
+    "tests/synthetic/",
+    "tests/unit/triage/",
+    "tests/unit/rules/",
+    "tests/unit/config/demo-tenants.test.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md",
+    "org/decisions/ADR-003-scenario-calibration.md"
+  ],
+  "acceptance": [
+    "node --test --disable-warning=ExperimentalWarning tests/e2e/scenarios.test.mjs tests/e2e/harness.test.mjs passes with 0 failures for both aurelia-mutual and kestrel-point (baseline: 54 failing subtests in org/quality-baseline.txt)",
+    "Triage bands follow 0-24 minor, 25-49 moderate, 50-74 major, 75-100 severe; auto_rear_end_injury yields moderate and home_water_small yields minor, or the scenario expectation is changed with a one-line ADR-003 rationale comment",
+    "Aurelia fast-tracks glass-only and home water under $2,500 via STP rules in tenants/aurelia-mutual.json",
+    "Rules engine falls back to the tenant default queue when a rule names no queue; the harness temp tenant e2e-demo no longer routes to an undefined queue; a unit test in tests/unit/rules/ covers the fallback",
+    "tenants/kestrel-point.json has a commercial_auto question set (fleet/unit number, driver employment status, DOT number, cargo, permissive use) and rules routing to a commercial queue that never fast-track; commercial_auto_fleet_collision scenario passes",
+    "tests/unit/triage, tests/unit/rules and tests/unit/config/demo-tenants.test.mjs pass",
+    "Result lists root cause per failure category (severity bands, STP rules, undefined queue, other) for defect records",
+    "Only synthetic data; no files written outside listed paths"
+  ],
+  "brief": "Start by running tests/e2e/scenarios.test.mjs and harness.test.mjs and grouping the 54 failing subtests by cause; read ADR-003 for the rule on tuning weights versus changing expectations. Expect four categories. (1) Severity bands off by about one band: inspect weights and cut-offs in src/modules/triage/ (score to band mapping must be 0-24/25-49/50-74/75-100); adjust weights or the injury/water factors, then re-run unit tests in tests/unit/triage/ and update them only if they encode the wrong values. Prefer fixing the weights over editing scenario expectations; edit an expectation only when the scenario is arguably wrong and add a one-line rationale. (2) Aurelia STP: add or fix rules in tenants/aurelia-mutual.json so glass-only auto claims and homeowners water damage with estimate under 2500 are fast-tracked; check the rule condition field names against the rules module and tenants/README.md. (3) Harness temp tenant e2e-demo (tests/e2e/harness.mjs) routes to an undefined queue: make src/modules/rules/ fall back to the tenant default queue when a matched rule has no queue, and make sure the harness tenant defines a default queue; add a unit test. (4) Commercial auto for Kestrel: add the commercial_auto question set and rules (commercial queue, fastTrack never true, including overriding any generic STP rule) in tenants/kestrel-point.json, extend tests/unit/config/demo-tenants.test.mjs for validation, and add or enable the commercial_auto_fleet_collision scenario in tests/e2e/scenarios.test.mjs. Pitfalls: other teams are editing other folders at once, so use only tenant-bound ctx APIs and do not touch package.json or src outside triage/rules; run only your own tests; do not commit. Post progress and any contract-change request to the integration/architecture hubs with --ticket S2-ITG-01.",
+  "valueDrivers": [
+    "VD-3"
+  ],
+  "requirements": [
+    "REQ-24"
+  ],
+  "startedAt": "2026-10-18T21:07:23.184Z",
+  "doneAt": "2026-10-18T21:23:33.962Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:23:33.962Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "criteria met; 149 e2e + 97 unit pass"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 3.5995,
+    "inputTokens": 142,
+    "cacheWriteTokens": 256599,
+    "cacheReadTokens": 11407316,
+    "outputTokens": 4452,
+    "agents": {
+      "a722b3fd435cdd529": {
+        "label": "S2-ITG-01 ic-integration-lead",
+        "model": "claude-opus-5-5",
+        "inputTokens": 130,
+        "cacheWriteTokens": 235288,
+        "cacheReadTokens": 11063195,
+        "outputTokens": 4332,
+        "usd": 3.4762
+      },
+      "af3467a6a636848b1": {
+        "label": "S2-ITG-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 21311,
+        "cacheReadTokens": 344121,
+        "outputTokens": 120,
+        "usd": 0.1233
+      }
+    }
+  }
+}

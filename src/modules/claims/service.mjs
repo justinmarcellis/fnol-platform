@@ -436,7 +436,10 @@ export function createService(ctx) {
   /** Mutate a claim from a fact event: save, audit, publish claim.updated; optionally move status. */
   function reactTo(evt, fn) {
     const claimId = evt.data?.claimId;
-    if (!claimId || !rowOf(claimId)) return null;
+    if (!claimId || !rowOf(claimId)) {
+      ctx.log.warn('claim event for unknown claim ignored', { eventType: evt.type, eventId: evt.id, claimId: claimId ?? null });
+      return null;
+    }
     return db.transaction(() => {
       const claim = load(claimId);
       const before = JSON.stringify(claim);
@@ -510,7 +513,11 @@ export function createService(ctx) {
 
   /** Timer starts/stops for any event: tenant timer config names the events (startOn, stopOn). */
   function applyTimerEvent(evt) {
-    if (!evt.data?.claimId || !rowOf(evt.data.claimId)) return;
+    if (!evt.data?.claimId) return;
+    if (!rowOf(evt.data.claimId)) {
+      ctx.log.warn('timer event for unknown claim ignored', { eventType: evt.type, eventId: evt.id, claimId: evt.data.claimId });
+      return;
+    }
     db.transaction(() => {
       if (evt.type === 'claim.status.changed') timers.onStatusChanged(evt.data.claimId, evt.data.to);
       else timers.onEvent(evt);

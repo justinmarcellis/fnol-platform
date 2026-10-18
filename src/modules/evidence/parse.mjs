@@ -8,6 +8,31 @@ export const ALLOWED_TYPES = [
   'application/pdf', 'text/plain',
 ];
 
+/** Default per-upload cap; tenants override via config.evidence.maxUploadBytes. */
+export const DEFAULT_MAX_BYTES = MAX_BYTES;
+
+/**
+ * Detect the real content type from magic bytes. Returns one of ALLOWED_TYPES, or null when unrecognised.
+ * @param {Buffer} bytes
+ */
+export function sniffContentType(bytes) {
+  if (!Buffer.isBuffer(bytes) || bytes.length === 0) return null;
+  const b = bytes;
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  const head6 = b.subarray(0, 6).toString('latin1');
+  if (head6 === 'GIF87a' || head6 === 'GIF89a') return 'image/gif';
+  if (b.length >= 12 && b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP') return 'image/webp';
+  if (b.length >= 12 && b.subarray(4, 8).toString('latin1') === 'ftyp'
+    && /^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(b.subarray(8, 12).toString('latin1'))) return 'image/heic';
+  if (b.subarray(0, 1024).toString('latin1').includes('%PDF-')) return 'application/pdf';
+  // text/plain: no NUL or other control bytes, and valid UTF-8
+  const sample = b.subarray(0, 8192);
+  for (const c of sample) if (c === 0 || (c < 9) || (c > 13 && c < 32)) return null;
+  try { new TextDecoder('utf-8', { fatal: true }).decode(b.length > 65536 ? b.subarray(0, 65536) : b); } catch { return null; }
+  return 'text/plain';
+}
+
 /** Strip parameters and lowercase a content type. */
 export const baseType = (ct) => String(ct ?? '').split(';')[0].trim().toLowerCase();
 

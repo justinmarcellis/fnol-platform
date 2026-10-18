@@ -70,7 +70,15 @@
         "reason": "All criteria met; 46/46 tests pass (condition, routing, service); routes match openapi; live config read per call; only rules paths touched"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-3",
+        "severity": "medium",
+        "summary": "route_queue without queue resolved to undefined instead of tenant default",
+        "foundIn": "S2-ITG-01"
+      }
+    ]
   },
   "spend": {
     "usd": 1.2304,

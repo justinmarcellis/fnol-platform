@@ -1,6 +1,6 @@
 # FNOL Platform: architecture overview
 
-Status: v1.0.0 (Sprint 0) · Owner: dir-architecture · Ticket: S0-ARC-01 · Builds on ADR-001 (stack, layout, module contract)
+Status: v1.2.0 (Sprint 2 reconciliation with the built code, S2-ARC-01; first issued v1.0.0 in S0-ARC-01) · Owner: dir-architecture · Builds on ADR-001 (stack, layout, module contract)
 
 The FNOL platform is a commercial off-the-shelf product that any P&C carrier can license. It covers the intake window, from the first contact about a loss until the claim is triaged, routed to an adjuster (or fast tracked), and handed to the carrier's core claims system. Coverage decisions, reserving and payment stay in the carrier's system of record. The platform makes suggestions and sends them through.
 
@@ -107,19 +107,21 @@ The modules, their service functions, the events they publish and consume, and t
 | `intake` | Guided FNOL sessions driven by question sets with conditional logic. Submitting a session creates a claim. |
 | `claims` | Claim aggregate, lifecycle state machine, parties, vehicles, properties, notes, tasks, reserves (placeholder), regulatory timers. |
 | `evidence` | Upload, storage, extraction (AI), human review of extracted fields. |
-| `coverage` | Policy snapshot through the policy port, and the coverage check. |
+| `coverage` | Policy snapshot and policy search (`GET /policies?q=`) through the policy port, and the coverage check (personal auto, homeowners, commercial auto). |
 | `triage` | Severity, complexity, fraud indicators, subrogation flag, explanation (AI cascade plus rules). |
 | `rules` | Condition-language evaluator used by intake, triage and routing. Owns routing decisions. |
 | `adjuster` | Read models: the first-view payload and the inbox. |
 | `integrations` | Webhook subscriptions and delivery, the outbox API, core-system adapters (claims port). |
+| `kpi` (1.2.0) | Read-only operational KPIs per tenant, tied to product value drivers (`GET /kpis`). |
+| `health` | `GET /healthz` liveness. |
 
 ## 3. Multi-tenancy
 
 **Model: shared runtime, shared database, row isolation.** This is the cheapest model to run for a COTS PoC, and it moves to a database per tenant later without changing module code because every module goes through `ctx.db`.
 
-- **Resolution.** The bearer token's `tid` claim names the tenant. Core resolves `req.tenant` (the tenant's config and its keys) before any handler runs. Request bodies never choose the tenant. If a body carries a `tenantId` that differs from the token, the request fails with `403 tenant_mismatch`.
-- **Row isolation.** Every tenant-owned table has `tenant_id TEXT NOT NULL`, and the first column of its primary key or index is `tenant_id`. `ctx.db` is bound to the request's tenant and adds `tenant_id = ?` to every statement, so a module cannot forget it (ADR-001). Event handlers get a `ctx.db` bound to `evt.tenantId`. Only `src/core` has an unscoped handle, used for migrations and the outbox dispatcher.
-- **Per-tenant PII keys.** Each tenant has its own data key: AES-256-GCM, wrapped by a master key from `.secrets/` locally or Cloud KMS on GCP. `ctx.crypto.encryptPii(tenantId, value)` encrypts every field marked `"x-pii": true` in the domain schemas. Deleting a tenant's key crypto-shreds that tenant's PII. Keys rotate per tenant, and ciphertext records the key version.
+- **Resolution.** The bearer token's `tenantId` claim names the tenant (v1.0.0 called it `tid`; core issues `tenantId`). Only `platform_admin` may act on another tenant, with `X-Tenant-Id`. Core resolves `req.tenant` (the tenant's config and its keys) before any handler runs. Request bodies never choose the tenant. If a body carries a `tenantId` that differs from the token, the request fails with `403 tenant_mismatch`.
+- **Row isolation.** Every tenant-owned table has `tenant_id TEXT NOT NULL`, and the first column of its primary key or index is `tenant_id`. `ctx.db` is bound to the request's tenant and adds `tenant_id = ?` to every statement, so a module cannot forget it (ADR-001). Event handlers get a tenant-bound context (`ctx.forTenant(evt.tenantid)`). Only `src/core` has an unscoped handle, used for migrations and the outbox dispatcher.
+- **Per-tenant PII keys (as built).** Each tenant's AES-256-GCM key is derived with HKDF-SHA256 from one 32-byte master key (`.secrets/master.key` locally), using the tenant id as salt. `ctx.crypto.encryptPii(tenantId, value)` encrypts every field marked `"x-pii": true` in the domain schemas as `enc:v1:<iv>:<tag>:<ct>`; `v1` is the ciphertext format version, not a key id, and there is no `tenant_keys` table. A wrong tenant or tampering fails decryption. **Target (deferred, platform ticket):** wrapped per-tenant data keys in Cloud KMS on GCP with a key id in the ciphertext (`enc:v2:<keyId>:...`), which enables per-tenant rotation and crypto-shredding by deleting one tenant's key.
 - **Isolation in events and logs.** Every event carries `tenantId`, and the bus delivers it only to handlers running in that tenant's context. Webhooks are per-tenant subscriptions. Logs carry `tenantId` and `requestId` and never carry PII.
 - **Noisy neighbours.** Rate limits per tenant, and AI token budgets per tenant and per claim (`ai.maxTokensPerClaim`).
 - **Testing.** `tests/integration` includes a cross-tenant leak test: tenant A's token must get a 404 for tenant B's ids on every GET route in the OpenAPI document.
@@ -137,6 +139,7 @@ The modules, their service functions, the events they publish and consume, and t
 | `queues`, `defaultQueue`, `fastTrack`, `severityBands` | Adjuster queues, assignment strategy, fast-track limits, severity cut-offs |
 | `timers`, `holidays` | Regulatory timers by state and LOB (acknowledge, contact, decide), with start and stop events, warning lead time and breach actions |
 | `notifications` | Claimant and internal notifications, webhook policy (allowed hosts, signing) |
+| `evidence` | Upload size cap (`maxUploadBytes`, added 1.2.0) |
 | `integrations` | Which policy adapter and core-claims adapter to use, and when to push (`claim.routed` by default) |
 | `ai` | Provider choice (`local`, `vertex-claude`, `vertex-gemini` or `cascade`), the cascade order, per-task thresholds, region, PII redaction before model calls, and whether human confirmation is required |
 
@@ -146,7 +149,8 @@ Rules and question sets are data, so a carrier can change them without a release
 
 - One public REST API, `/api/v1`, described by `contracts/openapi.yaml`. The UIs use no private endpoints.
 - Authentication uses a bearer token. Locally that is a dev HMAC token from `POST /auth/token`. In production it is an OIDC token from the carrier's identity provider (Identity Platform or IAP) carrying the same claims. Authorization is role-based: `x-roles` on each operation is enforced by the router (`router.post(path, handler, { roles })`).
-- Roles: `claimant` (limited to their own `claimIds`), `csr`, `adjuster`, `supervisor`, `tenant_admin`, `integration` (machine clients), and `auditor` (read only).
+- Roles (as issued by `src/core/auth.mjs`): `claimant` (limited to the sessions and claims they started), `agent`, `csr`, `adjuster`, `supervisor`, `tenant_admin` (also accepted under its original name `carrier_admin`), `integration` (machine clients), `auditor` (read only) and `platform_admin` (operator; passes every role check). Dev tokens carry `sub`, `tenantId`, `roles`, `name`, `exp`; `claimIds` is reserved and not issued yet.
+- Health: `GET /healthz` at the server root (outside `/api/v1`) returns `{ ok, modules, tenants }`.
 - Conventions: cursor pagination, `Idempotency-Key` on creates, `If-Match` versioning on claims and config, and one error shape, `{ error: { code, message } }`.
 - `x-module` on each operation names the module that registers the route, so ownership is clear when the router is assembled.
 
@@ -163,17 +167,18 @@ sequenceDiagram
   M->>DB: write claim rows
   M->>O: ctx.bus.publish(evt) inserts outbox row
   Note over DB,O: one transaction, so the state change and the event commit together
-  D->>O: poll pending rows in sequence
+  D->>O: read the committed row (pending ones are re-dispatched at boot)
   D->>S: deliver to bus.on(type) handlers (tenant-bound ctx)
   D->>W: deliver to integrations
   W-->>W: sign (HMAC-SHA256), POST with retry and exponential backoff, dead-letter after maxAttempts
 ```
 
-- **Envelope.** `events/envelope.schema.json`, CloudEvents 1.0 style: `specversion, id, type, source, time, tenantId, subject (= claimId), data`, plus `correlationId`, `causationId` and a per-tenant `sequence`.
-- **Transactional outbox.** `ctx.bus.publish()` inside a handler writes to the `outbox` table in the same SQLite transaction as the state change. A dispatcher in `src/core` delivers events at least once. Consumers must be idempotent on `event.id`. Core keeps a `consumed_events` table per handler for this.
+- **Envelope.** `events/envelope.schema.json`, CloudEvents 1.0 style: `specversion, id, type, source, time, tenantId, subject (= claimId), data`, plus `correlationId`, `causationId` and a per-tenant `sequence`. In process the bus uses the CloudEvents extension spelling `tenantid` and source `/fnol-platform`; the outbox API, webhooks and adapters normalise to the contract envelope.
+- **Sequence.** The outbox carries a per-tenant, strictly increasing `seq` (assigned in the publishing transaction, never reused). Consumers that need order use it (`GET /integrations/outbox?afterSequence=`).
+- **Transactional outbox.** `ctx.bus.publish()` inside a handler writes to the `outbox` table in the same SQLite transaction as the state change. The bus in `src/core` dispatches each event asynchronously after the insert, retries a failing handler up to 3 times, marks the row `delivered` or `failed`, and re-dispatches pending rows at boot: delivery is at least once. Consumers must be idempotent on `event.id`; core dedupes per named handler in `bus_handled`.
 - **No PII in events.** Events carry ids, codes and scores. Consumers fetch details through the API or `ctx.modules`. That keeps webhooks and analytics sinks out of PII scope.
 - **Webhooks.** A tenant subscribes HTTPS URLs to event types (`/integrations/webhooks`). Deliveries are signed with `X-FNOL-Signature: sha256=<hmac>` and `X-FNOL-Event-Id`, retried with exponential backoff, and visible under `/deliveries`. `GET /integrations/outbox` supports replay from a sequence number.
-- **Event catalogue (v1).** `claim.reported`, `claim.evidence.added`, `claim.evidence.extracted`, `claim.coverage.verified`, `claim.triaged`, `claim.routed`, `claim.status.changed`, `claim.timer.due`, `claim.timer.breached`, `claim.note.added`, and `tenant.config.updated`.
+- **Event catalogue (v1.2).** `claim.reported`, `claim.evidence.added`, `claim.evidence.extracted`, `claim.coverage.verified`, `claim.triaged`, `claim.routed`, `claim.status.changed`, `claim.timer.due`, `claim.timer.breached`, `claim.note.added`, `claim.updated` (added 1.2.0: any other claim mutation, ids and a `change` code only) and `tenant.config.updated`.
 
 ## 7. Claim lifecycle state machine
 
@@ -327,3 +332,6 @@ The PoC runs as one Node process with SQLite. The same module boundaries map ont
 - **D4.** Coverage and evidence results are recorded in `claim.checks`, not as lifecycle sub-states.
 - **D5.** The audit and auth routes are registered by `src/core` (`x-module: core`). The outbox is a core table, exposed read-only by `integrations`.
 - **D6.** OpenAPI references the domain JSON Schemas directly (`$ref: domain/Claim.schema.json`), so there is one source of truth.
+- **D7 (1.2.0).** Contracts describe the built code where the code is reasonable and the change is additive. Roles, the dev-token shape, `/healthz`, the in-process envelope and the crypto format are documented as built; security hardening of `src/core` (store rewrite, key ids, log redaction) goes to the platform team, not into the contract.
+- **D8 (1.2.0).** Routing precedence is "first `route_queue` by ascending priority wins; approved fast track beats queue rules; `deny_fast_track` beats `fast_track`" (contracts/modules.md, rules).
+- **D9 (1.2.0).** Severity band cut-offs are 0-24 / 25-49 / 50-74 / 75-100 unless the tenant overrides `severityBands` (ADR-003, domain-model.md section 3).

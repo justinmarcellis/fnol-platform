@@ -6,6 +6,26 @@ import { lossDateInTenantZone } from './dates.mjs';
 const SYSTEM_ACTOR = 'system:coverage';
 
 /**
+ * Classify a free-text search string. Order matters: VIN (17 alphanumerics), postal (5 or 9 digits),
+ * phone (10 digits, or 11 with a leading 1), policy-number prefix (letters, optional dash, digits), last name.
+ * @returns {{ kind: 'vin'|'postalCode'|'phone'|'policyNumberPrefix'|'lastName', criteria: object }|null}
+ */
+export function classifyQuery(q) {
+  const s = String(q ?? '').trim();
+  if (!s) return null;
+  if (/^[A-Za-z0-9]{17}$/.test(s)) return { kind: 'vin', criteria: { vin: s } };
+  if (/^\d{5}(-\d{4})?$/.test(s)) return { kind: 'postalCode', criteria: { postalCode: s } };
+  if (/^[+(\d][\d\s().+-]*$/.test(s)) {
+    const d = s.replace(/\D/g, '');
+    if (d.length === 10 || (d.length === 11 && d[0] === '1')) return { kind: 'phone', criteria: { phone: d } };
+    return null;
+  }
+  if (/^[A-Za-z]{2,5}-?\d*$/.test(s) && /[-\d]/.test(s)) return { kind: 'policyNumberPrefix', criteria: { policyNumberPrefix: s.toUpperCase() } };
+  if (/^[A-Za-z][A-Za-z'’. -]{1,59}$/.test(s)) return { kind: 'lastName', criteria: { lastName: s } };
+  return null;
+}
+
+/**
  * @param {object} ctx tenant-bound context (root ctx at boot; functions need a tenant when called)
  */
 export function createService(ctx) {
@@ -61,11 +81,34 @@ export function createService(ctx) {
      * @returns {Promise<object[]>} PolicySummary[]
      */
     async searchPolicies(criteria = {}) {
-      const keys = ['lastName', 'postalCode', 'vin', 'phone'];
+      const keys = ['lastName', 'postalCode', 'vin', 'phone', 'policyNumberPrefix'];
       const given = keys.filter((k) => criteria[k] !== undefined && criteria[k] !== null && String(criteria[k]).trim() !== '');
       if (!given.length) throw new AppError('bad_request', 'Provide at least one of lastName, postalCode, vin, phone', 400);
       try {
         return await adapter().search(Object.fromEntries(given.map((k) => [k, criteria[k]])));
+      } catch (e) {
+        if (e?.status) throw e;
+        throw new AppError('upstream_error', 'Policy system unavailable', 502);
+      }
+    },
+
+    /**
+     * Free-text policy search for CSR / agent screens. Classifies q (VIN, phone, postal code, policy-number
+     * prefix, last name), looks it up by blind index and returns masked PolicySummary rows.
+     * @param {string} q
+     * @returns {Promise<{ kind: string, items: object[] }>}
+     */
+    async searchByQuery(q) {
+      const text = typeof q === 'string' ? q.trim() : '';
+      if (!text) throw new AppError('bad_request', 'q is required', 400);
+      const parsed = classifyQuery(text);
+      if (!parsed) throw new AppError('bad_request', 'q must be a VIN, phone number, postal code, policy number prefix or last name', 400);
+      const a = adapter();
+      try {
+        const items = typeof a.searchSummaries === 'function'
+          ? await a.searchSummaries(parsed.criteria)
+          : await a.search(parsed.criteria);
+        return { kind: parsed.kind, items };
       } catch (e) {
         if (e?.status) throw e;
         throw new AppError('upstream_error', 'Policy system unavailable', 502);
@@ -94,8 +137,9 @@ export function createService(ctx) {
         lob: claim.lob,
         lossDate,
         lossCause: loss.cause,
-        vehicles: (claim.vehicles ?? []).map((v) => ({ role: v.role, vin: v.vin, policyVehicleId: v.policyVehicleId })),
-        properties: (claim.properties ?? []).map((p) => ({ role: p.role, policyLocationId: p.policyLocationId })),
+        cargoInvolved: loss.cargoInvolved === true || (claim.properties ?? []).some((p) => p.role === 'cargo'),
+        vehicles: (claim.vehicles ?? []).map((v) => ({ role: v.role, ownership: v.ownership, vin: v.vin, policyVehicleId: v.policyVehicleId })),
+        properties: (claim.properties ?? []).filter((p) => p.role !== 'cargo').map((p) => ({ role: p.role, policyLocationId: p.policyLocationId })),
       };
 
       let policy = null;

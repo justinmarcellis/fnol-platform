@@ -172,3 +172,60 @@ test('subscribe registers an unref 30 s sweep interval', async (t) => {
   assert.ok(sweep, 'a 30 000 ms interval was created');
   assert.equal(sweep.h.hasRef(), false, 'interval is unref-ed');
 });
+
+import claimsModule from '../../../src/modules/claims/index.mjs';
+import { mock } from 'node:test';
+
+function fakeCtx(extra = {}) {
+  const logs = [];
+  return { logs, log: { warn: (m, f) => logs.push([m, f]) }, clock: { now: () => new Date(T0) }, tenants: { list: () => [] }, forTenant: () => ({}), ...extra };
+}
+
+test('sweep uses ctx.scheduler.every when present; re-subscribe cancels the previous registration', async () => {
+  const calls = [];
+  let cancelled = 0;
+  const scheduler = { every: (ms, fn, o) => { calls.push({ ms, fn, o }); return () => { cancelled++; }; } };
+  const ctx = fakeCtx({ scheduler });
+  mock.timers.enable({ apis: ['setInterval'] });
+  try {
+    claimsModule.subscribe({ on() {} }, ctx);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].ms, 30000);
+    assert.equal(calls[0].o.name, 'claims:timer-sweep');
+    await calls[0].fn(); // runs a sweep over zero tenants without error
+    mock.timers.tick(120000);
+    assert.equal(ctx.logs.length, 0);
+    claimsModule.subscribe({ on() {} }, ctx);
+    assert.equal(cancelled, 1, 'teardown cancels the scheduler registration');
+    assert.equal(calls.length, 2);
+  } finally { mock.timers.reset(); }
+});
+
+test('sweep falls back to setInterval without a scheduler, and teardown clears it', () => {
+  const ctx = fakeCtx();
+  mock.timers.enable({ apis: ['setInterval'] });
+  let sweeps = 0;
+  ctx.tenants.list = () => { sweeps++; return []; };
+  try {
+    claimsModule.subscribe({ on() {} }, ctx);
+    mock.timers.tick(30000);
+    assert.equal(sweeps, 1);
+    claimsModule.subscribe({ on() {} }, ctx); // replaces: old interval cleared
+    mock.timers.tick(30000);
+    assert.equal(sweeps, 2, 'only the replacement interval is running');
+  } finally { mock.timers.reset(); }
+});
+
+test('claims bus handlers swallow errors for missing claims', async () => {
+  const handlers = {};
+  const ctx = fakeCtx();
+  mock.timers.enable({ apis: ['setInterval'] });
+  try { claimsModule.subscribe({ on: (t, fn) => { handlers[t] = fn; } }, ctx); } finally { mock.timers.reset(); }
+  const boom = { modules: { claims: {
+    applyEvent: async () => { throw Object.assign(new Error('Claim not found'), { code: 'not_found' }); },
+    applyTimerEvent: async () => { throw new Error('db closed'); },
+  } } };
+  await assert.doesNotReject(handlers['claim.triaged']({ id: 'e', type: 'claim.triaged', data: { claimId: 'x' } }, boom));
+  await assert.doesNotReject(handlers['*']({ id: 'e', type: 'x', data: { claimId: 'x' } }, boom));
+  assert.equal(ctx.logs.length, 2);
+});

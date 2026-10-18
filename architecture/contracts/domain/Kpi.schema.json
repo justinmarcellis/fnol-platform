@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Kpi.schema.json",
+  "title": "KPI report",
+  "description": "Response of GET /kpis (added 1.2.0): per-tenant operational metrics for a period, each tied to a product value driver (product/value-propositions.md). Read only, no PII. A metric whose source failed or whose denominator is zero has value null; numerator and denominator are still reported where known.",
+  "type": "object",
+  "required": [
+    "period",
+    "metrics"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "period": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "to": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Metric"
+      }
+    },
+    "truncated": {
+      "type": "boolean",
+      "description": "True when the claim scan hit its page cap; metrics then cover a subset."
+    }
+  },
+  "$defs": {
+    "Metric": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "valueDriver",
+        "value",
+        "unit",
+        "numerator",
+        "denominator"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,63}$",
+          "examples": [
+            "stp_rate",
+            "automated_capture_rate",
+            "median_minutes_to_acknowledgment",
+            "median_minutes_to_assignment",
+            "coverage_verified_at_intake_rate",
+            "fraud_flag_rate",
+            "subrogation_flag_rate",
+            "digital_self_service_share",
+            "spanish_session_share",
+            "regulatory_timers_met",
+            "regulatory_timers_breached"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "valueDriver": {
+          "type": "string",
+          "pattern": "^VD-[0-9]+$",
+          "description": "Product value driver, e.g. VD-1 (LAE via STP), VD-2 (cycle time), VD-4 (leakage), VD-5 (subrogation), VD-6 (digital and language reach), VD-7 (regulatory compliance)."
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "ratio",
+            "minutes",
+            "count"
+          ],
+          "description": "ratio is 0-1."
+        },
+        "numerator": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "denominator": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "definition": {
+          "type": "string",
+          "description": "Plain-language definition of the metric."
+        },
+        "note": {
+          "type": "string",
+          "description": "Why value is null (source unavailable or failed, computation failed)."
+        }
+      }
+    }
+  }
+}

@@ -74,7 +74,15 @@
         "reason": "All criteria met; 26/26 intake unit and workflow integration tests pass; tenant isolation, PII handling, idempotent submit and claimant access verified"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-001",
+        "severity": "high",
+        "summary": "Intake agent role can read/write any session",
+        "foundIn": "S2-SEC-01"
+      }
+    ]
   },
   "spend": {
     "usd": 1.068,

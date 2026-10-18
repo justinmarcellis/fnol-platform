@@ -39,7 +39,7 @@ export function areasIn(text) {
 }
 
 const RE = {
-  rearEnded: /rear[- ]?ended|from behind|hit in the rear/i,
+  rearEnded: /rear[- ]?ended|from behind|hit in the rear|(car|vehicle|truck|driver|van) behind (me|us)\b.{0,40}\b(hit|struck|ran into|bumped|rear[- ]?ended)/i,
   selfRearEnd: /\b(i|we) (rear[- ]?ended|hit the (car|vehicle|truck) (in front|ahead)|ran into the back)/i,
   insuredFault: /\b(my fault|i (was at fault|caused|ran|failed|backed into|hit|struck|slid)|we (caused|hit|ran into))\b/i,
   otherFault: /(other (driver|party|vehicle|motorist)|another (driver|vehicle|car)|a (driver|car|truck)).{0,60}(ran|failed to|cut|swerved|hit|struck|crossed|was speeding|rear[- ]?ended|backed into)|not my fault|at fault was the other/i,
@@ -94,6 +94,9 @@ export function buildTriageFacts({ bundle, accepted = {}, verification = null, p
   const atFaultRaw = val(accepted, 'atFaultParty');
   const cause = loss.cause ?? null;
   const injured = parties.filter((p) => p?.injured === true).length;
+  const properties = bundle?.properties ?? claim.properties ?? [];
+  const insuredVehicles = vehicles.filter((v) => !v?.role || v.role === 'insured');
+  const totalLoss = insuredVehicles.some((v) => Array.isArray(v?.damageAreas) && v.damageAreas.includes('total'));
   const failed = (verification?.checks ?? []).filter((c) => c && c.passed === false).map((c) => c.code).filter(Boolean).sort();
   const prior = priorClaims ?? bundle?.priorClaimsCount ?? (Array.isArray(bundle?.priorClaims) ? bundle.priorClaims.length : null)
     ?? claim.priorClaimsCount ?? (Number.isFinite(Number(val(accepted, 'priorClaims'))) ? Number(val(accepted, 'priorClaims')) : null);
@@ -114,6 +117,10 @@ export function buildTriageFacts({ bundle, accepted = {}, verification = null, p
     fatality: loss.fatality === true,
     vehiclesInvolved: Number.isInteger(loss.vehiclesInvolved) ? loss.vehiclesInvolved : vehicles.length,
     partyCount: parties.length,
+    // Calibration cues the AI severity pass does not score (ADR-003). Booleans only, no free text.
+    vehicleNotDrivable: !totalLoss && insuredVehicles.some((v) => v?.drivable === false || v?.towed === true),
+    totalLossIndicated: totalLoss,
+    dwellingUninhabitable: properties.some((p) => p?.habitable === false),
     policeReportFiled: policeFiled,
     policeReportNumber: policeNumber ? 'on_file' : undefined,
     estimateTotal: estimate ?? undefined,

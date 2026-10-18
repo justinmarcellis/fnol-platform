@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/PolicySummary.schema.json",
+  "title": "Policy summary (search result)",
+  "description": "One row of GET /policies?q= (added 1.2.0). Masked contact data only: never a full phone, address or date of birth. Built by the coverage module from the policy port.",
+  "type": "object",
+  "required": [
+    "policyNumber",
+    "lob",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "policyNumber": {
+      "type": "string",
+      "examples": [
+        "AUT-100001"
+      ]
+    },
+    "lob": {
+      "$ref": "common.schema.json#/$defs/Lob"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_force",
+        "cancelled",
+        "expired",
+        "pending_cancellation",
+        "not_found"
+      ]
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "effectiveDate": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "cancellationDate": {
+          "$ref": "common.schema.json#/$defs/Date"
+        }
+      }
+    },
+    "riskState": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/UsState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Policy rating state."
+    },
+    "insuredName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-pii": true,
+      "description": "Display name of the primary named insured (decrypted for staff roles)."
+    },
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Masked contact hints so a CSR can confirm the caller.",
+      "properties": {
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\*\\*\\*-\\*\\*\\*-[0-9]{4}$",
+          "examples": [
+            "***-***-0101"
+          ]
+        },
+        "postalCode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{3}\\**$",
+          "examples": [
+            "606**"
+          ]
+        }
+      }
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Short vehicle or property description, e.g. \"2021 Fabrikam Sedan\" or \"single family in Example City, IL\". No street address."
+    },
+    "namedInsureds": {
+      "type": "array",
+      "description": "Legacy 1.0 field (searchPolicies service function); not returned by GET /policies.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-pii": true
+          }
+        }
+      }
+    },
+    "vehicleCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "propertyCount": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

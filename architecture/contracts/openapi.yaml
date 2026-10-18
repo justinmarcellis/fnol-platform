@@ -1,15 +1,19 @@
 openapi: 3.1.0
 info:
   title: FNOL Platform API
-  version: 1.0.0
+  version: 1.2.0
   summary: Multi-tenant First Notice of Loss platform (proof of concept).
   description: |
     API-first contract for every channel (claimant web, CSR, adjuster, admin, partners).
 
     * Base path `/api/v1`. All bodies are JSON unless stated.
-    * **Tenant comes from the bearer token** (`tid` claim). A request never names another tenant;
+    * **Tenant comes from the bearer token** (`tenantId` claim). A request never names another tenant;
       a `tenantId` in a body, if present, must equal the token tenant or the call fails with `403 tenant_mismatch`.
-    * **Roles** per operation are listed in `x-roles`. `x-module` names the module (ADR-001) that registers the route.
+    * **Roles** per operation are listed in `x-roles` and match the roles each route registers (src/core/auth.mjs `ROLES`).
+      `carrier_admin` is the original name of `tenant_admin`; routes list both where both are accepted. `platform_admin`
+      passes every role check (never listed) and is the only role that may send `X-Tenant-Id`. `x-module` names the module (ADR-001) that registers the route.
+    * Version 1.2.0 (additive over 1.0.0): role matrix aligned with the built routes, `/healthz`, dev token shape, intake narrative and
+      step fields, policy search, KPIs. See the architecture hub answers for S2-ARC-01.
     * Errors always use `{ "error": { "code", "message" } }` (see `Error`).
     * Domain shapes are referenced from `domain/*.schema.json` (JSON Schema 2020-12) so the API and storage share one source of truth.
     * Responses decrypt PII only for roles allowed to see it; others receive `"[redacted]"` in `x-pii` fields.
@@ -39,15 +43,19 @@ tags:
   - name: adjuster
   - name: config
   - name: integrations
+  - name: kpi
   - name: audit
   - name: health
 
 paths:
-  /health:
+  /healthz:
+    servers:
+      - url: http://localhost:8080
+        description: Served at the root, outside /api/v1 (Cloud Run and load-balancer health checks)
     get:
       tags: [health]
       operationId: getHealth
-      summary: Liveness and readiness
+      summary: Liveness (GET /healthz at the server root; renamed from /health in 1.2.0 to match the built route)
       security: []
       x-roles: []
       x-module: health
@@ -58,10 +66,11 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [ok]
                 properties:
-                  status: { type: string, enum: [ok, degraded] }
-                  version: { type: string }
-                  aiProviders: { type: object, additionalProperties: { type: string, enum: [available, unconfigured, error] } }
+                  ok: { type: boolean }
+                  modules: { type: array, items: { type: string }, description: Loaded module names }
+                  tenants: { type: integer, minimum: 0, description: Number of loaded tenant configs }
 
   # ---------------------------------------------------------------- auth
   /auth/token:
@@ -69,7 +78,11 @@ paths:
       tags: [auth]
       operationId: issueDevToken
       summary: Issue a development token (disabled when NODE_ENV=production)
-      description: Dev-only HMAC-signed token. In production the platform accepts OIDC tokens from the tenant identity provider (Identity Platform / IAP) with the same claims.
+      description: |
+        Dev-only HMAC-signed token (returns 404 when devMode is off). In production the platform accepts OIDC tokens
+        from the tenant identity provider (Identity Platform / IAP) with the same claims. Core also accepts `sub` for
+        `userId` and `name` for `displayName` (aliases kept for older clients). Tokens last 8 hours; `ttlMinutes` and
+        `claimIds` are accepted and ignored in 1.2.0 (claimant scoping is enforced by the intake and claims services).
       security: []
       x-roles: []
       x-module: core
@@ -79,15 +92,19 @@ paths:
           application/json:
             schema:
               type: object
-              required: [tenantId, userId, roles]
-              additionalProperties: false
+              required: [tenantId, roles]
+              anyOf:
+                - required: [userId]
+                - required: [sub]
               properties:
                 tenantId: { $ref: 'domain/common.schema.json#/$defs/TenantId' }
                 userId: { type: string, examples: [adj-0001] }
+                sub: { type: string, description: Alias of userId. }
                 displayName: { type: string }
+                name: { type: string, description: Alias of displayName. }
                 roles: { type: array, minItems: 1, items: { $ref: 'domain/common.schema.json#/$defs/Role' } }
-                claimIds: { type: array, items: { type: string }, description: For claimant tokens, the claims this user may see. }
-                ttlMinutes: { type: integer, default: 60, maximum: 720 }
+                claimIds: { type: array, items: { type: string }, description: 'Reserved for claimant tokens; ignored in 1.2.0.' }
+                ttlMinutes: { type: integer, maximum: 720, description: 'Reserved; ignored in 1.2.0 (tokens last 8 hours).' }
       responses:
         '201':
           description: Token issued
@@ -100,7 +117,8 @@ paths:
     get:
       tags: [auth]
       operationId: getMe
-      summary: Current principal
+      summary: Current principal (planned; not registered in 1.2.0, the token response carries the principal)
+      x-status: planned
       x-roles: [claimant, csr, adjuster, supervisor, tenant_admin, integration, auditor]
       x-module: core
       responses:
@@ -117,7 +135,7 @@ paths:
       tags: [intake]
       operationId: startIntakeSession
       summary: Start a guided FNOL session for a line of business and channel
-      x-roles: [claimant, csr, integration]
+      x-roles: [claimant, csr, agent, integration, carrier_admin]
       x-module: intake
       requestBody:
         required: true
@@ -131,8 +149,12 @@ paths:
                 tenantId: { $ref: 'domain/common.schema.json#/$defs/TenantId', description: Optional; must match the token. }
                 lob: { $ref: 'domain/common.schema.json#/$defs/Lob' }
                 lossType: { type: string }
-                channel: { $ref: 'domain/common.schema.json#/$defs/Channel' }
-                locale: { type: string, default: en }
+                channel:
+                  description: Intake channel. The alias `csr` is accepted and stored as `csr_phone`.
+                  anyOf:
+                    - { $ref: 'domain/common.schema.json#/$defs/Channel' }
+                    - { const: csr, deprecated: true }
+                locale: { type: string, default: en, description: Falls back to en when the tenant does not offer the locale. }
                 policyNumber: { type: string }
       responses:
         '201':
@@ -149,7 +171,7 @@ paths:
     get:
       tags: [intake]
       operationId: getIntakeSession
-      x-roles: [claimant, csr, integration]
+      x-roles: [claimant, csr, agent, integration, carrier_admin]
       x-module: intake
       responses:
         '200':
@@ -164,7 +186,7 @@ paths:
       tags: [intake]
       operationId: getNextQuestion
       summary: Next question after evaluating showIf / requiredIf against current answers
-      x-roles: [claimant, csr, integration]
+      x-roles: [claimant, csr, agent, integration, carrier_admin]
       x-module: intake
       responses:
         '200':
@@ -180,7 +202,7 @@ paths:
       tags: [intake]
       operationId: answerQuestion
       summary: Answer one question (or several with `answers`); returns the next step
-      x-roles: [claimant, csr, integration]
+      x-roles: [claimant, csr, agent, integration, carrier_admin]
       x-module: intake
       requestBody:
         required: true
@@ -188,17 +210,11 @@ paths:
           application/json:
             schema:
               oneOf:
-                - type: object
-                  required: [questionId, value]
-                  properties:
-                    questionId: { type: string }
-                    value: {}
+                - { $ref: '#/components/schemas/AnswerItem' }
                 - type: object
                   required: [answers]
                   properties:
-                    answers:
-                      type: array
-                      items: { type: object, required: [questionId, value], properties: { questionId: { type: string }, value: {} } }
+                    answers: { type: array, items: { $ref: '#/components/schemas/AnswerItem' } }
       responses:
         '200':
           description: Accepted; next step
@@ -207,14 +223,48 @@ paths:
               schema: { $ref: '#/components/schemas/IntakeStep' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
-        '422': { $ref: '#/components/responses/Unprocessable' }
+        '422':
+          description: One or more answers were rejected. The body is the error envelope merged with the current IntakeStep (errors[] per question).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntakeStepError' }
+  /intake/sessions/{sessionId}/narrative:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    post:
+      tags: [intake]
+      operationId: submitIntakeNarrative
+      summary: Free-text narrative in, AI-suggested answers out (added 1.2.0)
+      description: |
+        Runs `extract_narrative` through the AI cascade and returns the step with `suggestions[]` (each with AI provenance).
+        Nothing is recorded as an answer: the caller confirms a suggestion by posting it to `/answers` with `provenance: ai_extraction`.
+        The narrative text is PII and is not stored by this call.
+      x-roles: [claimant, csr, agent, integration, carrier_admin]
+      x-module: intake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 20000, x-pii: true }
+      responses:
+        '200':
+          description: Step with suggestions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntakeStep' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /intake/sessions/{sessionId}/submit:
     parameters: [{ $ref: '#/components/parameters/SessionId' }]
     post:
       tags: [intake]
       operationId: submitIntakeSession
       summary: Submit a complete session; creates the claim (publishes claim.reported)
-      x-roles: [claimant, csr, integration]
+      x-roles: [claimant, csr, agent, integration, carrier_admin]
       x-module: intake
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       responses:
@@ -447,8 +497,8 @@ paths:
             application/json:
               schema: { $ref: 'domain/Document.schema.json' }
         '404': { $ref: '#/components/responses/NotFound' }
-        '413': { description: Too large (default limit 15 MB), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-        '415': { description: Unsupported media type, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '413': { description: 'File larger than the tenant cap (TenantConfig.evidence.maxUploadBytes, default 10 MB; payload_too_large). Request bodies over 15 MB are refused by core.', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '415': { description: 'Unsupported media type, or the declared type does not match the file magic bytes. Allowed: image/jpeg, image/png, image/webp, image/heic, image/gif, application/pdf, text/plain.', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
     get:
       tags: [evidence]
       operationId: listDocuments
@@ -462,6 +512,9 @@ paths:
           content:
             application/json:
               schema: { type: object, properties: { items: { type: array, items: { $ref: 'domain/Document.schema.json' } } } }
+        '404':
+          description: 'Unknown claim in this tenant (1.2.0 target; the 1.0 build returns 200 with an empty list, which leaks nothing and is tolerated until evidence aligns).'
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
   /claims/{claimId}/documents/{documentId}:
     parameters: [{ $ref: '#/components/parameters/ClaimId' }, { $ref: '#/components/parameters/DocumentId' }]
     get:
@@ -549,7 +602,7 @@ paths:
     get:
       tags: [coverage]
       operationId: getCoverage
-      x-roles: [csr, adjuster, supervisor, auditor]
+      x-roles: [csr, adjuster, supervisor, integration, auditor]
       x-module: coverage
       responses:
         '200':
@@ -562,6 +615,34 @@ paths:
                   verification: { $ref: 'domain/CoverageVerification.schema.json' }
                   policy: { $ref: 'domain/PolicySnapshot.schema.json' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /policies:
+    get:
+      tags: [coverage]
+      operationId: searchPolicies
+      summary: Free-text policy search for CSR and agent intake (added 1.2.0)
+      description: |
+        `q` is classified in this order: VIN (17 letters/digits), postal code (5 or 5+4 digits), phone (10 digits, or 11 starting with 1,
+        after removing punctuation), policy-number prefix (2-5 letters, optional dash, digits, e.g. `AUT-1000`), else last name.
+        PII criteria match only through HMAC blind indexes (`ctx.crypto.hmacIndex`); the policy-number prefix uses a plain indexed column.
+        Results are tenant-scoped, capped at 25 and carry masked contact data only. `matchedOn` says how `q` was read.
+      x-roles: [csr, agent, adjuster, supervisor]
+      x-module: coverage
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 100 }, description: 'VIN, phone, postal code, policy-number prefix or last name' }
+      responses:
+        '200':
+          description: Matching policies (possibly empty)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, matchedOn]
+                properties:
+                  items: { type: array, maxItems: 25, items: { $ref: 'domain/PolicySummary.schema.json' } }
+                  matchedOn: { type: string, enum: [vin, postalCode, phone, policyNumberPrefix, lastName] }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
   /policies/{policyNumber}/snapshot:
     get:
       tags: [coverage]
@@ -624,7 +705,7 @@ paths:
       tags: [routing]
       operationId: routeClaim
       summary: Route a triaged claim by tenant rules, or override (supervisor)
-      x-roles: [supervisor, adjuster]
+      x-roles: [supervisor, adjuster, carrier_admin]
       x-module: rules
       requestBody:
         required: false
@@ -654,7 +735,7 @@ paths:
     get:
       tags: [routing]
       operationId: getRoutingDecision
-      x-roles: [csr, adjuster, supervisor, auditor]
+      x-roles: [csr, adjuster, supervisor, auditor, carrier_admin]
       x-module: rules
       responses:
         '200': { description: Latest decision, content: { application/json: { schema: { $ref: 'domain/RoutingDecision.schema.json' } } } }
@@ -700,7 +781,7 @@ paths:
     get:
       tags: [config]
       operationId: getTenantConfig
-      x-roles: [tenant_admin, supervisor, auditor]
+      x-roles: [tenant_admin, carrier_admin, supervisor, auditor]
       x-module: config
       responses:
         '200':
@@ -714,7 +795,7 @@ paths:
       tags: [config]
       operationId: putTenantConfig
       summary: Replace tenant config (validated, versioned, audited; publishes tenant.config.updated)
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: config
       parameters: [{ $ref: '#/components/parameters/IfMatch' }]
       requestBody:
@@ -735,7 +816,7 @@ paths:
       tags: [config]
       operationId: validateTenantConfig
       summary: Dry-run validation (schema + semantic checks such as unknown queue ids, unreachable questions, rule syntax)
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: config
       requestBody:
         required: true
@@ -749,7 +830,7 @@ paths:
       tags: [config]
       operationId: getPublicTenantConfig
       summary: Branding, enabled LOBs and loss types for claimant/CSR UIs (no rules, no secrets)
-      x-roles: [claimant, csr, adjuster, supervisor, tenant_admin, integration, auditor]
+      x-roles: [claimant, agent, csr, adjuster, supervisor, tenant_admin, carrier_admin, integration, auditor]
       x-module: config
       responses:
         '200': { description: Public subset, content: { application/json: { schema: { $ref: '#/components/schemas/PublicConfig' } } } }
@@ -759,14 +840,14 @@ paths:
     get:
       tags: [integrations]
       operationId: listWebhooks
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: integrations
       responses:
         '200': { description: Subscriptions, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: 'domain/WebhookSubscription.schema.json' } } } } } } }
     post:
       tags: [integrations]
       operationId: createWebhook
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: integrations
       requestBody:
         required: true
@@ -795,7 +876,7 @@ paths:
     get:
       tags: [integrations]
       operationId: getWebhook
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: integrations
       responses:
         '200': { description: Subscription, content: { application/json: { schema: { $ref: 'domain/WebhookSubscription.schema.json' } } } }
@@ -803,7 +884,7 @@ paths:
     patch:
       tags: [integrations]
       operationId: updateWebhook
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: integrations
       requestBody:
         required: true
@@ -816,7 +897,7 @@ paths:
     delete:
       tags: [integrations]
       operationId: deleteWebhook
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: integrations
       responses:
         '204': { description: Deleted }
@@ -826,7 +907,7 @@ paths:
     get:
       tags: [integrations]
       operationId: listWebhookDeliveries
-      x-roles: [tenant_admin]
+      x-roles: [tenant_admin, carrier_admin]
       x-module: integrations
       parameters: [{ $ref: '#/components/parameters/Limit' }, { $ref: '#/components/parameters/Cursor' }]
       responses:
@@ -836,7 +917,7 @@ paths:
       tags: [integrations]
       operationId: listOutbox
       summary: Tenant's published events (outbox), for replay and debugging
-      x-roles: [tenant_admin, auditor, integration]
+      x-roles: [tenant_admin, carrier_admin, auditor, integration]
       x-module: integrations
       parameters:
         - { name: type, in: query, schema: { type: string } }
@@ -857,7 +938,7 @@ paths:
     get:
       tags: [integrations]
       operationId: listAdapters
-      x-roles: [tenant_admin, supervisor]
+      x-roles: [tenant_admin, carrier_admin, supervisor]
       x-module: integrations
       responses:
         '200':
@@ -878,7 +959,7 @@ paths:
       tags: [integrations]
       operationId: previewAdapterPayload
       summary: Show the payload the adapter would send to the core system (PII masked unless role allows)
-      x-roles: [tenant_admin, supervisor, adjuster]
+      x-roles: [tenant_admin, carrier_admin, supervisor, adjuster]
       x-module: integrations
       responses:
         '200':
@@ -903,11 +984,35 @@ paths:
       tags: [integrations]
       operationId: pushClaimToCore
       summary: Send (or resend) the claim to the core system through the adapter
-      x-roles: [tenant_admin, supervisor]
+      x-roles: [tenant_admin, carrier_admin, supervisor]
       x-module: integrations
       responses:
         '202': { description: Queued }
         '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- kpi
+  /kpis:
+    get:
+      tags: [kpi]
+      operationId: getKpis
+      summary: Operational KPIs for the caller's tenant, tied to product value drivers (added 1.2.0)
+      description: |
+        Read only and tenant-scoped. Defaults to the last 30 days. A date-only `to` includes that whole day (UTC).
+        Each metric is computed in isolation: a failing source gives `value: null` with a `note`, never a 500.
+        Zero denominators and empty medians give `value: null`.
+      x-roles: [supervisor, tenant_admin, carrier_admin, auditor]
+      x-module: kpi
+      parameters:
+        - { name: from, in: query, schema: { type: string, description: 'Date (YYYY-MM-DD) or date-time' } }
+        - { name: to, in: query, schema: { type: string, description: 'Date (YYYY-MM-DD) or date-time; must not be before from' } }
+      responses:
+        '200':
+          description: KPI report
+          content:
+            application/json:
+              schema: { $ref: 'domain/Kpi.schema.json' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   # ---------------------------------------------------------------- audit
   /audit:
@@ -924,6 +1029,7 @@ paths:
         - { name: action, in: query, schema: { type: string } }
         - { name: from, in: query, schema: { type: string, format: date-time } }
         - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: verify, in: query, schema: { type: boolean, default: false }, description: 'Also verify the hash chain; adds verification {ok, brokenAt, count}.' }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Cursor' }
       responses:
@@ -943,7 +1049,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: 'Claims: sub (user id), tid (tenant id), roles, optional claimIds (claimant), exp.'
+      description: 'Claims: sub (user id), tenantId, roles, name, exp (seconds). Dev tokens are HS256 HMAC-signed with a key derived from the master key. claimIds is reserved and not issued in 1.2.0.'
   parameters:
     ClaimId: { name: claimId, in: path, required: true, schema: { type: string } }
     SessionId: { name: sessionId, in: path, required: true, schema: { type: string } }
@@ -978,11 +1084,21 @@ components:
             requestId: { type: string }
     Token:
       type: object
-      required: [token, expiresAt]
+      required: [token, expiresAt, principal]
       properties:
         token: { type: string }
+        tokenType: { type: string, const: Bearer }
         expiresAt: { type: string, format: date-time }
         principal: { $ref: '#/components/schemas/Principal' }
+        claims:
+          type: object
+          description: Decoded token claims, for dev tooling.
+          properties:
+            sub: { type: string }
+            tenantId: { type: string }
+            roles: { type: array, items: { $ref: 'domain/common.schema.json#/$defs/Role' } }
+            name: { type: string }
+            exp: { type: integer }
     Principal:
       type: object
       required: [userId, tenantId, roles]
@@ -1001,20 +1117,52 @@ components:
         total: { type: integer }
     Question:
       $ref: 'domain/TenantConfig.schema.json#/properties/questionSets/items/properties/questions/items'
+    AnswerItem:
+      type: object
+      required: [questionId, value]
+      properties:
+        questionId: { type: string }
+        value: {}
+        provenance: { type: string, enum: [ai_extraction], description: 'Confirms a pending AI suggestion with the same value; the answer is then recorded with source ai_extraction and confirmedBy.' }
     IntakeStep:
       type: object
       required: [sessionId, done, progress]
       properties:
         sessionId: { type: string }
-        done: { type: boolean, description: True when every required question is answered and the session can be submitted. }
-        question: { oneOf: [{ $ref: '#/components/schemas/Question' }, { type: 'null' }] }
+        done: { type: boolean, description: True when every required question is answered, no rule blocks submission, and the session can be submitted. }
+        question:
+          description: Next question in order, or null when no required question is left (optional questions may remain, see optional).
+          oneOf: [{ $ref: '#/components/schemas/Question' }, { type: 'null' }]
+        prompt: { type: [string, 'null'], description: 'Question text localized to locale (added 1.2.0); null when question is null.' }
+        locale: { type: string, description: 'Session locale (added 1.2.0).' }
         progress: { type: object, properties: { answered: { type: integer }, requiredRemaining: { type: integer }, percent: { type: integer } } }
+        missing:
+          type: array
+          description: Required questions (static, requiredIf true, or forced by a require_question rule) not yet answered, localized (added 1.2.0). Empty when none.
+          items: { type: object, required: [questionId, text], properties: { questionId: { type: string }, text: { type: string } } }
+        optional:
+          type: array
+          description: Visible optional questions not yet answered (added 1.2.0).
+          items: { $ref: '#/components/schemas/Question' }
+        blocked:
+          type: array
+          description: Present only when intake-stage block_submit rules fire; reasons submission is blocked (added 1.2.0).
+          items: { type: string }
         errors: { type: array, items: { type: object, properties: { questionId: { type: string }, message: { type: string } } } }
         suggestions:
           type: array
           description: AI-prefilled answers awaiting confirmation
           items: { type: object, properties: { questionId: { type: string }, value: {}, ai: { $ref: 'domain/common.schema.json#/$defs/AiProvenance' } } }
         disclosures: { type: array, items: { type: string }, description: State fraud warning etc. to display }
+    IntakeStepError:
+      description: 422 body of POST /answers (added 1.2.0)
+      allOf:
+        - { $ref: '#/components/schemas/Error' }
+        - { $ref: '#/components/schemas/IntakeStep' }
+    PolicySummary:
+      $ref: 'domain/PolicySummary.schema.json'
+    KpiReport:
+      $ref: 'domain/Kpi.schema.json'
     ClaimCreate:
       type: object
       required: [lob, lossEvent]

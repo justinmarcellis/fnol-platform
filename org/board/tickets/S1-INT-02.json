@@ -75,7 +75,15 @@
         "reason": "All criteria met; 48 tests pass (run per file), docs check up to date, secret encrypted, guarded adapter import, in-scope paths only"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-007",
+        "severity": "high",
+        "summary": "Webhook SSRF check-then-fetch (DNS rebinding window)",
+        "foundIn": "S2-SEC-01"
+      }
+    ]
   },
   "spend": {
     "usd": 1.2235,

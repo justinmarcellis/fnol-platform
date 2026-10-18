@@ -261,3 +261,28 @@ test('HTTP routes follow openapi /claims paths', async (t) => {
   assert.equal(upd.json.status, 'done');
   assert.equal((await call(app, 'PATCH', `/api/v1/claims/${id}/tasks/tsk_missing00`, { token: adj, body: { status: 'done' } })).status, 404);
 });
+
+test('lossEvent location.geo round-trips and stays out of events and audit', async (t) => {
+  const app = await bootClaimsApp();
+  t.after(() => app.close());
+  const svc = app.claims();
+  const input = claimInput();
+  input.lossEvent.location = { ...input.lossEvent.location, geo: { lat: 43.07311, lng: -89.40123 } };
+  const c = await svc.createClaim(input, { actor: user('csr') });
+  await app.ctx.bus.drain();
+  assert.deepEqual((await svc.getClaim(c.id)).lossEvent.location.geo, { lat: 43.07311, lng: -89.40123 });
+  const out = JSON.stringify(app.ctx.bus.outbox('alpha'));
+  assert.ok(!out.includes('43.07311'));
+  assert.ok(!JSON.stringify(app.tctx().audit.list({ entityId: c.id })).includes('43.07311'));
+});
+
+test('event handlers for a missing claim log and return without throwing', async (t) => {
+  const app = await bootClaimsApp();
+  t.after(() => app.close());
+  const svc = app.claims();
+  assert.equal(await svc.applyEvent({ id: 'e1', type: 'claim.triaged', data: { claimId: 'clm_missing', severityScore: 1 } }), null);
+  assert.equal(await svc.applyTimerEvent({ id: 'e2', type: 'claim.status.changed', data: { claimId: 'clm_missing', to: 'closed' } }), undefined);
+  // through the bus: no handler failure, no outbox error
+  await assert.doesNotReject(async () => { await app.emit('claim.coverage.verified', 'clm_missing', { outcome: 'covered' }); });
+  await assert.doesNotReject(async () => { await app.emit('claim.routed', 'clm_missing', { outcome: 'assigned' }); });
+});

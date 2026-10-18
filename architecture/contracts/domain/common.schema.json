@@ -143,13 +143,16 @@
       "properties": {
         "description": {
           "type": "string",
-          "description": "Free text, e.g. \"Northbound I-94 near exit 12\""
+          "description": "Free text, e.g. \"Northbound I-94 near exit 12\". PII (can identify a person's whereabouts); encrypted at rest since 1.2.0.",
+          "x-pii": true
         },
         "address": {
           "$ref": "#/$defs/Address"
         },
         "geo": {
-          "$ref": "#/$defs/GeoPoint"
+          "$ref": "#/$defs/GeoPoint",
+          "x-pii": true,
+          "description": "PII (precise location); encrypted at rest as a JSON value since 1.2.0."
         },
         "state": {
           "$ref": "#/$defs/UsState"
@@ -190,7 +193,7 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 3,
-          "description": "Cascade tier that answered (0 = deterministic)."
+          "description": "Cascade tier that answered as an integer (0 = local/deterministic, 1 = cheap cloud model, 2 = strong cloud model)."
         },
         "promptVersion": {
           "type": "string"
@@ -205,6 +208,19 @@
             "type": "string"
           },
           "description": "Providers/models tried earlier in the cascade."
+        },
+        "tierName": {
+          "type": "string",
+          "enum": [
+            "local",
+            "cheap",
+            "strong"
+          ],
+          "description": "Name of the cascade tier (added 1.2.0); same meaning as tier."
+        },
+        "explanation": {
+          "type": "string",
+          "description": "Plain-language explanation of the output (standards.md). Added 1.2.0; producers that carry the explanation elsewhere may omit it."
         }
       }
     },
@@ -280,8 +296,12 @@
         "supervisor",
         "tenant_admin",
         "integration",
-        "auditor"
-      ]
+        "auditor",
+        "agent",
+        "carrier_admin",
+        "platform_admin"
+      ],
+      "description": "Roles issued by core (src/core/auth.mjs ROLES). carrier_admin is the original name of tenant_admin and is accepted wherever tenant_admin is listed (routes may list both). agent is a licensed agent reporting for an insured. platform_admin is the operator role: it passes every role check and may act on another tenant with X-Tenant-Id. auditor is read only."
     },
     "I18nText": {
       "description": "Plain string, or a map of BCP 47 locale to string.",
@@ -357,8 +377,8 @@
           "properties": {
             "fact": {
               "type": "string",
-              "pattern": "^(claim|loss|policy|coverage|triage|parties|vehicles|property|evidence|answers|session|tenant|now)(\\.[A-Za-z0-9_\\[\\]*]+)*$",
-              "description": "Dot path into the fact document, e.g. loss.cause, answers.injuries, triage.severityScore, vehicles[*].drivable"
+              "pattern": "^(claim|loss|policy|coverage|triage|parties|vehicles|property|evidence|answers|session|tenant|now)(\\[[0-9*]+\\]|\\.[A-Za-z0-9_\\[\\]*]+)*$",
+              "description": "Dot path into the fact document, e.g. loss.cause, answers.injuries, triage.severityScore, vehicles[*].drivable (1.2.0: a [*] or [n] segment may follow a name directly; the older vehicles.[*].drivable spelling stays valid)"
             },
             "op": {
               "type": "string",

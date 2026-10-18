@@ -1,0 +1,101 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:49.588Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:11:11.951Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:15:38.770Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:19:11.160Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-AI-01",
+  "team": "ai",
+  "title": "AI guardrails wrapper and offline evaluation harness",
+  "story": "AI guardrails and evaluation",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-ai-eval-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/ai/guardrails.mjs",
+    "src/ai/eval.mjs",
+    "tests/unit/ai/guardrails.test.mjs",
+    "tests/unit/ai/eval.test.mjs",
+    "tests/fixtures/ai/golden/",
+    "docs/ai-evaluation.md"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "src/ai/guardrails.mjs exports a wrapper that every provider call goes through; neutralises injection markers ('ignore previous instructions', role tags like <system>/[INST]/'system:') in document text, with tests",
+    "Input larger than the configured cap is truncated or rejected deterministically; tested",
+    "For cloud providers names, phones, emails, SSN/MBI patterns and plates are redacted before the call; the local provider receives full text; tested for both",
+    "Outputs are validated against src/ai/schemas.mjs task schemas; invalid output is rejected and falls back (no throw); tested",
+    "tests/fixtures/ai/golden/*.json holds golden cases for each task on synthetic scenarios (fictional data only)",
+    "node src/ai/eval.mjs scores the local provider: extraction field precision/recall, severity band accuracy, fraud/subrogation flag accuracy, and writes docs/ai-evaluation.md with method and table; vertex providers scored only on recorded fake responses",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/ai/guardrails.test.mjs tests/unit/ai/eval.test.mjs passes"
+  ],
+  "brief": "Read src/ai/index.mjs, cascade.mjs, schemas.mjs, inference-log.mjs and providers/* first. Build guardrails.mjs as a pure, zero-dependency layer: sanitizeText(text, opts) for injection neutralisation (replace markers with a visible [removed-instruction] token, never execute; also strip role tags and fenced 'system' blocks, case-insensitive), capInput(text, maxChars) with a default and a flag reporting truncation, redact(text) with regexes for emails, US phones, SSN (###-##-####), MBI (11 char pattern), licence plates, and names (use a small fictional-name heuristic plus field-aware redaction of known structured fields such as claimant.name; keep placeholder tokens like [NAME_1] consistent within one call, and provide a reverse map used only locally). guard(provider, task) returns a wrapped provider with the same interface as existing providers: sanitize+cap, redact only when provider.kind/locality is cloud (check how _shared.mjs and local.mjs identify themselves; do not edit providers or cascade, since you cannot write src/ai/providers), call, then validate output against the task schema; on invalid return the cascade's existing fallback signal (inspect cascade.mjs for how failure is represented) and record via inference-log. Do not modify existing files outside your paths; if wiring into cascade is needed, document it as a contract-change request to the architecture hub and export a helper instead. eval.mjs: load golden JSON, run local provider per task, compute precision/recall per field, severity band accuracy, flag accuracy, plus replay recorded fake vertex responses stored in golden fixtures; export a runEval() function (tests call it with a tiny golden set) and a CLI mode that writes docs/ai-evaluation.md (method section, per-task table, date). Pitfalls: keep output deterministic (no timestamps that break diffs other than a date line), no real names or carriers, no network.",
+  "valueDrivers": [
+    "VD-4",
+    "VD-7"
+  ],
+  "requirements": [
+    "REQ-25"
+  ],
+  "startedAt": "2026-10-18T21:11:11.951Z",
+  "doneAt": "2026-10-18T21:19:11.160Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:19:11.159Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 18 tests pass, eval runs offline and regenerates docs, redaction/validation/fallback verified, logs hash-only, synthetic data"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.613,
+    "inputTokens": 38,
+    "cacheWriteTokens": 113931,
+    "cacheReadTokens": 1593611,
+    "outputTokens": 928,
+    "agents": {
+      "a27331660ff06a6f0": {
+        "label": "S2-AI-01 ic-ai-eval-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 30,
+        "cacheWriteTokens": 93803,
+        "cacheReadTokens": 1374663,
+        "outputTokens": 145,
+        "usd": 0.511
+      },
+      "a39e91850fe557998": {
+        "label": "S2-AI-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 20128,
+        "cacheReadTokens": 218948,
+        "outputTokens": 783,
+        "usd": 0.102
+      }
+    }
+  }
+}

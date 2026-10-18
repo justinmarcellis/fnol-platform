@@ -2,7 +2,7 @@
 // Weights are 0-1 (schema). Score = capped sum of weights scaled to 0-100.
 const w = (n) => Math.max(0, Math.min(1, Math.round(n * 100) / 100));
 
-export const DEFAULTS = { inceptionDays: 30, lateReportDays: 14, priorClaims: 2, roundMin: 1000, roundStep: 500, siuScore: 60 };
+export const DEFAULTS = { inceptionDays: 30, lateReportDays: 14, theftLateReportDays: 7, priorClaims: 2, roundMin: 1000, roundStep: 500, siuScore: 60 };
 
 /**
  * Deterministic indicators. Each is independent and testable on its own.
@@ -18,10 +18,13 @@ export function deterministicIndicators(f, cfg = {}) {
   if (f.daysFromInception !== null && f.daysFromInception !== undefined && f.daysFromInception >= 0 && f.daysFromInception <= t.inceptionDays) {
     push('LOSS_NEAR_INCEPTION', 0.25, `Loss occurred ${f.daysFromInception} day(s) after policy inception.`);
   }
-  if (f.daysToReport !== null && f.daysToReport !== undefined && f.daysToReport > t.lateReportDays) {
-    push('LATE_REPORT', 0.15, `Reported ${f.daysToReport} days after the loss.`);
+  const theft = f.cause === 'theft' || (f.cause == null && f.narrative?.theftCue);
+  if (f.daysToReport !== null && f.daysToReport !== undefined) {
+    // A late-reported theft is a stronger red flag than a late-reported collision (calibrated per ADR-003).
+    if (theft && f.daysToReport > t.theftLateReportDays) push('LATE_REPORT', 0.35, `Theft reported ${f.daysToReport} days after the loss.`);
+    else if (f.daysToReport > t.lateReportDays) push('LATE_REPORT', 0.15, `Reported ${f.daysToReport} days after the loss.`);
   }
-  if ((f.cause === 'theft' || (f.cause == null && f.narrative?.theftCue)) && !f.policeReportFiled) {
+  if (theft && !f.policeReportFiled) {
     push('NO_POLICE_REPORT_THEFT', 0.3, 'Theft reported without a police report.');
   }
   if ((f.priorClaims ?? 0) >= t.priorClaims) {

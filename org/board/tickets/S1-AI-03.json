@@ -68,7 +68,21 @@
         "reason": "All criteria met; 16 evidence tests pass (service+routes); encrypted blobs, event without PII, routes/x-roles match openapi, tenant isolation tested"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-005",
+        "severity": "high",
+        "summary": "PDF parse regex/inflate denial of service",
+        "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "SEC2-006",
+        "severity": "high",
+        "summary": "Base64 validation regex catastrophic backtracking",
+        "foundIn": "S2-SEC-01"
+      }
+    ]
   },
   "spend": {
     "usd": 0.5709,

@@ -74,6 +74,10 @@
         "$ref": "common.schema.json#/$defs/FieldProvenance"
       },
       "description": "Provenance by field name."
+    },
+    "cargoInvolved": {
+      "type": "boolean",
+      "description": "Added 1.2.0 (commercial_auto). The loss involves cargo being carried. Cargo is a flag, not a LossCause; coverage requires the CARGO endorsement."
     }
   }
 }

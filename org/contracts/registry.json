@@ -3,22 +3,38 @@
     "id": "api.openapi",
     "path": "architecture/contracts/openapi.yaml",
     "kind": "openapi",
-    "version": "1.0.0",
-    "owner": "dir-architecture"
+    "version": "1.2.0",
+    "owner": "dir-architecture",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "module.contracts",
     "path": "architecture/contracts/modules.md",
     "kind": "module",
-    "version": "1.0.0",
-    "owner": "dir-architecture"
+    "version": "1.2.0",
+    "owner": "dir-architecture",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
+  },
+  {
+    "id": "module.coverage",
+    "path": "architecture/contracts/modules.md",
+    "section": "coverage",
+    "kind": "module",
+    "version": "1.1.0",
+    "owner": "dir-integrations",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.AdjusterView",
     "path": "architecture/contracts/domain/AdjusterView.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-experience"
+    "version": "1.1.0",
+    "owner": "dir-experience",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.AuditEntry",
@@ -38,15 +54,19 @@
     "id": "domain.CoverageVerification",
     "path": "architecture/contracts/domain/CoverageVerification.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-integrations"
+    "version": "1.1.0",
+    "owner": "dir-integrations",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.Document",
     "path": "architecture/contracts/domain/Document.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-ai"
+    "version": "1.1.0",
+    "owner": "dir-ai",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.IntakeSession",
@@ -59,8 +79,10 @@
     "id": "domain.LossEvent",
     "path": "architecture/contracts/domain/LossEvent.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-workflow"
+    "version": "1.1.0",
+    "owner": "dir-workflow",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.Note",
@@ -80,15 +102,19 @@
     "id": "domain.PolicySnapshot",
     "path": "architecture/contracts/domain/PolicySnapshot.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-integrations"
+    "version": "1.1.0",
+    "owner": "dir-integrations",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.Property",
     "path": "architecture/contracts/domain/Property.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-workflow"
+    "version": "1.1.0",
+    "owner": "dir-workflow",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.RegulatoryTimer",
@@ -122,22 +148,28 @@
     "id": "domain.TenantConfig",
     "path": "architecture/contracts/domain/TenantConfig.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-architecture"
+    "version": "1.1.0",
+    "owner": "dir-architecture",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.TriageResult",
     "path": "architecture/contracts/domain/TriageResult.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-ai"
+    "version": "1.1.0",
+    "owner": "dir-ai",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.Vehicle",
     "path": "architecture/contracts/domain/Vehicle.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-workflow"
+    "version": "1.1.0",
+    "owner": "dir-workflow",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "domain.WebhookSubscription",
@@ -150,8 +182,10 @@
     "id": "domain.common",
     "path": "architecture/contracts/domain/common.schema.json",
     "kind": "domain",
-    "version": "1.0.0",
-    "owner": "dir-architecture"
+    "version": "1.1.0",
+    "owner": "dir-architecture",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "event.claim.coverage.verified",
@@ -227,8 +261,10 @@
     "id": "event.envelope",
     "path": "architecture/contracts/events/envelope.schema.json",
     "kind": "event",
-    "version": "1.0.0",
-    "owner": "dir-architecture"
+    "version": "1.1.0",
+    "owner": "dir-architecture",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   },
   {
     "id": "event.tenant.config.updated",
@@ -236,5 +272,32 @@
     "kind": "event",
     "version": "1.0.0",
     "owner": "dir-architecture"
+  },
+  {
+    "id": "domain.Kpi",
+    "path": "architecture/contracts/domain/Kpi.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-integrations",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
+  },
+  {
+    "id": "domain.PolicySummary",
+    "path": "architecture/contracts/domain/PolicySummary.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-integrations",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
+  },
+  {
+    "id": "event.claim.updated",
+    "path": "architecture/contracts/events/claim.updated.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-workflow",
+    "changedIn": "1.2.0",
+    "ticket": "S2-ARC-01"
   }
 ]

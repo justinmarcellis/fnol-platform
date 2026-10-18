@@ -6,15 +6,57 @@
   "tier": "mid",
   "owner": "mgr-security",
   "reviewer": "ceo",
-  "status": "ready",
+  "status": "done",
   "sprint": 2,
   "dependsOn": [],
   "createdAt": "2026-10-18T21:05:56.019Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-18T21:07:14.706Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:27:18.119Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "paths": [
     "org/board/tickets/"
   ],
   "acceptance": [
     "Disjoint, parallel, testable tickets"
-  ]
+  ],
+  "spend": {
+    "usd": 0.1039,
+    "inputTokens": 8,
+    "cacheWriteTokens": 18971,
+    "cacheReadTokens": 215190,
+    "outputTokens": 1337,
+    "agents": {
+      "a28a382056dfd1ecb": {
+        "label": "S2-SEC-00 mgr-security planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 18971,
+        "cacheReadTokens": 215190,
+        "outputTokens": 1337,
+        "usd": 0.1039
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:27:18.119Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:27:18.119Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
 }

@@ -53,9 +53,15 @@ export const EVENT_TYPES = Object.keys(handlers);
 export function subscribeProjection(bus, rootCtx) {
   for (const type of EVENT_TYPES) {
     bus.on(type, async (evt, tctx) => {
-      const t = tctx ?? rootCtx.forTenant(evt.tenantid ?? evt.tenantId);
-      if (!evt?.data?.claimId) return;
-      handlers[type](t, evt.data, evt);
+      const t = tctx ?? rootCtx.forTenant(evt?.tenantid ?? evt?.tenantId);
+      const claimId = evt?.data?.claimId;
+      if (!claimId) { t.log?.warn?.('adjuster projection: event without claimId skipped', { type, eventId: evt?.id }); return; }
+      try {
+        handlers[type](t, evt.data, evt);
+      } catch (e) {
+        // The projection is rebuildable from the outbox, so a bad event must not poison the bus.
+        t.log?.warn?.('adjuster projection: handler failed; skipped', { type, claimId, error: e?.code ?? e?.message });
+      }
     }, { name: `adjuster:${type}` });
   }
 }

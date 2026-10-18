@@ -71,7 +71,15 @@
         "reason": "All 7 criteria met; 78/78 coverage tests pass via glob form (bare dir form fails on Node 22.22 for all suites, env issue); registry bump to 1.1.0 pending architecture hub"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-002",
+        "severity": "high",
+        "summary": "Plaintext PII in policy snapshot cache",
+        "foundIn": "S2-SEC-01"
+      }
+    ]
   },
   "spend": {
     "usd": 1.1569,

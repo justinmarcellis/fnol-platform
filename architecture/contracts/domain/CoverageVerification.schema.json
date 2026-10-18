@@ -59,7 +59,10 @@
               "driver_listed",
               "driver_not_excluded",
               "peril_covered",
-              "coverage_present"
+              "coverage_present",
+              "fleet_unit_on_policy",
+              "hnoa_coverage",
+              "cargo_endorsed"
             ]
           },
           "passed": {
@@ -88,6 +91,54 @@
     },
     "verifiedAt": {
       "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_force",
+        "lapsed",
+        "excluded",
+        "not_found",
+        "needs_review"
+      ],
+      "description": "Finer verdict (added 1.1.0, see modules.md coverage). in_force -> covered, lapsed/excluded -> not_covered, not_found -> policy_not_found, needs_review -> needs_review."
+    },
+    "deductible": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/Money"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Same value as applicableDeductible, or null when none applies (added 1.1.0)."
+    },
+    "limits": {
+      "type": "object",
+      "description": "Limits of the applicable coverages by coverage code (added 1.1.0).",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "$ref": "common.schema.json#/$defs/Money"
+          },
+          "limitPerPerson": {
+            "$ref": "common.schema.json#/$defs/Money"
+          },
+          "limitPerOccurrence": {
+            "$ref": "common.schema.json#/$defs/Money"
+          }
+        }
+      }
+    },
+    "applicableCoverages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Coverage codes that apply to the loss; same list as matchedCoverages (added 1.1.0)."
     }
   }
 }

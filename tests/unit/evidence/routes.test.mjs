@@ -28,7 +28,7 @@ test('base64 JSON upload returns fast with pending extraction, then extraction c
 test('multipart upload (binary safe) with optional kind and metadata', async (t) => {
   const app = await bootEvidenceApp();
   t.after(() => app.close());
-  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 13, 10, 255]), Buffer.from('\r\n--not-a-boundary\r\n'), Buffer.from([0, 1, 2])]);
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('\r\n--not-a-boundary\r\n'), Buffer.from([0, 1, 2])]);
   const m = multipart([
     { name: 'metadata', data: JSON.stringify({ damageAreas: ['hood'] }) },
     { name: 'file', filename: 'p.png', type: 'image/png', data: png },

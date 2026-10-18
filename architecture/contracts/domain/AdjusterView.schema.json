@@ -11,7 +11,8 @@
   "additionalProperties": false,
   "properties": {
     "claim": {
-      "$ref": "Claim.schema.json"
+      "$ref": "Claim.schema.json",
+      "description": "Claim header. claim.flags holds the stored flags merged with the derived flags (see flags)."
     },
     "policy": {
       "$ref": "PolicySnapshot.schema.json"
@@ -57,29 +58,93 @@
     },
     "summary": {
       "type": "object",
+      "description": "AI-generated claim summary, cached per triage attempt.",
       "properties": {
         "text": {
           "type": "string"
         },
+        "bullets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "unconfirmed": {
+          "type": "boolean",
+          "description": "True when the cascade could not reach the confidence threshold and a person should confirm."
+        },
         "ai": {
           "$ref": "common.schema.json#/$defs/AiProvenance"
+        },
+        "citedFacts": {
+          "type": "array",
+          "description": "Added 1.2.0. Facts the summary used (ids, codes, amounts; no PII). The text ends with a Facts used: line.",
+          "items": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {}
+            }
+          }
         }
-      },
-      "description": "AI-generated claim summary."
+      }
     },
     "nextActions": {
       "type": "array",
+      "description": "Next best actions, highest priority first. Rule actions win over AI actions with the same code.",
       "items": {
         "type": "object",
+        "required": [
+          "code",
+          "label"
+        ],
         "properties": {
           "code": {
-            "type": "string"
+            "type": "string",
+            "examples": [
+              "request_police_report",
+              "verify_coverage",
+              "refer_siu",
+              "contact_injured_party"
+            ]
           },
           "label": {
             "type": "string"
           },
           "reason": {
             "type": "string"
+          },
+          "priority": {
+            "description": "high | medium | low (rule actions), or a number where higher is more urgent (AI actions). Added 1.2.0.",
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "rule",
+              "ai"
+            ],
+            "description": "Who proposed the action. Added 1.2.0."
           }
         }
       }
@@ -107,6 +172,51 @@
     },
     "generatedAt": {
       "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      },
+      "description": "Derived flags (added 1.2.0), e.g. injury, fatality, cat, siu, subrogation, coverage_question, timer_due, timer_breached. The adjuster module merges them into claim.flags; when this property is present it holds the same merged list."
+    },
+    "timestamps": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Added 1.2.0. Key times for the first view. acknowledgedAt is the claim.acknowledged event time when a tenant emits one, else the acknowledge timer metAt; assignedAt is routing.decidedAt when assigned or fast tracked.",
+      "properties": {
+        "reportedAt": {
+          "oneOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "acknowledgedAt": {
+          "oneOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assignedAt": {
+          "oneOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
     }
   }
 }

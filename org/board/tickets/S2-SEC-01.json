@@ -1,0 +1,101 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:14.647Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:07:27.944Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:25:56.337Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:27:00.926Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-SEC-01",
+  "team": "security",
+  "title": "Security code review of Sprint 1 modules",
+  "story": "As the security lead I want a severity-ranked code review of all Sprint 1 modules against the threat model, with failing regression tests for each high/critical finding, so the PoC can be hardened before demo.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-security-security-reviewer",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "architecture/security-review-s2.md",
+    "tests/security/"
+  ],
+  "contracts": [
+    "architecture/threat-model.md",
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md",
+    "architecture/data-protection.md"
+  ],
+  "acceptance": [
+    "architecture/security-review-s2.md exists with a findings table: id (SEC2-NNN), severity (critical/high/medium/low/info), file:line, exploit scenario, fix, status",
+    "The review has a coverage section stating each of src/modules/{adjuster,claims,config,coverage,evidence,health,intake,integrations,rules,triage}, src/ai and src/web/shared/api.js was reviewed against each of the 8 checklist areas (tenant isolation, RBAC vs openapi x-roles, PII handling, prompt injection, webhook signature/SSRF, upload limits/content-type, error leakage, logging/events PII), with 'no finding' stated explicitly where clean",
+    "Every cited file:line exists and matches the described code (reviewer spot-checks at least 5)",
+    "Each high/critical finding has a test in tests/security/ named by finding id, written as t.todo (or test with todo option) so it fails when the todo is removed, and running node --test --disable-warning=ExperimentalWarning tests/security/ passes with no new failures",
+    "Each high/critical finding is posted to the incidents hub (node org/cli.mjs hub incidents shows one entry per finding id)",
+    "No files outside architecture/security-review-s2.md and tests/security/ are modified; no real names or secrets in the report"
+  ],
+  "brief": "Read-only review of src/modules/*, src/ai/*, src/web/shared/api.js; you write only the report and new test files in tests/security/ (existing files there: helpers.mjs, tenant-isolation, pii-leak, roles, routes, audit-chain tests; reuse helpers.mjs and do not edit existing tests, add new files named sec2-<area>.test.mjs). First read architecture/threat-model.md (risks R1-R3 already known: store rewrite bypass, devMode default true, cross-tenant row move; do not re-report as new, only cite whether still present), core-runtime-api.md (tenant-bound ctx addendum), contracts/modules.md and each module's openapi for x-roles and x-pii. Checklist per module: (1) tenant isolation: every DB access via tctx.db, no root ctx with tenant data, ctx.ai calls pass tenantId; grep for ctx.db, ctx.store, raw SQL string building, and tenant_id from request bodies; (2) RBAC: diff every registered route's roles against openapi x-roles, look for routes missing a role guard and object-level checks (IDOR across claims/evidence); (3) PII: x-pii fields encrypted at rest, not placed in event payloads, logs, errors or the AI inference log; (4) prompt injection: document/OCR text sent to providers must be delimited, schema-validated on output, and must not drive tool or privilege decisions; (5) webhooks: HMAC signature verification with constant-time compare and replay window, SSRF on target URLs (private/loopback/link-local/metadata ranges, redirects, DNS rebinding, non-http schemes); (6) uploads: size limits, content-type allowlist vs magic bytes, filename sanitization/path traversal; (7) error messages leaking stack traces, SQL, tenant ids or PII; (8) devMode/devlogin exposure. Verify each suspected finding by actually running a small script against the module (scratch dir only) before recording it; mark unverified ones 'suspected'. Severity: critical = cross-tenant data access or auth bypass, high = PII exposure, SSRF, RBAC gap on write routes. For each high/critical write one regression test that asserts the SECURE behaviour, wrapped as t.todo('SEC2-NNN: ...') so CI stays green. Post each via: AGENT_ID=ic-security-security-reviewer node org/cli.mjs post incidents incident '<id> <severity> <file:line> <summary>' --ticket S2-SEC-01. Pitfalls: line numbers drift, cite from the current tree; fixes are recommendations only, do not patch module code; if a contract is wrong, post a contract-change to architecture.",
+  "valueDrivers": [
+    "Insurer security due diligence",
+    "Tenant data isolation",
+    "PII and regulatory compliance"
+  ],
+  "requirements": [
+    "Review covers all Sprint 1 modules",
+    "High/critical findings have failing regression tests as todos",
+    "High/critical findings posted to incidents hub"
+  ],
+  "startedAt": "2026-10-18T21:07:27.944Z",
+  "doneAt": "2026-10-18T21:27:00.926Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:27:00.925Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Report, coverage matrix, 7 high findings (spot-checked 7 citations, all match), t.todo tests by id and incidents posts all present; only failure is openapi drift from another team's openapi.yaml edit"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 5.5099,
+    "inputTokens": 166,
+    "cacheWriteTokens": 443777,
+    "cacheReadTokens": 21829546,
+    "outputTokens": 3422,
+    "agents": {
+      "a88adfb8de0e17a37": {
+        "label": "S2-SEC-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 22560,
+        "cacheReadTokens": 223884,
+        "outputTokens": 885,
+        "usd": 0.11
+      },
+      "ad06cbe083e83686f": {
+        "label": "S2-SEC-01 ic-security-security-reviewer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 158,
+        "cacheWriteTokens": 421217,
+        "cacheReadTokens": 21605662,
+        "outputTokens": 2537,
+        "usd": 5.3999
+      }
+    }
+  }
+}

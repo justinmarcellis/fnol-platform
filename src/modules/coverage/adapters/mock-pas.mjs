@@ -3,6 +3,8 @@
 // postal codes) is encrypted with ctx.crypto.encryptPii; searching uses blind
 // indexes from ctx.crypto.hmacIndex.
 
+import { summarizePolicy } from '../summarize.mjs';
+
 const digits = (v) => String(v ?? '').replace(/\D/g, '');
 const norm = {
   lastName: (v) => String(v ?? '').trim().toLowerCase(),
@@ -65,6 +67,28 @@ function joinPii(doc, pii) {
 export function createMockPas(ctx) {
   const readPii = (row) => (row.pii ? JSON.parse(ctx.crypto.decryptPii(row.pii)) : null);
 
+  /** Blind-index lookup (AND semantics). policyNumberPrefix is not PII and uses a plain, escaped prefix match. */
+  function queryRows(criteria) {
+    const where = [];
+    const args = [];
+    const add = (col, key) => {
+      if (criteria[key] === undefined || criteria[key] === null || criteria[key] === '') return;
+      where.push(`${col} LIKE ?`);
+      args.push(`%,${ctx.crypto.hmacIndex(norm[key](criteria[key]))},%`);
+    };
+    add('last_name_idx', 'lastName');
+    add('postal_idx', 'postalCode');
+    add('vin_idx', 'vin');
+    add('phone_idx', 'phone');
+    const prefix = String(criteria.policyNumberPrefix ?? '').trim();
+    if (prefix) {
+      where.push("policy_number LIKE ? ESCAPE '\\'");
+      args.push(`${prefix.replace(/[\\%_]/g, '\\$&')}%`);
+    }
+    if (!where.length) return [];
+    return ctx.db.all(`SELECT * FROM coverage_policies WHERE ${where.join(' AND ')} ORDER BY policy_number LIMIT 50`, ...args);
+  }
+
   return {
     id: 'mock-pas',
 
@@ -84,20 +108,7 @@ export function createMockPas(ctx) {
     },
 
     async search(criteria = {}) {
-      const where = [];
-      const args = [];
-      const add = (col, key) => {
-        if (criteria[key] === undefined || criteria[key] === null || criteria[key] === '') return;
-        where.push(`${col} LIKE ?`);
-        args.push(`%,${ctx.crypto.hmacIndex(norm[key](criteria[key]))},%`);
-      };
-      add('last_name_idx', 'lastName');
-      add('postal_idx', 'postalCode');
-      add('vin_idx', 'vin');
-      add('phone_idx', 'phone');
-      if (!where.length) return [];
-      const rows = ctx.db.all(`SELECT * FROM coverage_policies WHERE ${where.join(' AND ')} ORDER BY policy_number LIMIT 50`, ...args);
-      return rows.map((row) => {
+      return queryRows(criteria).map((row) => {
         const doc = JSON.parse(row.doc);
         const pii = readPii(row);
         return {
@@ -110,6 +121,11 @@ export function createMockPas(ctx) {
           propertyCount: (doc.properties ?? []).length,
         };
       });
+    },
+
+    /** Same lookup as search(), returning masked PolicySummary rows (see summarize.mjs). */
+    async searchSummaries(criteria = {}) {
+      return queryRows(criteria).map((row) => summarizePolicy(JSON.parse(row.doc), readPii(row)));
     },
 
     /** Insert or replace synthetic policies for this tenant. Returns { inserted }. */

@@ -79,3 +79,27 @@ test('notes: body encrypted, returned decrypted to PII roles and redacted to oth
   assert.equal(full.json.parties[0].lastName, 'Quartz');
   assert.ok(!(await call(app, 'GET', `/api/v1/claims/${c.id}`, { token: app.token(['claimant']) })).text.includes('Quartz'));
 });
+
+test('location.description and location.geo are x-pii: round-trip, encrypted at rest, redactable', async (t) => {
+  const app = await bootClaimsApp();
+  t.after(() => app.close());
+  const svc = app.claims();
+  const geo = { lat: 43.07311, lng: -89.40123 };
+  const input = claimInput();
+  input.lossEvent.location = { ...input.lossEvent.location, description: 'Behind the Quince Hardware lot', geo };
+  const c = await svc.createClaim(input, { actor: user('csr') });
+  await app.ctx.bus.drain();
+  assert.deepEqual(c.lossEvent.location.geo, geo);
+  assert.equal(c.lossEvent.location.description, 'Behind the Quince Hardware lot');
+  assert.deepEqual((await svc.getClaim(c.id)).lossEvent.location.geo, geo);
+  const doc = JSON.parse(app.ctx.db.raw.prepare('SELECT doc FROM claims').get().doc);
+  assert.match(doc.lossEvent.location.geo, /^enc:v1:/);
+  assert.match(doc.lossEvent.location.description, /^enc:v1:/);
+  for (const [table, text] of Object.entries(dump(app))) {
+    assert.ok(!text.includes('43.07311'), `geo leaked in ${table}`);
+    assert.ok(!text.includes('Quince Hardware'), `location description leaked in ${table}`);
+  }
+  const red = await svc.getClaim(c.id, { redact: true });
+  assert.equal(red.lossEvent.location.geo, '[redacted]');
+  assert.equal(red.lossEvent.location.description, '[redacted]');
+});

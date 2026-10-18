@@ -19,9 +19,10 @@ export const loadTenant = (name) => JSON.parse(fs.readFileSync(path.join(root, '
 
 /**
  * Boot an isolated app with the real rules module, fake claims/triage/coverage (and optionally config).
- * Tenants: aurelia (copy of aurelia-mutual), kestrel (copy of kestrel-point), other (second tenant for isolation).
+ * Tenants: aurelia (copy of aurelia-mutual), kestrel (copy of kestrel-point), other (second tenant for isolation),
+ * plus any `extraTenants` ({ id: config }).
  */
-export async function bootRulesApp({ withConfig = true } = {}) {
+export async function bootRulesApp({ withConfig = true, extraTenants = {} } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fnol-rules-'));
   const modulesDir = path.join(dir, 'modules');
   const wrap = (name, file, fake) => {
@@ -39,6 +40,7 @@ export async function bootRulesApp({ withConfig = true } = {}) {
     aurelia: { ...loadTenant('aurelia-mutual'), id: 'aurelia' },
     kestrel: { ...loadTenant('kestrel-point'), id: 'kestrel' },
     other: { ...loadTenant('aurelia-mutual'), id: 'other' },
+    ...extraTenants,
   };
   for (const [id, cfg] of Object.entries(tenants)) fs.writeFileSync(path.join(tenantsDir, `${id}.json`), JSON.stringify(cfg));
   const app = await createApp({ dbPath: ':memory:', port: 0, secretsDir: path.join(dir, 'secrets'), tenantsDir, modulesDir, logLevel: 'silent' });

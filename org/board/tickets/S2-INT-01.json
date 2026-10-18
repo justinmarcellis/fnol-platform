@@ -1,0 +1,98 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:25.062Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:08:26.518Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:10:49.264Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:18:39.679Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-INT-01",
+  "team": "integrations",
+  "title": "Policy search API and commercial_auto coverage",
+  "story": "As a CSR I can find a policy by last name, postal code, VIN, phone or policy-number prefix via GET /api/v1/policies?q=, and commercial_auto claims get a coverage verdict.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-integrations-mock-pas-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/modules/coverage/",
+    "tests/unit/coverage/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#coverage",
+    "architecture/contracts/openapi.yaml#PolicySummary",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "GET /api/v1/policies?q= route exists in src/modules/coverage/routes.mjs, requires role csr, agent, adjuster or supervisor (403 otherwise), 400 on empty q, tenant-isolated",
+    "q is classified (VIN = 17 chars no I/O/Q; phone = 7+ digits after stripping punctuation; postal code; policy-number prefix like ABC-123; else last name) and PII fields match only via ctx.crypto.hmacIndex blind indexes; no plaintext PII column added",
+    "Response is PolicySummary[] with policyNumber, lob, status, insured display name, masked contact (e.g. ***-***-1234), risk state, short vehicle/property description; no full phone, address or DOB in output",
+    "Policy-number prefix search works via a non-PII indexed column/LIKE and is capped (limit 25)",
+    "verifyCoverage handles lob commercial_auto: fleet units matched by VIN/unit id, hired/non-owned auto covered when HNOA coverage present, cargo losses excluded unless CARGO endorsement; at least 2 commercial_auto fixtures added",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/coverage/*.test.mjs passes, including new policy-search.test.mjs and commercial-auto.test.mjs; existing tests still pass"
+  ],
+  "brief": "Extend the existing coverage module (already built: port.mjs, adapters/ mock-pas, service.mjs searchPolicies, verify.mjs evaluateCoverage, fixtures.mjs, routes.mjs). 1) Search: add a service fn searchByQuery(q, {limit}) that classifies q and delegates to the port adapter's search(criteria); extend the mock-pas adapter additively with policyNumberPrefix (plain column LIKE 'PFX%', policy numbers are not PII) and keep AND semantics for searchPolicies. Reuse the existing last_name_idx/postal_idx/vin_idx/phone_idx comma-delimited blind-index columns; normalise (lowercase, strip non-digits for phone, uppercase VIN) the same way seedPolicies does before hmacIndex. Add a summarizer producing PolicySummary with decrypted name via ctx.crypto.decryptPii and masked contact; never log PII. Register GET /api/v1/policies in routes.mjs using req.ctx (tenant-bound) and the router's role guard pattern already used for the snapshot route. Static route must not clash with /policies/:policyNumber/snapshot. 2) Commercial auto: extend verify.mjs rule function and PolicySnapshot fixtures: fleet units (vehicles[] with unitId/vin), HNOA coverage code, cargo excluded unless endorsement CARGO; map outcomes onto the existing status/outcome table (excluded, needs_review when unit not identified). Add fixtures (synthetic names/VINs only) to fixtures.mjs so the platform seed picks them up. Tests: use tests/unit/coverage/helpers.mjs and fake-claims.mjs; run with a glob (node --test on a directory fails on Node 22). If the contract lacks the q endpoint or masked fields, post a contract-change to architecture and add the smallest additive change, documented in the result. Do not touch other teams' paths.",
+  "valueDrivers": [
+    "VD-1",
+    "VD-4"
+  ],
+  "requirements": [
+    "CSR policy lookup",
+    "Commercial auto coverage verification"
+  ],
+  "startedAt": "2026-10-18T21:08:26.518Z",
+  "doneAt": "2026-10-18T21:18:39.679Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:18:39.678Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 98 coverage tests pass; masked summaries, blind-index PII, 2 commercial_auto fixtures; only regression is openapi route snapshot drift from contract additions, not ticket files"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6487,
+    "inputTokens": 44,
+    "cacheWriteTokens": 97729,
+    "cacheReadTokens": 1790946,
+    "outputTokens": 4609,
+    "agents": {
+      "a7f24cbe39739edf9": {
+        "label": "S2-INT-01 ic-integrations-mock-pas-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 32,
+        "cacheWriteTokens": 72426,
+        "cacheReadTokens": 1436400,
+        "outputTokens": 3662,
+        "usd": 0.505
+      },
+      "ab7c9d6a0b3fa2319": {
+        "label": "S2-INT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 25303,
+        "cacheReadTokens": 354546,
+        "outputTokens": 947,
+        "usd": 0.1437
+      }
+    }
+  }
+}

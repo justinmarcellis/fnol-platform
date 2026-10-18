@@ -208,7 +208,8 @@ const BUILDERS = {
         repairEstimate(rng, { vehicle: `${pv.year} ${pv.make} ${pv.model} VIN ${pv.vin}`, claimRef: 'rear-end', lossDate: c.lossDate, parts: [{ desc: 'Rear bumper cover', price: 640 }, { desc: 'Trunk lid', price: 785 }, { desc: 'Rear impact bar', price: 410 }, { desc: 'Tail lamp assembly LH', price: 255 }], laborHours: [{ desc: 'Remove and replace rear body panels', hours: 14.5 }, { desc: 'Frame measure and straighten', hours: 6 }, { desc: 'Refinish', hours: 8.5 }] }),
         photoPlaceholder('rear-damage.png', 'Rear bumper damage')
       ],
-      expected: { coverageStatus: 'covered', severityBand: 'moderate', fraud: false, subrogation: true, fastTrack: false },
+      // ADR-003 rationale: 'major', not 'moderate': both tenants escalate any reported bodily injury (TR-INJURY-SEV, RT-INJURY-01 injury desk) and the vehicle was towed.
+      expected: { coverageStatus: 'covered', severityBand: 'major', fraud: false, subrogation: true, fastTrack: false },
       meta: { deductible: 500, subrogationReason: 'rear_ended_by_other' }
     };
   },

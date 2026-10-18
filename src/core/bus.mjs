@@ -26,6 +26,16 @@ CREATE TABLE IF NOT EXISTS bus_handled (
   PRIMARY KEY (tenant_id, handler, event_id)
 );`,
   tenantTables: ['bus_handled'],
+}, {
+  // Per-tenant monotonic sequence; backfilled in (created_at, rowid) order.
+  sql: `
+ALTER TABLE outbox ADD COLUMN seq INTEGER;
+UPDATE outbox SET seq = (
+  SELECT x.rn FROM (
+    SELECT id AS oid, ROW_NUMBER() OVER (PARTITION BY tenant_id ORDER BY created_at, rowid) AS rn FROM outbox
+  ) x WHERE x.oid = outbox.id
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_outbox_tenant_seq ON outbox (tenant_id, seq);`,
 }];
 
 /**
@@ -105,9 +115,14 @@ export function createBus(ctx, opts = {}) {
         datacontenttype: 'application/json',
         data,
       };
-      ctx.db.forTenant(tenantId).insert('outbox', {
-        id: evt.id, type, subject: evt.subject, event: JSON.stringify(evt),
-        status: 'pending', attempts: 0, created_at: evt.time,
+      const t = ctx.db.forTenant(tenantId);
+      // seq is computed inside the same transaction as the insert, so it is gapless and unique per tenant.
+      t.transaction(() => {
+        const { n } = t.get('SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM outbox');
+        t.insert('outbox', {
+          id: evt.id, type, subject: evt.subject, event: JSON.stringify(evt),
+          status: 'pending', attempts: 0, created_at: evt.time, seq: n,
+        });
       });
       dispatch(evt);
       return evt;
@@ -128,7 +143,7 @@ export function createBus(ctx, opts = {}) {
     /** Re-dispatch pending/failed outbox rows for the given tenants (call at boot after subscriptions). */
     recover(tenantIds) {
       for (const id of tenantIds) {
-        const rows = ctx.db.forTenant(id).all("SELECT event FROM outbox WHERE status = 'pending' ORDER BY created_at");
+        const rows = ctx.db.forTenant(id).all("SELECT event FROM outbox WHERE status = 'pending' ORDER BY seq");
         rows.forEach((r) => dispatch(JSON.parse(r.event)));
       }
     },
@@ -136,8 +151,8 @@ export function createBus(ctx, opts = {}) {
     outbox(tenantId, status) {
       const t = ctx.db.forTenant(tenantId);
       return status
-        ? t.all('SELECT * FROM outbox WHERE status = ? ORDER BY created_at', status)
-        : t.all('SELECT * FROM outbox ORDER BY created_at');
+        ? t.all('SELECT * FROM outbox WHERE status = ? ORDER BY seq', status)
+        : t.all('SELECT * FROM outbox ORDER BY seq');
     },
   };
 }
