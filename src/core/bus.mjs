@@ -16,6 +16,16 @@ CREATE TABLE IF NOT EXISTS outbox (
 );
 CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox (tenant_id, status);`,
   tenantTables: ['outbox'],
+}, {
+  sql: `
+CREATE TABLE IF NOT EXISTS bus_handled (
+  tenant_id TEXT NOT NULL,
+  handler TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  handled_at TEXT NOT NULL,
+  PRIMARY KEY (tenant_id, handler, event_id)
+);`,
+  tenantTables: ['bus_handled'],
 }];
 
 /**
@@ -41,7 +51,10 @@ export function createBus(ctx, opts = {}) {
       for (let n = 1; n <= maxAttempts && !ok; n++) {
         attempts = Math.max(attempts, n);
         try {
-          await h.handler(evt);
+          // Per-handler dedupe on event id (modules.md rule 6), so replays after a crash are safe.
+          if (t.get('SELECT 1 AS x FROM bus_handled WHERE handler = ? AND event_id = ?', h.name, evt.id)) { ok = true; break; }
+          await h.handler(evt, ctx.forTenant ? ctx.forTenant(evt.tenantid) : ctx);
+          t.insert('bus_handled', { handler: h.name, event_id: evt.id, handled_at: ctx.clock.nowIso() });
           ok = true;
         } catch (e) {
           lastError = e?.message ?? String(e);
@@ -95,9 +108,12 @@ export function createBus(ctx, opts = {}) {
       dispatch(evt);
       return evt;
     },
-    /** Subscribe to an event type or '*'. Handler receives the event envelope. Returns an unsubscribe fn. */
-    on(type, handler) {
-      const h = { type, handler };
+    /**
+     * Subscribe to an event type or '*'. Handler receives (event, tenantCtx). Returns an unsubscribe fn.
+     * Give a stable opts.name (e.g. 'triage:claim.reported') so dedupe survives restarts.
+     */
+    on(type, handler, opts = {}) {
+      const h = { type, handler, name: opts.name ?? `${type}#${handlers.filter((x) => x.type === type).length}` };
       handlers.push(h);
       return () => { const i = handlers.indexOf(h); if (i >= 0) handlers.splice(i, 1); };
     },

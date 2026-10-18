@@ -11,7 +11,8 @@ import { createBus, migrations as busMigrations } from './core/bus.mjs';
 import { createTenants, migrations as tenantMigrations } from './core/tenants.mjs';
 import { createAuth, registerAuthRoutes } from './core/auth.mjs';
 import { createRouter, attachJson } from './core/router.mjs';
-import { HttpError } from './core/errors.mjs';
+import { HttpError, AppError } from './core/errors.mjs';
+import { createTenantBinder } from './core/tenant-context.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WEB_DIR = path.join(ROOT, 'src', 'web');
@@ -65,7 +66,7 @@ export async function createApp(opts = {}) {
   const log = createLogger({ level: opts.logLevel, clock });
   const ctx = {
     config: { devMode: opts.devMode ?? process.env.NODE_ENV !== 'production', dbPath, secretsDir, tenantsDir },
-    clock, log, modules: {}, moduleNames: [], ai: null, HttpError,
+    clock, log, modules: {}, moduleNames: [], ai: null, HttpError, AppError,
   };
   ctx.db = createStore(dbPath);
   ctx.crypto = createCrypto({ secretsDir });
@@ -78,7 +79,9 @@ export async function createApp(opts = {}) {
   ctx.bus = createBus(ctx);
   ctx.tenants = createTenants(ctx, { tenantsDir });
   ctx.auth = createAuth(ctx);
-  ctx.router = createRouter({ auth: ctx.auth, log });
+  const factories = new Map();
+  ctx.forTenant = createTenantBinder(ctx, factories);
+  ctx.router = createRouter({ auth: ctx.auth, log, bindTenant: ctx.forTenant });
 
   // Optional AI cascade from src/ai (owned by the AI team); absent in the core runtime.
   const aiEntry = path.join(ROOT, 'src', 'ai', 'index.mjs');
@@ -107,8 +110,11 @@ export async function createApp(opts = {}) {
   registerAuditRoutes(ctx.router, ctx);
   for (const mod of loaded) {
     // modules.md names the hook service(ctx); init(ctx) is the original name, both work
+    // Tenant-bound instances come from ctx.forTenant(id).modules; the root
+    // instance stays for boot-time and cross-tenant platform code.
     const factory = mod.service ?? mod.init;
     if (typeof factory === 'function') {
+      factories.set(mod.name, factory);
       const svc = await factory(ctx);
       if (svc) ctx.modules[mod.name] = svc;
     }

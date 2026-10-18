@@ -100,3 +100,18 @@ I booted `scripts/dev.mjs` on a test port; it printed the platform URL and start
 - The 15MB body limit returns 413. On oversized bodies the client may instead see a connection reset.
 - The optional src/ai/index.mjs hook (exporting createAi(ctx)) is a guess at the AI team's entry point and can be changed.
 - If scripts/seed.mjs does not exist, `npm run seed` simply fails.
+
+## Addendum (orchestrator, before Sprint 1): tenant-bound contexts
+
+Implements modules.md rule 3. Prefer these in module code.
+
+- `ctx.forTenant(tenantId)` returns a tenant-bound context `tctx` (cached per tenant). It inherits everything from the root ctx, plus:
+  - `tctx.tenant` is `{ id, config }`; `config` is live, read through `ctx.tenants.get`.
+  - `tctx.db` is the tenant-scoped store (`get/all/run/insert/update/transaction`). It also keeps the root helpers (`id`, `toJson`, `parseJson`, `system`, `forTenant`).
+  - Bound shortcuts: `tctx.bus.publish(type, subject, data)`, `tctx.audit.record(entry)`, `tctx.audit.list(filter)`, `tctx.crypto.encryptPii(v)`, `decryptPii(v)` and `hmacIndex(v)`. The explicit-tenant forms still work.
+  - `tctx.modules.<name>` is that module's `service(tctx)`. It is created lazily and cached per tenant.
+- **HTTP**: on authenticated routes, `req.ctx` is the tenant-bound context for `req.tenant.id`. Use `req.ctx.modules.claims.getClaim(id)`, not the root `ctx`.
+- **Events**: handlers are called as `handler(evt, tctx)`. Register with a stable name, `bus.on('claim.reported', fn, { name: 'triage:claim.reported' })`, so per-handler dedupe on `evt.id` survives restarts (`bus_handled` table).
+- **Errors**: `AppError(code, message, status = 400)` is exported from `src/core/errors.mjs` and available as `ctx.AppError`.
+- **Uploads**: `req.rawBody` is always the raw Buffer. JSON is parsed into `req.body` unless the content type is multipart, octet-stream, pdf, image or video.
+- Root `ctx.modules.<name>` still exists (built once with the root ctx) for boot-time code. Do not use it for tenant data.

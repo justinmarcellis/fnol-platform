@@ -40,7 +40,7 @@ export function attachJson(res) {
  * Minimal router. Handlers are (req, res); res.json(status, body) is available.
  * @param {{ auth: object, log?: object, limit?: number }} deps
  */
-export function createRouter({ auth, log, limit = BODY_LIMIT }) {
+export function createRouter({ auth, log, limit = BODY_LIMIT, bindTenant = null }) {
   const routes = [];
   const add = (method, pattern, handler, opts = {}) => {
     routes.push({ method, pattern, handler, opts, ...compile(pattern) });
@@ -84,11 +84,16 @@ export function createRouter({ auth, log, limit = BODY_LIMIT }) {
         if (!opts.public) {
           auth.authenticate(req);
           auth.requireRole(req.user, opts.roles);
+          // Tenant-bound context for module code (modules.md rule 3).
+          if (bindTenant && req.tenant?.id) req.ctx = bindTenant(req.tenant.id);
         }
         req.body = undefined;
         if (BODY_METHODS.has(req.method)) {
           const buf = await readBody(req, limit);
-          if (buf.length) {
+          req.rawBody = buf;
+          // Binary uploads keep only rawBody; everything else must be JSON.
+          const type = String(req.headers['content-type'] ?? '');
+          if (buf.length && !/^(multipart\/|application\/octet-stream|application\/pdf|image\/|video\/)/.test(type)) {
             try { req.body = JSON.parse(buf.toString('utf8')); } catch { throw badRequest('Invalid JSON body', 'invalid_json'); }
           }
         }
