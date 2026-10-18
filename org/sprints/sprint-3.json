@@ -1,0 +1,15 @@
+{
+  "number": 3,
+  "name": "Sprint 3: harden and document",
+  "status": "active",
+  "startedAt": "2026-10-18T21:31:10.823Z",
+  "budgetUsd": 50,
+  "goal": "Close all 7 high security findings and 4 UI defects; prove the PoC definition of done per LOB; configuration guide, demo script, COTS readiness",
+  "targets": {
+    "firstPassAcceptance": 0.85,
+    "budgetUsd": 50,
+    "testPassRate": 1,
+    "openHighFindings": 0
+  },
+  "committed": []
+}

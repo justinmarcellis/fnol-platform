@@ -1,6 +1,6 @@
 {
   "sprint": 2,
-  "generatedAt": "2026-10-18T21:29:53.801Z",
+  "generatedAt": "2026-10-18T21:30:30.131Z",
   "medians": {
     "hoursPerPoint": 0.021,
     "costPerPoint": 0.115
@@ -64,13 +64,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 2,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.071,
-      "composite": 0.897,
+      "composite": 0.797,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (2 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -81,13 +82,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.114,
-      "composite": 0.896,
+      "composite": 0.796,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -201,13 +203,14 @@
       "points": 8,
       "firstPassAcceptance": 0,
       "reworkRate": 1,
-      "defects": 0,
+      "defects": 3,
       "hoursPerPoint": 0.02,
       "costPerPoint": 0.159,
-      "composite": 0.401,
+      "composite": 0.301,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (3 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -218,13 +221,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.011,
       "costPerPoint": 0.083,
-      "composite": 0.901,
+      "composite": 0.801,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -270,13 +274,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.029,
       "costPerPoint": 0.141,
-      "composite": 0.894,
+      "composite": 0.794,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -287,13 +292,14 @@
       "points": 16,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.5,
       "hoursPerPoint": 0.031,
       "costPerPoint": 0.113,
-      "composite": 0.901,
+      "composite": 0.851,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (0.5 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -321,13 +327,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.041,
       "costPerPoint": 0.153,
-      "composite": 0.777,
+      "composite": 0.677,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -355,13 +362,14 @@
       "points": 13,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.007,
       "costPerPoint": 0.037,
-      "composite": 0.863,
+      "composite": 0.763,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -581,13 +589,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.04,
       "costPerPoint": 0.11,
-      "composite": 0.821,
+      "composite": 0.721,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -598,13 +607,14 @@
       "points": 13,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.5,
       "hoursPerPoint": 0.022,
       "costPerPoint": 0.127,
-      "composite": 0.975,
+      "composite": 0.925,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (0.5 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -615,13 +625,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.028,
       "costPerPoint": 0.154,
-      "composite": 0.891,
+      "composite": 0.791,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -632,13 +643,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.025,
       "costPerPoint": 0.148,
-      "composite": 0.926,
+      "composite": 0.826,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -840,13 +852,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 2,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.071,
-      "composite": 0.897,
+      "composite": 0.797,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (2 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -858,13 +871,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.114,
-      "composite": 0.896,
+      "composite": 0.796,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -985,13 +999,14 @@
       "points": 8,
       "firstPassAcceptance": 0,
       "reworkRate": 1,
-      "defects": 0,
+      "defects": 3,
       "hoursPerPoint": 0.02,
       "costPerPoint": 0.159,
-      "composite": 0.401,
+      "composite": 0.301,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (3 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1003,13 +1018,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.011,
       "costPerPoint": 0.083,
-      "composite": 0.901,
+      "composite": 0.801,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1058,13 +1074,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.029,
       "costPerPoint": 0.141,
-      "composite": 0.894,
+      "composite": 0.794,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1076,13 +1093,14 @@
       "points": 16,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.5,
       "hoursPerPoint": 0.031,
       "costPerPoint": 0.113,
-      "composite": 0.901,
+      "composite": 0.851,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (0.5 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1112,13 +1130,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.041,
       "costPerPoint": 0.153,
-      "composite": 0.777,
+      "composite": 0.677,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1148,13 +1167,14 @@
       "points": 13,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.007,
       "costPerPoint": 0.037,
-      "composite": 0.863,
+      "composite": 0.763,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1387,13 +1407,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.04,
       "costPerPoint": 0.11,
-      "composite": 0.821,
+      "composite": 0.721,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1405,13 +1426,14 @@
       "points": 13,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.5,
       "hoursPerPoint": 0.022,
       "costPerPoint": 0.127,
-      "composite": 0.975,
+      "composite": 0.925,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (0.5 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1423,13 +1445,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.028,
       "costPerPoint": 0.154,
-      "composite": 0.891,
+      "composite": 0.791,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1441,13 +1464,14 @@
       "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 1,
       "hoursPerPoint": 0.025,
       "costPerPoint": 0.148,
-      "composite": 0.926,
+      "composite": 0.826,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "escaped defects (1 per ticket); add tests or review",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1602,10 +1626,10 @@
       "points": 47,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.375,
       "hoursPerPoint": 0.016,
       "costPerPoint": 0.1,
-      "composite": 0.948,
+      "composite": 0.911,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1617,13 +1641,15 @@
       "points": 47,
       "firstPassAcceptance": 0.875,
       "reworkRate": 0.125,
-      "defects": 0,
+      "defects": 0.5,
       "hoursPerPoint": 0.022,
       "costPerPoint": 0.114,
-      "composite": 0.922,
+      "composite": 0.872,
       "lowPerformer": false,
       "lowConfidence": false,
-      "diagnosis": []
+      "diagnosis": [
+        "escaped defects (0.5 per ticket); add tests or review"
+      ]
     },
     {
       "key": "integration",
@@ -1650,10 +1676,10 @@
       "points": 64,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.3,
       "hoursPerPoint": 0.027,
       "costPerPoint": 0.186,
-      "composite": 0.881,
+      "composite": 0.851,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1665,10 +1691,10 @@
       "points": 33,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.143,
       "hoursPerPoint": 0.009,
       "costPerPoint": 0.064,
-      "composite": 0.884,
+      "composite": 0.87,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1749,13 +1775,15 @@
       "points": 39,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
+      "defects": 0.571,
       "hoursPerPoint": 0.028,
       "costPerPoint": 0.137,
-      "composite": 0.909,
+      "composite": 0.852,
       "lowPerformer": false,
       "lowConfidence": false,
-      "diagnosis": []
+      "diagnosis": [
+        "escaped defects (0.571 per ticket); add tests or review"
+      ]
     }
   ]
 }

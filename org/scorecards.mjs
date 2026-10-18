@@ -7,6 +7,9 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// escapedDefects is a list of defect records (tests/STRATEGY.md); older tickets may hold a number.
+const defectCount = (d) => (Array.isArray(d) ? d.length : Number(d) || 0);
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const OUT_DIR = join(HERE, 'scorecards');
 
@@ -79,7 +82,7 @@ export function metricsFor(group) {
     points,
     firstPassAcceptance: n ? group.filter((t) => t.review?.firstPass === true).length / n : 0,
     reworkRate: n ? group.filter((t) => (num(t.review?.reworkCount) ?? 0) > 0).length / n : 0,
-    defects: n ? group.reduce((s, t) => s + (num(t.review?.escapedDefects) ?? 0), 0) / n : 0,
+    defects: n ? group.reduce((s, t) => s + (defectCount(t.review?.escapedDefects)), 0) / n : 0,
     hoursPerPoint: tp ? timed.reduce((s, t) => s + hoursOf(t), 0) / tp : null,
     costPerPoint: cp ? costed.reduce((s, t) => s + costOf(t), 0) / cp : null,
   };

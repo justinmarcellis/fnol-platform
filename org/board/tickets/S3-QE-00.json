@@ -1,0 +1,20 @@
+{
+  "id": "S3-QE-00",
+  "team": "quality",
+  "title": "Sprint 3 planning: QE",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-quality",
+  "reviewer": "ceo",
+  "status": "ready",
+  "sprint": 3,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:31:10.823Z",
+  "history": [],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ]
+}

@@ -1,4 +1,8 @@
 // Pure metric functions for the PMO dashboard. No I/O; all inputs are plain data.
+
+// escapedDefects is a list of defect records (tests/STRATEGY.md); older tickets may hold a number.
+const defectCount = (d) => (Array.isArray(d) ? d.length : Number(d) || 0);
+
 const HOUR = 3600000;
 const ts = (v) => (v ? Date.parse(v) : NaN);
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -131,7 +135,7 @@ export function quality(tickets = [], q = null) {
     testsTotal: t_?.testsTotal ?? null, testsPassed: t_?.testsPassed ?? null,
     testPassRate: t_ && t_.testsTotal > 0 ? round(t_.testsPassed / t_.testsTotal, 4) : null,
     coveragePct: t_?.coveragePct ?? null, buildGreen: t_?.buildGreen ?? null, at: t_?.at ?? null,
-    defectEscapeRate: round(ratio(done.filter((t) => num(r(t).escapedDefects) > 0).length, done.length), 4),
+    defectEscapeRate: round(ratio(done.filter((t) => defectCount(r(t).escapedDefects) > 0).length, done.length), 4),
     reworkRate: round(ratio(done.filter((t) => num(r(t).reworkCount) > 0).length, done.length), 4),
     firstPassAcceptance: round(ratio(reviewed.filter((t) => r(t).firstPass === true).length, reviewed.filter((t) => typeof r(t).firstPass === 'boolean').length), 4),
     reviewed: reviewed.length,

@@ -115,5 +115,16 @@
     "before": 7,
     "target": 0,
     "status": "active"
+  },
+  {
+    "id": "IMP-10",
+    "sprint": 3,
+    "area": "performance",
+    "hypothesis": "ic-experience-claimant-web-dev config had 3 escaped defects (diagnosis: missing context, UI never run in a browser, not a capability limit). Intervention #1, fix the ticket/context: the Playwright UI gate (IMP-6) applies to its Sprint 3 rework ticket",
+    "owner": "dir-experience",
+    "metric": "escaped defects for this configuration",
+    "before": 3,
+    "target": 0,
+    "status": "active"
   }
 ]

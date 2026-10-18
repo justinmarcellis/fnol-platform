@@ -38,6 +38,10 @@ const VERDICT = { type: 'object', properties: {
   reasons: { type: 'string' }, testsPassed: { type: 'boolean' },
 }, required: ['verdict', 'criteria', 'reasons', 'testsPassed'] }
 
+const SEC = { type: 'object', properties: {
+  findings: { type: 'array', items: { type: 'object', properties: { severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] }, summary: { type: 'string' }, file: { type: 'string' }, scenario: { type: 'string' } }, required: ['severity', 'summary', 'file'] } },
+}, required: ['findings'] }
+
 const MODEL = { strong: 'opus', mid: 'sonnet', fast: 'haiku' }
 
 function managerPrompt(team) {
@@ -74,7 +78,7 @@ Acceptance criteria:
 ${t.acceptance.map((a) => '- ' + a).join('\n')}
 The IC reported: ${JSON.stringify(build ?? {}).slice(0, 3000)}
 Check every criterion against the files and by RUNNING the relevant tests yourself. Also check: tenant isolation respected, no PII in logs/events, contract conformance (shapes match architecture/contracts), only in-scope paths changed (git status shows the whole repo; other teams are writing too, so judge only files plausibly from this ticket), no real-world brands or data. Do not fix the work.
-Record the verdict: AGENT_ID=qe-acceptance node org/cli.mjs review ${t.id} <accept|rework> "<one-line reason>"
+You MUST record the verdict yourself before returning (IMP-7): AGENT_ID=qe-acceptance node org/cli.mjs review ${t.id} <accept|rework> "<one-line reason>"
 Regression gate (IMP-4): if the ticket changed anything under src/modules/ or src/core/, also run node --test --disable-warning=ExperimentalWarning "tests/e2e/*.test.mjs" "tests/security/*.test.mjs" and compare with the baseline in org/quality-baseline.txt (failures listed there were already failing before this sprint). A NEW failure caused by this ticket's files is grounds for rework.
 UI gate (IMP-6): if the ticket built UI under src/web/, its Playwright smoke test must exist and pass.
 Accept when every criterion is met and tests pass; minor style nits are not grounds for rework.`
@@ -94,7 +98,23 @@ Unmet criteria: ${JSON.stringify((review.criteria ?? []).filter((c) => !c.met))}
     review = await agent(reviewPrompt(t, team, build, 2), { label: `${t.id} review r2`, phase: 'Review', model: 'sonnet', schema: VERDICT })
     rounds = 2
   }
-  return { id: t.id, team: team.id, points: t.points, tier: t.tier, verdict: review?.verdict ?? 'unknown', rounds, testsPassed: build?.testsPassed ?? false, summary: build?.summary?.slice(0, 600), assumptions: build?.assumptions ?? [], contractChanges: build?.contractChanges ?? [], reviewReasons: review?.reasons }
+  // IMP-9: security review on every ticket that changes module or core code.
+  let security = null
+  if (args.securityGate && review?.verdict === 'accept' && t.paths.some((p) => /^src\/(modules|core|ai)\//.test(p))) {
+    security = await agent(`${COMMON}
+Your id: sec-reviewer (Security, Privacy & Compliance). Security-review ticket ${t.id} "${t.title}" just accepted by QE.
+Paths: ${t.paths.join(', ')}. Read architecture/threat-model.md and architecture/security-review-s2.md for the checklist.
+Look only at this ticket's files: tenant isolation, RBAC vs openapi x-roles (least privilege), PII in storage/logs/events, injection, DoS (regex, parsers, sizes), SSRF.
+Report findings. Severity high or critical only for an exploitable issue with a concrete scenario.`, { label: `${t.id} security`, phase: 'Review', model: 'sonnet', schema: SEC })
+    if (security?.findings?.some((f) => f.severity === 'high' || f.severity === 'critical')) {
+      const fix = await agent(`${icPrompt(t, team)}
+SECURITY REWORK requested. Fix these findings, add a test for each, rerun your tests, set the ticket to review:
+${JSON.stringify(security.findings.filter((f) => f.severity === 'high' || f.severity === 'critical'))}`, { label: `${t.id} ${t.owner} security rework`, phase: 'Build', model, schema: BUILD })
+      build = fix ?? build
+      rounds += 1
+    }
+  }
+  return { id: t.id, team: team.id, points: t.points, security: security?.findings ?? null, tier: t.tier, verdict: review?.verdict ?? 'unknown', rounds, testsPassed: build?.testsPassed ?? false, summary: build?.summary?.slice(0, 600), assumptions: build?.assumptions ?? [], contractChanges: build?.contractChanges ?? [], reviewReasons: review?.reasons }
 }
 
 const results = await pipeline(
