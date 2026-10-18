@@ -1,0 +1,10 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!infra/2-env/envs/*.tfvars
+crash.log
+infra/backend.auto.hcl
+node_modules/
+__pycache__/
+.env

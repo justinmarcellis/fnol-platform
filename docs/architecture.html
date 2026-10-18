@@ -1,0 +1,585 @@
+<title>FNOL Intake Platform Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: technical design dossier — sticky section index on the left, one reading column, wide diagrams/tables scroll in place */
+:root {
+  --paper: #f5f7f8;
+  --sheet: #ffffff;
+  --ink: #17232b;
+  --muted: #52626d;
+  --rule: #d6dee3;
+  --policy: #0f5e74;      /* primary accent: policy-document teal */
+  --policy-soft: #e2f0f3;
+  --gate: #a85a00;        /* compliance gate amber */
+  --gate-soft: #fbefdf;
+  --ok: #2f7a46;
+  --crit: #b3261e;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f171c; --sheet: #152029; --ink: #e3eaee; --muted: #9aabb6; --rule: #2a3a45;
+    --policy: #5fbfd6; --policy-soft: #173540; --gate: #f0a54a; --gate-soft: #3a2a14;
+    --ok: #6cc28a; --crit: #f08a80; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f171c; --sheet: #152029; --ink: #e3eaee; --muted: #9aabb6; --rule: #2a3a45;
+  --policy: #5fbfd6; --policy-soft: #173540; --gate: #f0a54a; --gate-soft: #3a2a14;
+  --ok: #6cc28a; --crit: #f08a80; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.6 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0,1fr); gap: 24px; } nav.toc { position: static !important; } }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 13px; }
+nav.toc .label { font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: s; }
+nav.toc li { counter-increment: s; }
+nav.toc a { display: flex; gap: 10px; padding: 5px 8px; border-radius: 4px; color: var(--ink); text-decoration: none; }
+nav.toc a::before { content: counter(s, decimal-leading-zero); font: 500 11px/1.9 var(--mono); color: var(--muted); }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--policy-soft); outline: none; }
+main { min-width: 0; display: grid; gap: 56px; }
+header.doc { display: grid; gap: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 28px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font: 12px/1.4 var(--mono); color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 500; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(30px, 4.2vw, 44px); font-weight: 700; letter-spacing: -.01em; }
+h2 { font-size: 26px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; }
+h2 .n { font: 500 13px var(--mono); color: var(--policy); }
+h3 { font-size: 18px; font-weight: 600; margin-top: 8px; }
+section { display: grid; gap: 16px; scroll-margin-top: 24px; }
+p { margin: 0; max-width: 72ch; }
+.lede { font-size: 17px; color: var(--muted); max-width: 70ch; }
+ul.tight { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 76ch; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+code { background: var(--policy-soft); padding: 1px 5px; border-radius: 3px; }
+.diagram { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; overflow-x: auto; }
+.diagram .cap { font: 12px/1.4 var(--mono); color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .08em; }
+pre.mermaid { margin: 0; background: transparent; font-family: var(--body); display: flex; justify-content: center; min-width: 640px; }
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 720px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+th { font: 600 11px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); background: var(--paper); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--mono); white-space: nowrap; }
+.pill { display: inline-block; font: 500 11px/1 var(--mono); padding: 4px 7px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
+.pill.hard { color: var(--crit); }
+.pill.soft { color: var(--gate); }
+.pill.info { color: var(--policy); }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.tier { background: var(--sheet); border: 1px solid var(--rule); border-top: 4px solid var(--policy); border-radius: 4px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.tier h3 { margin: 0; }
+.tier .k { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--policy); }
+.tier ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 3px; }
+.callout { border-left: 4px solid var(--gate); background: var(--gate-soft); padding: 14px 18px; border-radius: 0 4px 4px 0; max-width: 80ch; display: grid; gap: 6px; }
+.callout .k { font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--gate); }
+.decisions { display: grid; gap: 10px; counter-reset: d; }
+.decisions div { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 10px; counter-increment: d; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.decisions div::before { content: "D" counter(d); font: 600 13px var(--mono); color: var(--policy); }
+.phase { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.phase .when { font: 500 12px var(--mono); color: var(--muted); }
+@media (max-width: 520px) { .phase { grid-template-columns: minmax(0,1fr); gap: 4px; } }
+a { color: var(--policy); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Sections">
+  <div class="label">Contents</div>
+  <ol>
+    <li><a href="#scope">Scope &amp; principles</a></li>
+    <li><a href="#tiers">Three-tier overview</a></li>
+    <li><a href="#cascade">AI model cascade</a></li>
+    <li><a href="#copilot">Agent intake copilot</a></li>
+    <li><a href="#compliance">Compliance &amp; SOP engine</a></li>
+    <li><a href="#datamove">Data movement</a></li>
+    <li><a href="#network">Network design</a></li>
+    <li><a href="#infra">Infrastructure &amp; application</a></li>
+    <li><a href="#security">Security &amp; AI governance</a></li>
+    <li><a href="#ops">Reliability &amp; operations</a></li>
+    <li><a href="#roadmap">Build roadmap</a></li>
+    <li><a href="#decisions">Decisions</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <div class="meta"><span>DOC <b>ARCH-FNOL-001</b></span><span>REV <b>0.2 · decisions recorded</b></span><span>DATE <b>2026-10-18</b></span><span>TARGET <b>jmarcellis.com · Google Cloud · Firebase</b></span><span>LAUNCH <b>WI · IL · MI personal auto</b></span></div>
+  <h1>FNOL Intake Platform Architecture</h1>
+  <p class="lede">An AI-assisted first notice of loss system for agents and policyholders. A cascade of Gemini and Claude models on Vertex AI listens to calls from Google Customer Engagement Suite, extracts and checks. A versioned rules engine makes sure every claim captures what Wisconsin, Illinois or Michigan law and the company's SOPs require before it reaches Guidewire ClaimCenter or the in-house claims system.</p>
+</header>
+
+<section id="scope">
+  <h2><span class="n">01</span>Scope &amp; design principles</h2>
+  <p>The platform owns the intake window: from the first contact about a loss until a claim number exists in the core claims system and an adjuster is assigned. Coverage decisions, reserving and payment stay in the system of record.</p>
+  <div class="grid3">
+    <div class="tier"><div class="k">Channels</div><ul><li>Agent / CSR phone intake (primary)</li><li>Policyholder web &amp; mobile self-service</li><li>Producer / broker portal</li><li>Email &amp; document drop (ACORD 1/2/3 PDFs)</li><li>Partner API: TPAs, telematics crash alerts, body shops</li></ul></div>
+    <div class="tier"><div class="k">Lines of business</div><ul><li>Personal &amp; commercial auto</li><li>Homeowners / commercial property</li><li>General liability</li><li>Workers' compensation (FROI)</li><li>Catastrophe mode for any line</li></ul></div>
+    <div class="tier"><div class="k">Principles</div><ul><li>AI suggests, a person confirms. No AI value is written without provenance.</li><li>Rules are data: versioned by state, line and effective date.</li><li>Cheapest model that can answer, escalate on low confidence.</li><li>PII is tokenized at the edge and never sent to a model in clear unless needed.</li><li>Every event is replayable and auditable.</li></ul></div>
+  </div>
+</section>
+
+<section id="tiers">
+  <h2><span class="n">02</span>Three-tier overview</h2>
+  <p>Presentation, application and data tiers are separated by network boundary and identity, not just by code. Each tier runs in its own GCP project inside a VPC Service Controls perimeter.</p>
+  <div class="diagram"><div class="cap">Fig 1 · Logical tiers</div>
+<pre class="mermaid">
+flowchart TB
+  subgraph P["TIER 1 · PRESENTATION"]
+    AC["Agent Copilot Console<br/>React + Firestore live listeners<br/>IAP + SSO"]
+    SS["Policyholder Self-Service<br/>Firebase Hosting + App Check"]
+    RA["Rules &amp; SOP Admin<br/>Compliance team"]
+  end
+  subgraph A["TIER 2 · APPLICATION"]
+    LB["External HTTPS LB<br/>Cloud Armor WAF"]
+    GW["API Gateway / Apigee<br/>JWT, quotas, versioning"]
+    IN["intake-api<br/>Cloud Run"]
+    CO["copilot-orchestrator<br/>Cloud Run, streaming"]
+    CE["compliance-engine<br/>Cloud Run"]
+    MP["media-pipeline<br/>Cloud Functions gen2"]
+    SG["submission-saga<br/>Cloud Workflows"]
+    IA["integration-adapters<br/>Cloud Run"]
+    PS{{"Pub/Sub + Eventarc"}}
+  end
+  subgraph D["TIER 3 · DATA"]
+    FS[("Firestore<br/>drafts, live session")]
+    SQL[("Cloud SQL Postgres<br/>rules, claim ledger, audit")]
+    GCS[("Cloud Storage<br/>media, documents")]
+    BQ[("BigQuery<br/>analytics, AI telemetry")]
+    VS[("Vertex AI Vector Search<br/>SOP + statute corpus")]
+  end
+  VX["Vertex AI<br/>model cascade"]
+  CORE["Guidewire ClaimCenter / PolicyCenter<br/>or in-house claims + policy,<br/>ISO, state EDI"]
+  AC --> LB
+  SS --> LB
+  RA --> LB
+  LB --> GW
+  GW --> IN
+  GW --> CO
+  GW --> CE
+  IN --> FS
+  CO --> VX
+  CO --> VS
+  CE --> SQL
+  IN --> PS
+  PS --> MP
+  PS --> SG
+  MP --> GCS
+  SG --> IA
+  IA --> CORE
+  PS --> BQ
+  FS -. live updates .-> AC
+</pre>
+  </div>
+  <div class="grid3">
+    <div class="tier"><div class="k">Tier 1</div><h3>Presentation</h3><ul><li>React + TypeScript single-page apps, one shared design system</li><li>Agent console behind Identity-Aware Proxy with corporate SSO (SAML/OIDC) and device posture</li><li>Self-service on Firebase Hosting with Identity Platform (email link, SMS OTP), App Check, reCAPTCHA Enterprise</li><li>Firestore listeners push copilot prompts and checklist changes in real time</li><li>Offline-tolerant mobile capture: photos queue and upload by signed URL</li></ul></div>
+    <div class="tier"><div class="k">Tier 2</div><h3>Application</h3><ul><li>Stateless Cloud Run services for request/response and streaming</li><li>Cloud Functions gen2 for event handlers (upload, write, schedule)</li><li>Cloud Workflows runs the submission saga with compensation steps</li><li>Pub/Sub carries CloudEvents between services</li><li>Cloud Tasks for rate-limited calls to partner systems</li></ul></div>
+    <div class="tier"><div class="k">Tier 3</div><h3>Data</h3><ul><li>Firestore (multi-region <code>nam5</code>) for in-flight drafts</li><li>Cloud SQL Postgres HA for rules, ledger and immutable audit</li><li>GCS US multi-region with Bucket Lock for evidence</li><li>BigQuery for analytics, AI inference logs, model evaluation</li><li>Vector Search over SOPs, statutes and bulletins for retrieval</li></ul></div>
+  </div>
+</section>
+
+<section id="cascade">
+  <h2><span class="n">03</span>AI model cascade</h2>
+  <p>Every intake event (a transcript turn, a typed field, an uploaded photo) enters the cascade at the cheapest tier. A tier answers only when its confidence clears that task's threshold. Otherwise it passes the event up with what it learned. Most events should never reach a large model.</p>
+  <div class="diagram"><div class="cap">Fig 2 · Confidence-gated escalation</div>
+<pre class="mermaid">
+flowchart LR
+  E["Intake event<br/>transcript turn · field edit · upload"] --> T0["T0 · Deterministic<br/>schema, regex, DLP,<br/>VIN decode, address, policy lookup"]
+  T0 -->|resolved| OUT["Suggestion or<br/>checklist update"]
+  T0 -->|needs language| T1["T1 · Small fast model<br/>intent, LOB, entity extraction"]
+  T1 -->|conf ≥ task threshold| OUT
+  T1 -->|low conf or multi-entity| T2["T2 · Mid model + RAG<br/>SOP and statute reasoning,<br/>photo damage, summary"]
+  T2 -->|conf ok and verifier agrees| OUT
+  T2 -->|ambiguous or high severity| T3["T3 · Frontier model<br/>liability narrative, injury triage,<br/>fraud indicators"]
+  T3 --> V{"Verifier +<br/>guardrails"}
+  V -->|pass| OUT
+  V -->|fail| H["Supervisor / SIU<br/>review queue"]
+  OUT --> AG["Agent confirms,<br/>edits or rejects"]
+  AG -->|label| EV[("BigQuery eval set")]
+</pre>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Tier</th><th>Engine (examples on Vertex AI)</th><th>Typical tasks</th><th>p95 budget</th><th>Target share</th></tr></thead>
+    <tbody>
+      <tr><td><b>T0</b> Deterministic</td><td>JSON Schema, CEL rules, Sensitive Data Protection, Maps Address Validation, NHTSA vPIC VIN decode, policy admin lookup</td><td>Format checks, PII detection and tokenization, date-of-loss inside policy period, garaging vs loss location</td><td class="num">&lt; 50 ms</td><td class="num">~45%</td></tr>
+      <tr><td><b>T1</b> Small</td><td>Gemini Flash-Lite and Claude Haiku 5.5; fine-tuned classifier for LOB / cause of loss</td><td>Turn intent, entity extraction to field slots, cause-of-loss code, language detection, sentiment</td><td class="num">&lt; 400 ms</td><td class="num">~35%</td></tr>
+      <tr><td><b>T2</b> Mid + RAG</td><td>Gemini Flash and Claude Sonnet 5.5 with Vector Search grounding</td><td>"What is still missing for a TX auto BI claim?", photo damage description, call summary, ACORD mapping of free text</td><td class="num">&lt; 2.5 s</td><td class="num">~17%</td></tr>
+      <tr><td><b>T3</b> Frontier</td><td>Gemini Pro and Claude Opus 5.5</td><td>Multi-vehicle liability narrative, injury severity, contradictions across statements, fraud indicator rationale, CAT surge triage</td><td class="num">&lt; 8 s (async)</td><td class="num">~3%</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Routing rules</h3>
+  <ul class="tight">
+    <li><b>Two providers per tier</b>: every tier has a Gemini model and a Claude model behind one router interface. For each task, the model with the better score on the golden-transcript evaluation is primary and the other is the challenger. The challenger gets a small shadow share of traffic for comparison and takes over automatically if the primary times out or errors.</li>
+    <li><b>Per-task thresholds</b> live in config (e.g. VIN slot 0.95, cause-of-loss 0.85, narrative summary 0.75) and are tuned from agent accept/reject rates.</li>
+    <li><b>Hard escalations</b> skip tiers: any injury or fatality mention, a litigation or attorney mention, a catastrophe code, or a large-loss estimate goes straight to T2/T3.</li>
+    <li><b>Verifier</b>: a second, cheaper pass checks T2/T3 output against the transcript (every extracted value must quote a source span) and against the JSON schema. Unsupported values are dropped.</li>
+    <li><b>Fallback</b>: if a model endpoint fails or exceeds budget, the router returns the last good tier's answer and marks it unconfirmed. Intake never blocks on AI.</li>
+    <li><b>Cost guard</b>: per-session token budget; semantic cache in Memorystore for repeated SOP questions.</li>
+  </ul>
+</section>
+
+<section id="copilot">
+  <h2><span class="n">04</span>Agent intake copilot</h2>
+  <p>The agent console has three panes: the live transcript, the claim form, and a <b>Required Items</b> checklist computed by the compliance engine. The copilot fills form fields from the conversation as suggestions; the agent accepts them with one key. The checklist reorders itself as facts arrive. Mentioning an injured passenger, for example, adds Medicare query fields and PIP questions.</p>
+  <div class="grid3">
+    <div class="tier"><div class="k">Listens</div><ul><li>Audio and transcripts from Google Customer Engagement Suite: Agent Assist streams live transcription and Conversational Insights keeps call analytics</li><li>Speech-to-Text streaming with speaker diarization and insurance phrase hints</li><li>Redaction of card numbers and SSNs in the transcript before storage</li></ul></div>
+    <div class="tier"><div class="k">Prompts</div><ul><li>Next best question, in plain language, ranked by what blocks submission</li><li>Mandatory disclosures as scripts the agent must mark as read: recording consent, state fraud warning, privacy notice</li><li>Empathy and safety cues: "Is anyone hurt? Are you somewhere safe?"</li><li>Translation help for non-English callers</li></ul></div>
+    <div class="tier"><div class="k">Guards</div><ul><li>Submit is disabled while any hard requirement is open</li><li>An agent may waive a soft requirement only with a reason code</li><li>Every field stores value, source, confidence and confirming user</li><li>Completeness score shown live and recorded for QA</li></ul></div>
+  </div>
+  <div class="diagram"><div class="cap">Fig 3 · One transcript turn, end to end</div>
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant Caller
+  participant CC as CES Agent Assist
+  participant CO as copilot-orchestrator
+  participant AI as Model cascade
+  participant CE as compliance-engine
+  participant FS as Firestore draft
+  participant UI as Agent console
+  Caller->>CC: "Someone rear-ended me on I-35, my passenger's neck hurts"
+  CC->>CO: audio stream
+  CO->>CO: Speech-to-Text + DLP redaction
+  CO->>AI: T1 extract entities
+  AI-->>CO: lossType=collision, road=I-35, injury=true (0.93)
+  CO->>AI: injury flag → hard escalate to T2
+  AI-->>CO: injured party = passenger, body part = neck
+  CO->>FS: write suggestions with provenance
+  FS-->>CE: draft changed (Eventarc)
+  CE->>CE: evaluate TX · auto · BI ruleset v2026.09
+  CE->>FS: add checklist items (injured DOB, Medicare query, treatment)
+  FS-->>UI: live update
+  UI->>Caller: agent asks next question
+</pre>
+  </div>
+</section>
+
+<section id="compliance">
+  <h2><span class="n">05</span>Compliance &amp; SOP engine</h2>
+  <p>Requirements come from three sources: state law and regulation, industry data standards (ACORD loss notices, IAIABC EDI for workers' comp, ISO ClaimSearch), and company SOPs. Each requirement is one record in a versioned ruleset, keyed by <span class="mono">jurisdiction × line × coverage × effective date</span>. The jurisdiction is the loss state for most lines and the jurisdiction state for workers' comp. The engine is deterministic. AI never decides whether a rule applies; it only supplies facts and explains rules to the agent.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Rule ID</th><th>Applies when</th><th>Requirement captured at FNOL</th><th>Authority</th><th>Gate</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">CORE-001</td><td>All claims</td><td>Date, time and location of loss; reporter and relationship; policy number or insured lookup; description of loss; contact preference</td><td>ACORD 2 Automobile Loss Notice; SOP</td><td><span class="pill hard">hard</span></td></tr>
+      <tr><td class="mono">DISC-REC</td><td>Every recorded call (SOP). Required by law when any party is in IL, an all-party consent state</td><td>Recording disclosure read and acknowledged before a recorded statement</td><td>IL 720 ILCS 5/14-2. WI (Wis. Stat. §968.31(2)(c)) and MI (MCL 750.539c, as read in <i>Sullivan v. Gray</i>) allow participant recording; the SOP discloses anyway</td><td><span class="pill hard">hard</span></td></tr>
+      <tr><td class="mono">DISC-FRAUD</td><td>Any claim form the policyholder signs or e-signs</td><td>Company fraud statement shown and accepted; state-specific wording where counsel requires it</td><td>SOP; WI, IL and MI wording to be confirmed by counsel</td><td><span class="pill hard">hard</span></td></tr>
+      <tr><td class="mono">ACK-SLA</td><td>Any first-party or third-party claim</td><td>Notice timestamp recorded; acknowledgment due date computed and diaried</td><td>IL 50 Ill. Adm. Code 919.40 (15 working days); WI Ins 6.11 and MI MCL 500.2026 (prompt acknowledgment). SOP target: 1 business day in all three states</td><td><span class="pill info">auto</span></td></tr>
+      <tr><td class="mono">CRASH-RPT</td><td>Auto loss in WI or IL with injury, death or damage over the reporting threshold</td><td>Police report number and agency, or the reason none was filed</td><td>WI Stat. §346.70 ($1,000 to any one person's property); IL 625 ILCS 5/11-406 (over $1,500, or $500 if a driver is uninsured)</td><td><span class="pill soft">soft</span></td></tr>
+      <tr><td class="mono">UM-UIM</td><td>WI or IL auto where the other driver is uninsured, unidentified or hit-and-run</td><td>Other driver's identity or reason unknown, police report within the policy's time limit, physical-contact facts</td><td>WI Stat. §632.32(4); IL 215 ILCS 5/143a</td><td><span class="pill soft">soft</span></td></tr>
+      <tr><td class="mono">MI-PIP</td><td>Michigan auto with any injury</td><td>PIP coverage level on the policy, injured person's priority of coverage, application for benefits sent, one-year notice clock started</td><td>MCL 500.3107 (coverage levels after the 2019 reform), 500.3114 (priority), 500.3145 (notice)</td><td><span class="pill hard">hard</span></td></tr>
+      <tr><td class="mono">MI-PPI</td><td>Michigan auto that damaged stationary property: a fence, building or properly parked vehicle</td><td>Property owner, location and damage description for the property protection claim</td><td>MCL 500.3121</td><td><span class="pill soft">soft</span></td></tr>
+      <tr><td class="mono">MI-MINITORT</td><td>Michigan auto, other driver at fault, vehicle damage</td><td>Other driver's name, plate and insurer for mini-tort recovery (up to $3,000)</td><td>MCL 500.3135(3)(e)</td><td><span class="pill soft">soft</span></td></tr>
+      <tr><td class="mono">MI-MCCA</td><td>Michigan PIP claim with catastrophic injury indicators (TBI, spinal cord, amputation, severe burns)</td><td>Flag for Michigan Catastrophic Claims Association reporting</td><td>MCL 500.3104; MCCA reporting manual</td><td><span class="pill info">auto</span></td></tr>
+      <tr><td class="mono">MSP-111</td><td>Any bodily injury claimant</td><td>Name, DOB, gender, SSN or Medicare Beneficiary Identifier (tokenized) for the Medicare status query</td><td>MMSEA Section 111 (42 U.S.C. §1395y(b)(8))</td><td><span class="pill soft">soft</span></td></tr>
+      <tr><td class="mono">WC-FROI</td><td>Workers' comp (Phase 5)</td><td>Employer, employee, date of injury, nature and body part codes, lost time; FROI filed to the state agency by its deadline</td><td>IAIABC Claims EDI Release 3.1; WI DWD, IL IWCC, MI WDCA filing rules</td><td><span class="pill hard">hard</span></td></tr>
+      <tr><td class="mono">SMS-TCPA</td><td>Customer opts into text updates</td><td>Express consent captured with timestamp and wording</td><td>TCPA (47 U.S.C. §227)</td><td><span class="pill hard">hard</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><div class="k">Legal review required</div><p>Citations above are illustrative seed rules for design and test fixtures. Before production, each rule's text, deadline and applicability must be confirmed and owned by compliance counsel. Statutes and emergency orders change. The admin console requires a named approver for every ruleset version.</p></div>
+  <h3>How rules are stored and run</h3>
+  <ul class="tight">
+    <li><b>Format</b>: each rule has a condition in CEL (Common Expression Language) over the draft, a list of required field paths, a gate type, disclosure text by locale, an authority citation and an effective date range.</li>
+    <li><b>Lifecycle</b>: draft → peer review → compliance approval → scheduled publish. Published versions are immutable in Postgres and cached in Cloud Run memory.</li>
+    <li><b>Pinning</b>: a draft records the ruleset version it was evaluated against, so an auditor can replay any claim's checklist exactly.</li>
+    <li><b>RAG corpus</b>: the same SOP and statute text is chunked into Vector Search so T2 can explain <i>why</i> a field is required, with a citation the agent can read.</li>
+  </ul>
+</section>
+
+<section id="datamove">
+  <h2><span class="n">06</span>Data movement architecture</h2>
+  <p>Data moves through seven stages. Synchronous paths serve the agent's screen; everything else is event driven on Pub/Sub with CloudEvents envelopes, so stages can be replayed and scaled independently.</p>
+  <div class="diagram"><div class="cap">Fig 4 · Capture to analytics</div>
+<pre class="mermaid">
+flowchart LR
+  subgraph C["1 CAPTURE"]
+    c1["Agent console"]
+    c2["Self-service app"]
+    c3["Call audio"]
+    c4["Partner API / email"]
+  end
+  subgraph I["2 INGEST"]
+    i1["intake-api"]
+    i2["Signed URL upload"]
+    i3["GCS quarantine bucket"]
+  end
+  subgraph E["3 ENRICH"]
+    e1["Malware scan"]
+    e2["DLP inspect + tokenize"]
+    e3["Document AI / vision"]
+    e4["VIN, address, weather,<br/>policy lookups"]
+  end
+  subgraph V["4 VALIDATE"]
+    v1["compliance-engine"]
+    v2["Model cascade"]
+  end
+  subgraph S["5 PERSIST"]
+    s1[("Firestore draft")]
+    s2[("GCS clean bucket")]
+    s3[("Postgres ledger + audit")]
+  end
+  subgraph X["6 DISTRIBUTE"]
+    x1["submission-saga"]
+    x2["Core claims / PAS"]
+    x3["ISO ClaimSearch,<br/>state FROI, CMS"]
+  end
+  subgraph AN["7 ANALYZE"]
+    a1[("BigQuery")]
+    a2["Looker dashboards"]
+    a3["Model eval + retrain"]
+  end
+  c1 --> i1
+  c2 --> i1
+  c2 --> i2
+  c3 --> v2
+  c4 --> i1
+  i2 --> i3
+  i3 --> e1 --> e2 --> e3 --> s2
+  i1 --> e2
+  e2 --> s1
+  i1 --> e4 --> s1
+  s1 --> v1
+  s1 --> v2
+  v2 --> s1
+  v1 --> s1
+  s1 --> x1
+  x1 --> s3
+  x1 --> x2
+  x1 --> x3
+  s1 -. stream .-> a1
+  s3 -. Datastream CDC .-> a1
+  a1 --> a2
+  a1 --> a3
+</pre>
+  </div>
+  <div class="diagram"><div class="cap">Fig 5 · Submission saga (Cloud Workflows)</div>
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant UI as Agent console
+  participant IN as intake-api
+  participant CE as compliance-engine
+  participant WF as submission-saga
+  participant PAS as Policy admin
+  participant CC as Core claims
+  participant EXT as ISO / State EDI / CMS
+  participant N as notify
+  UI->>IN: POST /drafts/{id}:submit (idempotency key)
+  IN->>CE: final evaluation
+  CE-->>IN: all hard gates satisfied
+  IN->>WF: start execution, fnol.submitted
+  WF->>PAS: verify coverage in force on date of loss
+  PAS-->>WF: policy snapshot
+  WF->>CC: create claim (ACORD-mapped payload)
+  CC-->>WF: claim number, assigned adjuster
+  par downstream filings
+    WF->>EXT: ISO ClaimSearch report
+    WF->>EXT: WC FROI to state (if WC)
+    WF->>EXT: Section 111 query queue (if BI)
+  end
+  WF->>N: acknowledgment to claimant (channel per consent)
+  WF->>IN: fnol.claim.created
+  Note over WF,CC: Any failure retries with backoff, then compensates and alerts. The draft is never lost.
+</pre>
+  </div>
+  <h3>Event catalogue</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Topic</th><th>Producer</th><th>Consumers</th><th>Payload notes</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">fnol.draft.updated</td><td>intake-api, copilot</td><td>compliance-engine, BigQuery sink</td><td>Field-level diff with provenance; tokens only, no clear PII</td></tr>
+      <tr><td class="mono">fnol.media.uploaded</td><td>GCS finalize (Eventarc)</td><td>media-pipeline</td><td>Object path, hash, uploader, draft id</td></tr>
+      <tr><td class="mono">fnol.media.cleared</td><td>media-pipeline</td><td>copilot (vision), intake-api</td><td>Clean object path, EXIF time and GPS, extracted labels</td></tr>
+      <tr><td class="mono">fnol.compliance.evaluated</td><td>compliance-engine</td><td>intake-api, BigQuery</td><td>Ruleset version, open items, completeness score</td></tr>
+      <tr><td class="mono">fnol.submitted</td><td>intake-api</td><td>submission-saga</td><td>Draft snapshot reference and ruleset version</td></tr>
+      <tr><td class="mono">fnol.claim.created</td><td>submission-saga</td><td>notify, BigQuery, CRM</td><td>Claim number, adjuster, acknowledgment due date</td></tr>
+      <tr><td class="mono">ai.inference.logged</td><td>copilot-orchestrator</td><td>BigQuery</td><td>Tier, model and version, prompt id, latency, tokens, confidence, outcome</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Data handling rules</h3>
+  <ul class="tight">
+    <li><b>Classification</b>: Public, Internal, Confidential (policy data), Restricted (SSN, MBI, driver's licence, medical, bank). Restricted values are tokenized by Sensitive Data Protection with a KMS-wrapped key at ingest; only the token travels on events.</li>
+    <li><b>Media</b>: uploads land in a quarantine bucket with no public access. They are scanned, stripped of risky metadata and copied to the clean bucket only after passing. Originals are hashed for chain of custody.</li>
+    <li><b>Retention</b>: claim-file retention by state and line, enforced with GCS retention policies and Bucket Lock; abandoned drafts purged after a configurable window (e.g. 30 days).</li>
+    <li><b>Lineage and catalog</b>: Dataplex catalogs every dataset with its classification tags; BigQuery column-level security and policy tags restrict Restricted columns.</li>
+  </ul>
+</section>
+
+<section id="network">
+  <h2><span class="n">07</span>Network design architecture</h2>
+  <p>Hub-and-spoke on a Shared VPC. No service has a public IP. Public traffic enters only through the global load balancer; private traffic to Google APIs stays inside the VPC Service Controls perimeter; partner and on-prem traffic leaves through fixed, allowlisted paths.</p>
+  <div class="diagram"><div class="cap">Fig 6 · Network topology</div>
+<pre class="mermaid">
+flowchart TB
+  U1["Policyholders"] --> CDN["Firebase Hosting CDN<br/>static self-service app"]
+  U1 --> GLB
+  U2["Agents on corporate devices"] --> GLB["Global external HTTPS LB<br/>Cloud Armor: OWASP CRS, rate limit,<br/>geo, reCAPTCHA Enterprise"]
+  GLB -->|agent host| IAP["Identity-Aware Proxy<br/>context-aware access"]
+  GLB -->|api host| APIGW["API Gateway / Apigee"]
+  subgraph PERIM["VPC Service Controls perimeter"]
+    subgraph HOST["Shared VPC host project"]
+      subgraph R1["us-central1 subnet 10.10.0.0/20"]
+        CR1["Cloud Run services<br/>Direct VPC egress"]
+        SQL1[("Cloud SQL primary<br/>private IP")]
+        RED["Memorystore Redis"]
+      end
+      subgraph R2["us-east4 subnet 10.20.0.0/20"]
+        CR2["Cloud Run services<br/>warm standby"]
+        SQL2[("Cloud SQL<br/>cross-region replica")]
+      end
+      PSC["Private Service Connect<br/>Google APIs endpoint"]
+      NAT["Cloud NAT<br/>static egress IPs"]
+      SWP["Secure Web Proxy<br/>FQDN allowlist"]
+    end
+    GAPI["Firestore · GCS · BigQuery ·<br/>Vertex AI · DLP · KMS"]
+  end
+  IAP --> CR1
+  APIGW --> CR1
+  APIGW -. failover .-> CR2
+  CR1 --> PSC --> GAPI
+  CR2 --> PSC
+  CR1 --> SQL1
+  CR1 --> RED
+  SQL1 -. replication .-> SQL2
+  CR1 --> SWP --> NAT --> PARTNERS["ISO, CMS, state EDI,<br/>SMS / email providers"]
+  HOST <-->|"HA VPN or Interconnect<br/>BGP, Cloud Router"| ONP["On-prem / other cloud<br/>core claims, policy admin, contact center"]
+</pre>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Concern</th><th>Design</th></tr></thead>
+    <tbody>
+      <tr><td>Ingress</td><td>One global external Application Load Balancer with serverless NEGs to Cloud Run. Cloud Run ingress set to <code>internal-and-cloud-load-balancing</code> so the <code>run.app</code> URLs are not reachable. Managed TLS certificates; TLS 1.2+ only via SSL policy.</td></tr>
+      <tr><td>Edge protection</td><td>Cloud Armor with preconfigured OWASP rules, adaptive protection, per-client rate limiting on <code>/drafts</code> and upload-URL endpoints, and reCAPTCHA Enterprise tokens on self-service submit.</td></tr>
+      <tr><td>Workforce access</td><td>Agent and admin hosts are behind IAP with Access Context Manager levels (managed device, corporate IP range or certificate). No VPN needed for agents.</td></tr>
+      <tr><td>Service-to-service</td><td>Cloud Run to Cloud Run calls use internal ingress plus IAM-authenticated ID tokens. Each service has its own service account with only the roles it needs.</td></tr>
+      <tr><td>Google APIs</td><td>Private Google Access through a Private Service Connect endpoint; VPC-SC perimeter covers Firestore, GCS, BigQuery, Vertex AI, DLP, KMS, Secret Manager. Ingress and egress rules are written per identity.</td></tr>
+      <tr><td>Egress</td><td>Deny by default with hierarchical firewall policies. Outbound internet only through Secure Web Proxy (FQDN allowlist) and Cloud NAT with reserved IPs that partners can allowlist.</td></tr>
+      <tr><td>Hybrid</td><td>HA VPN (99.99% SLA) to start, Partner or Dedicated Interconnect when volume justifies it. Cloud DNS private zones with DNS forwarding to on-prem resolvers.</td></tr>
+      <tr><td>Telephony</td><td>Google Customer Engagement Suite runs in the AI project. Agent Assist publishes transcript and suggestion events to Pub/Sub inside the perimeter, so no call audio crosses the public internet to reach the copilot.</td></tr>
+      <tr><td>Model endpoints</td><td>Gemini and Claude are both called through Vertex AI over the Private Service Connect endpoint. Gemini runs in us-central1; Claude uses the Vertex AI global endpoint or a US region where the model is offered. No direct calls to model vendors' public APIs.</td></tr>
+      <tr><td>Claims systems</td><td>Guidewire Cloud is reached over HTTPS from the fixed Cloud NAT addresses, with OAuth 2.0 client credentials (Guidewire Hub) and Guidewire's IP allowlist. In-house systems are reached over HA VPN with BGP.</td></tr>
+      <tr><td>IP plan</td><td>/16 per environment carved into regional /20 subnets, with secondary ranges reserved for future GKE; no overlap with on-prem RFC 1918 space.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="infra">
+  <h2><span class="n">08</span>Infrastructure &amp; application architecture</h2>
+  <h3>Resource hierarchy</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Folder</th><th>Projects</th><th>Holds</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">fnol</td><td class="mono">jmfnol-seed</td><td>Terraform state bucket and the Terraform service account, impersonated by admins; no keys</td></tr>
+      <tr><td class="mono">fnol/common</td><td class="mono">jmfnol-logging, jmfnol-cicd</td><td>7-year audit log bucket fed by a folder sink; Artifact Registry, Cloud Build, Cloud Deploy</td></tr>
+      <tr><td class="mono">fnol/{dev,stg,prd}</td><td class="mono">jmfnol-net-ENV</td><td>Shared VPC host, subnets in us-central1 and us-east4, Cloud NAT, PSC endpoint, private DNS, firewall policy, HA VPN</td></tr>
+      <tr><td class="mono">fnol/{dev,stg,prd}</td><td class="mono">jmfnol-app-ENV</td><td>Cloud Run, Functions, Workflows, Pub/Sub, API Gateway, Firebase Hosting and Identity Platform</td></tr>
+      <tr><td class="mono">fnol/{dev,stg,prd}</td><td class="mono">jmfnol-data-ENV</td><td>Firestore, Cloud SQL, GCS buckets, BigQuery datasets</td></tr>
+      <tr><td class="mono">fnol/{dev,stg,prd}</td><td class="mono">jmfnol-ai-ENV</td><td>Vertex AI (Gemini and Claude), Vector Search, CES Agent Assist, Speech, Document AI, Model Armor</td></tr>
+      <tr><td class="mono">fnol/{dev,stg,prd}</td><td class="mono">jmfnol-sec-ENV</td><td>Cloud KMS HSM keys, Secret Manager, Sensitive Data Protection templates. Inside the environment perimeter so CMEK calls never cross it</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Services</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Service</th><th>Runtime</th><th>Responsibility</th><th>Data owned</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">web-agent</td><td>React, Vite · Cloud Run (static) behind IAP</td><td>Agent copilot console, QA review view</td><td>None</td></tr>
+      <tr><td class="mono">web-self-service</td><td>React · Firebase Hosting</td><td>Guided policyholder FNOL, photo capture, status</td><td>None</td></tr>
+      <tr><td class="mono">intake-api</td><td>TypeScript, Node 22 · Cloud Run</td><td>Draft lifecycle, field writes with provenance, upload URLs, submit</td><td>Firestore <code>drafts</code></td></tr>
+      <tr><td class="mono">copilot-orchestrator</td><td>Python 3.12, FastAPI · Cloud Run (WebSocket / gRPC streaming)</td><td>Transcription, cascade router, prompt registry, verifier, inference logging</td><td>Firestore <code>suggestions</code>, BigQuery <code>ai_inference</code></td></tr>
+      <tr><td class="mono">compliance-engine</td><td>TypeScript · Cloud Run</td><td>Evaluate rulesets, produce checklist and gates, disclosure scripts</td><td>Postgres <code>rulesets</code></td></tr>
+      <tr><td class="mono">rules-admin</td><td>Cloud Run + web UI</td><td>Author, review, approve and schedule rule versions</td><td>Postgres <code>rulesets</code>, <code>approvals</code></td></tr>
+      <tr><td class="mono">media-pipeline</td><td>Cloud Functions gen2 (Eventarc)</td><td>Scan, DLP, EXIF, thumbnails, Document AI and vision extraction</td><td>GCS <code>quarantine</code>, <code>evidence</code></td></tr>
+      <tr><td class="mono">submission-saga</td><td>Cloud Workflows</td><td>Orchestrate claim creation and downstream filings with compensation</td><td>Postgres <code>claim_ledger</code></td></tr>
+      <tr><td class="mono">integration-adapters</td><td>Java 21 or TypeScript · Cloud Run</td><td>Guidewire and in-house adapters behind one claims port; ISO, state EDI, CMS, Maps, weather</td><td>None (stateless)</td></tr>
+      <tr><td class="mono">notify</td><td>Cloud Functions gen2</td><td>Email and SMS with consent check and templated, state-specific text</td><td>Firestore <code>consents</code></td></tr>
+    </tbody>
+  </table></div>
+  <h3>Claims system integration</h3>
+  <p>The saga talks to one internal interface, the claims port. Each carrier system gets an adapter that implements it, and a routing table picks the adapter per policy (by policy number prefix, writing company or line). Both systems can run side by side during a migration.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Port operation</th><th>Guidewire adapter</th><th>In-house adapter</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">lookupPolicy</td><td>PolicyCenter Cloud API, policy as of the loss date; or ClaimCenter policy search through the configured policy system plugin</td><td>REST or SOAP over HA VPN; contract defined with the in-house team</td></tr>
+      <tr><td class="mono">createDraftClaim</td><td>ClaimCenter Cloud API: create a draft claim, then add contacts, vehicles, incidents and exposures</td><td>Create claim request, or a message on the in-house queue</td></tr>
+      <tr><td class="mono">submitClaim</td><td>ClaimCenter Cloud API submit; returns the claim number and assignment</td><td>Synchronous response or callback event with the claim number</td></tr>
+      <tr><td class="mono">attachDocument</td><td>ClaimCenter documents endpoint, with content from the GCS evidence bucket</td><td>Document store upload or GCS signed URL hand-off</td></tr>
+      <tr><td class="mono">subscribeEvents</td><td>Guidewire App Events (claim assigned, closed) delivered to a Pub/Sub push endpoint</td><td>CDC or webhook into Pub/Sub</td></tr>
+    </tbody>
+  </table></div>
+  <p>Every adapter maps from one canonical FNOL model, aligned with ACORD, so the rules engine and copilot never depend on either vendor's schema. Contract tests run each adapter against a recorded Guidewire sandbox and an in-house stub in CI.</p>
+  <h3>Draft data model (Firestore)</h3>
+  <p>Every captured value is a small object, so provenance travels with the data and the UI can show who or what supplied it.</p>
+  <div class="diagram"><pre style="margin:0;font:13px/1.55 var(--mono);white-space:pre;">drafts/{draftId}
+  status: "in_progress" | "submitted" | "claim_created" | "abandoned"
+  channel, lob, jurisdiction, rulesetVersion, completeness: 0.82
+  loss.dateTime     { value, source: "ai:T1" | "agent" | "customer" | "system",
+                      confidence, evidenceSpan, confirmedBy, confirmedAt }
+  loss.location     { value: { line1, city, state, zip, lat, lng }, ... }
+  loss.causeCode    { value: "COLL-REAR", ... }
+  /parties/{id}     role, nameToken, contact, injured, attorneyRepresented
+  /vehicles/{id}    vin, year, make, model, damageAreas, drivable
+  /injuries/{id}    partyRef, bodyPart, treatment, medicareQueryToken
+  /media/{id}       gcsPath, sha256, exifTime, labels, status
+  /checklist/{rule} ruleId, gate, state: open | met | waived, waiverReason
+  /transcript/{seq} speaker, text (redacted), ts</pre></div>
+  <h3>Delivery pipeline</h3>
+  <ul class="tight">
+    <li><b>Infrastructure as code</b>: Terraform modules (based on Google Cloud Foundation Fabric) per folder and project; state in a locked GCS bucket; plans reviewed in pull requests.</li>
+    <li><b>CI</b>: Cloud Build (or GitHub Actions with Workload Identity Federation, no keys) runs unit, contract and rules tests, SAST and dependency scans, then builds SBOM-signed images to Artifact Registry.</li>
+    <li><b>CD</b>: Cloud Deploy promotes dev → stg → prd with Binary Authorization; Cloud Run traffic splitting for canaries; Firebase Hosting preview channels for front ends.</li>
+    <li><b>Rules and prompts</b> ship through the same pipeline with their own regression suites: golden FNOL transcripts per state with expected checklist output.</li>
+  </ul>
+</section>
+
+<section id="security">
+  <h2><span class="n">09</span>Security, privacy &amp; AI governance</h2>
+  <div class="grid3">
+    <div class="tier"><div class="k">Identity</div><ul><li>Workforce SSO through IAP and Identity Platform; MFA required</li><li>Roles as custom claims: <code>agent</code>, <code>supervisor</code>, <code>adjuster</code>, <code>compliance_admin</code>, <code>auditor</code></li><li>Firestore Security Rules scope customers to their own drafts</li><li>One service account per service, no user-managed keys</li></ul></div>
+    <div class="tier"><div class="k">Protection</div><ul><li>CMEK with Cloud KMS (HSM) on Firestore, GCS, BigQuery, Cloud SQL</li><li>Secret Manager for partner credentials, rotated</li><li>Security Command Center, Cloud Audit Logs (data access on) to a locked sink</li><li>Mapped to NAIC Insurance Data Security Model Law, NYDFS 23 NYCRR 500, GLBA, CCPA/CPRA, HIPAA where medical data applies</li></ul></div>
+    <div class="tier"><div class="k">AI governance</div><ul><li>Written AI program aligned to the NAIC Model Bulletin on the Use of AI Systems by Insurers and Colorado SB21-169 testing duties</li><li>AI is advisory at FNOL: no coverage, liability or fraud decision is automated</li><li>Model Armor screens prompts and responses for injection and data leakage</li><li>Prompt registry with versions, eval scores and an owner; drift and bias dashboards in BigQuery</li></ul></div>
+  </div>
+</section>
+
+<section id="ops">
+  <h2><span class="n">10</span>Reliability &amp; operations</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Objective</th><th>Target</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td>Intake availability</td><td class="num">99.95%</td><td>Multi-region Firestore, Cloud Run in two regions behind one LB, intake works with AI disabled</td></tr>
+      <tr><td>Copilot suggestion latency</td><td class="num">p95 &lt; 800 ms</td><td>Streaming, T0/T1 first, regional Vertex endpoints, semantic cache</td></tr>
+      <tr><td>Submission success</td><td class="num">≥ 99.9%</td><td>Idempotency keys, saga retries, dead-letter topics with replay tooling</td></tr>
+      <tr><td>Recovery (prd)</td><td class="num">RPO ≤ 5 min · RTO ≤ 1 h</td><td>Cloud SQL cross-region replica, GCS US multi-region, Firestore PITR, scripted regional failover drills each quarter</td></tr>
+      <tr><td>CAT surge</td><td class="num">10× normal volume</td><td>Cloud Run max instances pre-raised, Pub/Sub buffering, CAT mode with shortened scripts and deferred soft gates</td></tr>
+    </tbody>
+  </table></div>
+  <p>Observability uses OpenTelemetry traces across every service and model call, with Cloud Monitoring SLO burn-rate alerts. Business dashboards track completeness at submit, waivers by reason, cycle time from first contact to claim number, and AI acceptance rate by tier and task.</p>
+</section>
+
+<section id="roadmap">
+  <h2><span class="n">11</span>Build roadmap</h2>
+  <div>
+    <div class="phase"><div class="when">PHASE 0<br/>wk 1–2</div><div><b>Landing zone.</b> <span class="pill info">written, ready to apply</span> Terraform in <code>infra/</code> for the fnol folder in jmarcellis.com: guardrail policies, five projects per environment, Shared VPC, NAT, PSC, VPC-SC in dry-run, HSM keys, audit sink, Artifact Registry, Firebase.</div></div>
+    <div class="phase"><div class="when">PHASE 1<br/>wk 3–6</div><div><b>Personal auto FNOL, agent channel, WI / IL / MI.</b> intake-api, Firestore model, compliance-engine with the rules above, agent console with checklist and gating, claims port with a Guidewire sandbox adapter and an in-house stub. Typed intake first, no audio.</div></div>
+    <div class="phase"><div class="when">PHASE 2<br/>wk 7–10</div><div><b>Copilot cascade.</b> copilot-orchestrator with T0–T2 on Gemini and Claude, CES Agent Assist transcript streaming, provenance UI, inference logging, golden-transcript evals that pick the primary model per task.</div></div>
+    <div class="phase"><div class="when">PHASE 3<br/>wk 11–14</div><div><b>Media and self-service.</b> Upload pipeline, vision extraction, policyholder web flow, notify service with consent.</div></div>
+    <div class="phase"><div class="when">PHASE 4<br/>wk 15–20</div><div><b>Integrations and hardening.</b> Submission saga to core claims and policy admin, ISO, T3 tier, multi-region, pen test, DR drill, production readiness review.</div></div>
+    <div class="phase"><div class="when">PHASE 5<br/>ongoing</div><div><b>Expand.</b> Property, GL and workers' comp with FROI, more states, CAT mode, analytics and model tuning from agent feedback.</div></div>
+  </div>
+</section>
+
+<section id="decisions">
+  <h2><span class="n">12</span>Decisions recorded</h2>
+  <div class="decisions">
+    <div><p><b>Claims and policy systems: Guidewire and in-house.</b> Both sit behind the claims port, with routing per policy. Guidewire Cloud is reached over HTTPS from fixed NAT addresses; in-house systems over HA VPN.</p></div>
+    <div><p><b>Contact center: Google Customer Engagement Suite.</b> Agent Assist supplies the live transcript and Conversational Insights keeps call analytics. Both run in the AI project inside the perimeter.</p></div>
+    <div><p><b>Models: Gemini and Claude side by side on Vertex AI.</b> Each cascade tier has one of each. Evaluation picks the primary per task, and the other provider is the failover.</p></div>
+    <div><p><b>Launch: personal auto in Wisconsin, Illinois and Michigan.</b> That covers two at-fault states and Michigan no-fault, which drives the most rule variety at launch.</p></div>
+    <div><p><b>Cloud: the jmarcellis.com organization.</b> Everything lives under one fnol folder with its own guardrail policies and a scoped access policy, so the rest of the organization is untouched.</p></div>
+    <div><p><b>Still open: rules store.</b> Postgres and CEL as proposed, unless the compliance team already uses a BRMS or DMN tool.</p></div>
+  </div>
+</section>
+</main>
+</div>
