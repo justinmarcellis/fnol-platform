@@ -1,0 +1,62 @@
+{
+  "id": "S1-EXP-00",
+  "team": "experience",
+  "title": "Sprint 1 planning: decompose experience stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-experience",
+  "reviewer": "dir-experience",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:34:36.145Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:00.638Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.1626,
+    "inputTokens": 12,
+    "cacheWriteTokens": 34908,
+    "cacheReadTokens": 371789,
+    "outputTokens": 98,
+    "agents": {
+      "a9c3d3eb031e56f72": {
+        "label": "S1-EXP-00 mgr-experience planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 34908,
+        "cacheReadTokens": 371789,
+        "outputTokens": 98,
+        "usd": 0.1626
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:00.638Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:00.637Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

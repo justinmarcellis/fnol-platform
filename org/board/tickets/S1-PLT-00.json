@@ -1,0 +1,62 @@
+{
+  "id": "S1-PLT-00",
+  "team": "platform",
+  "title": "Sprint 1 planning: decompose platform stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-platform",
+  "reviewer": "dir-platform",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:01.154Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:00.751Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.0978,
+    "inputTokens": 8,
+    "cacheWriteTokens": 21406,
+    "cacheReadTokens": 217809,
+    "outputTokens": 66,
+    "agents": {
+      "a67005aafb71cb454": {
+        "label": "S1-PLT-00 mgr-platform planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 21406,
+        "cacheReadTokens": 217809,
+        "outputTokens": 66,
+        "usd": 0.0978
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:00.751Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:00.751Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

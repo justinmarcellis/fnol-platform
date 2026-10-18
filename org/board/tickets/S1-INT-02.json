@@ -1,0 +1,107 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:39.244Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:53.937Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:45:39.783Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:55:20.670Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-INT-02",
+  "team": "integrations",
+  "title": "Integrations module: signed webhooks, delivery worker, outbox API, and API reference docs",
+  "story": "Stories 2 (webhooks, REQ-16) and 3 (docs)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-integrations-webhook-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "src/modules/integrations/index.mjs",
+    "src/modules/integrations/routes.mjs",
+    "src/modules/integrations/webhooks/",
+    "tests/unit/integrations/webhooks/",
+    "tests/unit/integrations/docs/",
+    "tests/integration/integrations/webhooks/",
+    "architecture/contracts/tools/",
+    "docs/api-reference.md"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#integrations",
+    "architecture/contracts/openapi.yaml (/integrations/webhooks, deliveries, outbox, adapters)",
+    "architecture/contracts/domain/WebhookSubscription.schema.json",
+    "architecture/contracts/events/envelope.schema.json"
+  ],
+  "acceptance": [
+    "Subscription CRUD routes and service fns match openapi and WebhookSubscription.schema.json; create returns secret once; secret stored encrypted (secret_enc) and never returned or logged afterwards",
+    "Delivery worker subscribes to '*', filters by event_types and active, POSTs JSON envelope with X-FNOL-Signature (HMAC-SHA256 hex of raw body using the subscription secret), plus X-FNOL-Event-Id; test verifies signature",
+    "Failed deliveries (non-2xx or network error) retry with exponential backoff up to a max attempt count, recorded in webhook_deliveries; idempotent per (subscription, event id); injectable clock/fetch in tests",
+    "listDeliveries is paginated by cursor; GET /integrations/outbox lists via ctx.bus.outbox with type/subject/afterSequence/limit",
+    "index.mjs service(ctx) composes webhooks plus the adapters service from ./adapters/index.mjs (S1-INT-03) via guarded dynamic import so it loads when that file is absent",
+    "architecture/contracts/tools/gen-api-reference.mjs generates docs/api-reference.md from openapi.yaml (zero dependencies) and preserves hand-written sections: authentication, tenancy, errors, events and webhooks (with a Node signature verification example), pagination",
+    "Tests pass: node --test --disable-warning=ExperimentalWarning tests/unit/integrations/webhooks/ tests/unit/integrations/docs/ tests/integration/integrations/webhooks/"
+  ],
+  "brief": "Part A, webhooks: src/modules/integrations/webhooks/{service,worker,signing,routes}.mjs. Use ctx.db for tables webhook_subscriptions, webhook_deliveries (see modules.md), ctx.crypto.encryptPii/decryptPii for the secret, ctx.bus.on('*', handler) with consumed_events idempotency, ctx.clock for backoff (e.g. 30s, 2m, 10m, 1h, 6h; 5 attempts then status 'failed'). Deliver through an injectable fetch (default global fetch) with timeout; validate target URLs (https only except localhost in dev/test; block private ranges in prod config) to avoid SSRF. Retry scheduling: persist next_attempt_at and provide worker.tick() driven by a ctx timer/interval; tests call tick() with a fake clock. Payload is the event envelope (no PII). Include a test receiver using node:http in tests/integration. Part B, wiring: index.mjs exports service(ctx); the adapters service (owned by S1-INT-03) exposes createAdapterService(ctx) from ./adapters/index.mjs returning { listAdapters, previewMapping, pushClaim, routes }; import it with try/catch dynamic import and use a local stub in your unit tests. routes.mjs registers all integrations routes including those the adapter service returns. Part C, docs: gen-api-reference.mjs parses openapi.yaml; since zero-dependency, write a minimal YAML reader sufficient for this file or load via flow-style/JSON-compatible subset - check the file first; if a parser is impractical, post a contract-change asking for an openapi.json mirror rather than adding dependencies. Generated section markers (<!-- BEGIN GENERATED --> ... END) let hand-written sections persist; add an --check flag. Do not edit package.json. Only synthetic data. Do not commit.",
+  "valueDrivers": [
+    "Real-time partner and downstream notifications",
+    "Auditable at-least-once delivery",
+    "Faster integrator onboarding via API reference"
+  ],
+  "requirements": [
+    "REQ-16",
+    "REQ-17"
+  ],
+  "startedAt": "2026-10-18T20:35:53.937Z",
+  "doneAt": "2026-10-18T20:55:20.670Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:55:20.670Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 48 tests pass (run per file), docs check up to date, secret encrypted, guarded adapter import, in-scope paths only"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.2235,
+    "inputTokens": 64,
+    "cacheWriteTokens": 174668,
+    "cacheReadTokens": 3757709,
+    "outputTokens": 3515,
+    "agents": {
+      "a280d5f06436e18d8": {
+        "label": "S1-INT-02 ic-integrations-webhook-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 56,
+        "cacheWriteTokens": 156580,
+        "cacheReadTokens": 3540918,
+        "outputTokens": 3442,
+        "usd": 1.1342
+      },
+      "a3796354b527da45b": {
+        "label": "S1-INT-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 18088,
+        "cacheReadTokens": 216791,
+        "outputTokens": 73,
+        "usd": 0.0893
+      }
+    }
+  }
+}

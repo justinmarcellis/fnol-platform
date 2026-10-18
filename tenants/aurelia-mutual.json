@@ -1,0 +1,1425 @@
+{
+  "$schema": "../architecture/contracts/domain/TenantConfig.schema.json",
+  "tenantId": "aurelia-mutual",
+  "version": 1,
+  "displayName": "Aurelia Mutual (fictional)",
+  "claimNumberPrefix": "AUR",
+  "timeZone": "America/Chicago",
+  "locales": [
+    "en",
+    "es"
+  ],
+  "branding": {
+    "primaryColor": "#1f5f4a",
+    "accentColor": "#e0a526",
+    "fontFamily": "Georgia, serif",
+    "supportPhone": "(555) 010-0142",
+    "supportEmail": "claims@aurelia-mutual.example",
+    "legalFooter": {
+      "en": "Aurelia Mutual is a fictional carrier used for demonstration only.",
+      "es": "Aurelia Mutual es una aseguradora ficticia usada solo para demostracion."
+    },
+    "fraudWarning": {
+      "WI": {
+        "en": "Illustrative notice (WI): giving false information on a claim may be a crime.",
+        "es": "Aviso ilustrativo (WI): dar informacion falsa en un reclamo puede ser un delito."
+      },
+      "IL": {
+        "en": "Illustrative notice (IL): giving false information on a claim may be a crime.",
+        "es": "Aviso ilustrativo (IL): dar informacion falsa en un reclamo puede ser un delito."
+      }
+    }
+  },
+  "lobs": [
+    {
+      "id": "personal_auto",
+      "enabled": true,
+      "label": {
+        "en": "Personal auto",
+        "es": "Auto personal"
+      },
+      "acordLobCd": "AUTOP",
+      "states": [
+        "WI",
+        "IL"
+      ],
+      "channels": [
+        "claimant_web",
+        "agent_portal",
+        "csr_phone"
+      ],
+      "lossTypes": [
+        {
+          "id": "collision",
+          "label": {
+            "en": "Collision",
+            "es": "Colision"
+          },
+          "causes": [
+            "collision",
+            "collision_animal",
+            "single_vehicle",
+            "hit_and_run"
+          ]
+        },
+        {
+          "id": "glass",
+          "label": {
+            "en": "Glass damage",
+            "es": "Dano de cristales"
+          },
+          "causes": [
+            "glass"
+          ]
+        },
+        {
+          "id": "theft_vandalism",
+          "label": {
+            "en": "Theft or vandalism",
+            "es": "Robo o vandalismo"
+          },
+          "causes": [
+            "theft",
+            "vandalism"
+          ]
+        },
+        {
+          "id": "weather",
+          "label": {
+            "en": "Weather or fire",
+            "es": "Clima o incendio"
+          },
+          "causes": [
+            "hail",
+            "wind",
+            "fire",
+            "flood"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "homeowners",
+      "enabled": true,
+      "label": {
+        "en": "Homeowners",
+        "es": "Seguro de vivienda"
+      },
+      "acordLobCd": "HOME",
+      "states": [
+        "WI",
+        "IL"
+      ],
+      "channels": [
+        "claimant_web",
+        "agent_portal",
+        "csr_phone"
+      ],
+      "lossTypes": [
+        {
+          "id": "water",
+          "label": {
+            "en": "Water damage",
+            "es": "Dano por agua"
+          },
+          "causes": [
+            "water_plumbing",
+            "water_weather",
+            "freeze"
+          ]
+        },
+        {
+          "id": "wind_hail",
+          "label": {
+            "en": "Wind or hail",
+            "es": "Viento o granizo"
+          },
+          "causes": [
+            "wind",
+            "hail"
+          ]
+        },
+        {
+          "id": "fire",
+          "label": {
+            "en": "Fire or lightning",
+            "es": "Incendio o rayo"
+          },
+          "causes": [
+            "fire",
+            "lightning"
+          ]
+        },
+        {
+          "id": "theft",
+          "label": {
+            "en": "Theft or vandalism",
+            "es": "Robo o vandalismo"
+          },
+          "causes": [
+            "theft",
+            "vandalism"
+          ]
+        }
+      ]
+    }
+  ],
+  "questionSets": [
+    {
+      "id": "auto-general",
+      "lob": "personal_auto",
+      "version": 1,
+      "questions": [
+        {
+          "id": "loss_date",
+          "text": {
+            "en": "When did the loss happen?",
+            "es": "Cuando ocurrio la perdida?"
+          },
+          "type": "date",
+          "required": true,
+          "validation": {
+            "notInFuture": true
+          },
+          "mapsTo": "loss.lossDate",
+          "order": 10,
+          "section": "loss"
+        },
+        {
+          "id": "loss_description",
+          "text": {
+            "en": "Tell us what happened.",
+            "es": "Cuentenos que sucedio."
+          },
+          "type": "longtext",
+          "required": true,
+          "aiAssist": true,
+          "mapsTo": "loss.description",
+          "order": 20,
+          "section": "loss"
+        },
+        {
+          "id": "injuries",
+          "text": {
+            "en": "Was anyone hurt?",
+            "es": "Hubo personas lesionadas?"
+          },
+          "type": "boolean",
+          "required": true,
+          "mapsTo": "loss.injuriesReported",
+          "order": 30,
+          "section": "loss"
+        },
+        {
+          "id": "vehicle_drivable",
+          "text": {
+            "en": "Can the vehicle be driven?",
+            "es": "Se puede conducir el vehiculo?"
+          },
+          "type": "boolean",
+          "required": true,
+          "order": 40,
+          "section": "vehicle"
+        },
+        {
+          "id": "other_party_involved",
+          "text": {
+            "en": "Was another vehicle or person involved?",
+            "es": "Hubo otro vehiculo o persona involucrada?"
+          },
+          "type": "boolean",
+          "required": true,
+          "order": 50,
+          "section": "parties"
+        },
+        {
+          "id": "other_party_info",
+          "text": {
+            "en": "Other party details",
+            "es": "Datos de la otra parte"
+          },
+          "type": "party",
+          "showIf": {
+            "fact": "answers.other_party_involved",
+            "op": "eq",
+            "value": true
+          },
+          "requiredIf": {
+            "fact": "answers.other_party_involved",
+            "op": "eq",
+            "value": true
+          },
+          "pii": true,
+          "order": 60,
+          "section": "parties"
+        },
+        {
+          "id": "police_report",
+          "text": {
+            "en": "Was a police report filed?",
+            "es": "Se presento un informe policial?"
+          },
+          "type": "boolean",
+          "showIf": {
+            "fact": "answers.injuries",
+            "op": "eq",
+            "value": true
+          },
+          "order": 70,
+          "section": "loss"
+        },
+        {
+          "id": "photos",
+          "text": {
+            "en": "Add photos of the damage.",
+            "es": "Agregue fotos de los danos."
+          },
+          "type": "media",
+          "aiAssist": true,
+          "order": 80,
+          "section": "evidence"
+        },
+        {
+          "id": "fraud_disclosure",
+          "text": {
+            "en": "I understand that knowingly giving false information is a crime.",
+            "es": "Entiendo que dar informacion falsa a sabiendas es un delito."
+          },
+          "type": "disclosure",
+          "required": true,
+          "order": 99,
+          "section": "submit"
+        }
+      ]
+    },
+    {
+      "id": "auto-glass",
+      "lob": "personal_auto",
+      "lossTypes": [
+        "glass"
+      ],
+      "version": 1,
+      "questions": [
+        {
+          "id": "loss_date",
+          "text": {
+            "en": "When did the glass break?",
+            "es": "Cuando se rompio el cristal?"
+          },
+          "type": "date",
+          "required": true,
+          "validation": {
+            "notInFuture": true
+          },
+          "mapsTo": "loss.lossDate",
+          "order": 10,
+          "section": "loss"
+        },
+        {
+          "id": "glass_location",
+          "text": {
+            "en": "Which glass is damaged?",
+            "es": "Que cristal esta danado?"
+          },
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "windshield",
+              "label": {
+                "en": "Windshield",
+                "es": "Parabrisas"
+              }
+            },
+            {
+              "value": "side",
+              "label": {
+                "en": "Side window",
+                "es": "Ventana lateral"
+              }
+            },
+            {
+              "value": "rear",
+              "label": {
+                "en": "Rear window",
+                "es": "Ventana trasera"
+              }
+            }
+          ],
+          "order": 20,
+          "section": "loss"
+        },
+        {
+          "id": "injuries",
+          "text": {
+            "en": "Was anyone hurt?",
+            "es": "Hubo personas lesionadas?"
+          },
+          "type": "boolean",
+          "required": true,
+          "mapsTo": "loss.injuriesReported",
+          "order": 30,
+          "section": "loss"
+        },
+        {
+          "id": "vehicle_drivable",
+          "text": {
+            "en": "Can the vehicle be driven?",
+            "es": "Se puede conducir el vehiculo?"
+          },
+          "type": "boolean",
+          "required": true,
+          "order": 40,
+          "section": "vehicle"
+        },
+        {
+          "id": "photos",
+          "text": {
+            "en": "Add a photo of the damage.",
+            "es": "Agregue una foto del dano."
+          },
+          "type": "media",
+          "aiAssist": true,
+          "order": 50,
+          "section": "evidence"
+        },
+        {
+          "id": "fraud_disclosure",
+          "text": {
+            "en": "I understand that knowingly giving false information is a crime.",
+            "es": "Entiendo que dar informacion falsa a sabiendas es un delito."
+          },
+          "type": "disclosure",
+          "required": true,
+          "order": 99,
+          "section": "submit"
+        }
+      ]
+    },
+    {
+      "id": "home-general",
+      "lob": "homeowners",
+      "version": 1,
+      "questions": [
+        {
+          "id": "loss_date",
+          "text": {
+            "en": "When did the loss happen?",
+            "es": "Cuando ocurrio la perdida?"
+          },
+          "type": "date",
+          "required": true,
+          "validation": {
+            "notInFuture": true
+          },
+          "mapsTo": "loss.lossDate",
+          "order": 10,
+          "section": "loss"
+        },
+        {
+          "id": "loss_description",
+          "text": {
+            "en": "Tell us what happened.",
+            "es": "Cuentenos que sucedio."
+          },
+          "type": "longtext",
+          "required": true,
+          "aiAssist": true,
+          "mapsTo": "loss.description",
+          "order": 20,
+          "section": "loss"
+        },
+        {
+          "id": "injuries",
+          "text": {
+            "en": "Was anyone hurt?",
+            "es": "Hubo personas lesionadas?"
+          },
+          "type": "boolean",
+          "required": true,
+          "mapsTo": "loss.injuriesReported",
+          "order": 30,
+          "section": "loss"
+        },
+        {
+          "id": "home_livable",
+          "text": {
+            "en": "Is the home safe to live in?",
+            "es": "Es seguro vivir en la casa?"
+          },
+          "type": "boolean",
+          "required": true,
+          "order": 40,
+          "section": "property"
+        },
+        {
+          "id": "damaged_areas",
+          "text": {
+            "en": "Which areas are damaged?",
+            "es": "Que areas estan danadas?"
+          },
+          "type": "multiselect",
+          "options": [
+            {
+              "value": "roof",
+              "label": {
+                "en": "Roof",
+                "es": "Techo"
+              }
+            },
+            {
+              "value": "kitchen",
+              "label": {
+                "en": "Kitchen",
+                "es": "Cocina"
+              }
+            },
+            {
+              "value": "basement",
+              "label": {
+                "en": "Basement",
+                "es": "Sotano"
+              }
+            },
+            {
+              "value": "bathroom",
+              "label": {
+                "en": "Bathroom",
+                "es": "Bano"
+              }
+            },
+            {
+              "value": "exterior",
+              "label": {
+                "en": "Exterior",
+                "es": "Exterior"
+              }
+            }
+          ],
+          "order": 50,
+          "section": "property"
+        },
+        {
+          "id": "water_source_stopped",
+          "text": {
+            "en": "Has the water been shut off?",
+            "es": "Se cerro el agua?"
+          },
+          "type": "boolean",
+          "showIf": {
+            "fact": "answers.loss_cause",
+            "op": "eq",
+            "value": "water_plumbing"
+          },
+          "order": 55,
+          "section": "property"
+        },
+        {
+          "id": "loss_cause",
+          "text": {
+            "en": "What caused the damage?",
+            "es": "Que causo el dano?"
+          },
+          "type": "select",
+          "required": true,
+          "options": [
+            {
+              "value": "water_plumbing",
+              "label": {
+                "en": "Plumbing leak",
+                "es": "Fuga de plomeria"
+              }
+            },
+            {
+              "value": "wind",
+              "label": {
+                "en": "Wind",
+                "es": "Viento"
+              }
+            },
+            {
+              "value": "hail",
+              "label": {
+                "en": "Hail",
+                "es": "Granizo"
+              }
+            },
+            {
+              "value": "fire",
+              "label": {
+                "en": "Fire",
+                "es": "Incendio"
+              }
+            },
+            {
+              "value": "theft",
+              "label": {
+                "en": "Theft",
+                "es": "Robo"
+              }
+            },
+            {
+              "value": "other",
+              "label": {
+                "en": "Other",
+                "es": "Otro"
+              }
+            }
+          ],
+          "mapsTo": "loss.cause",
+          "order": 45,
+          "section": "loss"
+        },
+        {
+          "id": "estimated_damage",
+          "text": {
+            "en": "Rough estimate of the damage",
+            "es": "Estimado aproximado del dano"
+          },
+          "type": "currency",
+          "validation": {
+            "min": 0
+          },
+          "order": 60,
+          "section": "property"
+        },
+        {
+          "id": "photos",
+          "text": {
+            "en": "Add photos of the damage.",
+            "es": "Agregue fotos de los danos."
+          },
+          "type": "media",
+          "aiAssist": true,
+          "order": 80,
+          "section": "evidence"
+        },
+        {
+          "id": "fraud_disclosure",
+          "text": {
+            "en": "I understand that knowingly giving false information is a crime.",
+            "es": "Entiendo que dar informacion falsa a sabiendas es un delito."
+          },
+          "type": "disclosure",
+          "required": true,
+          "order": 99,
+          "section": "submit"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "IN-OTHER-PARTY",
+      "name": "Collect other party when involved",
+      "stage": "intake",
+      "priority": 10,
+      "when": {
+        "fact": "answers.other_party_involved",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "require_question",
+          "questionId": "other_party_info"
+        }
+      ],
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      }
+    },
+    {
+      "id": "TR-INJURY-SEV",
+      "name": "Injury raises severity",
+      "stage": "triage",
+      "priority": 10,
+      "when": {
+        "fact": "loss.injuriesReported",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "add_severity",
+          "points": 35
+        },
+        {
+          "type": "set_complexity",
+          "complexity": "high"
+        }
+      ]
+    },
+    {
+      "id": "TR-NOT-DRIVABLE",
+      "name": "Undrivable vehicle raises severity",
+      "stage": "triage",
+      "priority": 20,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      },
+      "when": {
+        "fact": "answers.vehicle_drivable",
+        "op": "eq",
+        "value": false
+      },
+      "then": [
+        {
+          "type": "add_severity",
+          "points": 15
+        }
+      ]
+    },
+    {
+      "id": "TR-HOME-UNLIVABLE",
+      "name": "Uninhabitable home raises severity",
+      "stage": "triage",
+      "priority": 20,
+      "appliesTo": {
+        "lobs": [
+          "homeowners"
+        ]
+      },
+      "when": {
+        "fact": "answers.home_livable",
+        "op": "eq",
+        "value": false
+      },
+      "then": [
+        {
+          "type": "add_severity",
+          "points": 30
+        },
+        {
+          "type": "set_complexity",
+          "complexity": "high"
+        }
+      ]
+    },
+    {
+      "id": "RT-INJURY-01",
+      "name": "Injury to injury queue",
+      "stage": "routing",
+      "priority": 10,
+      "when": {
+        "any": [
+          {
+            "fact": "loss.injuriesReported",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "loss.fatality",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "then": [
+        {
+          "type": "route_queue",
+          "queue": "injury"
+        },
+        {
+          "type": "deny_fast_track",
+          "reason": "injury"
+        },
+        {
+          "type": "add_flag",
+          "flag": "injury"
+        }
+      ]
+    },
+    {
+      "id": "RT-SIU-01",
+      "name": "High fraud score to SIU (threshold 60)",
+      "stage": "routing",
+      "priority": 20,
+      "when": {
+        "fact": "triage.fraud.score",
+        "op": "gte",
+        "value": 60
+      },
+      "then": [
+        {
+          "type": "refer_siu",
+          "reason": "fraud score at or above 60"
+        },
+        {
+          "type": "route_queue",
+          "queue": "siu"
+        },
+        {
+          "type": "deny_fast_track",
+          "reason": "fraud"
+        }
+      ]
+    },
+    {
+      "id": "RT-AUTO-DEFAULT",
+      "name": "Auto default queue",
+      "stage": "routing",
+      "priority": 90,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      },
+      "when": true,
+      "then": [
+        {
+          "type": "route_queue",
+          "queue": "auto_physical_damage"
+        }
+      ]
+    },
+    {
+      "id": "RT-HOME-DEFAULT",
+      "name": "Home default queue",
+      "stage": "routing",
+      "priority": 90,
+      "appliesTo": {
+        "lobs": [
+          "homeowners"
+        ]
+      },
+      "when": true,
+      "then": [
+        {
+          "type": "route_queue",
+          "queue": "property"
+        }
+      ]
+    },
+    {
+      "id": "RT-FT-GLASS",
+      "name": "Straight-through: glass",
+      "stage": "routing",
+      "priority": 50,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      },
+      "when": {
+        "all": [
+          {
+            "fact": "loss.cause",
+            "op": "eq",
+            "value": "glass"
+          },
+          {
+            "fact": "triage.severityScore",
+            "op": "lt",
+            "value": 30
+          },
+          {
+            "fact": "coverage.outcome",
+            "op": "eq",
+            "value": "covered"
+          }
+        ]
+      },
+      "then": [
+        {
+          "type": "fast_track"
+        },
+        {
+          "type": "route_queue",
+          "queue": "fast_track"
+        }
+      ]
+    },
+    {
+      "id": "RT-FT-HOME-SMALL",
+      "name": "Straight-through: home damage under 2500",
+      "stage": "routing",
+      "priority": 50,
+      "appliesTo": {
+        "lobs": [
+          "homeowners"
+        ]
+      },
+      "when": {
+        "all": [
+          {
+            "fact": "answers.estimated_damage",
+            "op": "lt",
+            "value": 2500
+          },
+          {
+            "fact": "answers.home_livable",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "coverage.outcome",
+            "op": "eq",
+            "value": "covered"
+          },
+          {
+            "fact": "triage.severityScore",
+            "op": "lt",
+            "value": 30
+          }
+        ]
+      },
+      "then": [
+        {
+          "type": "fast_track"
+        },
+        {
+          "type": "route_queue",
+          "queue": "fast_track"
+        }
+      ]
+    },
+    {
+      "id": "RT-HOME-CAT",
+      "name": "Wind and hail flagged for catastrophe review",
+      "stage": "routing",
+      "priority": 40,
+      "appliesTo": {
+        "lobs": [
+          "homeowners"
+        ]
+      },
+      "when": {
+        "fact": "loss.cause",
+        "op": "in",
+        "value": [
+          "wind",
+          "hail"
+        ]
+      },
+      "then": [
+        {
+          "type": "add_flag",
+          "flag": "catastrophe_review"
+        }
+      ]
+    },
+    {
+      "id": "PR-SUBRO-AUTO",
+      "name": "Other party involved: subrogation review task",
+      "stage": "post_routing",
+      "priority": 10,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      },
+      "when": {
+        "fact": "answers.other_party_involved",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "add_flag",
+          "flag": "subrogation_candidate"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "subrogation_review",
+            "title": "Review subrogation potential",
+            "dueInHours": 72,
+            "queue": "auto_physical_damage"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PR-IL-ACK-NOTE",
+      "name": "Illinois claimant acknowledgement",
+      "stage": "post_routing",
+      "priority": 20,
+      "appliesTo": {
+        "states": [
+          "IL"
+        ]
+      },
+      "when": true,
+      "then": [
+        {
+          "type": "notify",
+          "template": "ack_il"
+        }
+      ]
+    }
+  ],
+  "queues": [
+    {
+      "id": "fast_track",
+      "label": {
+        "en": "Fast track",
+        "es": "Via rapida"
+      },
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "skills": [
+        "stp"
+      ],
+      "adjusters": [
+        "adj-aur-101",
+        "adj-aur-102"
+      ],
+      "assignment": "round_robin",
+      "slaHours": 4,
+      "maxSeverity": 30
+    },
+    {
+      "id": "auto_physical_damage",
+      "label": {
+        "en": "Auto physical damage",
+        "es": "Danos materiales de auto"
+      },
+      "lobs": [
+        "personal_auto"
+      ],
+      "skills": [
+        "auto",
+        "appraisal"
+      ],
+      "adjusters": [
+        "adj-aur-201",
+        "adj-aur-202",
+        "adj-aur-203"
+      ],
+      "assignment": "round_robin",
+      "slaHours": 24,
+      "maxSeverity": 60
+    },
+    {
+      "id": "property",
+      "label": {
+        "en": "Property",
+        "es": "Propiedad"
+      },
+      "lobs": [
+        "homeowners"
+      ],
+      "skills": [
+        "property",
+        "catastrophe"
+      ],
+      "adjusters": [
+        "adj-aur-301",
+        "adj-aur-302",
+        "adj-aur-303"
+      ],
+      "assignment": "least_loaded",
+      "slaHours": 24,
+      "maxSeverity": 80
+    },
+    {
+      "id": "injury",
+      "label": {
+        "en": "Injury",
+        "es": "Lesiones"
+      },
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "skills": [
+        "bodily_injury"
+      ],
+      "adjusters": [
+        "adj-aur-401",
+        "adj-aur-402"
+      ],
+      "assignment": "least_loaded",
+      "slaHours": 8
+    },
+    {
+      "id": "siu",
+      "label": {
+        "en": "Special investigations",
+        "es": "Investigaciones especiales"
+      },
+      "skills": [
+        "siu"
+      ],
+      "adjusters": [
+        "adj-aur-501",
+        "adj-aur-502"
+      ],
+      "assignment": "manual",
+      "slaHours": 48
+    }
+  ],
+  "fastTrack": {
+    "enabled": true,
+    "maxSeverity": 30,
+    "maxFraudScore": 25,
+    "maxEstimate": {
+      "amount": 2500,
+      "currency": "USD"
+    },
+    "queue": "fast_track"
+  },
+  "severityBands": {
+    "moderate": 25,
+    "major": 50,
+    "severe": 75
+  },
+  "timers": [
+    {
+      "id": "WI-ACK",
+      "state": "WI",
+      "kind": "acknowledge",
+      "duration": {
+        "value": 7,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "stopOn": {
+        "taskType": "acknowledge_claimant"
+      },
+      "warnBefore": {
+        "value": 2,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "ack_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (ack_breach)",
+            "dueInHours": 8,
+            "queue": "auto_physical_damage"
+          }
+        }
+      ],
+      "citation": "WI acknowledgement deadline (demo value 7 days). Illustrative, not legal advice."
+    },
+    {
+      "id": "WI-CONTACT",
+      "state": "WI",
+      "kind": "contact",
+      "duration": {
+        "value": 3,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "stopOn": {
+        "taskType": "first_contact"
+      },
+      "warnBefore": {
+        "value": 1,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "contact_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (contact_breach)",
+            "dueInHours": 8,
+            "queue": "auto_physical_damage"
+          }
+        }
+      ],
+      "citation": "WI first contact target (demo value 3 days). Illustrative, not legal advice."
+    },
+    {
+      "id": "WI-DECIDE",
+      "state": "WI",
+      "kind": "decide",
+      "duration": {
+        "value": 30,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "stopOn": {
+        "toStatus": [
+          "closed",
+          "withdrawn"
+        ]
+      },
+      "warnBefore": {
+        "value": 5,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "decision_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (decision_breach)",
+            "dueInHours": 24,
+            "queue": "property"
+          }
+        }
+      ],
+      "citation": "WI decision deadline (demo value 30 days). Illustrative, not legal advice."
+    },
+    {
+      "id": "IL-ACK",
+      "state": "IL",
+      "kind": "acknowledge",
+      "duration": {
+        "value": 2,
+        "unit": "business_days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "stopOn": {
+        "taskType": "acknowledge_claimant"
+      },
+      "warnBefore": {
+        "value": 1,
+        "unit": "business_days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "ack_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (ack_breach)",
+            "dueInHours": 8,
+            "queue": "auto_physical_damage"
+          }
+        }
+      ],
+      "citation": "IL acknowledgement deadline (demo value 2 business days). Illustrative, not legal advice."
+    },
+    {
+      "id": "IL-CONTACT",
+      "state": "IL",
+      "kind": "contact",
+      "duration": {
+        "value": 5,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "stopOn": {
+        "taskType": "first_contact"
+      },
+      "warnBefore": {
+        "value": 2,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "contact_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (contact_breach)",
+            "dueInHours": 8,
+            "queue": "auto_physical_damage"
+          }
+        }
+      ],
+      "citation": "IL first contact target (demo value 5 days). Illustrative, not legal advice."
+    },
+    {
+      "id": "IL-DECIDE",
+      "state": "IL",
+      "kind": "decide",
+      "duration": {
+        "value": 45,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto",
+        "homeowners"
+      ],
+      "stopOn": {
+        "toStatus": [
+          "closed",
+          "withdrawn"
+        ]
+      },
+      "warnBefore": {
+        "value": 7,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "decision_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (decision_breach)",
+            "dueInHours": 24,
+            "queue": "property"
+          }
+        }
+      ],
+      "citation": "IL decision deadline (demo value 45 days). Illustrative, not legal advice."
+    }
+  ],
+  "holidays": [
+    "2026-11-26",
+    "2026-12-25",
+    "2027-01-01"
+  ],
+  "notifications": {
+    "claimant": {
+      "channels": [
+        "email",
+        "sms"
+      ],
+      "onEvents": [
+        "claim.reported",
+        "claim.routed",
+        "claim.status.changed"
+      ]
+    },
+    "internal": {
+      "onEvents": [
+        "claim.timer.breached",
+        "claim.routed"
+      ],
+      "emails": [
+        "supervisors@aurelia-mutual.example"
+      ]
+    },
+    "webhooks": {
+      "enabled": true,
+      "allowedHosts": [
+        "hooks.aurelia-mutual.example"
+      ],
+      "signingAlgorithm": "hmac-sha256",
+      "includePii": false
+    }
+  },
+  "integrations": {
+    "policyPort": {
+      "adapter": "mock-pas",
+      "settings": {
+        "fieldMapProfile": "mapping-a",
+        "policyNumberFormat": "AUR-########"
+      }
+    },
+    "claimsPort": {
+      "adapter": "core-claims-suite",
+      "pushOn": "claim.routed",
+      "settings": {
+        "fieldMapProfile": "mapping-a"
+      }
+    }
+  },
+  "ai": {
+    "provider": "cascade",
+    "cascade": [
+      {
+        "provider": "local",
+        "minConfidence": 0.75
+      },
+      {
+        "provider": "vertex-claude",
+        "model": "claude-sonnet",
+        "minConfidence": 0.6,
+        "tasks": [
+          "extract_narrative",
+          "summarize",
+          "next_question",
+          "fraud_signals"
+        ]
+      }
+    ],
+    "tasks": {
+      "next_question": {
+        "enabled": true,
+        "threshold": 0.7
+      },
+      "extract_narrative": {
+        "enabled": true,
+        "threshold": 0.7
+      },
+      "fraud_signals": {
+        "enabled": true,
+        "threshold": 0.65
+      },
+      "summarize": {
+        "enabled": true
+      }
+    },
+    "region": "us-central1",
+    "redactPiiBeforeModel": true,
+    "maxTokensPerClaim": 40000,
+    "humanConfirmRequired": true
+  },
+  "security": {
+    "piiKeyRef": "kms://demo/aurelia-mutual",
+    "sessionTtlMinutes": 60,
+    "dataRetentionDays": 2555
+  }
+}

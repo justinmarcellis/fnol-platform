@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { snapshot, ORG } from '../org/fabric.mjs';
-import { computeMetrics } from './metrics.mjs';
+import { computeMetrics, parseValueDrivers } from './metrics.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const FILES = {
@@ -20,10 +20,16 @@ export function readQuality() {
   try { return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null; } catch { return null; }
 }
 
+/** VD-1..VD-6 headings from product/value-propositions.md ([] when absent). */
+export function readValueDrivers() {
+  const p = join(ORG, '..', 'product', 'value-propositions.md');
+  try { return existsSync(p) ? parseValueDrivers(readFileSync(p, 'utf8')) : []; } catch { return []; }
+}
+
 /** Snapshot plus computed metrics, as one object. */
 export function build() {
   const snap = snapshot();
-  return { snapshot: snap, metrics: computeMetrics(snap, { quality: readQuality() }) };
+  return { snapshot: snap, metrics: computeMetrics(snap, { quality: readQuality(), valueDrivers: readValueDrivers() }) };
 }
 
 /** Start the dashboard server. Resolves to the listening http.Server. */

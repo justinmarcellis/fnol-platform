@@ -1,0 +1,49 @@
+{
+  "payload": {
+    "RQ_UID": "evt_golden0002",
+    "REQUEST_TS": "20261018090000",
+    "CLAIM_REF": "BRV-2026-000007",
+    "POLICY_NO": "HOM-200001",
+    "LOB_CODE": "HOME",
+    "LOSS_DATE": "20260930",
+    "LOSS_CAUSE_CODE": "13",
+    "LOSS_DESC": "Burst pipe in kitchen.",
+    "LOSS_ADDR_LINE1": "9 Demo Road",
+    "LOSS_CITY": "Placeholder",
+    "LOSS_STATE": "TX",
+    "LOSS_ZIP": "75000",
+    "PARTY_COUNT": 1,
+    "PARTY_1_TYPE": "PER",
+    "PARTY_1_ROLES": "INS,REP",
+    "PARTY_1_FIRST_NAME": "Bo",
+    "PARTY_1_LAST_NAME": "Sample",
+    "PARTY_1_BIRTH_DATE": "19901225",
+    "PARTY_1_PHONE": "+15555550102",
+    "PROP_COUNT": 1,
+    "PROP_1_ROLE": "insured_location",
+    "PROP_1_ADDR_LINE1": "9 Demo Road",
+    "PROP_1_CITY": "Placeholder",
+    "PROP_1_STATE": "TX",
+    "PROP_1_ZIP": "75000",
+    "PROP_1_POLICY_LOC_ID": "LOC1",
+    "PROP_1_DWELLING_TYPE": "single_family",
+    "PROP_1_YEAR_BUILT": 1998,
+    "PROP_1_OCCUPIED_IND": "Y",
+    "PROP_1_HABITABLE_IND": "N",
+    "PROP_1_DAMAGED_AREAS": "kitchen",
+    "PROP_1_DAMAGE_DESC": "water damage to floor",
+    "PROP_1_MITIGATION_IND": "Y",
+    "X_LOB": "homeowners",
+    "X_CHANNEL": "csr_phone",
+    "X_REPORTED_TS": "20261001150000",
+    "X_RISK_STATE": "TX"
+  },
+  "unmapped": [
+    "claim.status"
+  ],
+  "warnings": [
+    "no acordLobCd configured for lob \"homeowners\"; used built-in default",
+    "no coverage verification available; coverage section omitted",
+    "no triage result available; triage extension omitted"
+  ]
+}

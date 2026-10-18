@@ -78,6 +78,17 @@
         "reason": "35/35 tests green; ctx API matches ADR-001; dev boot verified by IC"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "INC-1",
+        "foundBy": "ic-security-threat-modeler",
+        "foundIn": "S1-SEC-01",
+        "severity": "high",
+        "summary": "Tenant scope bypass via quoted/qualified table names and tenant_id updates",
+        "fixedBy": "ceo (core hotfix)",
+        "test": "tests/unit/core/store-scope-guard.test.mjs"
+      }
+    ]
   }
 }

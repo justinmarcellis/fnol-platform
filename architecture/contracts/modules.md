@@ -1,4 +1,4 @@
-# Module contracts (v1.0.0)
+# Module contracts (v1.1.0)
 
 Owner: dir-architecture · Implements ADR-001 (module contract, `ctx` shape, layout)
 
@@ -116,15 +116,33 @@ Synchronous calls only go downstream and are read-mostly. The only synchronous w
 
 | Function | Returns |
 | --- | --- |
-| `getPolicySnapshot({ policyNumber, asOf })` | `PolicySnapshot`, or throws `not_found`, through the policy port adapter from `TenantConfig.integrations.policyPort` |
-| `searchPolicies({ lastName?, postalCode?, vin?, phone? })` | `PolicySummary[]` |
-| `verifyCoverage(claimId)` | `CoverageVerification`. Publishes `claim.coverage.verified` |
+| `getPolicySnapshot({ policyNumber, asOf })` | `PolicySnapshot`, or throws `not_found`, through the policy port adapter from `TenantConfig.integrations.policyPort.adapter` (default `mock-pas`). Snapshots are cached in `policy_snapshots` |
+| `searchPolicies({ lastName?, postalCode?, vin?, phone? })` | `PolicySummary[]` = `{ policyNumber, lob, status, period, namedInsureds: [{ name }], vehicleCount, propertyCount }`. At least one criterion is required; criteria combine with AND. Lookup is by HMAC blind index (`ctx.crypto.hmacIndex`), so PII is never stored in a searchable plaintext column |
+| `verifyCoverage(claimId, { actor?, sourceEventId? }?)` | `CoverageVerification`. Persists the result and publishes `claim.coverage.verified`. A repeated `sourceEventId` returns the stored result without a second run |
 | `getLatestVerification(claimId)` | `CoverageVerification \| null` |
+| `seedPolicies(policies[])` | `{ inserted }`. **Added in 1.1.0.** Loads synthetic `PolicySnapshot`-shaped docs for the bound tenant into the mock PAS (`coverage_policies`), replacing a policy with the same `policyNumber`. `namedInsureds[]` may carry `phone` (and `lastName`) for search. Throws `not_supported` when the tenant's adapter cannot seed. Used by the seed script and tests; no HTTP route |
+| `getSnapshotById(id)` | `PolicySnapshot \| null`. **Added in 1.1.0.** Backs `GET /claims/{id}/coverage` |
 
-- Calls: `claims.getClaim` (read)
-- Publishes: `claim.coverage.verified`
-- Consumes: `claim.reported`, which calls `verifyCoverage` automatically
-- Tables: `policy_snapshots (tenant_id, id, policy_number, as_of, doc, retrieved_at)`, `coverage_verifications (tenant_id, id, claim_id, outcome, doc, verified_at)`. Mock PAS data lives in `mock_policies (tenant_id, policy_number, doc)`, owned by the mock-pas adapter inside this module
+- Calls: `claims.getClaim(claimId, { include: ['vehicles', 'properties'] })` (read)
+- Publishes: `claim.coverage.verified` (ids and codes only)
+- Consumes: `claim.reported`, which calls `verifyCoverage(claimId, { sourceEventId: evt.id })` automatically. Handler name `coverage:claim.reported`, idempotent on event id
+- Routes: `POST /claims/{claimId}/coverage/verify`, `GET /claims/{claimId}/coverage`, `GET /policies/{policyNumber}/snapshot` (as in openapi.yaml)
+- Tables: `policy_snapshots (tenant_id, id, policy_number, as_of, doc, retrieved_at, seq)`, `coverage_verifications (tenant_id, id, claim_id, outcome, status, source_event_id, doc, verified_at, seq)`. Mock PAS data lives in `coverage_policies (tenant_id, policy_number, lob, doc, pii, last_name_idx, postal_idx, vin_idx, phone_idx)`, owned by the mock-pas adapter inside this module (renamed from `mock_policies` in 1.0.0). `pii` holds encrypted names, phones and addresses; `*_idx` columns hold comma-delimited HMAC blind indexes
+- Policy port (module-internal, `port.mjs`): adapter `{ id, getPolicy({ policyNumber, asOf }) -> snapshot \| null, search(criteria), seed?(policies) }`. Only `mock-pas` is built in. Fixtures: `src/modules/coverage/fixtures.mjs` exports `policies` (9 synthetic policies) for the platform seed script
+
+### Verification result (additive in 1.1.0)
+
+`CoverageVerification.outcome` keeps the schema enum. The rule function also yields a finer `status`, returned as an additive field together with the deductible and limits. Consumers must ignore fields they do not know.
+
+| `status` | `outcome` | Meaning |
+| --- | --- | --- |
+| `in_force` | `covered` | Policy in force on the loss date and a coverage applies. `applicableCoverages` / `matchedCoverages` list the coverage codes |
+| `lapsed` | `not_covered` | Loss date outside the term, or policy cancelled or expired |
+| `excluded` | `not_covered` | Vehicle or location not on the policy, coverage not purchased, or peril excluded (for example flood without the `FLOOD` endorsement, or a coverage `excludedPerils` entry such as `water_weather`) |
+| `not_found` | `policy_not_found` | No policy for the reported number |
+| `needs_review` | `needs_review` | Ambiguous: LOB mismatch, no policy number, insured unit not identified or only partly matched, loss cause `other` or unmapped |
+
+Additive fields: `status`, `deductible` (`Money \| null`, same value as `applicableDeductible`), `limits` (`{ [coverageCode]: { limit?, limitPerPerson?, limitPerOccurrence? } }`), `applicableCoverages` (`string[]`). `reasons[]` entries are `"<code>: <detail>"` with no PII. A `lob_mismatch` is recorded as a failed `coverage_present` check. Glass is a comprehensive sub-coverage: a `glass` loss matches `GLASS` first (its deductible wins) and `COMP` second. Loss dates are compared in `TenantConfig.timeZone`. `percent_of_dwelling` deductibles are read as a percent of the `DWELLING` limit. The event payload is unchanged from 1.0.0.
 
 ## triage
 

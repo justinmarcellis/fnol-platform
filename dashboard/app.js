@@ -1,6 +1,6 @@
 // PMO dashboard UI. Data comes from /api/snapshot + /api/metrics, or window.__SNAPSHOT__ in the exported file.
 (function () {
-  const TABS = ['Overview', 'Org chart', 'Sprint board', 'Velocity & forecast', 'Quality', 'Flow', 'Cost', 'Performance', 'Improvement log'];
+  const TABS = ['Overview', 'Org chart', 'Sprint board', 'Velocity & forecast', 'Quality', 'Flow', 'Cost', 'Performance', 'Sprint review', 'Value drivers', 'Improvement log'];
   const STATUSES = ['backlog', 'ready', 'in_progress', 'review', 'done', 'blocked'];
   const state = { tab: 0, team: '', data: null, error: null };
   const $ = (id) => document.getElementById(id);
@@ -52,6 +52,14 @@
     const max = Math.max(1e-9, ...e.map(([, v]) => v));
     return `<svg viewBox="0 0 480 ${e.length * 24 + 6}" role="img">${e.map(([k, v], i) => `<text x="0" y="${i * 24 + 16}">${esc(k)}</text><rect class="s1" x="110" y="${i * 24 + 5}" width="${(v / max) * 280}" height="14" rx="2"/><text x="${116 + (v / max) * 280}" y="${i * 24 + 16}">${esc(fmtFn(v))}</text>`).join('')}</svg>`;
   };
+
+  function tierMix(mix) {
+    const tiers = (mix && mix.tiers) || [];
+    if (!tiers.length || !mix.totalUsd) return empty('No tier spend yet.');
+    return `<div class="stack" role="img" aria-label="Spend share by model tier">${tiers.filter((t) => t.pct > 0).map((t, i) => `<span class="seg c${i % 4}" style="width:${t.pct}%" title="${esc(t.tier)} ${t.pct}%"></span>`).join('')}</div>`
+      + table(['Tier', 'Spend', 'Share', 'Tickets', 'Points'], tiers.map((t) => [esc(t.tier), usd(t.usd), t.pct + '%', t.tickets, t.points]));
+  }
+  const list = (a) => (Array.isArray(a) && a.length ? `<ul>${a.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="muted">None recorded.</p>');
 
   // ---- views ----
   const views = [
@@ -109,20 +117,41 @@
     function cost({ metrics: m }) {
       const c = m.cost;
       return `<div class="grid">${kpi('Total spend', usd(c.totalUsd))}${kpi('Budget', usd(c.budgetUsd))}${kpi('Remaining', usd(c.budgetRemainingUsd))}${kpi('Used', c.budgetUsedPct === null ? 'n/a' : c.budgetUsedPct + '%')}${kpi('Points per $', fmt(c.pointsPerDollar))}</div>
-        <div class="grid wide"><div class="card"><h2>By team</h2>${hbars(c.byTeam, usd)}</div><div class="card"><h2>By sprint</h2>${hbars(c.bySprint, usd)}</div><div class="card"><h2>By ticket</h2>${hbars(c.byTicket, usd)}</div></div>`;
+        <div class="grid wide"><div class="card"><h2>By team</h2>${hbars(c.byTeam, usd)}</div><div class="card"><h2>By sprint</h2>${hbars(c.bySprint, usd)}</div><div class="card"><h2>By ticket</h2>${hbars(c.byTicket, usd)}</div>
+        <div class="card"><h2>Model tier mix</h2>${tierMix(m.tierMix)}</div></div>`;
     },
     function performance({ metrics: m }) {
       const sc = m.scorecards || { agents: [], teams: [] };
-      const row = (r) => [esc(r.id || r.agent || r.team || r.name), fmt(r.composite), r.tickets ?? r.ticketCount ?? 'n/a',
-        (r.lowPerformerFlag ? '<span class="badge off-track">low performer</span>' : '') + (r.lowConfidence ? ' <span class="badge">low confidence</span>' : '') || '-'];
-      return `<div class="grid wide"><div class="card"><h2>Agents</h2>${table(['Agent', 'Composite', 'Tickets', 'Flags'], (sc.agents || []).map(row))}</div>
-        <div class="card"><h2>Teams</h2>${table(['Team', 'Composite', 'Tickets', 'Flags'], (sc.teams || []).map(row))}</div></div>
+      if (!(sc.agents || []).length && !(sc.teams || []).length) return empty('No scorecards yet (org/scorecards/latest.json).');
+      const row = (r) => [esc(r.key || r.id || r.agent || r.team || r.name), fmt(r.composite), r.tickets ?? r.ticketCount ?? r.ticketsDone ?? 'n/a',
+        (r.lowPerformerFlag ? '<span class="badge off-track">low performer</span>' : '') + (r.lowConfidence ? ' <span class="badge">low confidence</span>' : '') || '-', esc((r.diagnosis || []).join('; '))];
+      return `<div class="grid wide"><div class="card"><h2>Agents</h2>${table(['Agent', 'Composite', 'Tickets', 'Flags', 'Diagnosis'], (sc.agents || []).map(row))}</div>
+        <div class="card"><h2>Teams</h2>${table(['Team', 'Composite', 'Tickets', 'Flags', 'Diagnosis'], (sc.teams || []).map(row))}</div></div>
         <p class="muted">Fewer than 3 tickets means low confidence; no action is taken on those rows.</p>`;
     },
-    function improvements({ snapshot: s }) {
-      const l = Array.isArray(s.improvements) ? s.improvements : [];
-      return `<div class="card"><h2>Improvement log</h2>${table(['Hypothesis', 'Owner', 'Metric', 'Before', 'After', 'Result'],
-        l.map((i) => [esc(i.hypothesis), esc(i.owner), esc(i.metric), fmt(i.before), fmt(i.after), esc(i.result)]))}</div>`;
+    function sprintReview({ metrics: m }) {
+      const rs = m.sprintReviews || [];
+      if (!rs.length) return empty('No sprints yet.');
+      return rs.map((s) => {
+        const r = s.review;
+        const kp = r ? `<div class="grid">${kpi('Points', `${fmt(r.completedPoints)}/${fmt(r.committedPoints)}`)}${kpi('Spend', usd(r.usd))}${kpi('Points per $', fmt(r.pointsPerDollar))}${kpi('First-pass', pct(r.firstPassAcceptance))}${kpi('Rework', pct(r.reworkRate))}${kpi('Tests', r.testsPassed ?? pct(r.testPassRate))}</div>
+          ${list(r.shipped).replace('<ul>', '<h3>Shipped</h3><ul>')}` : '<p class="muted">Review not written yet.</p>';
+        const t = s.retro;
+        const retro = t ? `<div class="grid wide"><div><h3>Went well</h3>${list(t.went_well)}</div><div><h3>Went badly</h3>${list(t.went_badly)}</div><div><h3>Manager retros</h3>${list(t.manager_retros)}</div></div>` : '<p class="muted">No retro yet.</p>';
+        return `<div class="card"><h2>${esc(s.name)} ${badge(s.status)}</h2>${s.goal ? `<p class="muted">${esc(s.goal)}</p>` : ''}${kp}${retro}</div>`;
+      }).join('');
+    },
+    function valueDrivers({ metrics: m }) {
+      const vd = m.valueDrivers || [];
+      if (!vd.length) return empty('No value drivers found (product/value-propositions.md).');
+      return `<div class="grid wide">${vd.map((d) => `<div class="card"><h2>${esc(d.id)}</h2><p>${esc(d.title)}</p>
+        <p class="muted">${d.tickets.length} ticket(s) · ${d.donePoints}/${d.points} pts done</p>
+        ${d.tickets.length ? `<ul class="plain">${d.tickets.map((t) => `<li><b>${esc(t.id)}</b> ${badge(t.status)} <span class="muted">${esc(t.title)}</span></li>`).join('')}</ul>` : '<p class="muted">No linked tickets yet.</p>'}</div>`).join('')}</div>`;
+    },
+    function improvements({ metrics: m, snapshot: s }) {
+      const l = m.improvements || (Array.isArray(s.improvements) ? s.improvements : []);
+      return `<div class="card"><h2>Improvement log</h2>${table(['Hypothesis', 'Owner', 'Metric', 'Before', 'After', 'Target', 'Result'],
+        l.map((i) => [esc(i.hypothesis), esc(i.owner), esc(i.metric), fmt(i.before), fmt(i.after), fmt(i.target), esc(i.result ?? i.status)]))}</div>`;
     },
   ];
 

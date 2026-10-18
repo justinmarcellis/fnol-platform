@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import { HttpError, unauthorized, forbidden, badRequest } from './errors.mjs';
 
-export const ROLES = ['claimant', 'agent', 'csr', 'adjuster', 'supervisor', 'carrier_admin', 'platform_admin', 'integration'];
+// tenant_admin and auditor come from openapi x-roles; carrier_admin is kept as tenant_admin's original name.
+export const ROLES = ['claimant', 'agent', 'csr', 'adjuster', 'supervisor', 'carrier_admin', 'tenant_admin', 'auditor', 'platform_admin', 'integration'];
 
 const enc = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
@@ -81,8 +82,16 @@ export function createAuth(ctx) {
 export function registerAuthRoutes(router, ctx) {
   router.post('/api/v1/auth/token', (req, res) => {
     if (!ctx.config.devMode) throw new HttpError(404, 'not_found', 'Not found');
-    const { tenantId, sub, roles, name } = req.body ?? {};
-    const token = ctx.auth.issueToken({ tenantId, sub, roles, name });
-    res.json(200, { token, tokenType: 'Bearer', claims: ctx.auth.verifyToken(token) });
+    // openapi names the fields userId/displayName; sub/name are accepted too.
+    const b = req.body ?? {};
+    const sub = b.userId ?? b.sub;
+    const name = b.displayName ?? b.name;
+    const token = ctx.auth.issueToken({ tenantId: b.tenantId, sub, roles: b.roles, name });
+    const claims = ctx.auth.verifyToken(token);
+    res.json(201, {
+      token, tokenType: 'Bearer', expiresAt: new Date(claims.exp * 1000).toISOString(),
+      principal: { userId: claims.sub, tenantId: claims.tenantId, roles: claims.roles, displayName: claims.name },
+      claims,
+    });
   }, { public: true });
 }

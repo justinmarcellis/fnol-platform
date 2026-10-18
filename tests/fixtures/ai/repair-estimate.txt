@@ -1,0 +1,8 @@
+LAKESIDE COLLISION REPAIR - ESTIMATE (SYNTHETIC)
+Repair Shop: Lakeside Collision Center
+Date: 03/12/2026
+Labor: $1,240.00
+Parts: $2,310.55
+Paint: $640.00
+Damage areas: rear bumper, trunk lid, left quarter panel
+Estimate Total: $4,190.55

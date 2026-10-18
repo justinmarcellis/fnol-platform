@@ -1,0 +1,96 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:25.094Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:13.250Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:38:09.086Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:46:10.554Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-QE-02",
+  "team": "quality",
+  "title": "Deterministic synthetic data generators",
+  "story": "Synthetic data generators tests/synthetic/index.mjs",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-quality-synthetic-data-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "tests/synthetic/",
+    "tests/fixtures/"
+  ],
+  "contracts": [
+    "architecture/contracts/domain/PolicySnapshot.schema.json",
+    "architecture/contracts/domain/Claim.schema.json",
+    "architecture/contracts/domain/Vehicle.schema.json",
+    "architecture/contracts/domain/Property.schema.json",
+    "architecture/contracts/openapi.yaml"
+  ],
+  "acceptance": [
+    "node --test --disable-warning=ExperimentalWarning tests/synthetic/ passes",
+    "generatePolicies({tenantId,lob,count,seed,state}) returns PolicySnapshot-valid objects (required fields from the schema checked in tests) for auto, home, commercial_auto; same seed gives deep-equal output, different seed differs",
+    "VINs are 17 chars with valid check digit (tested)",
+    "SCENARIOS contains at least the 8 named scenarios; generateScenario returns {name,lob,lossType,intakeAnswers,claimCreate,documents,expected} with expected {coverageStatus,severityBand,fraud,subrogation,fastTrack}, deterministic per seed",
+    "Police report and repair estimate documents contain realistic text with line items; no real carrier names or people; zero dependencies"
+  ],
+  "brief": "Create tests/synthetic/index.mjs exporting generatePolicies, SCENARIOS, generateScenario (keep the signatures exactly), plus helpers in tests/synthetic/ (prng.mjs seeded mulberry32 or similar, names.mjs, vin.mjs, documents.mjs) and tests in tests/synthetic/*.test.mjs. Never use Math.random or Date.now; all dates derive from seed with effective periods around 2026. Read PolicySnapshot.schema.json and common.schema.json and make outputs satisfy required fields and enums; write a tiny local validator in the test (required keys, types, enums) rather than adding dependencies. LOBs: auto, home, commercial_auto (check the schema enum for exact lob names and use those). Coverages/limits/deductibles realistic per LOB (e.g. auto 100/300/100 BI/PD, collision deductible 500; home dwelling A, water deductible 1000; fleet of 5-10 units for commercial). Tenant question ids: if tenants/*.json exist, read them at generation time (optional, fs read guarded by try/catch) and key intakeAnswers by their question ids; otherwise use generic keys (lossDate, lossDescription, injuries, policeReportNumber, drivable, etc.). claimCreate must match ClaimCreate in openapi.yaml. Scenarios: auto_rear_end_injury (subrogation true, fastTrack false, severity medium/high), auto_glass_only (fastTrack true), auto_theft_late_report (fraud true, report days after loss), auto_hit_and_run, home_water_small (fastTrack true, under 2500 estimate), home_fire_large (severity high/total), home_loss_before_inception (loss date before policy effective date, coverageStatus not_in_force; check CoverageVerification schema for exact enum), commercial_auto_fleet_collision. Documents: police report text (report no., parties, narrative, citations) and repair estimate text (line items parts/labor/tax/total that sum correctly), with kind/filename/contentType/text and optional metadata; include one tiny base64 image placeholder. Optionally put static JSON samples in tests/fixtures/. All names, carriers and addresses fictional (use reserved-like phone 555-01xx).",
+  "valueDrivers": [
+    "quality",
+    "reuse across teams"
+  ],
+  "requirements": [],
+  "startedAt": "2026-10-18T20:35:13.250Z",
+  "doneAt": "2026-10-18T20:46:10.554Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:46:10.554Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; 20/20 tests pass, deterministic, valid VINs, 8 scenarios, fictional data, zero deps, in-scope paths only"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.4671,
+    "inputTokens": 36,
+    "cacheWriteTokens": 80141,
+    "cacheReadTokens": 1248836,
+    "outputTokens": 1696,
+    "agents": {
+      "a0527dd73a870ef38": {
+        "label": "S1-QE-02 ic-quality-synthetic-data-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 60775,
+        "cacheReadTokens": 1031494,
+        "outputTokens": 1633,
+        "usd": 0.3746
+      },
+      "aa00f7bb3bfd65e00": {
+        "label": "S1-QE-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19366,
+        "cacheReadTokens": 217342,
+        "outputTokens": 63,
+        "usd": 0.0925
+      }
+    }
+  }
+}

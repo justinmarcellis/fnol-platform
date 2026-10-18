@@ -45,3 +45,6 @@ svg { width: 100%; height: auto; display: block; } svg text { fill: var(--muted)
 .legend { font-size: 12px; color: var(--muted); margin-top: 4px; } .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 4px 0 10px; }
 .team { margin-bottom: 12px; } ul.plain { list-style: none; margin: 0; padding: 0; } ul.plain li { padding: 2px 0; }
 @media (max-width: 600px) { .kpi .v { font-size: 22px; } main { padding: 12px; } }
+ul { margin: 0 0 8px; padding-left: 18px; }
+.stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; background: var(--border); }
+.seg.c0 { background: var(--accent); } .seg.c1 { background: var(--good); } .seg.c2 { background: var(--chart2); } .seg.c3 { background: var(--warn); }

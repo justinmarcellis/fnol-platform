@@ -1,0 +1,102 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:36.092Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:38:15.956Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:41:25.815Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:46:14.563Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-EXP-01",
+  "team": "experience",
+  "title": "UX flows doc and shared UI kit",
+  "story": "Story 1: UX flows and shared UI kit",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-ux-designer",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "architecture/ux-flows.md",
+    "src/web/shared/",
+    "tests/unit/web/shared/"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml (auth/token, config/public, error envelope)",
+    "architecture/core-runtime-api.md (static serving)"
+  ],
+  "requirements": [
+    "REQ-01",
+    "REQ-02",
+    "REQ-12"
+  ],
+  "valueDrivers": [
+    "time-to-first-screen",
+    "accessibility",
+    "multi-tenant white-label",
+    "multilingual"
+  ],
+  "acceptance": [
+    "architecture/ux-flows.md contains four mermaid flowcharts (claimant guided+conversational, CSR-assisted intake, adjuster first view, carrier admin configuration) plus sections on WCAG 2.2 AA targets (focus, contrast, target size, status messages, reduced motion) and multilingual notes (en/es, string keys, no concatenation, locale formats)",
+    "src/web/shared/ has api.js, i18n.js, theme.js, devlogin.js, tokens.css, components.css and components/{field,chips,stepper,upload,chat,timeline,toast,table}.js plus components/index.js, matching the KIT INTERFACE in the brief",
+    "tokens.css defines colors, spacing, type, radius as CSS custom properties with light and dark (prefers-color-scheme plus [data-theme]); theme.applyBranding maps public-config branding (name, primary color, logo url) to tokens and rejects non-hex colors",
+    "i18n has en and es tables with identical key sets (test asserts parity), param interpolation and fallback to en",
+    "api.js tests (node --test, fake fetch) cover bearer header, JSON envelope -> ApiError, network failure -> service_unavailable, upload; devlogin refuses when /health or config says production (devMode false) and posts tenant+role to /auth/token",
+    "Components are accessible by construction: labels tied to inputs, aria-live for toast and chat, role=list/progressbar semantics for stepper, keyboard operability for chips and table; file upload previews images with object URLs and revokes them",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/web/shared/ passes"
+  ],
+  "brief": "Build the shared kit and the UX flows doc. Read architecture/contracts/openapi.yaml for /auth/token (request/response), /config/public (PublicConfig schema: branding, lobs, locales) and the Error envelope; read core-runtime-api.md static serving: apps are served from src/web/<app>/ and other paths resolve under src/web/, so apps reference the kit by absolute path /shared/....\n\nKIT INTERFACE (agreed now so apps build in parallel; S1-EXP-01 implements exactly this, apps import it): src/web/shared/api.js exports createApiClient({baseUrl='/api/v1', getToken, fetchImpl=fetch}) returning {get,post,put,patch,del,upload(path,FormData)} that return parsed JSON and throw ApiError {status,code,message,details,requestId} from the error envelope; network failure/5xx/404-on-missing-route throws ApiError with code 'service_unavailable'. src/web/shared/i18n.js exports t(key,params), setLocale, getLocale, registerStrings(locale,table), supportedLocales (en, es). src/web/shared/theme.js exports applyBranding(publicConfig), setScheme('light'|'dark'|'auto'). src/web/shared/devlogin.js exports devLogin(api,{tenant,role}) -> {token,principal}. Components are custom elements registered on import of src/web/shared/components/index.js: fx-field, fx-chips, fx-stepper, fx-upload, fx-chat, fx-timeline, fx-toast, fx-table. Each is attribute/property driven and emits CustomEvents named 'fx-change' (detail {value}) / 'fx-submit'. Shared CSS: src/web/shared/tokens.css and components.css. Apps put pure logic (state, view-models, API orchestration) in plain modules taking an injected api and t, so node tests need no DOM or kit.\n\nVanilla ES modules only, zero dependencies, no build step. Web components may use light DOM or shadow DOM, but expose form value via property and events; if shadow DOM, inherit tokens (custom properties pierce). Keep DOM-free logic (ApiError, interpolation, branding mapping, token validation, file-type checks) in importable functions so node tests run without a DOM; guard customElements/document access (typeof customElements !== 'undefined') so modules import cleanly in node. i18n must not touch window at import. Include keys the apps will need under namespaces common.*, kit.* (apps register their own claimant.*, csr.* tables via registerStrings, so do not add app strings). Dev login must only work when devMode is true; read it from GET /health or a flag the caller passes, and never store secrets. Colors must meet 4.5:1 contrast; focus ring 3:1; targets >= 24px (aim 44px on mobile). Pitfalls: do not edit package.json; no real carrier names or logos; write only your paths.",
+  "startedAt": "2026-10-18T20:38:15.956Z",
+  "doneAt": "2026-10-18T20:46:14.563Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:46:14.563Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 25/25 tests pass (glob form; bare dir arg is a Node 22 limitation); in-scope files only, synthetic data, no PII logging"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.3881,
+    "inputTokens": 26,
+    "cacheWriteTokens": 75798,
+    "cacheReadTokens": 858902,
+    "outputTokens": 2675,
+    "agents": {
+      "a3c30ad8279f67ebf": {
+        "label": "S1-EXP-01 ic-experience-ux-designer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 20,
+        "cacheWriteTokens": 56911,
+        "cacheReadTokens": 701035,
+        "outputTokens": 1683,
+        "usd": 0.2994
+      },
+      "aba2b5c143d72022e": {
+        "label": "S1-EXP-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 18887,
+        "cacheReadTokens": 157867,
+        "outputTokens": 992,
+        "usd": 0.0887
+      }
+    }
+  }
+}

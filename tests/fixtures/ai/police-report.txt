@@ -1,0 +1,9 @@
+SAMPLE COUNTY SHERIFF - TRAFFIC CRASH REPORT (SYNTHETIC)
+Report No: SC-2026-004417
+Date of Loss: 2026-03-09
+Location: Main St and 4th Ave, Fairhaven, WI
+Unit 1: 2021 Maple sedan, VIN 1HGCM82633A004352, insured driver
+Unit 2: 2019 Cedar pickup
+Cited: Unit 2 - failure to keep proper lookout
+Contributing factors: Unit 2 followed too closely
+Damage: rear bumper and trunk on Unit 1

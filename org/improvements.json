@@ -8,7 +8,10 @@
     "metric": "share of agent spend auto-attributed",
     "before": 0,
     "target": 1,
-    "status": "active"
+    "status": "done",
+    "after": 1,
+    "result": "kept",
+    "note": "58/58 Sprint 1 agents auto-attributed by label"
   },
   {
     "id": "IMP-2",
@@ -19,7 +22,10 @@
     "metric": "interface mismatches found at review",
     "before": 1,
     "target": 0,
-    "status": "active"
+    "status": "done",
+    "after": 6,
+    "result": "revised",
+    "note": "Core API doc helped module code (no ctx misuse found), but 6 contract gaps between openapi and core still surfaced. Replaced by IMP-5."
   },
   {
     "id": "IMP-3",
@@ -30,7 +36,42 @@
     "metric": "points per wall-clock hour",
     "before": null,
     "target": null,
-    "status": "active",
-    "note": "Sprint 0 baseline: 47 pts in ~0.25h of agent time but serial waits; measured in S1"
+    "status": "done",
+    "note": "166 pts in ~26 min agent wall-clock ≈ 383 pts/h vs Sprint 0 ~190 pts/h; cost per point $0.12 vs $0.06 (bigger tickets, more review)",
+    "after": 383,
+    "result": "kept"
+  },
+  {
+    "id": "IMP-4",
+    "sprint": 2,
+    "area": "review",
+    "hypothesis": "Reviewers of pipeline tickets also run tests/e2e and tests/security, so cross-module defects are caught before acceptance",
+    "owner": "dir-quality",
+    "metric": "defects found after acceptance per sprint",
+    "before": 2,
+    "target": 0,
+    "status": "active"
+  },
+  {
+    "id": "IMP-5",
+    "sprint": 2,
+    "area": "synapse",
+    "hypothesis": "An architecture-hub triage agent at sprint start answers every open contract-change request, so no request waits a full sprint",
+    "owner": "dir-architecture",
+    "metric": "open contract-change requests at sprint close",
+    "before": 17,
+    "target": 0,
+    "status": "active"
+  },
+  {
+    "id": "IMP-6",
+    "sprint": 2,
+    "area": "playbook",
+    "hypothesis": "UI tickets include a Playwright smoke test in real Chromium, raising first-pass acceptance for Experience from 0.75",
+    "owner": "dir-experience",
+    "metric": "experience first-pass acceptance",
+    "before": 0.75,
+    "target": 1,
+    "status": "active"
   }
 ]

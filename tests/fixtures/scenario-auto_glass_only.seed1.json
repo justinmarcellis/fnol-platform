@@ -1,0 +1,344 @@
+{
+  "name": "auto_glass_only",
+  "lob": "personal_auto",
+  "lossType": "glass",
+  "intakeAnswers": {
+    "lossDate": "2026-05-15",
+    "lossTime": "23:18",
+    "lossDescription": "A rock hit my windshield on the highway and left a crack about 8 inches long. Car is drivable.",
+    "lossType": "glass",
+    "policyNumber": "PA-WI-7562874",
+    "injuries": false,
+    "drivable": true,
+    "glassOnly": true
+  },
+  "claimCreate": {
+    "tenantId": "northwind",
+    "lob": "personal_auto",
+    "lossType": "glass",
+    "channel": "api",
+    "policyNumber": "PA-WI-7562874",
+    "riskState": "WI",
+    "lossEvent": {
+      "lossDate": "2026-05-15",
+      "lossTime": "23:18",
+      "lossTimeZone": "America/Chicago",
+      "cause": "glass",
+      "description": "A rock hit my windshield on the highway and left a crack about 8 inches long. Car is drivable.",
+      "location": {
+        "description": "8635 Cobble Way, Fairhaven, WI 53001",
+        "address": {
+          "line1": "8635 Cobble Way",
+          "city": "Fairhaven",
+          "state": "WI",
+          "postalCode": "53001",
+          "country": "US"
+        },
+        "state": "WI"
+      },
+      "policeReport": {
+        "filed": false
+      },
+      "injuriesReported": false,
+      "fatality": false,
+      "vehiclesInvolved": 1
+    },
+    "parties": [
+      {
+        "id": "pty_41xtr1rn7u9v",
+        "tenantId": "northwind",
+        "claimId": "clm_zgdegasjrw0e",
+        "roles": [
+          "insured",
+          "driver",
+          "reporter"
+        ],
+        "kind": "person",
+        "firstName": "Quinn",
+        "lastName": "Kestrel",
+        "phone": "(608) 555-0173",
+        "preferredContact": "phone",
+        "isPolicyParty": true
+      }
+    ],
+    "externalRef": {
+      "system": "synthetic",
+      "id": "auto_glass_only-1"
+    },
+    "vehicles": [
+      {
+        "id": "veh_fvmmu4exbpmu",
+        "tenantId": "northwind",
+        "claimId": "clm_1a4s1h3583g4",
+        "role": "insured",
+        "vin": "1FZL5R990HE486508",
+        "year": 2017,
+        "make": "Corvane",
+        "model": "Hatch S",
+        "color": "Gray",
+        "licensePlate": "YDR1485",
+        "policyVehicleId": "veh-1",
+        "drivable": true,
+        "damageAreas": [
+          "glass"
+        ],
+        "damageDescription": "Windshield crack"
+      }
+    ]
+  },
+  "documents": [
+    {
+      "kind": "estimate",
+      "filename": "estimate-glass.txt",
+      "contentType": "text/plain",
+      "text": "CARDINAL GLASS AND TRIM (FICTIONAL)\nREPAIR ESTIMATE\nEstimate ID: EST-212724\nReference: glass   Date of loss: 2026-05-15\nVehicle: 2017 Corvane Hatch S\n\nLINE ITEMS\n01  PART  Windshield, laminated, with sensor bracket               385.00\n02  PART  Moulding kit                                              28.00\n03  LABOR Replace windshield (2.0 h @ 70/h)                        140.00\n04  LABOR Camera recalibration (1.0 h @ 70/h)                       70.00\n\nParts subtotal:      413.00\nLabor subtotal:      210.00\nSales tax (5.5% on parts):      22.72\nTOTAL:               645.72\n\nSynthetic test document. Shop and figures are fictional.",
+      "metadata": {
+        "shop": "Cardinal Glass and Trim (fictional)",
+        "lineItems": [
+          {
+            "type": "part",
+            "description": "Windshield, laminated, with sensor bracket",
+            "qty": 1,
+            "amountCents": 38500
+          },
+          {
+            "type": "part",
+            "description": "Moulding kit",
+            "qty": 1,
+            "amountCents": 2800
+          },
+          {
+            "type": "labor",
+            "description": "Replace windshield (2.0 h @ 70/h)",
+            "qty": 2,
+            "amountCents": 14000
+          },
+          {
+            "type": "labor",
+            "description": "Camera recalibration (1.0 h @ 70/h)",
+            "qty": 1,
+            "amountCents": 7000
+          }
+        ],
+        "partsTotal": 413,
+        "laborTotal": 210,
+        "tax": 22.72,
+        "total": 645.72,
+        "currency": "USD",
+        "synthetic": true
+      }
+    },
+    {
+      "kind": "photo",
+      "filename": "windshield.png",
+      "contentType": "image/png",
+      "contentBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "text": "Windshield crack",
+      "metadata": {
+        "placeholder": true,
+        "synthetic": true
+      }
+    }
+  ],
+  "expected": {
+    "coverageStatus": "covered",
+    "severityBand": "minor",
+    "fraud": false,
+    "subrogation": false,
+    "fastTrack": true
+  },
+  "policy": {
+    "id": "pol_qpup3m7rrwpr",
+    "tenantId": "northwind",
+    "policyNumber": "PA-WI-7562874",
+    "lob": "personal_auto",
+    "status": "in_force",
+    "period": {
+      "effectiveDate": "2026-03-07",
+      "expirationDate": "2027-03-07"
+    },
+    "asOfDate": "2026-05-06",
+    "ratingState": "WI",
+    "namedInsureds": [
+      {
+        "name": "Perry Kestrel",
+        "relation": "named_insured"
+      }
+    ],
+    "coverages": [
+      {
+        "code": "BI",
+        "description": "Bodily injury liability",
+        "limitPerPerson": {
+          "amount": 100000,
+          "currency": "USD"
+        },
+        "limitPerOccurrence": {
+          "amount": 300000,
+          "currency": "USD"
+        }
+      },
+      {
+        "code": "PD",
+        "description": "Property damage liability",
+        "limitPerOccurrence": {
+          "amount": 100000,
+          "currency": "USD"
+        },
+        "limit": {
+          "amount": 100000,
+          "currency": "USD"
+        }
+      },
+      {
+        "code": "UM",
+        "description": "Uninsured motorist",
+        "limitPerPerson": {
+          "amount": 100000,
+          "currency": "USD"
+        },
+        "limitPerOccurrence": {
+          "amount": 300000,
+          "currency": "USD"
+        }
+      },
+      {
+        "code": "MEDPAY",
+        "description": "Medical payments",
+        "limitPerPerson": {
+          "amount": 5000,
+          "currency": "USD"
+        }
+      }
+    ],
+    "endorsements": [],
+    "sourceSystem": "mock-pas",
+    "retrievedAt": "2026-05-06T12:00:00.000Z",
+    "vehicles": [
+      {
+        "unitId": "veh-1",
+        "vin": "1FZL5R990HE486508",
+        "year": 2017,
+        "make": "Corvane",
+        "model": "Hatch S",
+        "garagingPostalCode": "53003",
+        "coverages": [
+          {
+            "code": "COLL",
+            "description": "Collision",
+            "deductible": {
+              "amount": 500,
+              "currency": "USD"
+            },
+            "deductibleType": "flat"
+          },
+          {
+            "code": "COMP",
+            "description": "Comprehensive",
+            "deductible": {
+              "amount": 250,
+              "currency": "USD"
+            },
+            "deductibleType": "flat"
+          },
+          {
+            "code": "GLASS",
+            "description": "Glass",
+            "deductible": {
+              "amount": 0,
+              "currency": "USD"
+            },
+            "deductibleType": "flat"
+          },
+          {
+            "code": "RENTAL",
+            "description": "Rental reimbursement",
+            "limit": {
+              "amount": 900,
+              "currency": "USD"
+            }
+          },
+          {
+            "code": "TOWING",
+            "description": "Towing and labor",
+            "limit": {
+              "amount": 100,
+              "currency": "USD"
+            }
+          }
+        ]
+      },
+      {
+        "unitId": "veh-2",
+        "vin": "5YZ3GUKN9NT696535",
+        "year": 2022,
+        "make": "Aldera",
+        "model": "Sedan LX",
+        "garagingPostalCode": "53003",
+        "coverages": [
+          {
+            "code": "COLL",
+            "description": "Collision",
+            "deductible": {
+              "amount": 500,
+              "currency": "USD"
+            },
+            "deductibleType": "flat"
+          },
+          {
+            "code": "COMP",
+            "description": "Comprehensive",
+            "deductible": {
+              "amount": 250,
+              "currency": "USD"
+            },
+            "deductibleType": "flat"
+          },
+          {
+            "code": "GLASS",
+            "description": "Glass",
+            "deductible": {
+              "amount": 0,
+              "currency": "USD"
+            },
+            "deductibleType": "flat"
+          },
+          {
+            "code": "RENTAL",
+            "description": "Rental reimbursement",
+            "limit": {
+              "amount": 900,
+              "currency": "USD"
+            }
+          },
+          {
+            "code": "TOWING",
+            "description": "Towing and labor",
+            "limit": {
+              "amount": 100,
+              "currency": "USD"
+            }
+          }
+        ]
+      }
+    ],
+    "drivers": [
+      {
+        "driverId": "drv-1",
+        "name": "Perry Kestrel",
+        "excluded": false
+      },
+      {
+        "driverId": "drv-2",
+        "name": "Rowan Ashgrove",
+        "excluded": false
+      }
+    ]
+  },
+  "meta": {
+    "deductible": 0,
+    "seed": 1,
+    "reportedDate": "2026-05-15",
+    "lossDate": "2026-05-15"
+  }
+}

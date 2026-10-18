@@ -1,0 +1,91 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:25.091Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:03.653Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:35:40.794Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:45:33.965Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-QE-01",
+  "team": "quality",
+  "title": "Test strategy document",
+  "story": "Test strategy tests/STRATEGY.md",
+  "points": 2,
+  "tier": "mid",
+  "owner": "ic-quality-test-strategist",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "tests/STRATEGY.md"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "org/playbooks/standards.md"
+  ],
+  "acceptance": [
+    "tests/STRATEGY.md has sections: test pyramid (unit per module, integration per bounded context, security suite, e2e scenarios per LOB), synthetic-data rule, REQ-xx acceptance mapping, CI reporting to org/quality.json, defect classification and escape tracking",
+    "Defect escape section names review.escapedDefects on the originating ticket with a worked example and severity classes",
+    "Pyramid references real paths (tests/unit, tests/e2e, tests/synthetic) and the exact node --test command",
+    "Mentions only fictional data and no secrets"
+  ],
+  "brief": "Write tests/STRATEGY.md (Markdown only, ~2-3 pages). Read org/playbooks/standards.md, product/requirements.md (REQ-xx ids), architecture/contracts/modules.md and org/decisions/*.md first; do not restate ADRs, link them. Sections: 1) Pyramid with layer, owner, location, runner (node --test --disable-warning=ExperimentalWarning), expected ratio and gate: unit per module (tests/unit/<module>), integration per bounded context (module pairs over ctx.forTenant), security suite (tenant isolation, authz, PII redaction, injection on API inputs), e2e scenarios per LOB (tests/e2e, scenarios from tests/synthetic SCENARIOS: auto, home, commercial auto). 2) Synthetic-data rule: only generated, seeded, fictional data; no real carriers/people/logos; VINs valid check digit; how to use generatePolicies/generateScenario deterministically. 3) Acceptance against REQ-xx: table template mapping REQ id -> test file -> status; every story acceptance cites a REQ. 4) CI reporting: how a CI run writes pass/fail/todo counts per layer into org/quality.json (propose the JSON shape; check org/ for existing quality.json or scorecards and stay compatible, do not write the file yourself). t.todo semantics for missing modules. 5) Defect classification: severity S1-S4, type (functional, contract, security, data, perf), found-in phase; escape = defect found after ticket accepted, recorded as review.escapedDefects entry on the originating ticket, plus escape rate metric and the rule that every escape gets a regression test. Keep it concrete and checkable; do not write code.",
+  "valueDrivers": [
+    "quality",
+    "speed to confidence"
+  ],
+  "requirements": [],
+  "startedAt": "2026-10-18T20:35:03.653Z",
+  "doneAt": "2026-10-18T20:45:33.965Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:45:33.965Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All five sections plus worked review.escapedDefects example present, real paths and node --test command cited, fictional data only; nits for follow-up: generatePolicies/generateScenario signatures and LOB/scenario names and todo statuses for tests/security and tests/e2e now stale vs tests/synthetic and tests/security that exist"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.377,
+    "inputTokens": 24,
+    "cacheWriteTokens": 92434,
+    "cacheReadTokens": 654866,
+    "outputTokens": 1489,
+    "agents": {
+      "a4f0aaf1b6bc42f4b": {
+        "label": "S1-QE-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 65617,
+        "cacheReadTokens": 308389,
+        "outputTokens": 796,
+        "usd": 0.2337
+      },
+      "adc4cdf373010d366": {
+        "label": "S1-QE-01 ic-quality-test-strategist",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 26817,
+        "cacheReadTokens": 346477,
+        "outputTokens": 693,
+        "usd": 0.1433
+      }
+    }
+  }
+}

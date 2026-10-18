@@ -1,0 +1,2 @@
+{"at":"2026-10-18T21:04:07.144Z","hub":"incidents","type":"blocker","from":"ic-security-threat-modeler","ticket":"S1-SEC-01","text":"INC-1: tenant scope bypass in src/core/store.mjs (quoted/qualified identifiers, tenant_id updates, raw handle on tctx.db)"}
+{"at":"2026-10-18T21:04:07.144Z","hub":"incidents","type":"answer","from":"ceo","ticket":"S1-SEC-01","text":"INC-1 fixed: guardScoped() refuses quoted/qualified tenant tables and tenant_id assignment; tctx.db limited to scoped facade; regression test added","link":"tests/unit/core/store-scope-guard.test.mjs"}

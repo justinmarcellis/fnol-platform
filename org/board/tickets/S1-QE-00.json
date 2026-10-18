@@ -1,0 +1,62 @@
+{
+  "id": "S1-QE-00",
+  "team": "quality",
+  "title": "Sprint 1 planning: decompose quality stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-quality",
+  "reviewer": "dir-quality",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:34:25.149Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:00.883Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.1226,
+    "inputTokens": 10,
+    "cacheWriteTokens": 22979,
+    "cacheReadTokens": 278953,
+    "outputTokens": 932,
+    "agents": {
+      "af877f41036cb86d4": {
+        "label": "S1-QE-00 mgr-quality planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 22979,
+        "cacheReadTokens": 278953,
+        "outputTokens": 932,
+        "usd": 0.1226
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:00.883Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:00.882Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

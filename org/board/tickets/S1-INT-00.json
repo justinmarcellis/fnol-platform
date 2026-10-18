@@ -1,0 +1,62 @@
+{
+  "id": "S1-INT-00",
+  "team": "integrations",
+  "title": "Sprint 1 planning: decompose integrations stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-integrations",
+  "reviewer": "dir-integrations",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:34:39.297Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:00.697Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.1627,
+    "inputTokens": 10,
+    "cacheWriteTokens": 31090,
+    "cacheReadTokens": 299216,
+    "outputTokens": 2514,
+    "agents": {
+      "a97ef1e6edfc4a8fe": {
+        "label": "S1-INT-00 mgr-integrations planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 31090,
+        "cacheReadTokens": 299216,
+        "outputTokens": 2514,
+        "usd": 0.1627
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:00.697Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:00.697Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

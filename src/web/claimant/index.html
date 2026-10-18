@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Report a claim</title>
+  <meta name="description" content="Report an insurance claim online: guided questions or chat, add photos, and follow your claim status.">
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/components.css">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <a class="skip" href="#main" id="skip">Skip to main content</a>
+  <header class="top">
+    <div class="brand">
+      <img id="logo" alt="" hidden width="32" height="32">
+      <span id="brand-name" class="brand-name">Claims</span>
+    </div>
+    <div class="controls">
+      <label class="ctl"><span id="tenant-label">Insurance company</span>
+        <select id="tenant-picker"></select>
+      </label>
+      <label class="ctl" id="lang-wrap" hidden><span id="lang-label">Language</span>
+        <select id="lang-picker"></select>
+      </label>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"><p>Loading…</p></main>
+  <p id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+  <noscript><p class="noscript">This page needs JavaScript. Please enable it to report a claim.</p></noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

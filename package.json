@@ -13,5 +13,8 @@
     "test:e2e": "node --disable-warning=ExperimentalWarning --test \"tests/e2e/**/*.test.mjs\""
   },
   "dependencies": {},
-  "optionalDependencies": {}
+  "optionalDependencies": {
+    "@anthropic-ai/vertex-sdk": "0.20.2",
+    "@google/genai": "2.27.0"
+  }
 }

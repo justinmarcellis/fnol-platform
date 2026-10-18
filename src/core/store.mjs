@@ -107,8 +107,24 @@ export function createStore(dbPath) {
     return `${head}${before}WHERE tenant_id = :__tenant AND (${cond})${rest}`;
   }
 
+  /**
+   * Refuse SQL shapes the rewriter cannot scope (INC-1): quoted or schema-qualified
+   * names of tenant tables, and any statement that assigns tenant_id.
+   */
+  function guardScoped(sql) {
+    for (const t of tenantTables) {
+      const quoted = new RegExp(`\\b(FROM|JOIN|UPDATE|INTO)\\s+["\`\\[]${t}["\`\\]]`, 'i');
+      const qualified = new RegExp(`\\b(FROM|JOIN|UPDATE|INTO)\\s+["\`\\[]?\\w+["\`\\]]?\\s*\\.\\s*["\`\\[]?${t}\\b`, 'i');
+      if (quoted.test(sql) || qualified.test(sql)) {
+        throw new Error(`Quoted or schema-qualified reference to tenant table ${t} is not allowed through tenant scope`);
+      }
+    }
+    if (/\bSET\b[\s\S]*\btenant_id\s*=/i.test(sql)) throw new Error('tenant_id cannot be changed through tenant scope');
+  }
+
   /** Rewrite SQL so every tenant table access is filtered by :__tenant. */
   function rewrite(sql) {
+    guardScoped(sql);
     const s = sql.trim().replace(/;+\s*$/, '');
     const kind = /^\s*(\w+)/.exec(s)?.[1]?.toLowerCase();
     if (kind === 'select' || kind === 'with') return scopeFrom(s);
@@ -160,6 +176,7 @@ export function createStore(dbPath) {
   }
   function buildUpdate(table, id, patch, tenantId) {
     ident(table);
+    if (tenantId !== null && 'tenant_id' in patch) throw new Error('tenant_id cannot be changed through tenant scope');
     const cols = Object.keys(patch).map(ident);
     if (!cols.length) return null;
     const scope = tenantId === null ? '' : ' AND tenant_id = ?';

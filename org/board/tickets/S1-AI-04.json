@@ -1,0 +1,101 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:35:12.569Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:53:42.004Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:58:00.456Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:58:33.273Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "ai",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-AI-04",
+  "title": "Triage module",
+  "story": "Severity, fraud and subrogation triage (REQ-07, REQ-08, REQ-09)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-ai-fraud-signals-engineer",
+  "paths": [
+    "src/modules/triage/",
+    "tests/unit/triage/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#triage",
+    "architecture/contracts/domain/TriageResult.schema.json",
+    "architecture/contracts/events/claim.triaged.schema.json",
+    "architecture/contracts/openapi.yaml#triage",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "service(ctx) exports runTriage, getLatestTriage, listTriage; result validates against TriageResult.schema.json with severity score 0-100 and band, complexity, fraudIndicators [{code,weight,reason}], subrogation {flag,reasons,confidence}, plain-language explanation, inputsHash",
+    "runTriage skips when inputsHash unchanged unless force, increments attempt, publishes claim.triaged (no PII)",
+    "deterministic fraud indicators tested individually in tests/unit/triage/fraud.test.mjs: LOSS_NEAR_INCEPTION (<=30 days), LATE_REPORT, NO_POLICE_REPORT_THEFT, PRIOR_CLAIMS, NARRATIVE_EVIDENCE_MISMATCH, ROUND_NUMBER_ESTIMATE",
+    "subscribes to claim.coverage.verified and claim.evidence.extracted; rerun only if inputsHash changed and claim not in_review; test in tests/unit/triage/events.test.mjs",
+    "GET/POST /claims/{claimId}/triage routes match openapi x-roles; node --test tests/unit/triage/*.test.mjs passes with fake claims, evidence, coverage, rules, ai"
+  ],
+  "brief": "Implement per modules.md#triage and TriageResult schema. Inputs: claims.getClaimBundle(claimId), evidence.getAcceptedFacts, coverage.getLatestVerification, rules.evaluate({stage:'triage',facts}) (actions add_severity and set_complexity); all via ctx.modules, each wrapped so absence/failure degrades gracefully (tests inject fakes). Build a normalized facts object (no raw PII in logs), compute inputsHash=sha256 of canonical JSON. Call ctx.ai.run for severity, fraud_signals and subrogation passing {facts}; merge with deterministic logic in separate files (severity.mjs, fraud.mjs, subrogation.mjs, complexity.mjs, explain.mjs, service.mjs, routes.mjs, index.mjs). Severity: AI score plus rule add_severity deltas, clamp 0-100, band from thresholds (low<25, medium<50, high<75, severe). Complexity from parties, injuries, coverage issues, rules set_complexity. Fraud: always compute the deterministic indicators listed, union with AI indicators by code (max weight), score = capped sum scaled 0-100. Subrogation: flag if other party at fault cues, citation of other driver in accepted facts (citedParty), or rear-end where insured is struck; reasons list and confidence. Explanation is plain language sentences built from drivers; record provider/model/confidence from the severity ai result. Table triage_results as listed; attempt increments per claim. Pitfalls: event payload ids/codes/scores only; idempotent on evt.id; avoid retriggering loops (claim.triaged must not trigger triage); read core-runtime-api.md for store/bus.\nSHARED AI TASK I/O SHAPES (all teams code against these; local provider must emit them exactly): ai.run returns {output,provider,model,confidence,explanation,usage,unconfirmed?}. Provider interface (src/ai/providers/<name>.mjs default export factory (ctx,opts)=>{name, available():Promise<boolean>, run(task,input,{tier,schema}):Promise<{output,confidence,explanation,usage,model}|{refusal:true}>}). Outputs: extract_narrative in {text} out {lossType,lossDate,location,injuries:boolean,injuryCues[],atFault:'insured'|'other'|'unknown',cues[]}; extract_document in {kind?,text,filename} out {kind,fields:[{name,value,confidence,provenance:{snippet}}],needsReview}; classify_photo in {filename,metadata?} out {kind:'photo',damageAreas[],vehicle:{make,model,color},fields:[same as above],needsReview}; severity in {facts} out {score 0-100,band,drivers[]}; fraud_signals in {facts} out {score,indicators:[{code,weight,reason}]}; subrogation in {facts} out {flag,reasons[],confidence}; summarize in {facts} out {summary,bullets[]}; next_best_actions in {facts} out {actions:[{code,label,reason,priority}]}. Field names for extracted document facts: policeReportNumber, citedParty, atFaultParty, estimateTotal, repairShop, lossDate, vin, damageAreas.",
+  "valueDrivers": [
+    "faster routing of complex claims",
+    "fraud leakage reduction",
+    "subrogation recovery"
+  ],
+  "requirements": [
+    "REQ-07",
+    "REQ-08",
+    "REQ-09"
+  ],
+  "startedAt": "2026-10-18T20:53:42.004Z",
+  "doneAt": "2026-10-18T20:58:33.273Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:58:33.273Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 27/27 triage tests pass; routes/roles match openapi; events PII-free; only additive subrogation.confidence (contract-change posted)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.9152,
+    "inputTokens": 54,
+    "cacheWriteTokens": 142740,
+    "cacheReadTokens": 2613930,
+    "outputTokens": 3548,
+    "agents": {
+      "a9f1904810c1cb0bb": {
+        "label": "S1-AI-04 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 34149,
+        "cacheReadTokens": 315455,
+        "outputTokens": 702,
+        "usd": 0.1555
+      },
+      "adc3deca3c00ddf4e": {
+        "label": "S1-AI-04 ic-ai-fraud-signals-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 44,
+        "cacheWriteTokens": 108591,
+        "cacheReadTokens": 2298475,
+        "outputTokens": 2846,
+        "usd": 0.7597
+      }
+    }
+  }
+}

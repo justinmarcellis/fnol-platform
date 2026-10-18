@@ -1,0 +1,103 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:39.242Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:03.031Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:41:02.202Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:55:01.011Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-INT-01",
+  "team": "integrations",
+  "title": "Coverage module with mock PAS adapter and automatic verification",
+  "story": "Story 1 (REQ-06)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-integrations-mock-pas-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "src/modules/coverage/",
+    "tests/unit/coverage/",
+    "architecture/contracts/modules.md"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#coverage",
+    "architecture/contracts/openapi.yaml (coverage/policy paths)",
+    "architecture/contracts/domain/PolicySnapshot.schema.json",
+    "architecture/contracts/domain/CoverageVerification.schema.json",
+    "architecture/contracts/events/claim.coverage.verified.schema.json"
+  ],
+  "acceptance": [
+    "src/modules/coverage/ exports service(ctx) with getPolicySnapshot, searchPolicies, verifyCoverage, getLatestVerification, seedPolicies; routes match the openapi coverage and /policies paths",
+    "seedPolicies(policies[]) returns { inserted } and stores per-tenant rows in coverage_policies; modules.md coverage section documents it and states contract version 1.1.0",
+    "verifyCoverage returns status in_force|lapsed|not_found|excluded|needs_review with reasons[], deductible and limits, and publishes claim.coverage.verified (payload has no PII); results are persisted in coverage_verifications",
+    "Rules covered by tests: loss date in/out of term, LOB mismatch, vehicle or property not on policy, collision, comprehensive incl. glass, liability, dwelling, personal property, water damage exclusion (e.g. flood/seepage), missing policy -> not_found, ambiguous -> needs_review",
+    "Subscribing to claim.reported triggers verifyCoverage once (idempotent on event id)",
+    "searchPolicies finds by lastName, postalCode, vin, phone via ctx.crypto.hmacIndex blind indexes; PII fields are not stored in plaintext index columns",
+    "Tenant isolation test: tenant A policies invisible to tenant B",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/coverage/ passes"
+  ],
+  "brief": "Build src/modules/coverage/ (index.mjs exporting service(ctx), routes.mjs, port.mjs, adapters/mock-pas.mjs, verify.mjs, migrations/schema). Read architecture/core-runtime-api.md for ctx (db, bus, crypto, tenants, clock, modules, route registration, tenant-bound ctx). Policy port: define an adapter interface { id, getPolicy({policyNumber, asOf}), search(criteria) } selected by TenantConfig.integrations.policyPort (default 'mock-pas'); only mock-pas is built in. mock-pas stores synthetic PolicySnapshot docs per tenant in coverage_policies (tenant_id, policy_number, doc, plus blind-index columns last_name_idx, postal_idx, vin_idx, phone_idx from ctx.crypto.hmacIndex). Note modules.md names mock_policies; the ADDED table name is coverage_policies - update modules.md accordingly (contract addition: seedPolicies(policies[]) -> { inserted }, version 1.1.0). The registry file org/contracts/registry.json is outside this team's paths: post a contract-change to the architecture hub asking for the 1.1.0 bump, and mention it in your result. Also cache snapshots in policy_snapshots. verifyCoverage(claimId) calls ctx.modules.claims.getClaim; in tests use a small local fake claims service, do not depend on the claims team's code. Implement the rule logic as a pure function (policy, claim loss facts) -> { status, reasons[], deductible, limits, applicableCoverages } so it is table-testable. Include 6+ synthetic policies in a fixtures file (fictional names only, no real carriers) exported for the platform seed script. Pitfalls: loss date comparison in tenant timezone, glass is a comprehensive sub-coverage, events must carry ids/codes only, handler must use consumed_events idempotency, never log PII. Tests: tests/unit/coverage/{verify,mock-pas,search,service,events}.test.mjs. Write only your paths; do not commit.",
+  "valueDrivers": [
+    "Faster coverage decision at FNOL",
+    "Reduced adjuster manual policy lookup",
+    "Licensable policy-port abstraction"
+  ],
+  "requirements": [
+    "REQ-06"
+  ],
+  "startedAt": "2026-10-18T20:35:03.031Z",
+  "doneAt": "2026-10-18T20:55:01.011Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:55:01.011Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 7 criteria met; 78/78 coverage tests pass via glob form (bare dir form fails on Node 22.22 for all suites, env issue); registry bump to 1.1.0 pending architecture hub"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.1569,
+    "inputTokens": 56,
+    "cacheWriteTokens": 221326,
+    "cacheReadTokens": 2883338,
+    "outputTokens": 2678,
+    "agents": {
+      "a2867c1223b6f2d9a": {
+        "label": "S1-INT-01 ic-integrations-mock-pas-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 48,
+        "cacheWriteTokens": 155886,
+        "cacheReadTokens": 2700707,
+        "outputTokens": 2626,
+        "usd": 0.9562
+      },
+      "a2f0f76fb7d19dacd": {
+        "label": "S1-INT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 65440,
+        "cacheReadTokens": 182631,
+        "outputTokens": 52,
+        "usd": 0.2007
+      }
+    }
+  }
+}

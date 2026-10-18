@@ -103,5 +103,5 @@ export function registerAuditRoutes(router, ctx) {
     const body = { items };
     if (q.verify === 'true') body.verification = ctx.audit.verify(req.tenant.id);
     res.json(200, body);
-  }, { roles: ['supervisor', 'carrier_admin', 'platform_admin'] });
+  }, { roles: ['auditor', 'tenant_admin', 'supervisor'] });
 }

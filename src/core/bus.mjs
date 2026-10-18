@@ -46,6 +46,7 @@ export function createBus(ctx, opts = {}) {
     const t = ctx.db.forTenant(evt.tenantid);
     let attempts = 0;
     let lastError = null;
+    const failed = [];
     for (const h of matching(evt.type)) {
       let ok = false;
       for (let n = 1; n <= maxAttempts && !ok; n++) {
@@ -63,10 +64,13 @@ export function createBus(ctx, opts = {}) {
           if (n < maxAttempts) await sleep(retryDelayMs * n);
         }
       }
-      if (!ok) {
-        t.update('outbox', evt.id, { status: 'failed', attempts, last_error: lastError });
-        return;
-      }
+      // One failing handler must not starve the others; the event is marked failed at the end.
+      if (!ok) failed.push(h.name);
+    }
+    if (failed.length) {
+      t.update('outbox', evt.id, { status: 'failed', attempts, last_error: lastError });
+      ctx.log.error('bus event failed', { type: evt.type, eventId: evt.id, handlers: failed });
+      return;
     }
     t.update('outbox', evt.id, { status: 'delivered', attempts, delivered_at: ctx.clock.nowIso() });
   }

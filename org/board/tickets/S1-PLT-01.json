@@ -1,0 +1,99 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:35:01.102Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:43:48.463Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:44:35.502Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:46:33.508Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-PLT-01",
+  "team": "platform",
+  "title": "Seed script, dev users and setup guide",
+  "story": "Seed and one-command dev environment (REQ-22)",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-platform-tenancy-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "scripts/seed.mjs",
+    "docs/setup.md",
+    "tests/unit/scripts/seed.test.mjs"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "scripts/seed.mjs exists, boots createApp (port 0 or without listening), iterates tenants/*.json and each tenant's enabled LOBs, then closes cleanly",
+    "tests/synthetic/index.mjs is dynamically imported per tenant/LOB; if the file or generatePolicies is missing the script logs a skip and exits 0",
+    "When ctx.forTenant(t).modules.coverage.seedPolicies exists it is called with generatePolicies({tenantId, lob, count:25, seed:42, state}); when absent it is skipped with a log line",
+    "data/dev-users.json is written with fictional demo users per tenant and role (claimant, csr, adjuster, admin) and a ready-to-use token per role is printed; no real names and no secrets committed",
+    "tests/unit/scripts/seed.test.mjs passes with a temp db path and fake tenants dir, and covers the missing-synthetic and missing-coverage-service skips plus rerun idempotence",
+    "docs/setup.md covers prerequisites, npm start, URLs (/, /csr, /adjuster, /admin, dashboard :8090), demo users, resetting data, running tests, Vertex AI env vars (GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, ADC), troubleshooting",
+    "Run: node --test --disable-warning=ExperimentalWarning tests/unit/scripts/seed.test.mjs"
+  ],
+  "brief": "Build scripts/seed.mjs (ES module, zero deps) per core-runtime-api.md. scripts/dev.mjs already runs it only when the db file is missing or empty and starts the platform afterward, so seed must NOT leave the db locked: call createApp({port:0, dbPath, tenantsDir, secretsDir}) (honour FNOL_DB_PATH and allow overrides via exported function seed(opts) plus a main guard for CLI use), do the work, then await app.close(). Needing migrated tables is why seed calls createApp itself. Read tenants via ctx.tenants (or list tenants/*.json); LOBs come from the tenant config (field may be absent while the Workflow team finalises the schema; default to skip with a log, or fall back to ['auto','property'] only if the config has no lines field, and document the choice). Use ctx.forTenant(tenantId) for the tenant-bound ctx and read ctx.modules.coverage?.seedPolicies defensively. Dynamic import with a path built from import.meta.url and try/catch; never hard fail. Demo users: use ctx issueToken({sub, tenantId, roles, name, ttlSeconds}) from src/core/auth.mjs (check whether ctx exposes it, e.g. ctx.auth); choose a long ttl for dev only and write tokens to data/dev-users.json (data/ is gitignored; verify .gitignore, but do not edit it unless in your paths; report if missing). Print tokens only in dev mode. Fictional names only, e.g. Avery Demo. Tests use small local fakes for the synthetic generator and coverage service (temp dirs), not other teams' files. Do not edit package.json (npm start and seed scripts already exist). Pitfall: the seed must be idempotent and must not run from import side effects. docs/setup.md should be concise and accurate; verify commands by running npm start briefly on a non-default port then clean up data/ and .secrets/ you created.",
+  "valueDrivers": [
+    "time-to-first-demo",
+    "developer onboarding",
+    "licensability"
+  ],
+  "requirements": [
+    "REQ-22"
+  ],
+  "startedAt": "2026-10-18T20:43:48.463Z",
+  "doneAt": "2026-10-18T20:46:33.508Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:46:33.508Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 5 unit tests pass, real seed run seeded 4 tenant/LOB pairs, 12 users/tokens, users file byte-identical on rerun, app closes cleanly, setup.md complete"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.295,
+    "inputTokens": 22,
+    "cacheWriteTokens": 63617,
+    "cacheReadTokens": 673907,
+    "outputTokens": 120,
+    "agents": {
+      "a1eec66aef26f62fc": {
+        "label": "S1-PLT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 25954,
+        "cacheReadTokens": 226944,
+        "outputTokens": 34,
+        "usd": 0.1106
+      },
+      "ab8765056dc14c87a": {
+        "label": "S1-PLT-01 ic-platform-tenancy-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 37663,
+        "cacheReadTokens": 446963,
+        "outputTokens": 86,
+        "usd": 0.1844
+      }
+    }
+  }
+}

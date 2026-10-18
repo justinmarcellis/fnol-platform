@@ -6,7 +6,8 @@ test('auth: dev token endpoint issues usable token with claims', async () => {
   const app = await bootApp();
   try {
     const r = await call(app, 'POST', '/api/v1/auth/token', { body: { tenantId: 'alpha', sub: 'sup1', roles: ['supervisor'], name: 'Sam Super' } });
-    assert.equal(r.status, 200);
+    assert.equal(r.status, 201);
+    assert.equal(r.json.principal.displayName, 'Sam Super');
     assert.deepEqual(Object.keys(r.json.claims).sort(), ['exp', 'name', 'roles', 'sub', 'tenantId']);
     const a = await call(app, 'GET', '/api/v1/audit', { token: r.json.token });
     assert.equal(a.status, 200);

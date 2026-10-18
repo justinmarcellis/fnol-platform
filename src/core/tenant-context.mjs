@@ -20,7 +20,8 @@ export function createTenantBinder(ctx, factories) {
     const tctx = Object.create(ctx);
     tctx.root = ctx;
     tctx.tenant = { id: tenantId, get config() { return ctx.tenants.get(tenantId); } };
-    tctx.db = { ...ctx.db, ...scoped, tenantId };
+    // Only the scoped facade plus pure helpers: no raw handle, system store or other tenants (INC-1).
+    tctx.db = { ...scoped, tenantId, id: ctx.db.id, toJson: ctx.db.toJson, parseJson: ctx.db.parseJson };
     tctx.bus = {
       ...ctx.bus,
       publish: (...a) => (a.length >= 4 ? ctx.bus.publish(...a) : ctx.bus.publish(tenantId, ...a)),

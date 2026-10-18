@@ -1,0 +1,139 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:26.304Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:23.578Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:37:54.611Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:57:16.509Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:59:13.230Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:59:37.656Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-SEC-02",
+  "team": "security",
+  "title": "Security regression suite: tenant isolation, role enforcement, PII leakage, audit chain",
+  "story": "As a security reviewer I want an automated regression suite that attacks every API route so that tenant isolation, role checks and PII hygiene are proven as modules land.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-security-authz-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "tests/security/"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml",
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md",
+    "architecture/contracts/events/envelope.schema.json"
+  ],
+  "acceptance": [
+    "Running node --test --disable-warning=ExperimentalWarning tests/security/ exits 0 on the current tree (unimplemented routes are skipped, not failed)",
+    "tests/security/helpers.mjs boots createApp({port:0}) with a temp dbPath/secretsDir and two synthetic tenants (tenant-a, tenant-b, written as temp tenants dir JSON) and issues tokens via ctx.auth.issueToken; closes app and removes temp dir after",
+    "tests/security/routes.test.mjs enumerates every path+method in openapi.yaml (minimal YAML parse or a checked-in path list verified against the file) with its x-roles; a count assertion fails if the list drifts from the spec",
+    "tests/security/tenant-isolation.test.mjs: for each route taking an id, tenant-B token against tenant-A resource gives 404/403 and never 200; list endpoints for B never contain A ids; X-Tenant-Id from non-platform_admin gives 403",
+    "tests/security/roles.test.mjs: for each route a token whose roles are not in x-roles gets 403 (claimant refused on adjuster/admin routes), no token gets 401; allowed role is not 401/403",
+    "tests/security/pii-leak.test.mjs: creates a claim with known synthetic PII values (distinctive name, email, phone, plate), then asserts none appear in plaintext in ctx.bus.outbox payloads, captured log output, or raw SQLite columns marked x-pii; skips with t.skip if claims module is absent",
+    "tests/security/audit-chain.test.mjs: after activity, ctx.audit.verify(tenant) returns ok:true for both tenants, and tampering via ctx.db.raw is rejected by the append-only triggers",
+    "Skipped tests carry a reason string naming the missing module; no test is silently passing when a route is unimplemented",
+    "Only tests/security/ changed"
+  ],
+  "brief": "Use node:test and node:assert only. helpers.mjs: mkdtemp dir; write tenants/tenant-a.json and tenant-b.json with minimal valid TenantConfig (check architecture/contracts/domain/TenantConfig schema and tenants/README.md; use fictional names like 'Northwind Mutual Demo'); call createApp({dbPath,secretsDir,tenantsDir,port:0,devMode:true,logLevel:'info'}) and use app.url with fetch. Capture logs by passing a logLevel and wrapping process.stdout.write during the test (restore in finally), or read ctx.log if it accepts a sink; document the approach. Mint tokens with app.ctx.auth.issueToken({sub,tenantId,roles}). Role names come from ctx.auth.ROLES. Route enumeration: parse openapi.yaml with a ~40 line line-based parser (paths at 2-space indent under 'paths:', methods at 4-space, x-roles inline list or block list); if parsing proves brittle keep an explicit list in routes.mjs plus a test that every parsed path is in the list. Replace {param} with a plausible id such as clm_00000000000000000000. Classification: status 404 with error.code not_found/route_not_found for a path whose module is not loaded => t.skip('module <x-module> not implemented') ; use x-module from the spec and ctx.moduleNames to decide. Distinguish 'route absent' (router 404 for unknown route) from 'resource absent' (module 404): for isolation tests, seed a resource via the module service or API as tenant A where possible, otherwise skip with reason. Role test must pass the role gate before body validation, so a 400/404/422 for an allowed role is fine; only 401/403 are failures there. For PII test, use values like 'Zebulon Quillfeather', 'zq.test@example.invalid', '555-0142-9917', plate 'ZQ-7781'. Use per-test timeouts and always await app.close(). Do not touch src/. If the core misbehaves, record it with a failing-but-named test only if it is a real defect and post a contract-change/incident to the architecture hub.",
+  "valueDrivers": [
+    "VD-trust",
+    "VD-compliance",
+    "VD-quality"
+  ],
+  "requirements": [
+    "Cross-tenant access denied on every route",
+    "x-roles enforced on every route",
+    "No PII in events or logs",
+    "Audit chain verifies",
+    "Suite turns green as modules land"
+  ],
+  "startedAt": "2026-10-18T20:35:23.578Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:57:16.509Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Suite exits 1 on current tree (6 fail/134 pass): tenant-isolation route tests fail now that modules landed - webhooks {id} routes crash on tokenFor (tenant_admin not issuable), GET /claims/{id}/documents returns 200 for tenant B (investigate real leak vs test bug); route-role drift now broad. Also 'node --test tests/security/' dir form errors on Node 22 (use glob)."
+      },
+      {
+        "at": "2026-10-18T20:59:37.655Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 149 tests (142 pass, 5 skip with reasons, 2 todo, 0 fail) via both dir and glob invocation; only tests/security/ files."
+      }
+    ],
+    "firstPass": false
+  },
+  "doneAt": "2026-10-18T20:59:37.656Z",
+  "spend": {
+    "usd": 0.8692,
+    "inputTokens": 66,
+    "cacheWriteTokens": 142613,
+    "cacheReadTokens": 2349116,
+    "outputTokens": 4266,
+    "agents": {
+      "a98411b3797f4416d": {
+        "label": "S1-SEC-02 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 18525,
+        "cacheReadTokens": 158008,
+        "outputTokens": 862,
+        "usd": 0.0865
+      },
+      "a9c643b3b98fa1cc8": {
+        "label": "S1-SEC-02 ic-security-authz-engineer rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 22,
+        "cacheWriteTokens": 35002,
+        "cacheReadTokens": 714875,
+        "outputTokens": 1223,
+        "usd": 0.2428
+      },
+      "ab71b4c80de8d2e1a": {
+        "label": "S1-SEC-02 ic-security-authz-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 30,
+        "cacheWriteTokens": 67431,
+        "cacheReadTokens": 1259266,
+        "outputTokens": 2110,
+        "usd": 0.4416
+      },
+      "ade1341bdbf611800": {
+        "label": "S1-SEC-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 21655,
+        "cacheReadTokens": 216967,
+        "outputTokens": 71,
+        "usd": 0.0983
+      }
+    }
+  }
+}

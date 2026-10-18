@@ -1,0 +1,62 @@
+{
+  "id": "S1-SEC-00",
+  "team": "security",
+  "title": "Sprint 1 planning: decompose security stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-security",
+  "reviewer": "dir-security",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:34:26.362Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:00.963Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.143,
+    "inputTokens": 10,
+    "cacheWriteTokens": 27839,
+    "cacheReadTokens": 287358,
+    "outputTokens": 1588,
+    "agents": {
+      "a6d58efd195a59076": {
+        "label": "S1-SEC-00 mgr-security planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 27839,
+        "cacheReadTokens": 287358,
+        "outputTokens": 1588,
+        "usd": 0.143
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:00.963Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:00.963Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

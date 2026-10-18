@@ -175,16 +175,73 @@ export function scorecardView(sc, config = {}) {
   const minTickets = 3;
   const annotate = (rows) => {
     const list = Array.isArray(rows) ? rows : [];
-    const scored = list.filter((r) => typeof r.composite === 'number' && (r.tickets ?? r.ticketCount ?? minTickets) >= minTickets).map((r) => r.composite).sort((a, b) => a - b);
+    const scored = list.filter((r) => typeof r.composite === 'number' && (r.tickets ?? r.ticketCount ?? r.ticketsDone ?? minTickets) >= minTickets).map((r) => r.composite).sort((a, b) => a - b);
     const cut = scored.length >= 10 ? scored[Math.floor(scored.length * 0.1) - 1 < 0 ? 0 : Math.floor(scored.length * 0.1) - 1] : null;
     return list.map((r) => {
-      const n = r.tickets ?? r.ticketCount ?? null;
+      const n = r.tickets ?? r.ticketCount ?? r.ticketsDone ?? null;
       const lowConfidence = r.lowConfidence ?? (n !== null && n < minTickets);
       const low = !lowConfidence && (r.lowPerformer === true || (cut !== null && r.composite <= cut));
       return { ...r, lowConfidence: !!lowConfidence, lowPerformerFlag: !!low };
     });
   };
   return { ...(sc ?? {}), agents: annotate(sc?.agents), teams: annotate(sc?.teams) };
+}
+
+const TIER_ORDER = ['strong', 'mid', 'fast'];
+
+/** Spend (ticket.spend.usd) grouped by ticket.tier, with share of total. */
+export function tierSpendMix(tickets = []) {
+  const by = {};
+  for (const t of tickets) {
+    const k = t.tier || 'unspecified';
+    const g = (by[k] ??= { tier: k, usd: 0, tickets: 0, points: 0 });
+    g.usd += num(t.spend?.usd); g.tickets += 1; g.points += num(t.points);
+  }
+  const totalUsd = round(sum(Object.values(by).map((g) => g.usd)), 4);
+  const rank = (k) => (TIER_ORDER.includes(k) ? TIER_ORDER.indexOf(k) : TIER_ORDER.length);
+  const tiers = Object.values(by).sort((a, b) => rank(a.tier) - rank(b.tier) || a.tier.localeCompare(b.tier))
+    .map((g) => ({ ...g, usd: round(g.usd, 4), pct: totalUsd > 0 ? round((g.usd / totalUsd) * 100, 1) : 0 }));
+  return { totalUsd, tiers };
+}
+
+/** Parse '### VD-n title' headings from the value propositions markdown. */
+export function parseValueDrivers(md = '', max = 6) {
+  const out = [];
+  for (const m of String(md ?? '').matchAll(/^###\s+(VD-(\d+))\s+(.+?)\s*$/gm)) {
+    if (Number(m[2]) <= max && !out.some((d) => d.id === m[1])) out.push({ id: m[1], title: m[3] });
+  }
+  return out;
+}
+
+/** Join value drivers with the tickets whose valueDrivers include the id. */
+export function valueDriverView(drivers = [], tickets = []) {
+  return drivers.map((d) => {
+    const linked = tickets.filter((t) => (t.valueDrivers ?? []).includes(d.id));
+    const lp = (pred) => sum(linked.filter(pred).map((t) => num(t.points)));
+    return {
+      ...d, tickets: linked.map((t) => ({ id: t.id, title: t.title, status: t.status, points: num(t.points) })),
+      points: lp(() => true), donePoints: lp(isDone),
+    };
+  });
+}
+
+/** Improvement log rows with delta toward target and a result (stored result wins, else derived). */
+export function improvementLogView(list = []) {
+  return (Array.isArray(list) ? list : []).map((i) => {
+    const hasBA = typeof i.before === 'number' && typeof i.after === 'number';
+    const delta = hasBA ? round(i.after - i.before, 4) : null;
+    const up = typeof i.target !== 'number' || typeof i.before !== 'number' || i.target >= i.before;
+    const derived = !hasBA ? 'pending' : delta === 0 ? 'no change' : (delta > 0) === up ? 'improved' : 'regressed';
+    return { ...i, delta, result: i.result ?? derived };
+  });
+}
+
+/** Sprint review and retro summaries, newest first; sprints without either are kept with nulls. */
+export function sprintReviews(sprints = []) {
+  return [...sprints].sort((a, b) => b.number - a.number).map((s) => ({
+    number: s.number, name: s.name ?? `Sprint ${s.number}`, status: s.status ?? 'unknown', goal: s.goal ?? null,
+    review: s.review ?? null, retro: s.retro ?? null,
+  }));
 }
 
 /** Compute every dashboard metric from a fabric snapshot. */
@@ -211,5 +268,9 @@ export function computeMetrics(snap = {}, opts = {}) {
     cost: costM, quality: qual,
     targets: targetsStatus({ sprint: current, config, qual, costM, points }),
     scorecards: scorecardView(snap.scorecards, config),
+    tierMix: tierSpendMix(tickets),
+    valueDrivers: valueDriverView(opts.valueDrivers ?? [], tickets),
+    improvements: improvementLogView(snap.improvements),
+    sprintReviews: sprintReviews(sprints),
   };
 }

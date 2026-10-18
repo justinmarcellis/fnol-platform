@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { bootApp } from './helpers.mjs';
 
 test('bus: outbox persisted, subscribers called async, drain awaits', async () => {
-  const app = await bootApp();
+  const app = await bootApp({ isolated: true });
   const { bus } = app.ctx;
   const seen = [];
   bus.on('claim.reported', async (e) => { await new Promise((r) => setTimeout(r, 10)); seen.push(['typed', e.subject]); });
@@ -25,7 +25,7 @@ test('bus: outbox persisted, subscribers called async, drain awaits', async () =
 });
 
 test('bus: handler errors are logged not thrown; retries recorded; failure marked', async () => {
-  const app = await bootApp();
+  const app = await bootApp({ isolated: true });
   const { bus } = app.ctx;
   let calls = 0;
   bus.on('flaky', () => { calls++; if (calls < 2) throw new Error('transient'); });

@@ -1,0 +1,65 @@
+/* Design tokens. Light default, dark via prefers-color-scheme or [data-theme]. Text pairs target >= 4.5:1. */
+:root {
+  --fx-bg: #ffffff;
+  --fx-surface: #f5f7fa;
+  --fx-surface-2: #e8edf3;
+  --fx-text: #14202e;
+  --fx-text-muted: #4a5a6b;
+  --fx-border: #8392a3;
+  --fx-brand: #0b5cad;
+  --fx-on-brand: #ffffff;
+  --fx-accent: #7a3e00;
+  --fx-on-accent: #ffffff;
+  --fx-focus: #0b5cad;
+  --fx-success: #0a6b3a;
+  --fx-warning: #8a5300;
+  --fx-danger: #b00020;
+  --fx-info: #0b5cad;
+  --fx-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fx-logo-url: none;
+  --fx-space-1: 4px;
+  --fx-space-2: 8px;
+  --fx-space-3: 12px;
+  --fx-space-4: 16px;
+  --fx-space-5: 24px;
+  --fx-space-6: 32px;
+  --fx-radius: 8px;
+  --fx-target: 44px;
+  --fx-target-min: 24px;
+  --fx-font-size: 1rem;
+  --fx-font-size-sm: 0.875rem;
+  --fx-font-size-lg: 1.25rem;
+  --fx-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --fx-bg: #10161d;
+    --fx-surface: #18212b;
+    --fx-surface-2: #223040;
+    --fx-text: #eef2f6;
+    --fx-text-muted: #b4c0cd;
+    --fx-border: #7d8da0;
+    --fx-focus: #7db8f5;
+    --fx-success: #5fd394;
+    --fx-warning: #f0b25a;
+    --fx-danger: #ff8a9b;
+    --fx-info: #7db8f5;
+  }
+}
+:root[data-theme='dark'] {
+  --fx-bg: #10161d;
+  --fx-surface: #18212b;
+  --fx-surface-2: #223040;
+  --fx-text: #eef2f6;
+  --fx-text-muted: #b4c0cd;
+  --fx-border: #7d8da0;
+  --fx-focus: #7db8f5;
+  --fx-success: #5fd394;
+  --fx-warning: #f0b25a;
+  --fx-danger: #ff8a9b;
+  --fx-info: #7db8f5;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
