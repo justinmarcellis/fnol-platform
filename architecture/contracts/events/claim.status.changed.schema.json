@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.status.changed.schema.json",
+  "title": "claim.status.changed",
+  "description": "Claim status moved along the lifecycle state machine. Published by claims.",
+  "x-publisher": "claims",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.status.changed"
+    },
+    "source": {
+      "pattern": "/modules/claims$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "from",
+        "to",
+        "version"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "from": {
+          "type": "string",
+          "enum": [
+            "reported",
+            "validating",
+            "triaged",
+            "assigned",
+            "fast_tracked",
+            "in_review",
+            "pending_info",
+            "closed",
+            "withdrawn"
+          ]
+        },
+        "to": {
+          "type": "string",
+          "enum": [
+            "reported",
+            "validating",
+            "triaged",
+            "assigned",
+            "fast_tracked",
+            "in_review",
+            "pending_info",
+            "closed",
+            "withdrawn"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "actor": {
+          "$ref": "../domain/common.schema.json#/$defs/Actor"
+        }
+      }
+    }
+  }
+}

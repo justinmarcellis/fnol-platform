@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.note.added.schema.json",
+  "title": "claim.note.added",
+  "description": "A note was added. The body is not in the event (PII). Published by claims.",
+  "x-publisher": "claims",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.note.added"
+    },
+    "source": {
+      "pattern": "/modules/claims$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "noteId",
+        "category",
+        "visibility"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "noteId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "category": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "internal",
+            "shared_with_claimant"
+          ]
+        },
+        "author": {
+          "$ref": "../domain/common.schema.json#/$defs/Actor"
+        },
+        "aiGenerated": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

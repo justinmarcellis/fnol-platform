@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.triaged.schema.json",
+  "title": "claim.triaged",
+  "description": "Triage (initial or re-run) produced a TriageResult. Published by triage.",
+  "x-publisher": "triage",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.triaged"
+    },
+    "source": {
+      "pattern": "/modules/triage$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "triageResultId",
+        "attempt",
+        "severityScore",
+        "complexity",
+        "fraudScore",
+        "subrogation",
+        "ai"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "triageResultId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "severityScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "severityBand": {
+          "type": "string"
+        },
+        "complexity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "fraudScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "fraudIndicatorCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "subrogation": {
+          "type": "boolean"
+        },
+        "fastTrackEligible": {
+          "type": "boolean"
+        },
+        "ai": {
+          "$ref": "../domain/common.schema.json#/$defs/AiProvenance"
+        }
+      }
+    }
+  }
+}

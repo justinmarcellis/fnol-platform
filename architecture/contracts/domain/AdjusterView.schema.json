@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/AdjusterView.schema.json",
+  "title": "Adjuster first view",
+  "description": "Read model: everything an adjuster needs on first open, aggregated by the adjuster module. PII decrypted per role.",
+  "type": "object",
+  "required": [
+    "claim",
+    "generatedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "claim": {
+      "$ref": "Claim.schema.json"
+    },
+    "policy": {
+      "$ref": "PolicySnapshot.schema.json"
+    },
+    "coverage": {
+      "$ref": "CoverageVerification.schema.json"
+    },
+    "triage": {
+      "$ref": "TriageResult.schema.json"
+    },
+    "routing": {
+      "$ref": "RoutingDecision.schema.json"
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "$ref": "Document.schema.json"
+      }
+    },
+    "timers": {
+      "type": "array",
+      "items": {
+        "$ref": "RegulatoryTimer.schema.json"
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "Task.schema.json"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "$ref": "Note.schema.json"
+      }
+    },
+    "reserves": {
+      "type": "array",
+      "items": {
+        "$ref": "Reserve.schema.json"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "ai": {
+          "$ref": "common.schema.json#/$defs/AiProvenance"
+        }
+      },
+      "description": "AI-generated claim summary."
+    },
+    "nextActions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "at",
+          "type"
+        ],
+        "properties": {
+          "at": {
+            "$ref": "common.schema.json#/$defs/Timestamp"
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "generatedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

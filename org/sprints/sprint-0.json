@@ -1,0 +1,51 @@
+{
+  "number": 0,
+  "name": "Sprint 0: setup",
+  "status": "closed",
+  "startedAt": "2026-10-18T20:14:21.907Z",
+  "budgetUsd": 30,
+  "goal": "Coordination fabric, repo scaffold, CI, contracts, value-proposition ranking, dashboard skeleton",
+  "targets": {
+    "committedPoints": 47,
+    "firstPassAcceptance": 0.75,
+    "budgetUsd": 30
+  },
+  "committed": [
+    "S0-PRD-01",
+    "S0-PRD-02",
+    "S0-ARC-01",
+    "S0-PLT-01",
+    "S0-PMO-01"
+  ],
+  "closedAt": "2026-10-18T20:27:54.961Z",
+  "review": {
+    "completedPoints": 47,
+    "committedPoints": 47,
+    "usd": 2.84,
+    "pointsPerDollar": 16.6,
+    "firstPassAcceptance": 1,
+    "testsPassed": "35/35",
+    "shipped": [
+      "Coordination fabric, CLI, spend accounting",
+      "Core runtime (router, RBAC tokens, tenant-scoped store, PII crypto, hash-chained audit, outbox bus)",
+      "PM dashboard skeleton",
+      "Value-driver ranking and 25 requirements",
+      "Architecture overview, 20 domain + 12 event schemas, 48-operation OpenAPI"
+    ]
+  },
+  "retro": {
+    "went_well": [
+      "Contract-first: all 5 tickets ran fully parallel with zero serial dependencies",
+      "First-pass acceptance 5/5"
+    ],
+    "went_badly": [
+      "Module service hook named init() in core but service() in contracts; caught only at orchestrator review",
+      "Agent labels lacked ticket IDs so spend needed manual mapping",
+      "Workflow concurrency cap (2) left 3rd council agent queued ~5 min"
+    ],
+    "manager_retros": [
+      "product: ranking needed a fictional model carrier; reuse MC-1 everywhere",
+      "platform: tests from other teams ran in our suite; keep tests path-scoped"
+    ]
+  }
+}

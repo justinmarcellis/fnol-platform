@@ -1,0 +1,76 @@
+{
+  "status": "done",
+  "sprint": 0,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:14:21.907Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:15:50.080Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:26:37.577Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:27:16.137Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S0-ARC-01",
+  "team": "integrations",
+  "title": "Architecture overview, domain model and contracts",
+  "points": 13,
+  "tier": "strong",
+  "owner": "dir-architecture",
+  "reviewer": "ceo",
+  "paths": [
+    "architecture/overview.md",
+    "architecture/domain-model.md",
+    "architecture/contracts/",
+    "org/contracts/registry.json"
+  ],
+  "acceptance": [
+    "overview covers multi-tenancy, configurability, API-first, event-driven, pluggable AI, adapter seams",
+    "JSON Schemas for every domain entity",
+    "OpenAPI 3.1 covering intake, claims, triage, routing, adjuster, config, integrations, auth",
+    "Event schemas for the claim lifecycle",
+    "Module service-function contract listed per module",
+    "Registry lists every contract with version"
+  ],
+  "startedAt": "2026-10-18T20:15:50.080Z",
+  "doneAt": "2026-10-18T20:27:16.137Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:27:16.136Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "20 domain schemas, 12 event schemas, 48 OpenAPI operations, module contract; service()/init() reconciled in core"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.0647,
+    "inputTokens": 40,
+    "cacheWriteTokens": 109459,
+    "cacheReadTokens": 2198939,
+    "outputTokens": 3874,
+    "agents": {
+      "a5258a02c40253246": {
+        "label": "dir-architecture: contracts",
+        "model": "claude-opus-5-5",
+        "inputTokens": 40,
+        "cacheWriteTokens": 109459,
+        "cacheReadTokens": 2198939,
+        "outputTokens": 3874,
+        "usd": 1.0647
+      }
+    }
+  }
+}

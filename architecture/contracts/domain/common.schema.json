@@ -1,0 +1,396 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/common.schema.json",
+  "title": "Common definitions",
+  "description": "Shared value types used by every domain, event and API schema.",
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,5}_[A-Za-z0-9]{8,40}$",
+      "description": "Prefixed opaque id, e.g. clm_01J9Z..., doc_..., ses_..."
+    },
+    "TenantId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{2,39}$",
+      "description": "Tenant (licensee carrier) slug, e.g. \"harborline-mutual\". Fictional only."
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp."
+    },
+    "Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "UsState": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "USPS state code (WI, IL, MI seeded)."
+    },
+    "Lob": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{2,39}$",
+      "description": "Line of business id from tenant config, e.g. personal_auto, homeowners, commercial_auto. Each LOB carries an ACORD LOBCd mapping (AUTOP, HOME, AUTOB)."
+    },
+    "Channel": {
+      "type": "string",
+      "enum": [
+        "claimant_web",
+        "claimant_mobile",
+        "csr_phone",
+        "agent_portal",
+        "api",
+        "email",
+        "partner"
+      ],
+      "description": "Intake channel (FNOL reported-by channel)."
+    },
+    "LossCause": {
+      "type": "string",
+      "enum": [
+        "collision",
+        "collision_animal",
+        "single_vehicle",
+        "hit_and_run",
+        "glass",
+        "theft",
+        "vandalism",
+        "fire",
+        "lightning",
+        "wind",
+        "hail",
+        "water_weather",
+        "water_plumbing",
+        "flood",
+        "freeze",
+        "falling_object",
+        "liability_bodily_injury",
+        "liability_property_damage",
+        "other"
+      ],
+      "description": "Platform loss-cause code. Aligned with the ACORD LossCauseCd concept; each tenant/adapter maps it to its own code list (see domain-model.md section ACORD alignment)."
+    },
+    "Money": {
+      "type": "object",
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Major units, e.g. 500.00"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "default": "USD"
+        }
+      }
+    },
+    "Address": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "line1": {
+          "type": "string"
+        },
+        "line2": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/UsState"
+        },
+        "postalCode": {
+          "type": "string",
+          "pattern": "^[0-9]{5}(-[0-9]{4})?$"
+        },
+        "country": {
+          "type": "string",
+          "default": "US"
+        }
+      },
+      "description": "Postal address. PII when it belongs to a person.",
+      "x-pii": true
+    },
+    "GeoPoint": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lng"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      }
+    },
+    "Location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Free text, e.g. \"Northbound I-94 near exit 12\""
+        },
+        "address": {
+          "$ref": "#/$defs/Address"
+        },
+        "geo": {
+          "$ref": "#/$defs/GeoPoint"
+        },
+        "state": {
+          "$ref": "#/$defs/UsState"
+        }
+      }
+    },
+    "Confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "AiProvenance": {
+      "type": "object",
+      "required": [
+        "provider",
+        "model",
+        "confidence"
+      ],
+      "additionalProperties": false,
+      "description": "Required on every AI output (standards.md).",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "local",
+            "vertex-claude",
+            "vertex-gemini"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "description": "Model id, e.g. local-rules-v1"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "tier": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Cascade tier that answered (0 = deterministic)."
+        },
+        "promptVersion": {
+          "type": "string"
+        },
+        "latencyMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "escalatedFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Providers/models tried earlier in the cascade."
+        }
+      }
+    },
+    "FieldProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "description": "Where a value came from: user entry, AI extraction (with document span), core system or rule.",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "user",
+            "csr",
+            "ai_extraction",
+            "policy_system",
+            "rule",
+            "api",
+            "import"
+          ]
+        },
+        "documentId": {
+          "$ref": "#/$defs/Id"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "span": {
+          "type": "string",
+          "description": "Quoted source text or bounding box reference."
+        },
+        "confirmedBy": {
+          "type": "string",
+          "description": "User id that confirmed an AI suggestion."
+        },
+        "confirmedAt": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "Actor": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "user",
+            "system",
+            "integration"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/Role"
+        }
+      }
+    },
+    "Role": {
+      "type": "string",
+      "enum": [
+        "claimant",
+        "csr",
+        "adjuster",
+        "supervisor",
+        "tenant_admin",
+        "integration",
+        "auditor"
+      ]
+    },
+    "I18nText": {
+      "description": "Plain string, or a map of BCP 47 locale to string.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+          }
+        }
+      ]
+    },
+    "Condition": {
+      "description": "FNOL condition language v1 (see domain-model.md). Combinators all/any/not, leaves compare a fact path to a value.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "all"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Condition"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "any"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "any": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Condition"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "not"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "not": {
+              "$ref": "#/$defs/Condition"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "fact",
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "fact": {
+              "type": "string",
+              "pattern": "^(claim|loss|policy|coverage|triage|parties|vehicles|property|evidence|answers|session|tenant|now)(\\.[A-Za-z0-9_\\[\\]*]+)*$",
+              "description": "Dot path into the fact document, e.g. loss.cause, answers.injuries, triage.severityScore, vehicles[*].drivable"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "eq",
+                "ne",
+                "in",
+                "nin",
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "between",
+                "exists",
+                "missing",
+                "contains",
+                "matches",
+                "any_eq",
+                "count_gte",
+                "within_days"
+              ]
+            },
+            "value": {
+              "description": "Comparison value; array for in/nin/between; omitted for exists/missing."
+            }
+          }
+        },
+        {
+          "type": "boolean",
+          "description": "Constant true/false."
+        }
+      ]
+    }
+  }
+}

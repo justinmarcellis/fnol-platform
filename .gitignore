@@ -8,3 +8,6 @@ infra/backend.auto.hcl
 node_modules/
 __pycache__/
 .env
+.secrets/
+data/
+*.db

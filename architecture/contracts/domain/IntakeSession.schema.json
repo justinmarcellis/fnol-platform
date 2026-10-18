@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/IntakeSession.schema.json",
+  "title": "Intake session",
+  "description": "A guided FNOL conversation (claimant web, CSR phone, agent portal) driven by the tenant question set. Submitting it creates a Claim.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "lob",
+    "channel",
+    "status",
+    "questionSetId",
+    "questionSetVersion",
+    "answers",
+    "startedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "lob": {
+      "$ref": "common.schema.json#/$defs/Lob"
+    },
+    "lossType": {
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "common.schema.json#/$defs/Channel"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "submitted",
+        "abandoned",
+        "expired"
+      ]
+    },
+    "locale": {
+      "type": "string",
+      "default": "en"
+    },
+    "questionSetId": {
+      "type": "string"
+    },
+    "questionSetVersion": {
+      "type": "integer"
+    },
+    "answers": {
+      "type": "object",
+      "description": "questionId -> answer record. PII answers encrypted at rest.",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "value",
+          "answeredAt"
+        ],
+        "properties": {
+          "value": {},
+          "answeredAt": {
+            "$ref": "common.schema.json#/$defs/Timestamp"
+          },
+          "provenance": {
+            "$ref": "common.schema.json#/$defs/FieldProvenance"
+          },
+          "confidence": {
+            "$ref": "common.schema.json#/$defs/Confidence"
+          }
+        }
+      }
+    },
+    "currentQuestionId": {
+      "type": "string"
+    },
+    "progress": {
+      "type": "object",
+      "properties": {
+        "answered": {
+          "type": "integer"
+        },
+        "requiredRemaining": {
+          "type": "integer"
+        },
+        "percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "policyNumber": {
+      "type": "string"
+    },
+    "startedBy": {
+      "$ref": "common.schema.json#/$defs/Actor"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "startedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "submittedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "expiresAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+{"at":"2026-10-18T20:20:50.859Z","hub":"platform","type":"decision","text":"Core ctx API published in S0-PLT-01 summary; see src/core/*.mjs","from":"ceo","link":"src/core/"}
+{"at":"2026-10-18T20:26:43.223Z","hub":"platform","type":"request","text":"Please mount module service(ctx) exports at ctx.modules.<name>, bind ctx to evt.tenantId in bus handlers, dedupe via consumed_events, and register /auth/token, /auth/me, /audit in core per architecture/contracts/modules.md","from":"dir-architecture","ticket":"S0-ARC-01","link":"architecture/contracts/modules.md"}

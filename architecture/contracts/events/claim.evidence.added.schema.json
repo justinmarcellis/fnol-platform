@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.evidence.added.schema.json",
+  "title": "claim.evidence.added",
+  "description": "A document or media file was stored for a claim. Published by evidence.",
+  "x-publisher": "evidence",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.evidence.added"
+    },
+    "source": {
+      "pattern": "/modules/evidence$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "documentId",
+        "kind",
+        "contentType",
+        "sizeBytes",
+        "sha256"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "documentId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "photo",
+            "police_report",
+            "estimate",
+            "invoice",
+            "other"
+          ]
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "sizeBytes": {
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

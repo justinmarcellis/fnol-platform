@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/LossEvent.schema.json",
+  "title": "Loss event",
+  "description": "What happened, when and where. ACORD: ClaimsOccurrence (LossDt, LossTime, LossCauseCd, IncidentDesc).",
+  "type": "object",
+  "required": [
+    "lossDate",
+    "cause",
+    "description"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "lossDate": {
+      "$ref": "common.schema.json#/$defs/Date"
+    },
+    "lossTime": {
+      "type": "string",
+      "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+    },
+    "lossTimeZone": {
+      "type": "string",
+      "default": "America/Chicago"
+    },
+    "cause": {
+      "$ref": "common.schema.json#/$defs/LossCause"
+    },
+    "causeDetail": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 8000,
+      "description": "Narrative in the reporter's words. May contain PII; stored encrypted.",
+      "x-pii": true
+    },
+    "location": {
+      "$ref": "common.schema.json#/$defs/Location"
+    },
+    "policeReport": {
+      "type": "object",
+      "properties": {
+        "filed": {
+          "type": "boolean"
+        },
+        "agency": {
+          "type": "string"
+        },
+        "reportNumber": {
+          "type": "string"
+        }
+      }
+    },
+    "injuriesReported": {
+      "type": "boolean"
+    },
+    "fatality": {
+      "type": "boolean"
+    },
+    "vehiclesInvolved": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "weather": {
+      "type": "string"
+    },
+    "catastropheCode": {
+      "type": "string",
+      "description": "Tenant CAT event code when CAT mode is on."
+    },
+    "fieldProvenance": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/FieldProvenance"
+      },
+      "description": "Provenance by field name."
+    }
+  }
+}

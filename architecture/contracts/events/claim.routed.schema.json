@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.routed.schema.json",
+  "title": "claim.routed",
+  "description": "Routing decided: assigned to a queue/adjuster or fast tracked. Published by rules.",
+  "x-publisher": "rules",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.routed"
+    },
+    "source": {
+      "pattern": "/modules/rules$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "decisionId",
+        "outcome",
+        "queue",
+        "ruleIds"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "decisionId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "assigned",
+            "fast_tracked"
+          ]
+        },
+        "queue": {
+          "type": "string"
+        },
+        "adjusterId": {
+          "type": "string"
+        },
+        "ruleIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "override": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/RegulatoryTimer.schema.json",
+  "title": "Regulatory timer",
+  "description": "A state-mandated or SOP deadline on a claim, started and stopped by events per tenant timer config.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "state",
+    "kind",
+    "startedAt",
+    "dueAt",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "state": {
+      "$ref": "common.schema.json#/$defs/UsState"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "acknowledge",
+        "contact",
+        "decide"
+      ]
+    },
+    "definitionId": {
+      "type": "string",
+      "description": "TenantConfig.timers[].id"
+    },
+    "startedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "warnAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "dueAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "running",
+        "due_soon",
+        "met",
+        "breached",
+        "cancelled",
+        "paused"
+      ]
+    },
+    "metAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "breachedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "citation": {
+      "type": "string",
+      "description": "Human-readable source of the deadline as entered by the tenant."
+    }
+  }
+}

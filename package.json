@@ -1,0 +1,17 @@
+{
+  "name": "fnol-platform",
+  "version": "0.1.0",
+  "description": "COTS First Notice of Loss platform proof of concept",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning scripts/dev.mjs",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.mjs\"",
+    "test:unit": "node --disable-warning=ExperimentalWarning --test \"tests/unit/**/*.test.mjs\"",
+    "test:e2e": "node --disable-warning=ExperimentalWarning --test \"tests/e2e/**/*.test.mjs\""
+  },
+  "dependencies": {},
+  "optionalDependencies": {}
+}

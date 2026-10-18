@@ -1,0 +1,73 @@
+{
+  "status": "done",
+  "sprint": 0,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:14:21.907Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:15:42.117Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:19:52.351Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:20:18.410Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S0-PRD-01",
+  "team": "product",
+  "title": "Value propositions and value-driver ranking",
+  "points": 8,
+  "tier": "strong",
+  "owner": "dir-product",
+  "reviewer": "ceo",
+  "paths": [
+    "product/value-propositions.md",
+    "product/requirements.md"
+  ],
+  "acceptance": [
+    "All six stakeholder groups covered",
+    "Each candidate value driver has estimated impact with stated assumptions",
+    "Ranking table scores impact x breadth x feasibility",
+    "Top 4-6 drivers chosen as PoC scope with reasoning",
+    "requirements.md maps PoC capabilities to drivers with REQ IDs"
+  ],
+  "startedAt": "2026-10-18T20:15:42.117Z",
+  "doneAt": "2026-10-18T20:20:18.410Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:20:18.410Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Ranking complete with stated assumptions; scope VD-1..VD-6, VD-7 as guardrail"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6727,
+    "inputTokens": 24,
+    "cacheWriteTokens": 92468,
+    "cacheReadTokens": 820328,
+    "outputTokens": 2309,
+    "agents": {
+      "a0cd0fbaf5b3b31af": {
+        "label": "dir-product: value props",
+        "model": "claude-opus-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 92468,
+        "cacheReadTokens": 820328,
+        "outputTokens": 2309,
+        "usd": 0.6727
+      }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Property.schema.json",
+  "title": "Property",
+  "description": "A dwelling or structure involved in a property loss. ACORD: PropertyLossInfo / Location.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "role"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "insured_location",
+        "third_party"
+      ]
+    },
+    "address": {
+      "$ref": "common.schema.json#/$defs/Address"
+    },
+    "policyLocationId": {
+      "type": "string"
+    },
+    "dwellingType": {
+      "type": "string",
+      "enum": [
+        "single_family",
+        "condo",
+        "townhouse",
+        "mobile_home",
+        "multi_family",
+        "other"
+      ]
+    },
+    "yearBuilt": {
+      "type": "integer"
+    },
+    "occupied": {
+      "type": "boolean"
+    },
+    "habitable": {
+      "type": "boolean"
+    },
+    "damagedAreas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "roof",
+          "exterior",
+          "interior",
+          "basement",
+          "kitchen",
+          "bathroom",
+          "garage",
+          "contents",
+          "other_structure",
+          "landscaping"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "damageDescription": {
+      "type": "string"
+    },
+    "mitigationStarted": {
+      "type": "boolean"
+    },
+    "emergencyServicesNeeded": {
+      "type": "boolean"
+    },
+    "provenance": {
+      "$ref": "common.schema.json#/$defs/FieldProvenance"
+    }
+  }
+}

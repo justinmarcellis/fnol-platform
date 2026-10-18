@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/WebhookSubscription.schema.json",
+  "title": "Webhook subscription",
+  "description": "Tenant-registered HTTPS endpoint receiving CloudEvents. Deliveries are signed (HMAC-SHA256 over the raw body, header X-FNOL-Signature).",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "url",
+    "eventTypes",
+    "active"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "description": {
+      "type": "string"
+    },
+    "eventTypes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(claim|tenant)\\.[a-z.]+$|^\\*$"
+      },
+      "minItems": 1
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "secretRef": {
+      "type": "string",
+      "description": "Reference to the signing secret; the secret is returned once on create and never again."
+    },
+    "retryPolicy": {
+      "type": "object",
+      "properties": {
+        "maxAttempts": {
+          "type": "integer",
+          "default": 8
+        },
+        "backoff": {
+          "type": "string",
+          "enum": [
+            "exponential"
+          ],
+          "default": "exponential"
+        }
+      }
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.evidence.extracted.schema.json",
+  "title": "claim.evidence.extracted",
+  "description": "Extraction finished (or failed) for a document. Published by evidence.",
+  "x-publisher": "evidence",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.evidence.extracted"
+    },
+    "source": {
+      "pattern": "/modules/evidence$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "documentId",
+        "extractionId",
+        "status"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "documentId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "extractionId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "partial",
+            "failed",
+            "skipped"
+          ]
+        },
+        "fieldCount": {
+          "type": "integer"
+        },
+        "lowConfidenceFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ai": {
+          "$ref": "../domain/common.schema.json#/$defs/AiProvenance"
+        }
+      }
+    }
+  }
+}

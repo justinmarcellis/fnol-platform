@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/CoverageVerification.schema.json",
+  "title": "Coverage verification",
+  "description": "Result of checking a claim against its policy snapshot. Indicative only; coverage decisions stay with the carrier (overview.md scope).",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "outcome",
+    "checks",
+    "verifiedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "policySnapshotId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "policyNumber": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "covered",
+        "partial",
+        "not_covered",
+        "policy_not_found",
+        "needs_review"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "passed"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "policy_found",
+              "in_force",
+              "loss_in_period",
+              "vehicle_on_policy",
+              "location_on_policy",
+              "driver_listed",
+              "driver_not_excluded",
+              "peril_covered",
+              "coverage_present"
+            ]
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "matchedCoverages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applicableDeductible": {
+      "$ref": "common.schema.json#/$defs/Money"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verifiedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

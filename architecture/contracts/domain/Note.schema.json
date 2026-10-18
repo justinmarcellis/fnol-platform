@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Note.schema.json",
+  "title": "Note",
+  "description": "Free-text claim note. Body is PII-bearing and encrypted.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "body",
+    "author",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "body": {
+      "type": "string",
+      "maxLength": 20000,
+      "x-pii": true
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "general",
+        "contact",
+        "coverage",
+        "liability",
+        "fraud",
+        "subrogation",
+        "ai_summary",
+        "system"
+      ]
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "shared_with_claimant"
+      ],
+      "default": "internal"
+    },
+    "author": {
+      "$ref": "common.schema.json#/$defs/Actor"
+    },
+    "ai": {
+      "$ref": "common.schema.json#/$defs/AiProvenance"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

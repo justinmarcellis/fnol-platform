@@ -1,0 +1,60 @@
+{
+  "orchestrator": { "id": "ceo", "title": "Chief Executive / Program Orchestrator", "model": "opus" },
+  "teams": [
+    {
+      "id": "product", "name": "Product & Market Strategy", "hub": "product",
+      "director": { "id": "dir-product", "model": "opus" }, "manager": { "id": "mgr-product", "model": "sonnet" },
+      "icRoles": ["market-researcher", "persona-designer", "requirements-analyst", "pricing-analyst", "competitive-analyst", "value-modeler"],
+      "owns": ["product/"]
+    },
+    {
+      "id": "experience", "name": "Claimant & Agent Experience", "hub": "experience",
+      "director": { "id": "dir-experience", "model": "opus" }, "manager": { "id": "mgr-experience", "model": "sonnet" },
+      "icRoles": ["ux-designer", "claimant-web-dev", "csr-portal-dev", "adjuster-view-dev", "admin-ui-dev", "accessibility-specialist", "i18n-specialist"],
+      "owns": ["src/web/"]
+    },
+    {
+      "id": "ai", "name": "Intake Intelligence (AI/ML)", "hub": "ai",
+      "director": { "id": "dir-ai", "model": "opus" }, "manager": { "id": "mgr-ai", "model": "sonnet" },
+      "icRoles": ["conversation-designer", "extraction-engineer", "severity-modeler", "fraud-signals-engineer", "summarization-engineer", "provider-integrator", "eval-engineer"],
+      "owns": ["src/ai/", "src/modules/evidence/", "src/modules/triage/"]
+    },
+    {
+      "id": "workflow", "name": "Claims Workflow & Rules", "hub": "workflow",
+      "director": { "id": "dir-workflow", "model": "opus" }, "manager": { "id": "mgr-workflow", "model": "sonnet" },
+      "icRoles": ["domain-modeler", "rules-engine-dev", "routing-dev", "stp-dev", "timers-dev", "intake-flow-dev"],
+      "owns": ["src/modules/claims/", "src/modules/intake/", "src/modules/rules/"]
+    },
+    {
+      "id": "integrations", "name": "Integrations & Data", "hub": "integrations",
+      "director": { "id": "dir-integrations", "model": "opus" }, "manager": { "id": "mgr-integrations", "model": "sonnet" },
+      "icRoles": ["api-designer", "acord-mapper", "mock-pas-dev", "adapter-dev", "webhook-dev", "reporting-dev"],
+      "owns": ["src/modules/coverage/", "src/modules/integrations/", "architecture/contracts/"]
+    },
+    {
+      "id": "platform", "name": "Platform & DevOps", "hub": "platform",
+      "director": { "id": "dir-platform", "model": "opus" }, "manager": { "id": "mgr-platform", "model": "sonnet" },
+      "icRoles": ["runtime-dev", "tenancy-dev", "ci-engineer", "iac-engineer", "observability-dev", "perf-engineer"],
+      "owns": ["src/core/", "src/server.mjs", "scripts/", "infra/", ".github/", "package.json"]
+    },
+    {
+      "id": "security", "name": "Security, Privacy & Compliance", "hub": "security",
+      "director": { "id": "dir-security", "model": "opus" }, "manager": { "id": "mgr-security", "model": "sonnet" },
+      "icRoles": ["threat-modeler", "authz-engineer", "crypto-engineer", "audit-engineer", "compliance-mapper", "security-reviewer"],
+      "owns": ["architecture/threat-model.md", "docs/security-overview.md"]
+    },
+    {
+      "id": "quality", "name": "Quality Engineering", "hub": "quality",
+      "director": { "id": "dir-quality", "model": "opus" }, "manager": { "id": "mgr-quality", "model": "sonnet" },
+      "icRoles": ["test-strategist", "synthetic-data-engineer", "e2e-engineer", "contract-tester", "perf-tester", "acceptance-reviewer"],
+      "owns": ["tests/"]
+    },
+    {
+      "id": "pmo", "name": "Program Management Office", "hub": "pmo",
+      "director": { "id": "dir-pmo", "model": "opus" }, "manager": { "id": "mgr-pmo", "model": "sonnet" },
+      "icRoles": ["dashboard-dev", "metrics-analyst", "retro-facilitator", "playbook-editor"],
+      "owns": ["dashboard/", "org/"]
+    }
+  ],
+  "crossTeamHubs": ["architecture", "decisions", "incidents"]
+}

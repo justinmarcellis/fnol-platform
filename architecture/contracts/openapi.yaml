@@ -1,0 +1,1080 @@
+openapi: 3.1.0
+info:
+  title: FNOL Platform API
+  version: 1.0.0
+  summary: Multi-tenant First Notice of Loss platform (proof of concept).
+  description: |
+    API-first contract for every channel (claimant web, CSR, adjuster, admin, partners).
+
+    * Base path `/api/v1`. All bodies are JSON unless stated.
+    * **Tenant comes from the bearer token** (`tid` claim). A request never names another tenant;
+      a `tenantId` in a body, if present, must equal the token tenant or the call fails with `403 tenant_mismatch`.
+    * **Roles** per operation are listed in `x-roles`. `x-module` names the module (ADR-001) that registers the route.
+    * Errors always use `{ "error": { "code", "message" } }` (see `Error`).
+    * Domain shapes are referenced from `domain/*.schema.json` (JSON Schema 2020-12) so the API and storage share one source of truth.
+    * Responses decrypt PII only for roles allowed to see it; others receive `"[redacted]"` in `x-pii` fields.
+    * Optimistic concurrency: mutating calls on claims and config accept `If-Match: <version>`; a stale version returns `409 version_conflict`.
+    * Synthetic data only. Tenants are fictional carriers.
+  license:
+    name: Proprietary (COTS licence)
+    url: https://fnol-platform.example/licence
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local one-command dev server
+  - url: https://{tenantHost}/api/v1
+    description: Cloud Run behind the HTTPS load balancer
+    variables:
+      tenantHost:
+        default: api.fnol-platform.example
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+  - name: intake
+  - name: claims
+  - name: evidence
+  - name: coverage
+  - name: triage
+  - name: routing
+  - name: adjuster
+  - name: config
+  - name: integrations
+  - name: audit
+  - name: health
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Liveness and readiness
+      security: []
+      x-roles: []
+      x-module: health
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [ok, degraded] }
+                  version: { type: string }
+                  aiProviders: { type: object, additionalProperties: { type: string, enum: [available, unconfigured, error] } }
+
+  # ---------------------------------------------------------------- auth
+  /auth/token:
+    post:
+      tags: [auth]
+      operationId: issueDevToken
+      summary: Issue a development token (disabled when NODE_ENV=production)
+      description: Dev-only HMAC-signed token. In production the platform accepts OIDC tokens from the tenant identity provider (Identity Platform / IAP) with the same claims.
+      security: []
+      x-roles: []
+      x-module: core
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId, userId, roles]
+              additionalProperties: false
+              properties:
+                tenantId: { $ref: 'domain/common.schema.json#/$defs/TenantId' }
+                userId: { type: string, examples: [adj-0001] }
+                displayName: { type: string }
+                roles: { type: array, minItems: 1, items: { $ref: 'domain/common.schema.json#/$defs/Role' } }
+                claimIds: { type: array, items: { type: string }, description: For claimant tokens, the claims this user may see. }
+                ttlMinutes: { type: integer, default: 60, maximum: 720 }
+      responses:
+        '201':
+          description: Token issued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Token' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { description: Not available in production, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /auth/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Current principal
+      x-roles: [claimant, csr, adjuster, supervisor, tenant_admin, integration, auditor]
+      x-module: core
+      responses:
+        '200':
+          description: Principal
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Principal' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ---------------------------------------------------------------- intake
+  /intake/sessions:
+    post:
+      tags: [intake]
+      operationId: startIntakeSession
+      summary: Start a guided FNOL session for a line of business and channel
+      x-roles: [claimant, csr, integration]
+      x-module: intake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lob, channel]
+              additionalProperties: false
+              properties:
+                tenantId: { $ref: 'domain/common.schema.json#/$defs/TenantId', description: Optional; must match the token. }
+                lob: { $ref: 'domain/common.schema.json#/$defs/Lob' }
+                lossType: { type: string }
+                channel: { $ref: 'domain/common.schema.json#/$defs/Channel' }
+                locale: { type: string, default: en }
+                policyNumber: { type: string }
+      responses:
+        '201':
+          description: Session started; includes the first question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntakeStep' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /intake/sessions/{sessionId}:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    get:
+      tags: [intake]
+      operationId: getIntakeSession
+      x-roles: [claimant, csr, integration]
+      x-module: intake
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema: { $ref: 'domain/IntakeSession.schema.json' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /intake/sessions/{sessionId}/next-question:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    get:
+      tags: [intake]
+      operationId: getNextQuestion
+      summary: Next question after evaluating showIf / requiredIf against current answers
+      x-roles: [claimant, csr, integration]
+      x-module: intake
+      responses:
+        '200':
+          description: Next step (question is null when every required question is answered)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntakeStep' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /intake/sessions/{sessionId}/answers:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    post:
+      tags: [intake]
+      operationId: answerQuestion
+      summary: Answer one question (or several with `answers`); returns the next step
+      x-roles: [claimant, csr, integration]
+      x-module: intake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [questionId, value]
+                  properties:
+                    questionId: { type: string }
+                    value: {}
+                - type: object
+                  required: [answers]
+                  properties:
+                    answers:
+                      type: array
+                      items: { type: object, required: [questionId, value], properties: { questionId: { type: string }, value: {} } }
+      responses:
+        '200':
+          description: Accepted; next step
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntakeStep' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /intake/sessions/{sessionId}/submit:
+    parameters: [{ $ref: '#/components/parameters/SessionId' }]
+    post:
+      tags: [intake]
+      operationId: submitIntakeSession
+      summary: Submit a complete session; creates the claim (publishes claim.reported)
+      x-roles: [claimant, csr, integration]
+      x-module: intake
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      responses:
+        '201':
+          description: Claim created
+          content:
+            application/json:
+              schema: { $ref: 'domain/Claim.schema.json' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  # ---------------------------------------------------------------- claims
+  /claims:
+    post:
+      tags: [claims]
+      operationId: createClaim
+      summary: Create a claim directly (API / partner channel)
+      x-roles: [integration, csr]
+      x-module: claims
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClaimCreate' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: 'domain/Claim.schema.json' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+    get:
+      tags: [claims]
+      operationId: listClaims
+      summary: List claims with filters (tenant-scoped)
+      x-roles: [csr, adjuster, supervisor, auditor, integration]
+      x-module: claims
+      parameters:
+        - { name: status, in: query, schema: { type: array, items: { type: string } }, style: form, explode: false }
+        - { name: lob, in: query, schema: { type: string } }
+        - { name: queue, in: query, schema: { type: string } }
+        - { name: adjusterId, in: query, schema: { type: string } }
+        - { name: fastTrack, in: query, schema: { type: boolean } }
+        - { name: severityMin, in: query, schema: { type: integer, minimum: 0, maximum: 100 } }
+        - { name: flag, in: query, schema: { type: string } }
+        - { name: riskState, in: query, schema: { type: string } }
+        - { name: reportedFrom, in: query, schema: { type: string, format: date-time } }
+        - { name: reportedTo, in: query, schema: { type: string, format: date-time } }
+        - { name: q, in: query, description: Claim number or policy number prefix, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [reportedAt, -reportedAt, severity, -severity], default: -reportedAt } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Page of claims (summary form; parties omitted)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - properties:
+                      items: { type: array, items: { $ref: 'domain/Claim.schema.json' } }
+  /claims/{claimId}:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    get:
+      tags: [claims]
+      operationId: getClaim
+      x-roles: [claimant, csr, adjuster, supervisor, auditor, integration]
+      x-module: claims
+      responses:
+        '200':
+          description: Claim
+          headers:
+            ETag: { schema: { type: string }, description: Claim version }
+          content:
+            application/json:
+              schema: { $ref: 'domain/Claim.schema.json' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /claims/{claimId}/status:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    post:
+      tags: [claims]
+      operationId: changeClaimStatus
+      summary: Move the claim along the lifecycle (validated against the state machine)
+      description: Allowed manual transitions are in overview.md. Automatic transitions (reported to validating to triaged to assigned/fast_tracked) are made by event subscribers, not this endpoint. Reopen (closed to in_review) and withdraw after assignment need supervisor.
+      x-roles: [adjuster, supervisor, csr]
+      x-module: claims
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              additionalProperties: false
+              properties:
+                to: { type: string, enum: [in_review, pending_info, closed, withdrawn] }
+                reason: { type: string, maxLength: 500 }
+                closeReason: { type: string, enum: [paid, denied, no_coverage, duplicate, withdrawn_by_insured, below_deductible, other] }
+      responses:
+        '200':
+          description: Updated claim
+          content:
+            application/json:
+              schema: { $ref: 'domain/Claim.schema.json' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /claims/{claimId}/notes:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    get:
+      tags: [claims]
+      operationId: listNotes
+      x-roles: [csr, adjuster, supervisor, auditor]
+      x-module: claims
+      responses:
+        '200':
+          description: Notes, newest first
+          content:
+            application/json:
+              schema: { type: object, properties: { items: { type: array, items: { $ref: 'domain/Note.schema.json' } } } }
+    post:
+      tags: [claims]
+      operationId: addNote
+      x-roles: [csr, adjuster, supervisor]
+      x-module: claims
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, maxLength: 20000 }
+                category: { type: string }
+                visibility: { type: string, enum: [internal, shared_with_claimant], default: internal }
+      responses:
+        '201':
+          description: Note added (publishes claim.note.added)
+          content:
+            application/json:
+              schema: { $ref: 'domain/Note.schema.json' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /claims/{claimId}/tasks:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    get:
+      tags: [claims]
+      operationId: listTasks
+      x-roles: [csr, adjuster, supervisor, auditor]
+      x-module: claims
+      responses:
+        '200':
+          description: Tasks
+          content:
+            application/json:
+              schema: { type: object, properties: { items: { type: array, items: { $ref: 'domain/Task.schema.json' } } } }
+  /claims/{claimId}/tasks/{taskId}:
+    parameters:
+      - { $ref: '#/components/parameters/ClaimId' }
+      - { name: taskId, in: path, required: true, schema: { type: string } }
+    patch:
+      tags: [claims]
+      operationId: updateTask
+      x-roles: [adjuster, supervisor]
+      x-module: claims
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { status: { type: string, enum: [open, in_progress, done, cancelled] }, assigneeId: { type: string } } }
+      responses:
+        '200': { description: Task, content: { application/json: { schema: { $ref: 'domain/Task.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /claims/{claimId}/timers:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    get:
+      tags: [claims]
+      operationId: listTimers
+      summary: Regulatory timers on the claim
+      x-roles: [csr, adjuster, supervisor, auditor]
+      x-module: claims
+      responses:
+        '200':
+          description: Timers
+          content:
+            application/json:
+              schema: { type: object, properties: { items: { type: array, items: { $ref: 'domain/RegulatoryTimer.schema.json' } } } }
+
+  # ---------------------------------------------------------------- evidence
+  /claims/{claimId}/documents:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    post:
+      tags: [evidence]
+      operationId: uploadDocument
+      summary: Upload evidence (multipart or base64 JSON); extraction runs asynchronously
+      x-roles: [claimant, csr, adjuster, integration]
+      x-module: evidence
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, kind]
+              properties:
+                file: { type: string, contentMediaType: application/octet-stream }
+                kind: { type: string, enum: [photo, police_report, estimate, invoice, other] }
+                description: { type: string }
+          application/json:
+            schema:
+              type: object
+              required: [kind, filename, contentType, contentBase64]
+              properties:
+                kind: { type: string, enum: [photo, police_report, estimate, invoice, other] }
+                filename: { type: string }
+                contentType: { type: string }
+                contentBase64: { type: string, contentEncoding: base64 }
+                description: { type: string }
+      responses:
+        '201':
+          description: Stored (publishes claim.evidence.added); extraction.status is pending
+          content:
+            application/json:
+              schema: { $ref: 'domain/Document.schema.json' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413': { description: Too large (default limit 15 MB), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '415': { description: Unsupported media type, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    get:
+      tags: [evidence]
+      operationId: listDocuments
+      x-roles: [claimant, csr, adjuster, supervisor, auditor, integration]
+      x-module: evidence
+      parameters:
+        - { name: kind, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Documents with extraction summaries
+          content:
+            application/json:
+              schema: { type: object, properties: { items: { type: array, items: { $ref: 'domain/Document.schema.json' } } } }
+  /claims/{claimId}/documents/{documentId}:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }, { $ref: '#/components/parameters/DocumentId' }]
+    get:
+      tags: [evidence]
+      operationId: getDocument
+      x-roles: [claimant, csr, adjuster, supervisor, auditor, integration]
+      x-module: evidence
+      responses:
+        '200': { description: Document, content: { application/json: { schema: { $ref: 'domain/Document.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /claims/{claimId}/documents/{documentId}/content:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }, { $ref: '#/components/parameters/DocumentId' }]
+    get:
+      tags: [evidence]
+      operationId: getDocumentContent
+      summary: Download the original bytes (audited as a sensitive read)
+      x-roles: [csr, adjuster, supervisor]
+      x-module: evidence
+      responses:
+        '200': { description: Bytes, content: { application/octet-stream: { schema: { type: string, contentMediaType: application/octet-stream } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /claims/{claimId}/documents/{documentId}/extraction:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }, { $ref: '#/components/parameters/DocumentId' }]
+    get:
+      tags: [evidence]
+      operationId: getExtraction
+      summary: Extraction results with field-level confidence and provenance
+      x-roles: [csr, adjuster, supervisor, auditor, integration]
+      x-module: evidence
+      responses:
+        '200':
+          description: Extraction
+          content:
+            application/json:
+              schema: { $ref: 'domain/Document.schema.json#/properties/extraction' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [evidence]
+      operationId: rerunExtraction
+      x-roles: [adjuster, supervisor]
+      x-module: evidence
+      responses:
+        '202': { description: Re-extraction queued }
+  /claims/{claimId}/documents/{documentId}/extraction/review:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }, { $ref: '#/components/parameters/DocumentId' }]
+    post:
+      tags: [evidence]
+      operationId: reviewExtraction
+      summary: Accept, correct or reject extracted fields (AI suggests, a person confirms)
+      x-roles: [csr, adjuster, supervisor]
+      x-module: evidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fields]
+              properties:
+                fields:
+                  type: array
+                  items: { type: object, required: [name, accepted], properties: { name: { type: string }, accepted: { type: boolean }, value: {} } }
+      responses:
+        '200': { description: Updated extraction, content: { application/json: { schema: { $ref: 'domain/Document.schema.json#/properties/extraction' } } } }
+
+  # ---------------------------------------------------------------- coverage
+  /claims/{claimId}/coverage/verify:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    post:
+      tags: [coverage]
+      operationId: verifyCoverage
+      summary: Verify (or re-verify) coverage against a policy snapshot as of the loss date
+      x-roles: [csr, adjuster, supervisor, integration]
+      x-module: coverage
+      responses:
+        '200':
+          description: Verification (publishes claim.coverage.verified)
+          content:
+            application/json:
+              schema: { $ref: 'domain/CoverageVerification.schema.json' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+  /claims/{claimId}/coverage:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    get:
+      tags: [coverage]
+      operationId: getCoverage
+      x-roles: [csr, adjuster, supervisor, auditor]
+      x-module: coverage
+      responses:
+        '200':
+          description: Latest verification and the snapshot it used
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verification: { $ref: 'domain/CoverageVerification.schema.json' }
+                  policy: { $ref: 'domain/PolicySnapshot.schema.json' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /policies/{policyNumber}/snapshot:
+    get:
+      tags: [coverage]
+      operationId: getPolicySnapshot
+      summary: Policy lookup through the policy port (CSR intake helper)
+      x-roles: [csr, adjuster, supervisor, integration]
+      x-module: coverage
+      parameters:
+        - { name: policyNumber, in: path, required: true, schema: { type: string } }
+        - { name: asOf, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Snapshot, content: { application/json: { schema: { $ref: 'domain/PolicySnapshot.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  # ---------------------------------------------------------------- triage
+  /claims/{claimId}/triage:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    post:
+      tags: [triage]
+      operationId: runTriage
+      summary: Run (or re-run) triage through the AI cascade
+      x-roles: [adjuster, supervisor]
+      x-module: triage
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, properties: { force: { type: boolean, default: false, description: Re-run even if inputs are unchanged. } } }
+      responses:
+        '200':
+          description: Triage result (publishes claim.triaged)
+          content:
+            application/json:
+              schema: { $ref: 'domain/TriageResult.schema.json' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [triage]
+      operationId: getTriage
+      x-roles: [adjuster, supervisor, auditor, csr]
+      x-module: triage
+      parameters:
+        - { name: history, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Latest result (or all attempts when history=true)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: 'domain/TriageResult.schema.json' }
+                  - { type: object, properties: { items: { type: array, items: { $ref: 'domain/TriageResult.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- routing
+  /claims/{claimId}/routing:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    post:
+      tags: [routing]
+      operationId: routeClaim
+      summary: Route a triaged claim by tenant rules, or override (supervisor)
+      x-roles: [supervisor, adjuster]
+      x-module: rules
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override:
+                  type: object
+                  description: Supervisor only. Skips rule evaluation and records the override.
+                  required: [reason]
+                  properties:
+                    queue: { type: string }
+                    adjusterId: { type: string }
+                    fastTrack: { type: boolean }
+                    reason: { type: string }
+      responses:
+        '200':
+          description: Decision (publishes claim.routed)
+          content:
+            application/json:
+              schema: { $ref: 'domain/RoutingDecision.schema.json' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [routing]
+      operationId: getRoutingDecision
+      x-roles: [csr, adjuster, supervisor, auditor]
+      x-module: rules
+      responses:
+        '200': { description: Latest decision, content: { application/json: { schema: { $ref: 'domain/RoutingDecision.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- adjuster
+  /adjuster/claims/{claimId}/view:
+    parameters: [{ $ref: '#/components/parameters/ClaimId' }]
+    get:
+      tags: [adjuster]
+      operationId: getAdjusterView
+      summary: Aggregated first-view payload (claim, policy, coverage, triage, routing, evidence, timers, tasks, notes, summary)
+      x-roles: [adjuster, supervisor]
+      x-module: adjuster
+      responses:
+        '200': { description: View, content: { application/json: { schema: { $ref: 'domain/AdjusterView.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /adjuster/inbox:
+    get:
+      tags: [adjuster]
+      operationId: getAdjusterInbox
+      summary: Claims assigned to me or my queues, ordered by timer urgency then severity
+      x-roles: [adjuster, supervisor]
+      x-module: adjuster
+      parameters:
+        - { name: queue, in: query, schema: { type: string } }
+        - { name: mine, in: query, schema: { type: boolean, default: true } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Inbox rows
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/InboxRow' } }
+
+  # ---------------------------------------------------------------- config
+  /config:
+    get:
+      tags: [config]
+      operationId: getTenantConfig
+      x-roles: [tenant_admin, supervisor, auditor]
+      x-module: config
+      responses:
+        '200':
+          description: Current tenant config
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: 'domain/TenantConfig.schema.json' }
+    put:
+      tags: [config]
+      operationId: putTenantConfig
+      summary: Replace tenant config (validated, versioned, audited; publishes tenant.config.updated)
+      x-roles: [tenant_admin]
+      x-module: config
+      parameters: [{ $ref: '#/components/parameters/IfMatch' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'domain/TenantConfig.schema.json' }
+      responses:
+        '200': { description: Saved, content: { application/json: { schema: { $ref: 'domain/TenantConfig.schema.json' } } } }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422':
+          description: Invalid config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ValidationReport' }
+  /config/validate:
+    post:
+      tags: [config]
+      operationId: validateTenantConfig
+      summary: Dry-run validation (schema + semantic checks such as unknown queue ids, unreachable questions, rule syntax)
+      x-roles: [tenant_admin]
+      x-module: config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'domain/TenantConfig.schema.json' }
+      responses:
+        '200': { description: Report, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationReport' } } } }
+  /config/public:
+    get:
+      tags: [config]
+      operationId: getPublicTenantConfig
+      summary: Branding, enabled LOBs and loss types for claimant/CSR UIs (no rules, no secrets)
+      x-roles: [claimant, csr, adjuster, supervisor, tenant_admin, integration, auditor]
+      x-module: config
+      responses:
+        '200': { description: Public subset, content: { application/json: { schema: { $ref: '#/components/schemas/PublicConfig' } } } }
+
+  # ---------------------------------------------------------------- integrations
+  /integrations/webhooks:
+    get:
+      tags: [integrations]
+      operationId: listWebhooks
+      x-roles: [tenant_admin]
+      x-module: integrations
+      responses:
+        '200': { description: Subscriptions, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: 'domain/WebhookSubscription.schema.json' } } } } } } }
+    post:
+      tags: [integrations]
+      operationId: createWebhook
+      x-roles: [tenant_admin]
+      x-module: integrations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, eventTypes]
+              properties:
+                url: { type: string, format: uri }
+                eventTypes: { type: array, items: { type: string } }
+                description: { type: string }
+                active: { type: boolean, default: true }
+      responses:
+        '201':
+          description: Created; `secret` is returned only here
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: 'domain/WebhookSubscription.schema.json' }
+                  - { type: object, properties: { secret: { type: string } } }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /integrations/webhooks/{webhookId}:
+    parameters: [{ name: webhookId, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [integrations]
+      operationId: getWebhook
+      x-roles: [tenant_admin]
+      x-module: integrations
+      responses:
+        '200': { description: Subscription, content: { application/json: { schema: { $ref: 'domain/WebhookSubscription.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [integrations]
+      operationId: updateWebhook
+      x-roles: [tenant_admin]
+      x-module: integrations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { url: { type: string, format: uri }, eventTypes: { type: array, items: { type: string } }, active: { type: boolean }, description: { type: string }, rotateSecret: { type: boolean } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: 'domain/WebhookSubscription.schema.json' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [integrations]
+      operationId: deleteWebhook
+      x-roles: [tenant_admin]
+      x-module: integrations
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /integrations/webhooks/{webhookId}/deliveries:
+    parameters: [{ name: webhookId, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [integrations]
+      operationId: listWebhookDeliveries
+      x-roles: [tenant_admin]
+      x-module: integrations
+      parameters: [{ $ref: '#/components/parameters/Limit' }, { $ref: '#/components/parameters/Cursor' }]
+      responses:
+        '200': { description: Delivery attempts, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/Page' }, { properties: { items: { type: array, items: { $ref: '#/components/schemas/Delivery' } } } }] } } } }
+  /integrations/outbox:
+    get:
+      tags: [integrations]
+      operationId: listOutbox
+      summary: Tenant's published events (outbox), for replay and debugging
+      x-roles: [tenant_admin, auditor, integration]
+      x-module: integrations
+      parameters:
+        - { name: type, in: query, schema: { type: string } }
+        - { name: subject, in: query, description: claimId, schema: { type: string } }
+        - { name: afterSequence, in: query, schema: { type: integer } }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: Events in sequence order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/OutboxRecord' } }
+                  nextSequence: { type: integer }
+  /integrations/adapters:
+    get:
+      tags: [integrations]
+      operationId: listAdapters
+      x-roles: [tenant_admin, supervisor]
+      x-module: integrations
+      responses:
+        '200':
+          description: Registered adapters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { type: object, properties: { id: { type: string, examples: [core-claims-suite, mock-pas] }, port: { type: string, enum: [claims, policy] }, format: { type: string, examples: [acord-aligned-json] }, enabled: { type: boolean } } }
+  /integrations/adapters/{adapterId}/preview/{claimId}:
+    parameters:
+      - { name: adapterId, in: path, required: true, schema: { type: string } }
+      - { $ref: '#/components/parameters/ClaimId' }
+    get:
+      tags: [integrations]
+      operationId: previewAdapterPayload
+      summary: Show the payload the adapter would send to the core system (PII masked unless role allows)
+      x-roles: [tenant_admin, supervisor, adjuster]
+      x-module: integrations
+      responses:
+        '200':
+          description: Mapped payload and mapping report
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [adapterId, payload]
+                properties:
+                  adapterId: { type: string }
+                  format: { type: string }
+                  payload: { type: object, description: 'ACORD-aligned claims notification, see overview.md' }
+                  unmapped: { type: array, items: { type: string }, description: Platform fields with no target }
+                  warnings: { type: array, items: { type: string } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /integrations/adapters/{adapterId}/push/{claimId}:
+    parameters:
+      - { name: adapterId, in: path, required: true, schema: { type: string } }
+      - { $ref: '#/components/parameters/ClaimId' }
+    post:
+      tags: [integrations]
+      operationId: pushClaimToCore
+      summary: Send (or resend) the claim to the core system through the adapter
+      x-roles: [tenant_admin, supervisor]
+      x-module: integrations
+      responses:
+        '202': { description: Queued }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- audit
+  /audit:
+    get:
+      tags: [audit]
+      operationId: listAudit
+      x-roles: [auditor, tenant_admin, supervisor]
+      x-module: core
+      parameters:
+        - { name: claimId, in: query, schema: { type: string } }
+        - { name: entityType, in: query, schema: { type: string } }
+        - { name: entityId, in: query, schema: { type: string } }
+        - { name: actorId, in: query, schema: { type: string } }
+        - { name: action, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Audit entries, newest first
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Page' }
+                  - properties:
+                      items: { type: array, items: { $ref: 'domain/AuditEntry.schema.json' } }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Claims: sub (user id), tid (tenant id), roles, optional claimIds (claimant), exp.'
+  parameters:
+    ClaimId: { name: claimId, in: path, required: true, schema: { type: string } }
+    SessionId: { name: sessionId, in: path, required: true, schema: { type: string } }
+    DocumentId: { name: documentId, in: path, required: true, schema: { type: string } }
+    Limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+    Cursor: { name: cursor, in: query, schema: { type: string } }
+    IfMatch: { name: If-Match, in: header, required: false, schema: { type: string }, description: Expected version }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 }, description: Replays within 24h return the original response. }
+  responses:
+    BadRequest: { description: Malformed request, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Unauthorized: { description: Missing or invalid token, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Forbidden: { description: Role not allowed or tenant mismatch, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    NotFound: { description: Not found in this tenant, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Conflict: { description: Version conflict or invalid state transition, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Unprocessable: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    UpstreamError: { description: Core or policy system adapter failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Stable machine code
+              examples: [bad_request, unauthorized, forbidden, tenant_mismatch, not_found, version_conflict, invalid_transition, validation_failed, upstream_error, payload_too_large, unsupported_media_type, rate_limited, internal]
+            message: { type: string }
+            details: { type: array, items: { type: object, properties: { path: { type: string }, message: { type: string } } } }
+            requestId: { type: string }
+    Token:
+      type: object
+      required: [token, expiresAt]
+      properties:
+        token: { type: string }
+        expiresAt: { type: string, format: date-time }
+        principal: { $ref: '#/components/schemas/Principal' }
+    Principal:
+      type: object
+      required: [userId, tenantId, roles]
+      properties:
+        userId: { type: string }
+        tenantId: { type: string }
+        displayName: { type: string }
+        roles: { type: array, items: { $ref: 'domain/common.schema.json#/$defs/Role' } }
+        claimIds: { type: array, items: { type: string } }
+    Page:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array }
+        nextCursor: { type: [string, 'null'] }
+        total: { type: integer }
+    Question:
+      $ref: 'domain/TenantConfig.schema.json#/properties/questionSets/items/properties/questions/items'
+    IntakeStep:
+      type: object
+      required: [sessionId, done, progress]
+      properties:
+        sessionId: { type: string }
+        done: { type: boolean, description: True when every required question is answered and the session can be submitted. }
+        question: { oneOf: [{ $ref: '#/components/schemas/Question' }, { type: 'null' }] }
+        progress: { type: object, properties: { answered: { type: integer }, requiredRemaining: { type: integer }, percent: { type: integer } } }
+        errors: { type: array, items: { type: object, properties: { questionId: { type: string }, message: { type: string } } } }
+        suggestions:
+          type: array
+          description: AI-prefilled answers awaiting confirmation
+          items: { type: object, properties: { questionId: { type: string }, value: {}, ai: { $ref: 'domain/common.schema.json#/$defs/AiProvenance' } } }
+        disclosures: { type: array, items: { type: string }, description: State fraud warning etc. to display }
+    ClaimCreate:
+      type: object
+      required: [lob, lossEvent]
+      additionalProperties: false
+      properties:
+        tenantId: { $ref: 'domain/common.schema.json#/$defs/TenantId' }
+        lob: { $ref: 'domain/common.schema.json#/$defs/Lob' }
+        lossType: { type: string }
+        channel: { type: string, enum: [api, partner, email, csr_phone], default: api }
+        policyNumber: { type: string }
+        riskState: { $ref: 'domain/common.schema.json#/$defs/UsState' }
+        lossEvent: { $ref: 'domain/LossEvent.schema.json' }
+        parties: { type: array, items: { $ref: 'domain/Party.schema.json' }, description: id/tenantId/claimId are assigned by the server and ignored if sent }
+        vehicles: { type: array, items: { $ref: 'domain/Vehicle.schema.json' } }
+        properties: { type: array, items: { $ref: 'domain/Property.schema.json' } }
+        externalRef: { type: object, properties: { system: { type: string }, id: { type: string } } }
+    InboxRow:
+      type: object
+      properties:
+        claimId: { type: string }
+        claimNumber: { type: string }
+        status: { type: string }
+        lob: { type: string }
+        queue: { type: string }
+        severityScore: { type: integer }
+        complexity: { type: string }
+        flags: { type: array, items: { type: string } }
+        nextTimer: { $ref: 'domain/RegulatoryTimer.schema.json' }
+        reportedAt: { type: string, format: date-time }
+    ValidationReport:
+      type: object
+      required: [valid, errors]
+      properties:
+        valid: { type: boolean }
+        errors: { type: array, items: { type: object, properties: { path: { type: string }, code: { type: string }, message: { type: string } } } }
+        warnings: { type: array, items: { type: object, properties: { path: { type: string }, message: { type: string } } } }
+    PublicConfig:
+      type: object
+      properties:
+        tenantId: { type: string }
+        displayName: { type: string }
+        branding: { $ref: 'domain/TenantConfig.schema.json#/properties/branding' }
+        lobs: { $ref: 'domain/TenantConfig.schema.json#/properties/lobs' }
+        locales: { type: array, items: { type: string } }
+    OutboxRecord:
+      type: object
+      required: [sequence, event, publishedAt]
+      properties:
+        sequence: { type: integer }
+        event: { $ref: 'events/envelope.schema.json' }
+        publishedAt: { type: string, format: date-time }
+        dispatch: { type: object, properties: { status: { type: string, enum: [pending, dispatched, failed] }, attempts: { type: integer } } }
+    Delivery:
+      type: object
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        eventType: { type: string }
+        attempt: { type: integer }
+        status: { type: string, enum: [pending, succeeded, failed, dead_letter] }
+        responseStatus: { type: integer }
+        nextAttemptAt: { type: string, format: date-time }
+        at: { type: string, format: date-time }

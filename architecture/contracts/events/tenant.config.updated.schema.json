@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/tenant.config.updated.schema.json",
+  "title": "tenant.config.updated",
+  "description": "Tenant configuration saved; caches must refresh. subject = tenantId. Published by config.",
+  "x-publisher": "config",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "tenant.config.updated"
+    },
+    "source": {
+      "pattern": "/modules/config$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "changedSections"
+      ],
+      "properties": {
+        "version": {
+          "type": "integer"
+        },
+        "previousVersion": {
+          "type": "integer"
+        },
+        "changedSections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "branding",
+              "lobs",
+              "questionSets",
+              "rules",
+              "queues",
+              "timers",
+              "notifications",
+              "integrations",
+              "ai",
+              "security",
+              "fastTrack",
+              "severityBands",
+              "holidays",
+              "other"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

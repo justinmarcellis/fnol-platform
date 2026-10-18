@@ -1,0 +1,123 @@
+import { HttpError } from './errors.mjs';
+
+export const migrations = [{
+  sql: `
+CREATE TABLE IF NOT EXISTS outbox (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  subject TEXT,
+  event TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  created_at TEXT NOT NULL,
+  delivered_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox (tenant_id, status);`,
+  tenantTables: ['outbox'],
+}];
+
+/**
+ * Event bus: persisted outbox + in-process async dispatch with retries.
+ * @param {object} ctx
+ * @param {{ maxAttempts?: number, retryDelayMs?: number }} [opts]
+ */
+export function createBus(ctx, opts = {}) {
+  const maxAttempts = opts.maxAttempts ?? 3;
+  const retryDelayMs = opts.retryDelayMs ?? 5;
+  const handlers = [];
+  const pending = new Set();
+
+  const matching = (type) => handlers.filter((h) => h.type === '*' || h.type === type);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function deliver(evt) {
+    const t = ctx.db.forTenant(evt.tenantid);
+    let attempts = 0;
+    let lastError = null;
+    for (const h of matching(evt.type)) {
+      let ok = false;
+      for (let n = 1; n <= maxAttempts && !ok; n++) {
+        attempts = Math.max(attempts, n);
+        try {
+          await h.handler(evt);
+          ok = true;
+        } catch (e) {
+          lastError = e?.message ?? String(e);
+          ctx.log.error('bus handler failed', { type: evt.type, eventId: evt.id, attempt: n, error: lastError });
+          t.update('outbox', evt.id, { attempts, last_error: lastError });
+          if (n < maxAttempts) await sleep(retryDelayMs * n);
+        }
+      }
+      if (!ok) {
+        t.update('outbox', evt.id, { status: 'failed', attempts, last_error: lastError });
+        return;
+      }
+    }
+    t.update('outbox', evt.id, { status: 'delivered', attempts, delivered_at: ctx.clock.nowIso() });
+  }
+
+  function dispatch(evt) {
+    const p = new Promise((resolve) => setImmediate(resolve))
+      .then(() => deliver(evt))
+      .catch((e) => ctx.log.error('bus dispatch error', { eventId: evt.id, error: e?.message }))
+      .finally(() => pending.delete(p));
+    pending.add(p);
+  }
+
+  return {
+    /**
+     * Persist and asynchronously dispatch a CloudEvents-style event.
+     * @param {string} tenantId
+     * @param {string} type e.g. 'claim.reported'
+     * @param {string} subject e.g. the claim id
+     * @param {object} data
+     * @returns {object} the event envelope
+     */
+    publish(tenantId, type, subject, data = {}) {
+      if (!tenantId || !type) throw new HttpError(500, 'bus_invalid', 'publish requires tenantId and type');
+      const evt = {
+        specversion: '1.0',
+        id: ctx.db.id('evt'),
+        source: '/fnol-platform',
+        type,
+        subject: subject ?? null,
+        time: ctx.clock.nowIso(),
+        tenantid: tenantId,
+        datacontenttype: 'application/json',
+        data,
+      };
+      ctx.db.forTenant(tenantId).insert('outbox', {
+        id: evt.id, type, subject: evt.subject, event: JSON.stringify(evt),
+        status: 'pending', attempts: 0, created_at: evt.time,
+      });
+      dispatch(evt);
+      return evt;
+    },
+    /** Subscribe to an event type or '*'. Handler receives the event envelope. Returns an unsubscribe fn. */
+    on(type, handler) {
+      const h = { type, handler };
+      handlers.push(h);
+      return () => { const i = handlers.indexOf(h); if (i >= 0) handlers.splice(i, 1); };
+    },
+    /** Await all in-flight handlers (for tests). */
+    async drain() {
+      while (pending.size) await Promise.all([...pending]);
+    },
+    /** Re-dispatch pending/failed outbox rows for the given tenants (call at boot after subscriptions). */
+    recover(tenantIds) {
+      for (const id of tenantIds) {
+        const rows = ctx.db.forTenant(id).all("SELECT event FROM outbox WHERE status = 'pending' ORDER BY created_at");
+        rows.forEach((r) => dispatch(JSON.parse(r.event)));
+      }
+    },
+    /** Read outbox rows for a tenant (optionally by status). */
+    outbox(tenantId, status) {
+      const t = ctx.db.forTenant(tenantId);
+      return status
+        ? t.all('SELECT * FROM outbox WHERE status = ? ORDER BY created_at', status)
+        : t.all('SELECT * FROM outbox ORDER BY created_at');
+    },
+  };
+}

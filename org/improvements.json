@@ -1,0 +1,36 @@
+[
+  {
+    "id": "IMP-1",
+    "sprint": 1,
+    "area": "tooling",
+    "hypothesis": "Putting the ticket ID in every agent label lets org/spend.mjs attribute 100% of spend automatically",
+    "owner": "dir-pmo",
+    "metric": "share of agent spend auto-attributed",
+    "before": 0,
+    "target": 1,
+    "status": "active"
+  },
+  {
+    "id": "IMP-2",
+    "sprint": 1,
+    "area": "context",
+    "hypothesis": "Linking architecture/core-runtime-api.md and modules.md in every build ticket removes cross-team interface mismatches",
+    "owner": "dir-platform",
+    "metric": "interface mismatches found at review",
+    "before": 1,
+    "target": 0,
+    "status": "active"
+  },
+  {
+    "id": "IMP-3",
+    "sprint": 1,
+    "area": "process",
+    "hypothesis": "Running 3 workflows side by side (6 agents) instead of 2 raises throughput without raising cost per point",
+    "owner": "ceo",
+    "metric": "points per wall-clock hour",
+    "before": null,
+    "target": null,
+    "status": "active",
+    "note": "Sprint 0 baseline: 47 pts in ~0.25h of agent time but serial waits; measured in S1"
+  }
+]

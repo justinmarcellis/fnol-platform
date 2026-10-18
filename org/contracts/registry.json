@@ -1,0 +1,240 @@
+[
+  {
+    "id": "api.openapi",
+    "path": "architecture/contracts/openapi.yaml",
+    "kind": "openapi",
+    "version": "1.0.0",
+    "owner": "dir-architecture"
+  },
+  {
+    "id": "module.contracts",
+    "path": "architecture/contracts/modules.md",
+    "kind": "module",
+    "version": "1.0.0",
+    "owner": "dir-architecture"
+  },
+  {
+    "id": "domain.AdjusterView",
+    "path": "architecture/contracts/domain/AdjusterView.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-experience"
+  },
+  {
+    "id": "domain.AuditEntry",
+    "path": "architecture/contracts/domain/AuditEntry.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-platform"
+  },
+  {
+    "id": "domain.Claim",
+    "path": "architecture/contracts/domain/Claim.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.CoverageVerification",
+    "path": "architecture/contracts/domain/CoverageVerification.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-integrations"
+  },
+  {
+    "id": "domain.Document",
+    "path": "architecture/contracts/domain/Document.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-ai"
+  },
+  {
+    "id": "domain.IntakeSession",
+    "path": "architecture/contracts/domain/IntakeSession.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.LossEvent",
+    "path": "architecture/contracts/domain/LossEvent.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.Note",
+    "path": "architecture/contracts/domain/Note.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.Party",
+    "path": "architecture/contracts/domain/Party.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.PolicySnapshot",
+    "path": "architecture/contracts/domain/PolicySnapshot.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-integrations"
+  },
+  {
+    "id": "domain.Property",
+    "path": "architecture/contracts/domain/Property.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.RegulatoryTimer",
+    "path": "architecture/contracts/domain/RegulatoryTimer.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.Reserve",
+    "path": "architecture/contracts/domain/Reserve.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.RoutingDecision",
+    "path": "architecture/contracts/domain/RoutingDecision.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.Task",
+    "path": "architecture/contracts/domain/Task.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.TenantConfig",
+    "path": "architecture/contracts/domain/TenantConfig.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-architecture"
+  },
+  {
+    "id": "domain.TriageResult",
+    "path": "architecture/contracts/domain/TriageResult.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-ai"
+  },
+  {
+    "id": "domain.Vehicle",
+    "path": "architecture/contracts/domain/Vehicle.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "domain.WebhookSubscription",
+    "path": "architecture/contracts/domain/WebhookSubscription.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-integrations"
+  },
+  {
+    "id": "domain.common",
+    "path": "architecture/contracts/domain/common.schema.json",
+    "kind": "domain",
+    "version": "1.0.0",
+    "owner": "dir-architecture"
+  },
+  {
+    "id": "event.claim.coverage.verified",
+    "path": "architecture/contracts/events/claim.coverage.verified.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-integrations"
+  },
+  {
+    "id": "event.claim.evidence.added",
+    "path": "architecture/contracts/events/claim.evidence.added.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-ai"
+  },
+  {
+    "id": "event.claim.evidence.extracted",
+    "path": "architecture/contracts/events/claim.evidence.extracted.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-ai"
+  },
+  {
+    "id": "event.claim.note.added",
+    "path": "architecture/contracts/events/claim.note.added.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "event.claim.reported",
+    "path": "architecture/contracts/events/claim.reported.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "event.claim.routed",
+    "path": "architecture/contracts/events/claim.routed.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "event.claim.status.changed",
+    "path": "architecture/contracts/events/claim.status.changed.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "event.claim.timer.breached",
+    "path": "architecture/contracts/events/claim.timer.breached.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "event.claim.timer.due",
+    "path": "architecture/contracts/events/claim.timer.due.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-workflow"
+  },
+  {
+    "id": "event.claim.triaged",
+    "path": "architecture/contracts/events/claim.triaged.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-ai"
+  },
+  {
+    "id": "event.envelope",
+    "path": "architecture/contracts/events/envelope.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-architecture"
+  },
+  {
+    "id": "event.tenant.config.updated",
+    "path": "architecture/contracts/events/tenant.config.updated.schema.json",
+    "kind": "event",
+    "version": "1.0.0",
+    "owner": "dir-architecture"
+  }
+]
