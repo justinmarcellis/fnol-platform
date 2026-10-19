@@ -1,0 +1,30 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T03:18:54.887Z",
+  "history": [],
+  "id": "S5-WFL-05",
+  "team": "workflow",
+  "title": "Holder verification lockout per policy, atomic (S5-WFL-04 gate mediums)",
+  "story": "As a carrier I want policy-holder verification to resist scripted guessing across sessions and parallel requests so that last name and ZIP cannot be brute-forced",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/modules/intake/service.js",
+    "src/modules/intake/index.mjs",
+    "tests/unit/intake/policy-vehicles-lockout.test.js"
+  ],
+  "acceptance": [
+    "Failed verifications are counted per (tenant, policy number) in a module-owned table (migration in intake/index.mjs), not on the session, with a rolling window (e.g. 10 failures per 15 minutes per policy locks that policy's verification for the window); starting new sessions does not reset it (test)",
+    "The count is incremented atomically in one SQL statement before the coverage lookup result is revealed, so N parallel wrong guesses on one session or across sessions record N failures (test fires 20 concurrent wrong guesses and asserts the lock holds and the count is >= 20 or capped consistently)",
+    "Locked responses are the same uniform 404 as any other failure; a correct guess during lockout also gets 404 (test)",
+    "Per-session 5-attempt limit from S5-WFL-04 kept; CSR and agent rules unchanged; node --test tests/unit/intake/ passes; full npm test no new failures"
+  ],
+  "brief": "Findings from the S5-WFL-04 security gate: the lockout counter lives on the session document (bypass by new sessions) and is read-await-write (race). Use ctx.db (tenant-scoped) with an UPSERT ... SET failures = failures + 1 RETURNING failures, or an equivalent single statement. Store a keyed hash of the policy number (use ctx.crypto blind index or HMAC helper if one exists), not the plain number.",
+  "valueDrivers": [
+    "VD-7"
+  ]
+}

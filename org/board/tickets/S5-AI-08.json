@@ -1,0 +1,36 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T03:18:54.887Z",
+  "history": [
+    {
+      "at": "2026-10-19T03:19:06.888Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-AI-08",
+  "team": "ai",
+  "title": "Cloud redaction misses labelled person names (live-eval finding, SEC2-011)",
+  "story": "As a carrier privacy officer I want labelled names in documents redacted before any cloud model call so that claimant names never leave the trust boundary",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-ai-provider-integrator",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/ai/guardrails.mjs",
+    "tests/unit/ai/redaction-labels.test.mjs"
+  ],
+  "acceptance": [
+    "Live eval found 'Customer: Morgan Ellis, phone 555-010-4410' sends 'Morgan Ellis' to the cloud provider (phone is redacted). redactValue redacts person names that follow common labels (Customer, Claimant, Insured, Owner, Driver, Witness, Contact, Policyholder, Name, Cited, Reported by, Other driver; case-insensitive; with or without a colon) up to the end of the name (stop at comma, newline, ' phone', digits), and restores them in output",
+    "Every pii string in every case of tests/fixtures/ai/golden/*.json is absent from JSON.stringify(redactValue(case.input).value) (test iterates all golden files)",
+    "No over-redaction of fixed vocabulary: shop names after 'Repair Shop:' and loss types stay (test); linear-time patterns only (the existing ReDoS tests still pass, add one 50k-char input under 100 ms)",
+    "node --test tests/unit/ai/ passes; tests/e2e and tests/security show no new failures"
+  ],
+  "brief": "Redaction lives in src/ai/guardrails.mjs (redactValue, restore). Keep patterns linear (no nested quantifiers). Do not touch eval-live.mjs (S5-AI-07 runs in parallel).",
+  "valueDrivers": [
+    "VD-7"
+  ],
+  "startedAt": "2026-10-19T03:19:06.888Z"
+}

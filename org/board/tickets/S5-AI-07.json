@@ -1,0 +1,35 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T03:18:54.886Z",
+  "history": [
+    {
+      "at": "2026-10-19T03:19:05.812Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-AI-07",
+  "team": "ai",
+  "title": "Live eval passes the task output schema to providers (escaped defect from S5-AI-03)",
+  "story": "As the AI director I want the live evaluation to call providers exactly as the production cascade does so that live scores measure the models, not a harness bug",
+  "points": 1,
+  "tier": "mid",
+  "owner": "ic-ai-eval-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/ai/eval-live.mjs",
+    "tests/unit/ai/eval-live.test.mjs"
+  ],
+  "acceptance": [
+    "Live run on 2026-10-19 (orchestrator): every Gemini call returned invalid_output because eval-live.mjs:336 calls wrapped.run without schema; the cascade passes schema: schemaFor(task) (cascade.mjs:121,153). eval-live passes the same options the cascade does (schema, tier, model)",
+    "A unit test uses a fake provider that returns a schema-shaped envelope only when opts.schema is present (and garbage otherwise), and asserts eval-live scores it as valid; the test fails on the old code",
+    "node --test tests/unit/ai/eval-live.test.mjs tests/unit/ai/eval.test.mjs passes"
+  ],
+  "brief": "One-line fix plus a test that would have caught it. Do not touch guardrails.mjs (S5-AI-08 runs in parallel).",
+  "valueDrivers": [
+    "VD-4"
+  ],
+  "startedAt": "2026-10-19T03:19:05.812Z"
+}

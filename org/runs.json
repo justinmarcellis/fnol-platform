@@ -2004,7 +2004,7 @@
   "model": "sonnet",
   "phase": "Build",
   "startedAt": "2026-10-19T01:59:10.595Z",
-  "endedAt": "2026-10-19T02:01:49.934Z"
+  "endedAt": "2026-10-19T02:02:54.887Z"
  },
  {
   "id": "ac7c295282f299a6b",
@@ -2058,6 +2058,114 @@
   "model": "sonnet",
   "phase": "Review",
   "startedAt": "2026-10-19T02:01:59.759Z",
-  "endedAt": "2026-10-19T02:02:18.208Z"
+  "endedAt": "2026-10-19T02:02:31.204Z"
+ },
+ {
+  "id": "ae3c08c8c76169a24",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-WFL-03 ic-workflow-intake-flow-dev rework",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T02:02:31.964Z",
+  "endedAt": "2026-10-19T02:02:46.857Z"
+ },
+ {
+  "id": "a81be5e10e3a12ba4",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-WFL-03 review r2",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:02:47.675Z",
+  "endedAt": "2026-10-19T02:03:01.776Z"
+ },
+ {
+  "id": "ab9af485a4927d756",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-AI-03 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:02:55.710Z",
+  "endedAt": "2026-10-19T02:03:10.871Z"
+ },
+ {
+  "id": "a1687420aa17c6381",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-AI-03 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:03:12.267Z",
+  "endedAt": "2026-10-19T02:03:34.132Z"
+ },
+ {
+  "id": "a01a22021650f7544",
+  "workflow": "wf_8f4329fd-e4c",
+  "label": "S5-EXP-01 ic-experience-claimant-web-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T02:14:38.188Z",
+  "endedAt": "2026-10-19T02:17:13.839Z"
+ },
+ {
+  "id": "ad29ec594ef1e63a9",
+  "workflow": "wf_8f4329fd-e4c",
+  "label": "S5-WFL-04 ic-workflow-intake-flow-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T02:14:39.755Z",
+  "endedAt": "2026-10-19T02:17:40.772Z"
+ },
+ {
+  "id": "ab8aed169afae2174",
+  "workflow": "wf_8f4329fd-e4c",
+  "label": "S5-EXP-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:17:15.210Z",
+  "endedAt": "2026-10-19T02:19:07.471Z"
+ },
+ {
+  "id": "a47f0ecbc522f426c",
+  "workflow": "wf_8f4329fd-e4c",
+  "label": "S5-WFL-04 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:17:41.746Z",
+  "endedAt": "2026-10-19T02:18:08.173Z"
+ },
+ {
+  "id": "ace4b54bf0972147b",
+  "workflow": "wf_8f4329fd-e4c",
+  "label": "S5-WFL-04 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:18:09.035Z",
+  "endedAt": "2026-10-19T02:18:29.235Z"
+ },
+ {
+  "id": "a7f33ffc5c8f455dd",
+  "workflow": "wf_8f4329fd-e4c",
+  "label": "S5-EXP-01 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:19:08.269Z",
+  "endedAt": "2026-10-19T02:19:36.922Z"
+ },
+ {
+  "id": "aadd53cd07b8ab441",
+  "workflow": "wf_b1c7c2a9-65e",
+  "label": "S5-AI-07 ic-ai-eval-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T03:19:02.864Z",
+  "endedAt": "2026-10-19T03:19:09.599Z"
+ },
+ {
+  "id": "a5453b28109981930",
+  "workflow": "wf_b1c7c2a9-65e",
+  "label": "S5-AI-08 ic-ai-provider-integrator",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T03:19:04.396Z",
+  "endedAt": "2026-10-19T03:19:08.685Z"
  }
 ]
