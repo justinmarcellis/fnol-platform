@@ -1,0 +1,34 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T15:53:18.736Z",
+  "history": [],
+  "id": "S6-PMO-02",
+  "team": "pmo",
+  "title": "One program dashboard: add the decision network to the PMO dashboard and refresh its snapshot",
+  "story": "As the sponsor I want a single program dashboard that includes the decision network so that I do not have to watch two pages",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-pmo-dashboard-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "dashboard/app.js",
+    "dashboard/server.mjs",
+    "dashboard/styles.css",
+    "dashboard/index.html",
+    "dashboard/export.mjs",
+    "dashboard/snapshot.html",
+    "tests/unit/dashboard/",
+    "docs/design/screens/dashboard-*.png",
+    "tests/ui/dashboard-snapshot.test.mjs"
+  ],
+  "acceptance": [
+    "Sponsor decision (2026-10-19): the PMO dashboard (dashboard/, published as 'FNOL Program Dashboard') is the one dashboard; the decision network moves into it from the live board (dashboard/live.html, 'Decision network' tab, canvas renderer around lines 270-410 reading graph.json)",
+    "dashboard/app.js gets a 'Decision network' tab that renders the same graph (agents, teams and hubs as nodes; messages, reviews, assignments and agent runs as edges; filters and a legend as on the live board), keyboard-accessible tab, readable in light and dark, works at 390 px width",
+    "build() in dashboard/server.mjs includes the graph computed by the same code as org/live-export.mjs (import its build, do not duplicate the logic) so both the live server (/api/snapshot) and the exported snapshot carry it; real records only, nothing invented",
+    "Snapshot robustness: node dashboard/export.mjs writes dashboard/snapshot.html that renders every tab without network access and without errors (Playwright test opens the file, clicks every tab, asserts no console errors and no 'Try again'/error state), and the file stays under 2 MB",
+    "Screenshots docs/design/screens/dashboard-overview.png and dashboard-network.png at 1440x900; node --test tests/unit/dashboard/*.test.mjs passes; full npm test no new failures"
+  ],
+  "brief": "Read dashboard/live.html (the network renderer and its data shape from org/live-export.mjs build().graph) and dashboard/app.js (TABS, views, render). Keep zero dependencies. Do not edit org/live-export.mjs (export a function from it only if needed by posting to the pmo hub; prefer importing build and the helpers it already exports). The orchestrator republishes snapshot.html to the sponsor's dashboard artifact after acceptance."
+}
