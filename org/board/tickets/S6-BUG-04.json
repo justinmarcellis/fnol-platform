@@ -53,5 +53,59 @@
       }
     ],
     "firstPass": false
+  },
+  "spend": {
+    "usd": 7.9944,
+    "inputTokens": 370,
+    "cacheWriteTokens": 440123,
+    "cacheReadTokens": 27171668,
+    "outputTokens": 17903,
+    "agents": {
+      "a12d441235cc591f3": {
+        "label": "S6-BUG-04 audit admin",
+        "model": "<synthetic>",
+        "inputTokens": 0,
+        "cacheWriteTokens": 0,
+        "cacheReadTokens": 0,
+        "outputTokens": 0,
+        "usd": 0
+      },
+      "a41afed59053f2bed": {
+        "label": "S6-BUG-04 ic-experience-admin-ui-dev",
+        "model": "claude-opus-5-5",
+        "inputTokens": 184,
+        "cacheWriteTokens": 232241,
+        "cacheReadTokens": 17497770,
+        "outputTokens": 5501,
+        "usd": 4.7715
+      },
+      "a72f0a991d4716ff8": {
+        "label": "S6-BUG-04 ic-experience-admin-ui-dev",
+        "model": "<synthetic>",
+        "inputTokens": 0,
+        "cacheWriteTokens": 0,
+        "cacheReadTokens": 0,
+        "outputTokens": 0,
+        "usd": 0
+      },
+      "a97ee918c18c0375b": {
+        "label": "S6-BUG-04 audit admin",
+        "model": "claude-opus-5-5",
+        "inputTokens": 94,
+        "cacheWriteTokens": 125653,
+        "cacheReadTokens": 5514537,
+        "outputTokens": 9915,
+        "usd": 1.9298
+      },
+      "add2376cd18dbbd81": {
+        "label": "S6-BUG-04 review",
+        "model": "claude-opus-5-5",
+        "inputTokens": 92,
+        "cacheWriteTokens": 82229,
+        "cacheReadTokens": 4159361,
+        "outputTokens": 2487,
+        "usd": 1.2931
+      }
+    }
   }
 }

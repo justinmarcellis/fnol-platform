@@ -53,5 +53,50 @@
       }
     ],
     "firstPass": false
+  },
+  "spend": {
+    "usd": 9.6048,
+    "inputTokens": 348,
+    "cacheWriteTokens": 606464,
+    "cacheReadTokens": 32078434,
+    "outputTokens": 15346,
+    "agents": {
+      "a2386a74a168fd6ec": {
+        "label": "S6-BUG-03 audit adjuster",
+        "model": "claude-opus-5-5",
+        "inputTokens": 68,
+        "cacheWriteTokens": 179618,
+        "cacheReadTokens": 4128913,
+        "outputTokens": 8271,
+        "usd": 1.8896
+      },
+      "a4e43b42a6c9467c7": {
+        "label": "S6-BUG-03 review",
+        "model": "claude-opus-5-5",
+        "inputTokens": 44,
+        "cacheWriteTokens": 51253,
+        "cacheReadTokens": 1597547,
+        "outputTokens": 2334,
+        "usd": 0.6226
+      },
+      "a5f159e95e5949cf3": {
+        "label": "S6-BUG-03 ic-experience-adjuster-view-dev",
+        "model": "claude-opus-5-5",
+        "inputTokens": 206,
+        "cacheWriteTokens": 316163,
+        "cacheReadTokens": 25148133,
+        "outputTokens": 4446,
+        "usd": 6.7002
+      },
+      "ad880b80a0ab745b0": {
+        "label": "S6-BUG-03 audit adjuster",
+        "model": "<synthetic>",
+        "inputTokens": 30,
+        "cacheWriteTokens": 59430,
+        "cacheReadTokens": 1203841,
+        "outputTokens": 295,
+        "usd": 0.3924
+      }
+    }
   }
 }

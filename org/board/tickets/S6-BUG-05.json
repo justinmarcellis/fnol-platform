@@ -64,5 +64,77 @@
       }
     ],
     "firstPass": true
+  },
+  "spend": {
+    "usd": 16.0274,
+    "inputTokens": 608,
+    "cacheWriteTokens": 756421,
+    "cacheReadTokens": 58598841,
+    "outputTokens": 26154,
+    "agents": {
+      "a23e3774cec67a99c": {
+        "label": "S6-BUG-05 review",
+        "model": "claude-opus-5-5",
+        "inputTokens": 48,
+        "cacheWriteTokens": 59768,
+        "cacheReadTokens": 1881871,
+        "outputTokens": 2249,
+        "usd": 0.7204
+      },
+      "a2bc71845379bf58b": {
+        "label": "S6-BUG-05 re-audit",
+        "model": "claude-opus-5-5",
+        "inputTokens": 156,
+        "cacheWriteTokens": 203719,
+        "cacheReadTokens": 11082471,
+        "outputTokens": 10347,
+        "usd": 3.4427
+      },
+      "a5ef8b363c20d6c0f": {
+        "label": "S6-BUG-05 audit data",
+        "model": "claude-opus-5-5",
+        "inputTokens": 106,
+        "cacheWriteTokens": 140022,
+        "cacheReadTokens": 6379728,
+        "outputTokens": 6921,
+        "usd": 2.1149
+      },
+      "a7665893c30a9200f": {
+        "label": "S6-BUG-05 ic-integration-integration-lead",
+        "model": "<synthetic>",
+        "inputTokens": 0,
+        "cacheWriteTokens": 0,
+        "cacheReadTokens": 0,
+        "outputTokens": 0,
+        "usd": 0
+      },
+      "aa67c663d10bab7aa": {
+        "label": "S6-BUG-05 audit data",
+        "model": "<synthetic>",
+        "inputTokens": 0,
+        "cacheWriteTokens": 0,
+        "cacheReadTokens": 0,
+        "outputTokens": 0,
+        "usd": 0
+      },
+      "aabdc96254388a0fa": {
+        "label": "S6-BUG-05 ic-integration-integration-lead",
+        "model": "claude-opus-5-5",
+        "inputTokens": 298,
+        "cacheWriteTokens": 352912,
+        "cacheReadTokens": 39254771,
+        "outputTokens": 6637,
+        "usd": 9.7494
+      },
+      "afc89564dfcd427e0": {
+        "label": "S6-BUG-05 re-audit",
+        "model": "<synthetic>",
+        "inputTokens": 0,
+        "cacheWriteTokens": 0,
+        "cacheReadTokens": 0,
+        "outputTokens": 0,
+        "usd": 0
+      }
+    }
   }
 }

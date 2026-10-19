@@ -51,5 +51,68 @@
       }
     ],
     "firstPass": false
+  },
+  "spend": {
+    "usd": 12.298,
+    "inputTokens": 550,
+    "cacheWriteTokens": 1027940,
+    "cacheReadTokens": 35900968,
+    "outputTokens": 18135,
+    "agents": {
+      "a197e13fcbfd6c5bc": {
+        "label": "S6-BUG-02 review",
+        "model": "claude-opus-5-5",
+        "inputTokens": 46,
+        "cacheWriteTokens": 57379,
+        "cacheReadTokens": 1713712,
+        "outputTokens": 2121,
+        "usd": 0.6722
+      },
+      "a34f57de9c391ef55": {
+        "label": "S6-BUG-02 audit csr",
+        "model": "<synthetic>",
+        "inputTokens": 88,
+        "cacheWriteTokens": 145230,
+        "cacheReadTokens": 5301008,
+        "outputTokens": 2347,
+        "usd": 1.4469
+      },
+      "a82857d7292c53f73": {
+        "label": "S6-BUG-02 audit csr",
+        "model": "claude-opus-5-5",
+        "inputTokens": 106,
+        "cacheWriteTokens": 189310,
+        "cacheReadTokens": 6480676,
+        "outputTokens": 8611,
+        "usd": 2.4153
+      },
+      "aa47b8ada6e89a685": {
+        "label": "S6-BUG-02 ic-experience-csr-portal-dev rework",
+        "model": "claude-opus-5-5",
+        "inputTokens": 44,
+        "cacheWriteTokens": 64145,
+        "cacheReadTokens": 1860283,
+        "outputTokens": 251,
+        "usd": 0.698
+      },
+      "aa898a56aa1d59b02": {
+        "label": "S6-BUG-02 ic-experience-csr-portal-dev rework",
+        "model": "claude-opus-5-5",
+        "inputTokens": 104,
+        "cacheWriteTokens": 128519,
+        "cacheReadTokens": 6700239,
+        "outputTokens": 756,
+        "usd": 1.9982
+      },
+      "adb1b405fc168dcdf": {
+        "label": "S6-BUG-02 ic-experience-csr-portal-dev",
+        "model": "claude-opus-5-5",
+        "inputTokens": 162,
+        "cacheWriteTokens": 443357,
+        "cacheReadTokens": 13845050,
+        "outputTokens": 4049,
+        "usd": 5.0674
+      }
+    }
   }
 }
