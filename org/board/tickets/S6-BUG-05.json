@@ -1,8 +1,14 @@
 {
-  "status": "ready",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T19:57:52.038Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
   "id": "S6-BUG-05",
   "team": "integration",
   "title": "Bug bash: demo data, personas, shared kit and server modules",
@@ -34,5 +40,6 @@
     "Each tenant's claimant persona holds a personal auto policy with vehicles and a consistent last name and ZIP; the agent persona produces seeded policies; demo claims have plausible loss and report dates",
     "Audit clean for shared kit and API errors across all personas; full npm test: no new failures"
   ],
-  "brief": "Defect list comes from the audit phase. Do not edit tests/unit/web, tests/unit/adjuster, tests/unit/config (other fixers own them)."
+  "brief": "Defect list comes from the audit phase. Do not edit tests/unit/web, tests/unit/adjuster, tests/unit/config (other fixers own them).",
+  "startedAt": "2026-10-19T19:57:52.038Z"
 }

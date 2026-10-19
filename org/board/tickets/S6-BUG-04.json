@@ -1,8 +1,19 @@
 {
-  "status": "ready",
+  "status": "review",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T19:35:25.970Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T19:59:43.535Z",
+      "from": "in_progress",
+      "to": "review"
+    }
+  ],
   "id": "S6-BUG-04",
   "team": "experience",
   "title": "Bug bash: carrier admin console",
@@ -24,5 +35,6 @@
     "Audit clean on admin screens for both tenants",
     "Full npm test: no new failures"
   ],
-  "brief": "Defect list comes from the audit phase."
+  "brief": "Defect list comes from the audit phase.",
+  "startedAt": "2026-10-19T19:35:25.970Z"
 }

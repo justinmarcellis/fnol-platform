@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "review",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
   "history": [
@@ -7,6 +7,11 @@
       "at": "2026-10-19T19:00:21.612Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T19:34:53.608Z",
+      "from": "in_progress",
+      "to": "review"
     }
   ],
   "id": "S6-BUG-02",
