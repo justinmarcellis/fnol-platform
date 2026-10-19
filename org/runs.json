@@ -2509,5 +2509,23 @@
   "phase": "Review",
   "startedAt": "2026-10-19T13:23:38.167Z",
   "endedAt": "2026-10-19T13:24:04.105Z"
+ },
+ {
+  "id": "ab2007c1ba048d9b3",
+  "workflow": "wf_152a10aa-89c",
+  "label": "S6-PMO-02 ic-pmo-dashboard-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T15:53:19.419Z",
+  "endedAt": "2026-10-19T15:56:27.782Z"
+ },
+ {
+  "id": "a8122fa4ee86ded21",
+  "workflow": "wf_152a10aa-89c",
+  "label": "S6-PMO-02 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T15:56:29.193Z",
+  "endedAt": "2026-10-19T15:56:48.341Z"
  }
 ]

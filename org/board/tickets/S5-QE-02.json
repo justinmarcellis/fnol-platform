@@ -1,8 +1,14 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T02:21:00.456Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T15:57:10.412Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "id": "S5-QE-02",
   "team": "quality",
   "title": "Demo Beat 6 PII assertion matched random ids containing 555",
@@ -18,5 +24,18 @@
   "acceptance": [
     "Assertion matches the staged party name and phone, not any 555 substring; demo test passes"
   ],
-  "brief": "Orchestrator follow-up: /Fenwick|555/ matched random hex ids in claim.routed events (intermittent failure in the full run after S5-WFL-04/S5-EXP-01)."
+  "brief": "Orchestrator follow-up: /Fenwick|555/ matched random hex ids in claim.routed events (intermittent failure in the full run after S5-WFL-04/S5-EXP-01).",
+  "doneAt": "2026-10-19T15:57:10.412Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T15:57:10.411Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Verified by every full npm test since 1702813 (0 failures in Beat 6 across 6+ runs); orchestrator one-line test fix"
+      }
+    ],
+    "firstPass": true
+  }
 }

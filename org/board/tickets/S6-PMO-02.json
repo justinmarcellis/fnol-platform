@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T15:53:18.736Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T15:53:23.633Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T15:56:19.174Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T15:56:48.261Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-PMO-02",
@@ -37,5 +47,45 @@
     "Screenshots docs/design/screens/dashboard-overview.png and dashboard-network.png at 1440x900; node --test tests/unit/dashboard/*.test.mjs passes; full npm test no new failures"
   ],
   "brief": "Read dashboard/live.html (the network renderer and its data shape from org/live-export.mjs build().graph) and dashboard/app.js (TABS, views, render). Keep zero dependencies. Do not edit org/live-export.mjs (export a function from it only if needed by posting to the pmo hub; prefer importing build and the helpers it already exports). The orchestrator republishes snapshot.html to the sponsor's dashboard artifact after acceptance.",
-  "startedAt": "2026-10-19T15:53:23.633Z"
+  "startedAt": "2026-10-19T15:53:23.633Z",
+  "doneAt": "2026-10-19T15:56:48.261Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T15:56:48.261Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met: Decision network tab, graph via computeFeed import, offline snapshot 816KB with Playwright tab test, 1440x900 screenshots, 32/32 tests pass; no src changes"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.7872,
+    "inputTokens": 44,
+    "cacheWriteTokens": 171619,
+    "cacheReadTokens": 1700901,
+    "outputTokens": 1790,
+    "agents": {
+      "a8122fa4ee86ded21": {
+        "label": "S6-PMO-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 64820,
+        "cacheReadTokens": 181735,
+        "outputTokens": 190,
+        "usd": 0.2003
+      },
+      "ab2007c1ba048d9b3": {
+        "label": "S6-PMO-02 ic-pmo-dashboard-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 36,
+        "cacheWriteTokens": 106799,
+        "cacheReadTokens": 1519166,
+        "outputTokens": 1600,
+        "usd": 0.5869
+      }
+    }
+  }
 }

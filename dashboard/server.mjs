@@ -37,7 +37,8 @@ export function readValueDrivers() {
 /** Snapshot plus computed metrics, as one object. */
 export function build() {
   const snap = snapshot();
-  return { snapshot: snap, metrics: computeMetrics(snap, { quality: readQuality(), valueDrivers: readValueDrivers() }) };
+  const graph = liveFeed().graph;
+  return { snapshot: { ...snap, graph }, metrics: computeMetrics(snap, { quality: readQuality(), valueDrivers: readValueDrivers() }), graph };
 }
 
 /** Start the dashboard server. Resolves to the listening http.Server. */
@@ -47,7 +48,7 @@ export function start({ port = Number(process.env.PORT) || 8090 } = {}) {
     const send = (code, type, body) => { res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' }); res.end(body); };
     try {
       if (req.method !== 'GET') return send(405, 'application/json', '{"error":{"code":"method_not_allowed","message":"GET only"}}');
-      if (path === '/api/snapshot') return send(200, 'application/json', JSON.stringify(snapshot()));
+      if (path === '/api/snapshot') return send(200, 'application/json', JSON.stringify({ ...snapshot(), graph: liveFeed().graph }));
       if (path.startsWith('/api/live/')) {
         const doc = liveFeed()[path.slice('/api/live/'.length)];
         return doc ? send(200, 'application/json', JSON.stringify(doc)) : send(404, 'application/json', '{"error":{"code":"not_found","message":"Unknown feed document"}}');

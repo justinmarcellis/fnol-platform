@@ -48,3 +48,18 @@ svg { width: 100%; height: auto; display: block; } svg text { fill: var(--muted)
 ul { margin: 0 0 8px; padding-left: 18px; }
 .stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; background: var(--border); }
 .seg.c0 { background: var(--accent); } .seg.c1 { background: var(--good); } .seg.c2 { background: var(--chart2); } .seg.c3 { background: var(--warn); }
+
+.netfilters { border: 0; padding: 0; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.netfilters label { font-size: 13px; } .netfilters legend { padding: 0; float: left; margin-right: 12px; font-size: 12px; }
+.netwrap { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.netsvg { min-height: 320px; --nl: 42%; }
+@media (prefers-color-scheme: dark) { .netsvg, .netleg { --nl: 64%; } }
+.netleg { --nl: 42%; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+@media (prefers-color-scheme: dark) { .netleg { --nl: 64%; } }
+.ne { stroke: var(--muted); opacity: .55; fill: none; } .ne.k-msg { stroke: var(--accent); } .ne.k-review { stroke: var(--good); } .ne.k-run { stroke: var(--warn); }
+.nn circle { fill: hsl(var(--h) 55% var(--nl)); stroke: var(--surface); stroke-width: 1; }
+.nn.hubn circle { fill: transparent; stroke: hsl(var(--h) 55% var(--nl)); stroke-width: 2.5; }
+.nn.dim { opacity: .3; } svg text.nl { fill: var(--text); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+.tdot { background: hsl(var(--h) 55% var(--nl)); } .kdot { border-radius: 0 !important; height: 3px !important; margin-bottom: 3px; background: var(--muted); }
+.kdot.k-msg { background: var(--accent); } .kdot.k-review { background: var(--good); } .kdot.k-run { background: var(--warn); }
+nav button:focus-visible, .netfilters :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

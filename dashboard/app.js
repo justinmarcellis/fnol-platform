@@ -1,8 +1,8 @@
 // PMO dashboard UI. Data comes from /api/snapshot + /api/metrics, or window.__SNAPSHOT__ in the exported file.
 (function () {
-  const TABS = ['Overview', 'Org chart', 'Sprint board', 'Velocity & forecast', 'Quality', 'Flow', 'Cost', 'Performance', 'Sprint review', 'Value drivers', 'Improvement log'];
+  const TABS = ['Overview', 'Org chart', 'Decision network', 'Sprint board', 'Velocity & forecast', 'Quality', 'Flow', 'Cost', 'Performance', 'Sprint review', 'Value drivers', 'Improvement log'];
   const STATUSES = ['backlog', 'ready', 'in_progress', 'review', 'done', 'blocked'];
-  const state = { tab: 0, team: '', data: null, error: null };
+  const state = { tab: 0, team: '', data: null, error: null, net: { kinds: ['msg', 'ticket', 'review', 'run'], team: '' } };
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v) ? 'n/a' : typeof v === 'number' ? String(Math.round(v * 10 ** d) / 10 ** d) : esc(v));
@@ -61,6 +61,89 @@
   }
   const list = (a) => (Array.isArray(a) && a.length ? `<ul>${a.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="muted">None recorded.</p>');
 
+
+  // ---- decision network (inline SVG, deterministic layout, no dependencies) ----
+  const NET_KINDS = { msg: 'message', ticket: 'ticket move', review: 'review verdict', run: 'agent run' };
+  const netCache = { key: null, pos: null };
+  const hash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967295; };
+  const teamHue = (t) => Math.round(hash('team:' + (t || 'none')) * 360);
+  function layoutNet(g, W, H) {
+    const key = g.nodes.length + ':' + g.edges.length + ':' + W + ':' + (g.nodes[0] && g.nodes[0].activity);
+    if (netCache.key === key) return netCache.pos;
+    const teams = [...new Set(g.nodes.map((n) => n.team).filter(Boolean))].sort();
+    const ang = (t) => (Math.max(0, teams.indexOf(t)) / Math.max(teams.length, 1)) * Math.PI * 2;
+    const N = g.nodes.map((n) => {
+      const a = ang(n.team) + (hash(n.id) - .5) * .6, rad = n.kind === 'orchestrator' ? 0 : (n.kind === 'hub' ? .2 : .36) * Math.min(W, H);
+      return { id: n.id, kind: n.kind, team: n.team, x: W / 2 + Math.cos(a) * rad, y: H / 2 + Math.sin(a) * rad, vx: 0, vy: 0, r: nodeR(n) };
+    });
+    const idx = new Map(N.map((n, i) => [n.id, i]));
+    const L = g.edges.filter((e) => idx.has(e.source) && idx.has(e.target)).map((e) => [idx.get(e.source), idx.get(e.target), e.count]);
+    for (let it = 0; it < 320; it++) {
+      const cool = 1 - it / 320;
+      for (let i = 0; i < N.length; i++) for (let j = i + 1; j < N.length; j++) {
+        let dx = N[j].x - N[i].x, dy = N[j].y - N[i].y, d2 = dx * dx + dy * dy || 1; const d = Math.sqrt(d2);
+        const f = ((N[i].kind === 'hub' || N[j].kind === 'hub' ? 14000 : 7000) / d2) * cool; const min = N[i].r + N[j].r + 4;
+        const push = f + (d < min ? (min - d) * .4 : 0);
+        dx /= d; dy /= d; N[i].vx -= dx * push; N[i].vy -= dy * push; N[j].vx += dx * push; N[j].vy += dy * push;
+      }
+      for (const [a, b, c] of L) {
+        const dx = N[b].x - N[a].x, dy = N[b].y - N[a].y, d = Math.sqrt(dx * dx + dy * dy) || 1, want = 70 + 90 / Math.sqrt(c);
+        const f = (d - want) * Math.min(.05, .004 + c / 800);
+        N[a].vx += (dx / d) * f; N[a].vy += (dy / d) * f; N[b].vx -= (dx / d) * f; N[b].vy -= (dy / d) * f;
+      }
+      for (const n of N) {
+        const tx = n.kind === 'orchestrator' ? W / 2 : W / 2 + Math.cos(ang(n.team)) * W * .28, ty = n.kind === 'orchestrator' ? H / 2 : H / 2 + Math.sin(ang(n.team)) * H * .3;
+        n.vx += (tx - n.x) * .008; n.vy += (ty - n.y) * .008;
+        n.x += Math.max(-12, Math.min(12, n.vx)); n.y += Math.max(-12, Math.min(12, n.vy)); n.vx *= .6; n.vy *= .6;
+        n.x = Math.max(n.r + 6, Math.min(W - n.r - 6, n.x)); n.y = Math.max(n.r + 14, Math.min(H - n.r - 14, n.y));
+      }
+    }
+    netCache.key = key; netCache.pos = new Map(N.map((n) => [n.id, n]));
+    return netCache.pos;
+  }
+  function nodeR(n) { return 3 + Math.sqrt(n.activity || 0) * (n.kind === 'hub' ? 1.6 : 1.1); }
+  function netChart(g) {
+    const narrow = window.innerWidth < 640, W = narrow ? 390 : 1000, H = narrow ? 600 : 520;
+    const pos = layoutNet(g, W, H), kinds = new Set(state.net.kinds), team = state.net.team;
+    const inTeam = (n) => !team || n.team === team;
+    const nodeById = new Map(g.nodes.map((n) => [n.id, n]));
+    const edges = g.edges.map((e) => {
+      const ks = Object.entries(e.kinds || {}).filter(([k]) => kinds.has(k));
+      return { e, ks, n: ks.reduce((a, [, v]) => a + v, 0) };
+    }).filter((x) => x.n > 0 && pos.has(x.e.source) && pos.has(x.e.target) && (inTeam(nodeById.get(x.e.source)) || inTeam(nodeById.get(x.e.target))));
+    const shown = new Set(); edges.forEach((x) => { shown.add(x.e.source); shown.add(x.e.target); });
+    const lines = edges.map(({ e, ks, n }) => {
+      const a = pos.get(e.source), b = pos.get(e.target), dom = ks.sort((p, q) => q[1] - p[1])[0][0];
+      return `<line class="ne k-${esc(dom)}" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke-width="${Math.min(4, .6 + Math.log2(1 + n) * .5).toFixed(2)}"><title>${esc(e.source)} to ${esc(e.target)}: ${ks.map(([k, v]) => v + ' ' + (NET_KINDS[k] || k)).join(', ')}</title></line>`;
+    }).join('');
+    const nodes = g.nodes.filter((n) => shown.has(n.id) && pos.has(n.id)).map((n) => {
+      const p = pos.get(n.id), dim = !inTeam(n);
+      const lab = n.kind === 'hub' || n.kind === 'orchestrator' || n.activity > 70
+        ? `<text class="nl" x="${p.x.toFixed(1)}" y="${(p.y - p.r - 4).toFixed(1)}" text-anchor="middle">${esc(n.id.replace('hub:', '#'))}</text>` : '';
+      return `<g class="nn ${n.kind === 'hub' ? 'hubn' : ''}${dim ? ' dim' : ''}" style="--h:${teamHue(n.team)}"><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.r.toFixed(1)}"><title>${esc(n.id)} (${esc(n.kind)}${n.team ? ', ' + esc(n.team) : ''}): ${n.activity} events</title></circle>${lab}</g>`;
+    }).join('');
+    return `<svg class="netsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Decision network: ${shown.size} agents and hubs connected by ${edges.length} recorded message, ticket, review and agent-run links">${lines}${nodes}</svg>`;
+  }
+  function netLegend(g) {
+    const teams = [...new Set(g.nodes.map((n) => n.team).filter(Boolean))].sort();
+    return `<div class="legend netleg">${teams.map((t) => `<span><i class="tdot" style="--h:${teamHue(t)}"></i>${esc(t)}</span>`).join('')}
+      ${Object.entries(NET_KINDS).map(([k, v]) => `<span><i class="kdot k-${k}"></i>${esc(v)}</span>`).join('')}<span>hub = hollow ring; size = recorded activity</span></div>`;
+  }
+  function networkView(d) {
+    const g = d.graph || (d.snapshot && d.snapshot.graph);
+    if (!g || !Array.isArray(g.nodes) || !g.nodes.length) return empty('No decision network recorded yet.');
+    const teams = [...new Set(g.nodes.map((n) => n.team).filter(Boolean))].sort();
+    const top = [...g.nodes].sort((a, b) => b.activity - a.activity).slice(0, 12);
+    const act = g.active || [];
+    return `<div class="card"><h2>Decision network</h2>
+      <p class="muted">${g.nodes.length} agents and hubs, ${g.edges.length} links. Each link is recorded hub messages, ticket moves (assignments), review verdicts or agent runs. ${act.length ? 'Active now: ' + esc(act.map((a) => a.owner + ' (' + a.id + ')').slice(0, 4).join(', ')) : 'No agents running right now.'}</p>
+      <fieldset class="netfilters"><legend class="muted">Filters</legend>
+        ${Object.entries(NET_KINDS).map(([k, v]) => `<label><input type="checkbox" data-nk="${k}" ${state.net.kinds.includes(k) ? 'checked' : ''}> ${esc(v)}</label>`).join('')}
+        <label>Team <select id="netteam" aria-label="Filter network by team"><option value="">All teams</option>${teams.map((t) => `<option ${t === state.net.team ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label></fieldset>
+      <div class="netwrap" id="netwrap">${netChart(g)}</div>${netLegend(g)}</div>
+      <div class="card"><h2>Most active centers</h2>${table(['Node', 'Kind', 'Team', 'Events'], top.map((n) => [esc(n.id), esc(n.kind), esc(n.team || ''), n.activity]))}</div>`;
+  }
+
   // ---- views ----
   const views = [
     function overview({ snapshot: s, metrics: m }) {
@@ -84,6 +167,7 @@
           <p class="muted">IC roles: ${esc((t.icRoles || []).join(', '))}</p></div>`;
       }).join('')}</div>`;
     },
+    networkView,
     function board({ snapshot: s }) {
       const all = s.tickets || [];
       if (!all.length) return empty('No tickets yet.');
@@ -156,7 +240,7 @@
   ];
 
   function render() {
-    $('tabs').innerHTML = TABS.map((t, i) => `<button role="tab" aria-selected="${i === state.tab}" data-i="${i}">${esc(t)}</button>`).join('');
+    $('tabs').innerHTML = TABS.map((t, i) => `<button role="tab" aria-selected="${i === state.tab}" tabindex="${i === state.tab ? 0 : -1}" data-i="${i}">${esc(t)}</button>`).join('');
     const d = state.data;
     if (!d) { $('view').innerHTML = empty(state.error ? 'Cannot load data: ' + state.error : 'Loading…'); return; }
     $('program').textContent = (d.snapshot.config && d.snapshot.config.program) || 'Program Dashboard';
@@ -164,6 +248,8 @@
     $('live').textContent = state.error ? 'stale' : window.__SNAPSHOT__ ? 'snapshot' : 'live';
     $('live').className = 'pill' + (state.error ? ' stale' : '');
     try { $('view').innerHTML = views[state.tab](d); } catch (e) { $('view').innerHTML = empty('Render error: ' + e.message); }
+    document.querySelectorAll('[data-nk]').forEach((c) => { c.onchange = () => { state.net.kinds = [...document.querySelectorAll('[data-nk]')].filter((x) => x.checked).map((x) => x.dataset.nk); const g = d.graph || d.snapshot.graph; $('netwrap').innerHTML = netChart(g); }; });
+    const nt = $('netteam'); if (nt) nt.onchange = () => { state.net.team = nt.value; $('netwrap').innerHTML = netChart(d.graph || d.snapshot.graph); };
     const sel = $('teamsel'); if (sel) sel.onchange = () => { state.team = sel.value; render(); };
   }
 
@@ -171,12 +257,17 @@
     if (window.__SNAPSHOT__) { state.data = window.__SNAPSHOT__; render(); return; }
     try {
       const [snapshot, metrics] = await Promise.all(['/api/snapshot', '/api/metrics'].map((u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); })));
-      state.data = { snapshot, metrics }; state.error = null;
+      state.data = { snapshot, metrics, graph: snapshot.graph }; state.error = null;
     } catch (e) { state.error = e.message; }
     render();
   }
 
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.tab = Number(b.dataset.i); render(); } });
+  $('tabs').addEventListener('keydown', (e) => {
+    const k = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!k) return;
+    state.tab = (state.tab + k + TABS.length) % TABS.length; render(); const b = $('tabs').querySelector('[aria-selected=true]'); if (b) b.focus(); e.preventDefault();
+  });
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (TABS[state.tab] === 'Decision network' && state.data) render(); }, 150); });
   render();
   load();
   if (!window.__SNAPSHOT__) setInterval(load, 10000);

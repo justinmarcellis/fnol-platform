@@ -88,16 +88,17 @@ test('app renders every tab, escaped, with and without scorecards', () => {
   const data = (sc) => {
     const snapshot = { config: {}, teams: { teams: [] }, tickets: tickets.map((t) => ({ ...t, title: evil, owner: evil, team: 'a' })), sprints: [], improvements: [] };
     const sprints = [{ number: 1, status: 'closed', review: { completedPoints: 1, committedPoints: 2, shipped: [evil] }, retro: { went_well: [evil] } }];
-    return { snapshot, metrics: computeMetrics({ ...snapshot, sprints, scorecards: sc }, { valueDrivers: [{ id: 'VD-1', title: evil }] }) };
+    const graph = { nodes: [{ id: evil, kind: 'ic', team: evil, activity: 3, lastAt: null }, { id: 'hub:a', kind: 'hub', team: 'a', activity: 2, lastAt: null }], edges: [{ source: evil, target: 'hub:a', count: 3, kinds: { msg: 3 }, lastAt: null }], active: [{ id: evil, owner: evil, status: 'in_progress' }] };
+    return { snapshot, graph, metrics: computeMetrics({ ...snapshot, sprints, scorecards: sc }, { valueDrivers: [{ id: 'VD-1', title: evil }] }) };
   };
   for (const sc of [undefined, fixture]) {
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 12; i++) {
       const handlers = [];
       const els = {};
       const el = (id) => (els[id] ??= { id, innerHTML: '', textContent: '', className: '', addEventListener: (_, h) => handlers.push(h) });
-      const ctx = vm.createContext({ window: { __SNAPSHOT__: data(sc) }, document: { getElementById: el }, setInterval() {} });
+      const ctx = vm.createContext({ window: { __SNAPSHOT__: data(sc), innerWidth: 1200, addEventListener() {} }, document: { getElementById: el, querySelectorAll: () => [] }, setTimeout, clearTimeout, setInterval() {} });
       vm.runInContext(src, ctx);
-      if (i === 0) assert.equal((els.tabs.innerHTML.match(/<button/g) || []).length, 11);
+      if (i === 0) assert.equal((els.tabs.innerHTML.match(/<button/g) || []).length, 12);
       handlers[0]({ target: { closest: () => ({ dataset: { i: String(i) } }) } });
       assert.ok(!els.view.innerHTML.includes('Render error'), `tab ${i}: ${els.view.innerHTML.slice(0, 160)}`);
       assert.ok(!els.view.innerHTML.includes('<b>x</b>'), `tab ${i} unescaped`);
