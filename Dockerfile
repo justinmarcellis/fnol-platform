@@ -13,6 +13,7 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund || npm install --omi
 
 COPY src ./src
 COPY scripts ./scripts
+COPY tenants ./tenants
 
 # /data holds the SQLite file (ephemeral on Cloud Run, see docs/deployment.md);
 # /app/.secrets receives master.key from a Secret Manager volume mount.
@@ -24,5 +25,7 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
-# createApp binds 127.0.0.1 unless host is passed, and Cloud Run needs 0.0.0.0.
-CMD ["node", "--disable-warning=ExperimentalWarning", "--input-type=module", "-e", "const { createApp } = await import('./src/server.mjs'); const app = await createApp({ port: Number(process.env.PORT || 8080), host: '0.0.0.0' }); console.log('FNOL platform listening on ' + app.url); for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => app.close().then(() => process.exit(0)));"]
+# PoC start: seed + demo data on a new (ephemeral) database, then serve on 0.0.0.0.
+# devMode follows NODE_ENV; the fnol-poc deploy sets NODE_ENV=development.
+ENV HOST=0.0.0.0
+CMD ["node", "--disable-warning=ExperimentalWarning", "scripts/dev.mjs"]
