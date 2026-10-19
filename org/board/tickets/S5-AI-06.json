@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:58:57.859Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-19T01:59:33.349Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T02:13:58.543Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-AI-06",
@@ -36,5 +41,18 @@
   "valueDrivers": [
     "VD-7"
   ],
-  "startedAt": "2026-10-19T01:59:13.152Z"
+  "startedAt": "2026-10-19T01:59:13.152Z",
+  "doneAt": "2026-10-19T02:13:58.543Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T02:13:58.542Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Recorded by orchestrator from the reviewer's workflow result (wf_c0d1327d-5c0): all criteria met; the fabric write was lost in the S5 stash incident"
+      }
+    ],
+    "firstPass": true
+  }
 }

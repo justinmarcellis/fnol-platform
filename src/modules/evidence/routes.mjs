@@ -12,17 +12,40 @@ const PII_ROLES = ['csr', 'adjuster', 'supervisor', 'carrier_admin', 'platform_a
 const canSeePii = (req) => req.user.roles?.some((r) => PII_ROLES.includes(r));
 const MASK = '[redacted]';
 
-/** SEC2-017: mask pii:true extraction fields (value, normalizedValue, provenance span) for roles without PII access. */
+const SAFE_PROV_STRINGS = new Set(['documentId']);
+const SAFE_FIELD_STRINGS = new Set(['name', 'value', 'normalizedValue']);
+
+/** Provenance allow-list: ids and numeric locators (page/offset/etc.) only; no span, snippet or any other free text. */
+function safeProvenance(prov) {
+  const out = {};
+  for (const [k, v] of Object.entries(prov ?? {})) {
+    if (typeof v === 'number' || typeof v === 'boolean' || (typeof v === 'string' && SAFE_PROV_STRINGS.has(k))) out[k] = v;
+  }
+  return out;
+}
+
+/** SEC2-017: allow-list for roles without PII access. Fields keep name, masked/non-pii value, confidence and numeric locators; no free text survives. */
 function maskExtraction(ext) {
   if (!ext || !Array.isArray(ext.fields)) return ext;
-  return {
+  const out = {
     ...ext,
     fields: ext.fields.map((f) => {
-      if (!f.pii) return f;
-      const { span: _s, ...prov } = f.provenance ?? {};
-      return { ...f, value: MASK, ...(f.normalizedValue !== undefined ? { normalizedValue: MASK } : {}), provenance: prov };
+      const o = {};
+      for (const [k, v] of Object.entries(f)) {
+        if (k === 'provenance') continue;
+        if (typeof v === 'number' || typeof v === 'boolean' || (typeof v === 'string' && SAFE_FIELD_STRINGS.has(k))) o[k] = v;
+      }
+      if (f.pii) {
+        o.value = MASK;
+        if (f.normalizedValue !== undefined) o.normalizedValue = MASK;
+      }
+      o.provenance = safeProvenance(f.provenance);
+      return o;
     }),
   };
+  delete out.summary;
+  delete out.explanation;
+  return out;
 }
 
 /** Claimants never see storage keys or extracted fields; roles without PII access get pii fields masked. */

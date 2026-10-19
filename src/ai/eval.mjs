@@ -1,6 +1,7 @@
 // Offline AI evaluation harness. Scores the local provider (and recorded vertex responses) against
 // golden cases in tests/fixtures/ai/golden/*.json. No network, no clock in scores, deterministic output.
 //   node src/ai/eval.mjs            writes docs/ai-evaluation.md
+//   node src/ai/eval.mjs --live ... live Vertex run (see eval-live.mjs); writes docs/ai-evaluation-live.md
 //   import { runEval } from './eval.mjs'
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -262,7 +263,19 @@ export async function writeReport({ docPath = DOC_PATH, date = process.env.EVAL_
   return { result, docPath };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+async function main(argv) {
+  if (argv.includes('--live')) {
+    // Live mode lives in eval-live.mjs; no flag means the offline, deterministic report below.
+    const { liveMain } = await import('./eval-live.mjs');
+    const { exitCode } = await liveMain(argv);
+    process.exitCode = exitCode;
+    return;
+  }
   const { docPath } = await writeReport();
   process.stdout.write(`wrote ${docPath}\n`);
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  // Not awaited at module level, so a lazy import of eval-live.mjs (which imports this file) cannot deadlock.
+  main(process.argv.slice(2)).catch((e) => { process.stderr.write(`${e?.stack ?? e}\n`); process.exitCode = 1; });
 }

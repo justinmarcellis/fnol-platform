@@ -1,0 +1,40 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T02:13:58.507Z",
+  "history": [],
+  "id": "S5-WFL-04",
+  "team": "workflow",
+  "title": "Verify the claimant as policy holder by last name and ZIP; restore the claimant vehicle picker",
+  "story": "As a claimant I want to confirm my policy with my last name and ZIP code so that I can pick my insured vehicle and get fast-tracked, while nobody else can probe my policy",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/modules/intake/service.js",
+    "src/modules/intake/routes.js",
+    "src/web/claimant/structured.js",
+    "src/web/claimant/flow.js",
+    "src/web/claimant/app.js",
+    "tests/unit/intake/policy-vehicles.test.js",
+    "tests/unit/intake/policy-vehicles-holder.test.js",
+    "tests/unit/intake/policy-vehicles-agent.test.js",
+    "tests/integration/workflow/intake-to-claim.test.js",
+    "tests/ui/claimant.test.mjs"
+  ],
+  "acceptance": [
+    "Claimant holder check replaces the S5-WFL-01 token-name match: GET /intake/sessions/{id}/policy-vehicles accepts the claimant's last name and 5-digit ZIP (query parameters or a short POST verify step, your choice, documented) and returns vehicles only when the last name matches a named insured and the ZIP matches the policy's garaging or mailing postal code from the coverage snapshot; otherwise the uniform 404; unknown policy, wrong name, wrong ZIP and other tenant are indistinguishable (deep-equal test)",
+    "Brute-force guard: after 5 failed verifications on one session the endpoint keeps returning the uniform 404 for that session (test)",
+    "Agent rule from S5-WFL-03 kept (agent sees vehicles only for policies it produces); CSR unchanged; the two outdated tests in policy-vehicles.test.js and policy-vehicles-holder.test.js are updated to the new rules with a one-line comment citing S5-WFL-03/S5-WFL-04",
+    "Claimant web: the insured-vehicle picker asks for last name and ZIP when needed, then lists vehicles and sends policyVehicleId; tests/ui/claimant.test.mjs 'insured-vehicle picker' and 'pick is stored on the claim' pass using a seeded policy's synthetic holder name and ZIP",
+    "tests/integration/workflow/intake-to-claim.test.js passes (the 'mapped ClaimCreate' failure shows an extra name field on the actor; fix the cause, not the expectation, unless the expectation is wrong and you say why)",
+    "Full npm test shows no new failures versus the parent commit; tests/e2e/demo-script.test.mjs passes"
+  ],
+  "brief": "Context: S5-WFL-01 matched the claimant token name to the named insured. Dev and real claimant tokens do not carry the insured's name, so the claimant web picker never appears (tests/ui/claimant.test.mjs fails). Policy number + last name + ZIP is the standard FNOL holder check. Postal codes are in the coverage snapshot (src/modules/coverage/adapters/mock-pas.mjs; garaging/addresses are encrypted PII, read them through the coverage service, never return them). Do not log names or ZIPs. Do not edit src/web/shared/* or index.html files (S5-EXP-01 runs in parallel). If openapi needs to change post a contract-change to the architecture hub.",
+  "valueDrivers": [
+    "VD-1",
+    "VD-7"
+  ]
+}

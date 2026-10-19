@@ -1,0 +1,40 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T02:13:58.506Z",
+  "history": [],
+  "id": "S5-EXP-01",
+  "team": "experience",
+  "title": "Web apps work on the deployed service behind IAP",
+  "story": "As the sponsor I want the claimant, CSR, adjuster and admin apps to work on the deployed Cloud Run URL behind Identity-Aware Proxy so that I can run the demo in my browser",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-claimant-web-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/web/shared/devlogin.js",
+    "src/web/shared/api.js",
+    "src/web/claimant/index.html",
+    "src/web/csr/index.html",
+    "src/web/adjuster/index.html",
+    "src/web/admin/index.html",
+    "src/web/admin/client.js",
+    "src/server.mjs",
+    "src/core/auth.mjs",
+    "tests/unit/web/runtime-config.test.mjs",
+    "tests/unit/core/auth-header.test.mjs",
+    "tests/ui/deployed-host.test.mjs"
+  ],
+  "acceptance": [
+    "Root cause 1: isDevMode() only trusts localhost, so on *.run.app every app refuses dev login and shows 'Service unavailable' with no API call. Fix: the server serves GET /runtime-config.js (no auth, no-store cache header) that sets window.__FNOL_DEV__ to the server's ctx.config.devMode and nothing else; every app index.html loads it before app scripts; with devMode false it sets false and dev login stays unavailable",
+    "Root cause 2: IAP treats an Authorization: Bearer header as an IAP credential and rejects the app's own token (observed: 'Invalid IAP credentials'). Fix: the web API client (shared/api.js and admin/client.js) sends the app token in X-Fnol-Authorization: Bearer <token> instead of Authorization; auth.mjs accepts Authorization first and X-Fnol-Authorization as a fallback, with identical verification; external API clients keep using Authorization (openapi unchanged except a contract-change post to the architecture hub describing the alternate header)",
+    "tests/ui/deployed-host.test.mjs (Playwright, Chromium at /opt/pw-browsers, Playwright at /opt/node-tools/node_modules): serve the app on a port and open it under a non-localhost hostname (e.g. chromium --host-resolver-rules mapping fnol.test to 127.0.0.1); the claimant app reaches the first intake question and no request carries an Authorization header (assert via page.on('request')); the same with devMode false shows that dev login is unavailable",
+    "Unit tests: runtime-config reflects devMode true and false; auth accepts either header and rejects a bad token in either; tests/security routes snapshot unaffected (if it changes, post to the security hub instead of editing tests/security)",
+    "Full npm test shows no new failures versus the parent commit, including tests/ui (run them, IMP-6)"
+  ],
+  "brief": "Squad ticket across experience and platform (playbook v2: a feature needing UI and server changes is one ticket). src/server.mjs and src/core/auth.mjs are Platform-owned and granted to this ticket. Keep zero dependencies. Static serving is in src/server.mjs resolveStatic; add the runtime-config route there (it is not under /api). Do not touch src/web/claimant/structured.js, flow.js, app.js or src/modules/intake (S5-WFL-04 runs in parallel).",
+  "valueDrivers": [
+    "VD-1"
+  ]
+}
