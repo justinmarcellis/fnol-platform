@@ -35,7 +35,12 @@ Never write invented or estimated values into the feed. The local live view is `
 Contact the sponsor only for decisions that are theirs (scope trade-offs, budget increases, anything irreversible or touching real external systems or money), milestones (each sprint review in 3 bullets, deployment live), or red flags (budget, unresolvable blockers, security). Lead with the headline, stay under about 150 words, and link to the live board. Push commits directly to `main` in this repository. The sponsor does not want to merge pull requests; open one only if they ask.
 
 ## Sprint 5 backlog (prioritized)
-1. **Deploy to `fnol-poc`** following `docs/deploy-fnol-poc.md`. Stay in project `fnol-poc` only, even though the service account has wider org access. Never allow unauthenticated access, put Identity-Aware Proxy in front, and grant only the sponsor's Google account; ask the sponsor for that email once. Verify `/healthz` and run the demo script against the deployed URL.
+1. **Verify the `fnol-poc` deployment.** A session already ran the first deploy (`justinmarcellis/fnol-platform#2`, runbook updated in `docs/deploy-fnol-poc.md`). Check the Cloud Run service `fnol-platform` in `us-central1`:
+   - it is authenticated-only, behind Identity-Aware Proxy, with only the sponsor's account granted;
+   - the revision logs show the seed and demo-data lines;
+   - the demo script passes against the deployed URL.
+
+   Redeploy only to ship new commits. Stay in project `fnol-poc` only, even though the service account has wider org access.
 2. **Live AI.** Enable Vertex AI in `fnol-poc` and run the evaluation harness (`src/ai/eval.mjs`) with Gemini live. Run Claude (`claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5` through Vertex AI, region `global`) only after the sponsor enables the Claude models in Model Garden; ask once. Record results in `docs/ai-evaluation.md` and pick primary and challenger models per task.
 3. **Open security findings.** Fix the policy-vehicles policy-number oracle (verify the claimant against the policy holder) and the open mediums in `architecture/security-review-s2.md`. Each fix needs a regression test, and the Security team re-reviews before closing.
 4. **Production-path spikes** (design plus a small proof, no migration): a store adapter for Cloud SQL Postgres, Pub/Sub for the outbox, Cloud KMS for the master key, and an OIDC SSO replacement for dev tokens.
