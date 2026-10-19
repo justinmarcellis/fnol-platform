@@ -27,7 +27,7 @@ if (fs.existsSync(seed) && dbEmpty) {
 }
 
 const { createApp } = await import('../src/server.mjs');
-const app = await createApp({ port, dbPath });
+const app = await createApp({ port, dbPath, host: process.env.HOST });
 const children = [];
 
 const dash = path.join(root, 'dashboard', 'server.mjs');

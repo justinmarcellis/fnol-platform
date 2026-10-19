@@ -13,7 +13,8 @@ test('Dockerfile: slim node 22, non-root, healthcheck, starts server', () => {
   assert.match(d, /^USER node$/m);
   assert.match(d, /^HEALTHCHECK\b/m);
   assert.match(d, /\/healthz/);
-  assert.match(d, /^CMD \[.*src\/server\.mjs/m);
+  // The PoC image starts via scripts/dev.mjs, which seeds a new database before serving.
+  assert.match(d, /^CMD \[.*(src\/server\.mjs|scripts\/dev\.mjs)/m);
   assert.match(d, /0\.0\.0\.0/);
   assert.doesNotMatch(d, /^ENV .*(KEY|SECRET|PASSWORD|TOKEN)=/mi);
 });
