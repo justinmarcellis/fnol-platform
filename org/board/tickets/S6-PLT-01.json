@@ -1,0 +1,38 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:47:39.640Z",
+  "history": [],
+  "id": "S6-PLT-01",
+  "team": "platform",
+  "title": "Dev mode is an explicit opt-in (fail closed); deploy config consistent",
+  "story": "As the platform operator I want dev mode (token minting, demo personas) on only when explicitly enabled so that a deployment that forgets NODE_ENV is not wide open",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-platform-runtime-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/server.mjs",
+    "scripts/dev.mjs",
+    "Dockerfile",
+    "infra/cloudrun/service.yaml",
+    "docs/deploy-fnol-poc.md",
+    "docs/setup.md",
+    "tests/unit/core/dev-mode.test.mjs",
+    "tests/unit/core/deployment-files.test.mjs",
+    "tests/ui/admin-harness.mjs",
+    "tests/ui/adjuster-harness.mjs",
+    "tests/ui/a11y-harness.mjs",
+    "tests/unit/integrations/webhooks/helpers.mjs",
+    "tests/e2e/harness.mjs"
+  ],
+  "acceptance": [
+    "S6-EXP-02 security gate (medium): devMode = opts.devMode ?? NODE_ENV !== production is fail-open. New rule: devMode is true only when opts.devMode is true or FNOL_DEV_MODE=1; otherwise false regardless of NODE_ENV (test for unset, 0, 1, NODE_ENV values)",
+    "npm start (scripts/dev.mjs) sets dev mode for local use so the local experience is unchanged; tests that rely on devMode pass it explicitly",
+    "Boot log prints one clear warning line when dev mode is on (no secrets)",
+    "Dockerfile, infra/cloudrun/service.yaml and docs/deploy-fnol-poc.md agree: the fnol-poc deploy sets FNOL_DEV_MODE=1 explicitly (IAP-only PoC, accepted R2 risk) and the deploy command in the runbook is updated; the deployment-files test checks the manifest and runbook agree",
+    "Full npm test no new failures"
+  ],
+  "brief": "src/server.mjs:69-70 computes devMode. Grep tests for devMode/NODE_ENV usages (IMP-14) and include any test that must change in your result; post to the platform hub if a test outside your paths must change. Sequenced after the Wave B redesigns (they edit tests/ui). Test harnesses that rely on the old default are in your paths; set devMode explicitly there."
+}

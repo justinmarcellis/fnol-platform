@@ -1,8 +1,14 @@
 {
-  "status": "ready",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:28:28.986Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T12:48:05.761Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
   "id": "S6-EXP-04",
   "team": "experience",
   "title": "CSR desk redesign: two-pane assisted intake; fix the intermittent CSR test",
@@ -29,5 +35,6 @@
   "valueDrivers": [
     "VD-1",
     "VD-2"
-  ]
+  ],
+  "startedAt": "2026-10-19T12:48:05.761Z"
 }

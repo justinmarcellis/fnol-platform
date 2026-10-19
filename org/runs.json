@@ -2293,5 +2293,104 @@
   "phase": "Review",
   "startedAt": "2026-10-19T04:19:29.583Z",
   "endedAt": "2026-10-19T04:19:48.611Z"
+ },
+ {
+  "id": "a43d970b0a5fba5a7",
+  "workflow": "wf_61348c05-9ef",
+  "label": "S6-EXP-01 ic-experience-ux-designer",
+  "model": "opus",
+  "phase": "Build",
+  "startedAt": "2026-10-19T12:26:55.027Z",
+  "endedAt": "2026-10-19T12:45:40.547Z"
+ },
+ {
+  "id": "ab3f2a8a3654a96b8",
+  "workflow": "wf_61348c05-9ef",
+  "label": "S6-EXP-02 ic-experience-admin-ui-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T12:26:55.031Z",
+  "endedAt": "2026-10-19T12:32:07.579Z"
+ },
+ {
+  "id": "a9c921f754b31f839",
+  "workflow": "wf_350a3d71-043",
+  "label": "S6-PMO-01 ic-pmo-metrics-analyst",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T12:27:00.262Z",
+  "endedAt": "2026-10-19T12:27:26.502Z"
+ },
+ {
+  "id": "a2dbab50665bffa22",
+  "workflow": "wf_350a3d71-043",
+  "label": "S6-PMO-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T12:27:27.739Z",
+  "endedAt": "2026-10-19T12:27:42.926Z"
+ },
+ {
+  "id": "a19b57d8cd4c45a8c",
+  "workflow": "wf_61348c05-9ef",
+  "label": "S6-EXP-02 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T12:32:08.984Z",
+  "endedAt": "2026-10-19T12:33:02.028Z"
+ },
+ {
+  "id": "abbb852b568934524",
+  "workflow": "wf_61348c05-9ef",
+  "label": "S6-EXP-02 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T12:33:03.204Z",
+  "endedAt": "2026-10-19T12:33:25.366Z"
+ },
+ {
+  "id": "a07df81f0ee54ff8e",
+  "workflow": "wf_61348c05-9ef",
+  "label": "S6-EXP-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T12:45:41.812Z",
+  "endedAt": "2026-10-19T12:46:34.969Z"
+ },
+ {
+  "id": "a6fcffa428b7a9f78",
+  "workflow": "wf_7c4f9e0c-2c9",
+  "label": "S6-EXP-03 ic-experience-claimant-web-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T12:48:00.998Z",
+  "endedAt": "2026-10-19T12:48:08.821Z"
+ },
+ {
+  "id": "a49ccd2b30389d942",
+  "workflow": "wf_7c4f9e0c-2c9",
+  "label": "S6-EXP-04 ic-experience-csr-portal-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T12:48:02.876Z",
+  "endedAt": "2026-10-19T12:48:08.219Z"
+ },
+ {
+  "id": "a7eaf73a68ee3b450",
+  "workflow": "wf_5dd369e0-965",
+  "label": "S6-EXP-05 ic-experience-adjuster-view-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T12:48:02.878Z",
+  "endedAt": "2026-10-19T12:48:06.907Z"
+ },
+ {
+  "id": "a20ea19fea0c54b25",
+  "workflow": "wf_5dd369e0-965",
+  "label": "S6-EXP-06 ic-experience-admin-ui-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T12:48:02.879Z",
+  "endedAt": "2026-10-19T12:48:02.908Z"
  }
 ]
