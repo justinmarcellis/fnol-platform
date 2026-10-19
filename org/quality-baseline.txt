@@ -1,54 +1,9 @@
-        not ok 4 - triage
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 1 - e2e-demo / auto_rear_end_injury
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 2 - e2e-demo / auto_glass_only
-        not ok 4 - triage
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 3 - e2e-demo / auto_theft_late_report
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 4 - e2e-demo / auto_hit_and_run
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 5 - e2e-demo / home_water_small
-        not ok 4 - triage
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 6 - e2e-demo / home_fire_large
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 7 - e2e-demo / home_loss_before_inception
-        not ok 4 - triage
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 8 - e2e-demo / commercial_auto_fleet_collision
-not ok 7 - matrix with a temp tenant: missing modules map to todo and nothing fails
-        not ok 4 - triage
-        not ok 6 - adjuster first view
-    not ok 1 - aurelia-mutual / auto_rear_end_injury
-        not ok 4 - triage
-        not ok 6 - adjuster first view
-    not ok 3 - aurelia-mutual / auto_theft_late_report
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 5 - aurelia-mutual / home_water_small
-        not ok 4 - triage
-        not ok 6 - adjuster first view
-    not ok 6 - aurelia-mutual / home_fire_large
-        not ok 4 - triage
-        not ok 6 - adjuster first view
-    not ok 8 - kestrel-point / auto_rear_end_injury
-        not ok 5 - routing / STP
-        not ok 6 - adjuster first view
-    not ok 9 - kestrel-point / auto_glass_only
-        not ok 4 - triage
-        not ok 6 - adjuster first view
-    not ok 10 - kestrel-point / auto_theft_late_report
-        not ok 4 - triage
-        not ok 6 - adjuster first view
-    not ok 12 - kestrel-point / commercial_auto_fleet_collision
-not ok 1 - E2E scenario matrix
+# Sprint 5 regression baseline (2026-10-19T01:49:20Z, main 8fb908a): tests/e2e + tests/security
+# 372 pass, 0 fail, 7 todo. A ticket is in regression if it adds any failure; the todos below are known open findings.
+not ok 47 - SEC2-009: AI output is type-checked against the task schema, not only for top-level keys # TODO SEC2-009: hasRequiredShape only checks that required keys exist, so wrong types reach consumers (adjuster summary 500s)
+not ok 48 - SEC2-010: AI calls made through a tenant-bound ctx are attributed to the tenant (inference log, tenant AI config) # TODO SEC2-010: intake conversation.js calls ctx.ai.run without opts.tenantId; the root ai object has no ctx.tenant, so the call is unlogged and ignores tenant ai settings
+not ok 50 - SEC2-013: isSafeRegex rejects ambiguous alternation under a quantifier # TODO SEC2-013: the nested-quantifier heuristic misses (a|aa)+$ and (\\w|\\d)+x$, so tenant rules can freeze the process
+not ok 53 - SEC2-022: a user id equal to the triage system actor does not bypass the terminal-state guard # TODO SEC2-022: triage compares the caller's sub to the string "system:triage"
+not ok 63 - SEC2-017: auditor and integration roles do not see decrypted names in coverage or extraction responses # TODO SEC2-017: GET /claims/{id}/coverage and /documents/{id}/extraction return insured names and pii:true fields to auditor/integration
+not ok 70 - SEC2-020: webhook deliveries carry a signed timestamp so receivers can enforce a replay window # TODO SEC2-020: the signature covers the body only; no timestamp header or documented tolerance (body time is the only freshness signal)
+not ok 71 - SEC2-021: /healthz does not list module names or tenant counts to anonymous callers # TODO SEC2-021: public /healthz returns ctx.moduleNames and the tenant count
