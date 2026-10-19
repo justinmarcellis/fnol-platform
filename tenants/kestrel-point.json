@@ -29,6 +29,7 @@
         "MI"
       ],
       "channels": [
+        "claimant_web",
         "csr_phone",
         "api"
       ],
@@ -165,7 +166,7 @@
           "text": "Which vehicle on the policy was involved?",
           "type": "vehicle",
           "required": false,
-          "order": 35,
+          "order": 36,
           "section": "vehicle"
         },
         {
@@ -247,7 +248,7 @@
           "text": "Which vehicle on the policy was involved?",
           "type": "vehicle",
           "required": false,
-          "order": 35,
+          "order": 25,
           "section": "vehicle"
         },
         {
@@ -918,7 +919,8 @@
       ],
       "adjusters": [
         "adj-kpt-301",
-        "adj-kpt-302"
+        "adj-kpt-302",
+        "adj-kpt-202"
       ],
       "assignment": "round_robin",
       "slaHours": 12
@@ -953,7 +955,7 @@
       "adjusters": [
         "adj-kpt-401",
         "adj-kpt-402",
-        "adj-kpt-403"
+        "adj-kpt-202"
       ],
       "assignment": "least_loaded",
       "slaHours": 6
@@ -1195,7 +1197,7 @@
       "adapter": "mock-pas",
       "settings": {
         "fieldMapProfile": "mapping-b",
-        "policyNumberFormat": "KP-####-####"
+        "policyNumberFormat": "LL-SS-#######"
       }
     },
     "claimsPort": {

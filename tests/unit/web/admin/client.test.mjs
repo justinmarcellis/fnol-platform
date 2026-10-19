@@ -57,18 +57,20 @@ test('save maps 409 to conflict and 422 to invalid', async () => {
   assert.equal(inv.report.errors[0].path, '/rules/0/when');
 });
 
-test('loadHistory falls back from versions to audit to unavailable on 404', async () => {
-  let { c } = mk({ 'GET /config/versions': { status: 200, body: { items: [{ version: 2, actor: 'a' }, { version: 1, actor: 'b' }] } } });
-  let h = await c.loadHistory();
+test('loadHistory reads GET /config/versions only, with names and readable sections (ADMIN-1, ADMIN-2)', async () => {
+  const { f, c } = mk({ 'GET /config/versions': { status: 200, body: { items: [
+    { version: 2, actor: 'dev-aurelia-mutual-carrier-admin', actorName: 'Taylor Brandt', createdAt: '2026-10-01T10:00:00Z', changedKeys: ['branding', 'displayName'], source: 'console' },
+    { version: 1, actor: 'boot', actorName: 'System (tenant file)', createdAt: '2026-09-01T10:00:00Z', changedKeys: [], source: 'tenant_file' },
+  ] } } });
+  const h = await c.loadHistory();
   assert.equal(h.source, 'versions');
-  assert.equal(h.rows[0].version, 2);
-  ({ c } = mk({ 'GET /audit': { status: 200, body: { items: [{ action: 'tenant.config.updated', actor: 'z', details: { version: 4 } }] } } }));
-  h = await c.loadHistory();
-  assert.equal(h.source, 'audit');
-  assert.equal(h.rows[0].version, 4);
-  ({ c } = mk({}));
-  h = await c.loadHistory();
-  assert.deepEqual(h, { available: false, source: 'none', rows: [] });
+  assert.deepEqual(h.rows.map((r) => r.version), [2, 1]);
+  assert.equal(h.rows[0].actorName, 'Taylor Brandt');
+  assert.deepEqual(h.rows[0].changed, ['Branding', 'Identity']);
+  assert.deepEqual(h.rows[1].changed, ['Initial configuration from the tenant file']);
+  assert.deepEqual(f.calls.map((x) => x.key), ['GET /config/versions'], 'no audit fallback request');
+  const { c: c2 } = mk({});
+  await assert.rejects(() => c2.loadHistory(), (e) => e.status === 404);
 });
 
 test('loadKpis returns available:false on 404 and the body otherwise', async () => {

@@ -17,16 +17,16 @@
     "supportEmail": "claims@aurelia-mutual.example",
     "legalFooter": {
       "en": "Aurelia Mutual is a fictional carrier used for demonstration only.",
-      "es": "Aurelia Mutual es una aseguradora ficticia usada solo para demostracion."
+      "es": "Aurelia Mutual es una aseguradora ficticia usada solo para demostración."
     },
     "fraudWarning": {
       "WI": {
         "en": "Illustrative notice (WI): giving false information on a claim may be a crime.",
-        "es": "Aviso ilustrativo (WI): dar informacion falsa en un reclamo puede ser un delito."
+        "es": "Aviso ilustrativo (WI): dar información falsa en un reclamo puede ser un delito."
       },
       "IL": {
         "en": "Illustrative notice (IL): giving false information on a claim may be a crime.",
-        "es": "Aviso ilustrativo (IL): dar informacion falsa en un reclamo puede ser un delito."
+        "es": "Aviso ilustrativo (IL): dar información falsa en un reclamo puede ser un delito."
       }
     }
   },
@@ -53,7 +53,7 @@
           "id": "collision",
           "label": {
             "en": "Collision",
-            "es": "Colision"
+            "es": "Colisión"
           },
           "causes": [
             "collision",
@@ -66,7 +66,7 @@
           "id": "glass",
           "label": {
             "en": "Glass damage",
-            "es": "Dano de cristales"
+            "es": "Daño de cristales"
           },
           "causes": [
             "glass"
@@ -120,7 +120,7 @@
           "id": "water",
           "label": {
             "en": "Water damage",
-            "es": "Dano por agua"
+            "es": "Daño por agua"
           },
           "causes": [
             "water_plumbing",
@@ -174,7 +174,7 @@
           "id": "loss_date",
           "text": {
             "en": "When did the loss happen?",
-            "es": "Cuando ocurrio la perdida?"
+            "es": "¿Cuándo ocurrió la pérdida?"
           },
           "type": "date",
           "required": true,
@@ -189,7 +189,7 @@
           "id": "loss_description",
           "text": {
             "en": "Tell us what happened.",
-            "es": "Cuentenos que sucedio."
+            "es": "Cuéntenos qué sucedió."
           },
           "type": "longtext",
           "required": true,
@@ -202,7 +202,7 @@
           "id": "injuries",
           "text": {
             "en": "Was anyone hurt?",
-            "es": "Hubo personas lesionadas?"
+            "es": "¿Hubo personas lesionadas?"
           },
           "type": "boolean",
           "required": true,
@@ -214,7 +214,7 @@
           "id": "insured_vehicle",
           "text": {
             "en": "Which vehicle on your policy was involved?",
-            "es": "Cual vehiculo de su poliza estuvo involucrado?"
+            "es": "¿Qué vehículo de su póliza estuvo involucrado?"
           },
           "type": "vehicle",
           "required": false,
@@ -225,7 +225,7 @@
           "id": "vehicle_drivable",
           "text": {
             "en": "Can the vehicle be driven?",
-            "es": "Se puede conducir el vehiculo?"
+            "es": "¿Se puede conducir el vehículo?"
           },
           "type": "boolean",
           "required": true,
@@ -236,7 +236,7 @@
           "id": "other_party_involved",
           "text": {
             "en": "Was another vehicle or person involved?",
-            "es": "Hubo otro vehiculo o persona involucrada?"
+            "es": "¿Hubo otro vehículo o persona involucrada?"
           },
           "type": "boolean",
           "required": true,
@@ -268,14 +268,9 @@
           "id": "police_report",
           "text": {
             "en": "Was a police report filed?",
-            "es": "Se presento un informe policial?"
+            "es": "¿Se presentó un informe policial?"
           },
           "type": "boolean",
-          "showIf": {
-            "fact": "answers.injuries",
-            "op": "eq",
-            "value": true
-          },
           "order": 70,
           "section": "loss"
         },
@@ -283,7 +278,7 @@
           "id": "photos",
           "text": {
             "en": "Add photos of the damage.",
-            "es": "Agregue fotos de los danos."
+            "es": "Agregue fotos de los daños."
           },
           "type": "media",
           "aiAssist": true,
@@ -294,7 +289,7 @@
           "id": "fraud_disclosure",
           "text": {
             "en": "I understand that knowingly giving false information is a crime.",
-            "es": "Entiendo que dar informacion falsa a sabiendas es un delito."
+            "es": "Entiendo que dar información falsa a sabiendas es un delito."
           },
           "type": "disclosure",
           "required": true,
@@ -315,7 +310,7 @@
           "id": "loss_date",
           "text": {
             "en": "When did the glass break?",
-            "es": "Cuando se rompio el cristal?"
+            "es": "¿Cuándo se rompió el cristal?"
           },
           "type": "date",
           "required": true,
@@ -330,7 +325,7 @@
           "id": "glass_location",
           "text": {
             "en": "Which glass is damaged?",
-            "es": "Que cristal esta danado?"
+            "es": "¿Qué cristal está dañado?"
           },
           "type": "select",
           "required": true,
@@ -364,7 +359,7 @@
           "id": "injuries",
           "text": {
             "en": "Was anyone hurt?",
-            "es": "Hubo personas lesionadas?"
+            "es": "¿Hubo personas lesionadas?"
           },
           "type": "boolean",
           "required": true,
@@ -376,7 +371,7 @@
           "id": "insured_vehicle",
           "text": {
             "en": "Which vehicle on your policy was involved?",
-            "es": "Cual vehiculo de su poliza estuvo involucrado?"
+            "es": "¿Qué vehículo de su póliza estuvo involucrado?"
           },
           "type": "vehicle",
           "required": false,
@@ -387,7 +382,7 @@
           "id": "vehicle_drivable",
           "text": {
             "en": "Can the vehicle be driven?",
-            "es": "Se puede conducir el vehiculo?"
+            "es": "¿Se puede conducir el vehículo?"
           },
           "type": "boolean",
           "required": true,
@@ -398,7 +393,7 @@
           "id": "photos",
           "text": {
             "en": "Add a photo of the damage.",
-            "es": "Agregue una foto del dano."
+            "es": "Agregue una foto del daño."
           },
           "type": "media",
           "aiAssist": true,
@@ -409,7 +404,7 @@
           "id": "fraud_disclosure",
           "text": {
             "en": "I understand that knowingly giving false information is a crime.",
-            "es": "Entiendo que dar informacion falsa a sabiendas es un delito."
+            "es": "Entiendo que dar información falsa a sabiendas es un delito."
           },
           "type": "disclosure",
           "required": true,
@@ -427,7 +422,7 @@
           "id": "loss_date",
           "text": {
             "en": "When did the loss happen?",
-            "es": "Cuando ocurrio la perdida?"
+            "es": "¿Cuándo ocurrió la pérdida?"
           },
           "type": "date",
           "required": true,
@@ -442,7 +437,7 @@
           "id": "loss_description",
           "text": {
             "en": "Tell us what happened.",
-            "es": "Cuentenos que sucedio."
+            "es": "Cuéntenos qué sucedió."
           },
           "type": "longtext",
           "required": true,
@@ -455,7 +450,7 @@
           "id": "injuries",
           "text": {
             "en": "Was anyone hurt?",
-            "es": "Hubo personas lesionadas?"
+            "es": "¿Hubo personas lesionadas?"
           },
           "type": "boolean",
           "required": true,
@@ -467,7 +462,7 @@
           "id": "home_livable",
           "text": {
             "en": "Is the home safe to live in?",
-            "es": "Es seguro vivir en la casa?"
+            "es": "¿Es seguro vivir en la casa?"
           },
           "type": "boolean",
           "required": true,
@@ -475,72 +470,10 @@
           "section": "property"
         },
         {
-          "id": "damaged_areas",
-          "text": {
-            "en": "Which areas are damaged?",
-            "es": "Que areas estan danadas?"
-          },
-          "type": "multiselect",
-          "options": [
-            {
-              "value": "roof",
-              "label": {
-                "en": "Roof",
-                "es": "Techo"
-              }
-            },
-            {
-              "value": "kitchen",
-              "label": {
-                "en": "Kitchen",
-                "es": "Cocina"
-              }
-            },
-            {
-              "value": "basement",
-              "label": {
-                "en": "Basement",
-                "es": "Sotano"
-              }
-            },
-            {
-              "value": "bathroom",
-              "label": {
-                "en": "Bathroom",
-                "es": "Bano"
-              }
-            },
-            {
-              "value": "exterior",
-              "label": {
-                "en": "Exterior",
-                "es": "Exterior"
-              }
-            }
-          ],
-          "order": 50,
-          "section": "property"
-        },
-        {
-          "id": "water_source_stopped",
-          "text": {
-            "en": "Has the water been shut off?",
-            "es": "Se cerro el agua?"
-          },
-          "type": "boolean",
-          "showIf": {
-            "fact": "answers.loss_cause",
-            "op": "eq",
-            "value": "water_plumbing"
-          },
-          "order": 55,
-          "section": "property"
-        },
-        {
           "id": "loss_cause",
           "text": {
             "en": "What caused the damage?",
-            "es": "Que causo el dano?"
+            "es": "¿Qué causó el daño?"
           },
           "type": "select",
           "required": true,
@@ -549,7 +482,7 @@
               "value": "water_plumbing",
               "label": {
                 "en": "Plumbing leak",
-                "es": "Fuga de plomeria"
+                "es": "Fuga de plomería"
               }
             },
             {
@@ -593,10 +526,72 @@
           "section": "loss"
         },
         {
+          "id": "damaged_areas",
+          "text": {
+            "en": "Which areas are damaged?",
+            "es": "¿Qué áreas están dañadas?"
+          },
+          "type": "multiselect",
+          "options": [
+            {
+              "value": "roof",
+              "label": {
+                "en": "Roof",
+                "es": "Techo"
+              }
+            },
+            {
+              "value": "kitchen",
+              "label": {
+                "en": "Kitchen",
+                "es": "Cocina"
+              }
+            },
+            {
+              "value": "basement",
+              "label": {
+                "en": "Basement",
+                "es": "Sótano"
+              }
+            },
+            {
+              "value": "bathroom",
+              "label": {
+                "en": "Bathroom",
+                "es": "Baño"
+              }
+            },
+            {
+              "value": "exterior",
+              "label": {
+                "en": "Exterior",
+                "es": "Exterior"
+              }
+            }
+          ],
+          "order": 50,
+          "section": "property"
+        },
+        {
+          "id": "water_source_stopped",
+          "text": {
+            "en": "Has the water been shut off?",
+            "es": "¿Se cerró el agua?"
+          },
+          "type": "boolean",
+          "showIf": {
+            "fact": "answers.loss_cause",
+            "op": "eq",
+            "value": "water_plumbing"
+          },
+          "order": 55,
+          "section": "property"
+        },
+        {
           "id": "estimated_damage",
           "text": {
             "en": "Rough estimate of the damage",
-            "es": "Estimado aproximado del dano"
+            "es": "Estimado aproximado del daño"
           },
           "type": "currency",
           "validation": {
@@ -609,7 +604,7 @@
           "id": "photos",
           "text": {
             "en": "Add photos of the damage.",
-            "es": "Agregue fotos de los danos."
+            "es": "Agregue fotos de los daños."
           },
           "type": "media",
           "aiAssist": true,
@@ -620,7 +615,7 @@
           "id": "fraud_disclosure",
           "text": {
             "en": "I understand that knowingly giving false information is a crime.",
-            "es": "Entiendo que dar informacion falsa a sabiendas es un delito."
+            "es": "Entiendo que dar información falsa a sabiendas es un delito."
           },
           "type": "disclosure",
           "required": true,
@@ -970,7 +965,7 @@
       "id": "fast_track",
       "label": {
         "en": "Fast track",
-        "es": "Via rapida"
+        "es": "Vía rápida"
       },
       "lobs": [
         "personal_auto",
@@ -991,7 +986,7 @@
       "id": "auto_physical_damage",
       "label": {
         "en": "Auto physical damage",
-        "es": "Danos materiales de auto"
+        "es": "Daños materiales de auto"
       },
       "lobs": [
         "personal_auto"
@@ -1025,7 +1020,7 @@
       "adjusters": [
         "adj-aur-301",
         "adj-aur-302",
-        "adj-aur-303"
+        "adj-aur-201"
       ],
       "assignment": "least_loaded",
       "slaHours": 24,
@@ -1046,7 +1041,8 @@
       ],
       "adjusters": [
         "adj-aur-401",
-        "adj-aur-402"
+        "adj-aur-402",
+        "adj-aur-201"
       ],
       "assignment": "least_loaded",
       "slaHours": 8
@@ -1378,7 +1374,7 @@
       "adapter": "mock-pas",
       "settings": {
         "fieldMapProfile": "mapping-a",
-        "policyNumberFormat": "AUR-########"
+        "policyNumberFormat": "LL-SS-#######"
       }
     },
     "claimsPort": {

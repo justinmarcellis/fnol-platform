@@ -4,9 +4,10 @@ const ORDER = ['low', 'medium', 'high'];
 /**
  * @param {object} facts normalized facts
  * @param {string[]} [ruleSet] values from set_complexity actions
+ * @param {{ band?: string }} [severity] computed severity: a major or severe loss is never low complexity (ADJUSTER-18)
  * @returns {{ complexity: 'low'|'medium'|'high', points: number, reasons: string[] }}
  */
-export function computeComplexity(facts, ruleSet = []) {
+export function computeComplexity(facts, ruleSet = [], severity = null) {
   let points = 0;
   const reasons = [];
   const add = (n, why) => { points += n; reasons.push(why); };
@@ -17,6 +18,8 @@ export function computeComplexity(facts, ruleSet = []) {
   if (facts.coverage && facts.coverage.outcome && facts.coverage.outcome !== 'covered') add(1, `coverage outcome is ${facts.coverage.outcome}`);
   else if (facts.coverage?.failedChecks?.length) add(1, 'coverage checks need review');
   if (facts.lossDateMismatch) add(1, 'loss date differs between report and documents');
+  if (severity?.band === 'severe') add(2, 'severity is severe');
+  else if (severity?.band === 'major') add(1, 'severity is major');
   let complexity = points >= 3 ? 'high' : points >= 1 ? 'medium' : 'low';
   const set = ruleSet.filter((c) => ORDER.includes(c));
   if (set.length) {

@@ -38,7 +38,9 @@ test('PII is not stored in plaintext; index columns hold only hashes', async () 
   const auto = rows.find((r) => r.policy_number === 'AUT-100001');
   assert.match(auto.vin_idx, /^,[0-9a-f]{64},$/);
   assert.ok(app.ctx.crypto.isEncrypted(auto.pii));
-  assert.equal(auto.last_name_idx, `,${app.ctx.crypto.hmacIndex('alpha', 'testwell')},`);
+  // Name keys: the last name and (S6-BUG-05, CSR-6) the full normalized name, both as hashes only.
+  assert.ok(auto.last_name_idx.includes(`,${app.ctx.crypto.hmacIndex('alpha', 'testwell')},`));
+  assert.match(auto.last_name_idx, /^,[0-9a-f]{64},[0-9a-f]{64},$/);
 });
 
 test('getPolicySnapshot returns the full snapshot with PII restored and status as of the date', async () => {

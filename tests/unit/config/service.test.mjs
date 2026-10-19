@@ -189,5 +189,7 @@ test('getTimerDefinitions, getQueues and getPublicConfig', () => {
   assert.deepEqual(svc.getTimerDefinitions({ state: 'IL', lob: 'personal_auto' }).map((t) => t.id).sort(), ['IL-ACK', 'IL-CONTACT', 'IL-DECIDE']);
   assert.ok(svc.getQueues().length >= 4);
   const pub = svc.getPublicConfig();
-  assert.deepEqual(Object.keys(pub).sort(), ['branding', 'displayName', 'lobs', 'locales', 'tenantId']);
+  assert.deepEqual(Object.keys(pub).sort(), ['availableLobs', 'branding', 'channel', 'displayName', 'lobs', 'locales', 'tenantId']);
+  assert.equal(pub.channel, null, 'no channel: every enabled line is available');
+  assert.deepEqual(pub.availableLobs, pub.lobs.filter((l) => l.enabled !== false).map((l) => l.id));
 });

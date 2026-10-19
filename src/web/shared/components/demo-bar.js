@@ -7,7 +7,7 @@ import { groupPersonas, loadPersonas, readSession, switchPersona, ROLE_LABELS } 
 const HE = typeof HTMLElement !== 'undefined' ? HTMLElement : class {};
 const STYLE_ID = 'fx-demo-bar-style';
 
-const CSS = `
+export const DEMO_BAR_CSS = `
 fx-demo-bar { display: block; font-family: var(--fx-font-ui, system-ui, sans-serif); font-size: .875rem; }
 fx-demo-bar[hidden] { display: none; }
 fx-demo-bar .fxd { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; box-sizing: border-box; min-height: 44px; padding: 6px 16px;
@@ -17,7 +17,7 @@ fx-demo-bar .fxd-pill { display: inline-flex; align-items: center; gap: 6px; pad
 fx-demo-bar .fxd-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #1b1300; }
 fx-demo-bar .fxd-field { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
 fx-demo-bar .fxd-field > span { color: var(--fx-demo-muted, #b4c0cd); font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
-fx-demo-bar select { font: inherit; font-family: var(--fx-font-ui, system-ui, sans-serif); color: inherit; background: #1b2735; border: 1px solid #4a5f75; border-radius: 6px; min-height: 32px; padding: 3px 28px 3px 10px; max-width: 300px; cursor: pointer; }
+fx-demo-bar select { font: inherit; font-family: var(--fx-font-ui, system-ui, sans-serif); color: inherit; background: #1b2735; border: 1px solid #4a5f75; border-radius: 6px; min-height: 32px; padding: 3px 28px 3px 10px; max-width: 28rem; cursor: pointer; }
 fx-demo-bar select:hover { border-color: #7d8da0; }
 fx-demo-bar select:disabled { opacity: .6; cursor: progress; }
 fx-demo-bar :focus-visible { outline: 3px solid #7db8f5; outline-offset: 2px; }
@@ -76,7 +76,7 @@ export class FxDemoBar extends HE {
     const doc = this.ownerDocument;
     if (doc.getElementById(STYLE_ID)) return;
     const st = doc.createElement('style');
-    st.id = STYLE_ID; st.textContent = CSS;
+    st.id = STYLE_ID; st.textContent = DEMO_BAR_CSS;
     doc.head.appendChild(st);
   }
 

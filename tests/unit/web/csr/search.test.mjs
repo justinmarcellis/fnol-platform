@@ -58,7 +58,7 @@ test('blank input never calls the api', async () => {
 test('400 from the classifier is an invalid search, not unavailable', async () => {
   const api = fakeApi({ 'GET /policies': () => { throw new FakeApiError(400, 'bad_request', 'unclassifiable'); } });
   const s = createPolicySearch({ api, t });
-  await s.search('?');
+  await s.search('?!#');
   assert.equal(s.state.phase, 'invalid');
   assert.equal(s.state.message, t('csr.search.unclassified'));
 });

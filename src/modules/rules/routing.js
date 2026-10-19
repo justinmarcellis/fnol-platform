@@ -99,6 +99,9 @@ export function decideRouting({ actions, config, lob, triage, coverage, estimate
     }
   } else if (denials.length) {
     reasons.push('fast track not requested');
+  } else if (triage?.fastTrackEligible === true) {
+    // ADJUSTER-18: triage eligibility alone does not fast track; say why the claim went to a desk instead.
+    reasons.push('triage marked the claim fast-track eligible, but no fast-track rule of this tenant applies to it');
   }
 
   // The fast-track queue only applies when the claim really is fast tracked.

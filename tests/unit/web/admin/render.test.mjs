@@ -54,7 +54,7 @@ test('rules panel shows when and then editors and the fast track limits', () => 
 test('validation errors render inline next to their fields, including JSON children', () => {
   const report = normalizeReport({ valid: false, errors: [{ path: '/rules/0/when/fact', code: 'x', message: 'Unknown fact' }, { path: '/timers/0/duration/value', message: 'must be >= 1' }] });
   assert.match(panelHtml('rules', ctx({ report })), /data-error-for="\/rules\/0\/when">Unknown fact/);
-  assert.match(panelHtml('timers', ctx({ report })), /data-error-for="\/timers\/0\/duration\/value">must be &gt;= 1/);
+  assert.match(panelHtml('timers', ctx({ report })), /data-error-for="\/timers\/0\/duration\/value">Enter 1 or more\./, 'schema wording is rewritten (ADMIN-6)');
 });
 
 test('local JSON errors keep the user text', () => {
@@ -63,9 +63,9 @@ test('local JSON errors keep the user text', () => {
   assert.match(html, /Invalid JSON: x/);
 });
 
-test('sections are the seven console areas plus history, each as cards', () => {
-  assert.deepEqual(TABS.map((t) => t[0]), ['branding', 'questions', 'rules', 'timers', 'webhooks', 'ai', 'kpis', 'history']);
-  for (const id of ['branding', 'questions', 'rules', 'timers', 'webhooks', 'ai']) {
+test('sections are the eight console areas plus history, each as cards', () => {
+  assert.deepEqual(TABS.map((t) => t[0]), ['branding', 'questions', 'rules', 'timers', 'webhooks', 'ai', 'security', 'kpis', 'history']);
+  for (const id of ['branding', 'questions', 'rules', 'timers', 'webhooks', 'ai', 'security']) {
     assert.match(panelHtml(id, ctx({ webhooks: { available: true, items: [] } })), /<fx-card /, id);
   }
   assert.match(panelHtml('branding', ctx()), /data-path="\/locales"/, 'locales live under branding');

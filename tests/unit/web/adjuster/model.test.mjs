@@ -26,14 +26,14 @@ test('inboxRow builds sortable fields and falls back to reportedAt for assigned'
   assert.equal(none.severityScore, null);
 });
 
-test('KPI counts: open, due today, overdue, fast-tracked', () => {
+test('KPI counts: open, due within 48 h, overdue, fast-tracked', () => {
   const rows = M.inboxRows(fakeInbox().items, { now: NOW });
   const k = M.inboxKpis(rows, NOW);
   assert.equal(k.open, 3);
   assert.equal(k.overdue, 1);
   assert.equal(k.fastTracked, 1);
-  assert.ok(k.dueToday >= 0);
-  assert.deepEqual(M.inboxKpis([], NOW), { open: 0, dueToday: 0, overdue: 0, fastTracked: 0 });
+  assert.equal(k.dueSoon, 1); // c2 contact timer due in ~46 h; c4 is closed, so its timer does not count
+  assert.deepEqual(M.inboxKpis([], NOW), { open: 0, dueSoon: 0, overdue: 0, fastTracked: 0 });
 });
 
 test('filters by status and severity', () => {

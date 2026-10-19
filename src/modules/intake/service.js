@@ -5,6 +5,7 @@ import { suggestFromNarrative } from './conversation.js';
 import { toClaimCreate } from './mapping.js';
 import * as mapping from './mapping.js';
 import { answerBytes, checkAnswerSize, namespacedKey, openSuggestions, sealSuggestions } from './security.js';
+import { holderNameMatches } from '../coverage/names.mjs';
 
 const DEFAULT_TTL_MIN = 60;
 const MAX_BATCH = 100;
@@ -131,9 +132,20 @@ export function createService(ctx, opts = {}) {
     return { facts, visible, required, blocks, ...plan(visible, required, answers) };
   }
 
-  function disclosures(doc, answers) {
+  /**
+   * Fraud notices for the session's state: the risk/loss state answered, else the risk state of the session's
+   * policy (ratingState, looked up once and kept on the session), else every configured state (CSR-16, CLAIMANT-9).
+   */
+  async function disclosures(doc, answers) {
     const warn = cfg().branding?.fraudWarning ?? {};
-    const st = answers.risk_state?.value ?? answers.loss_state?.value;
+    let st = answers.risk_state?.value ?? answers.loss_state?.value ?? doc.riskState;
+    if (!st && doc.policyNumber) {
+      try {
+        const snap = await mod('coverage')?.getPolicySnapshot?.({ policyNumber: doc.policyNumber, asOf: (doc.startedAt ?? nowIso()).slice(0, 10) });
+        st = snap?.ratingState ?? snap?.riskState;
+        if (st) doc.riskState = st;
+      } catch { /* unknown policy: show every state's notice */ }
+    }
     const keys = st && warn[st] ? [st] : Object.keys(warn);
     return keys.map((k) => localize(warn[k], doc.locale));
   }
@@ -145,13 +157,13 @@ export function createService(ctx, opts = {}) {
     const step = {
       sessionId,
       done: st.remaining.length === 0 && st.blocks.length === 0,
-      question: q ? publicQuestion(q) : null,
+      question: q ? publicQuestion(q, { required: st.required.has(q.id) }) : null,
       prompt: q ? localize(q.text, doc.locale) : null,
       locale: doc.locale,
       progress: st.progress,
-      optional: st.optional.map((o) => publicQuestion(o)),
+      optional: st.optional.map((o) => publicQuestion(o, { required: false })),
       missing: st.remaining.map((q) => ({ questionId: q.id, text: localize(q.text, doc.locale) })),
-      disclosures: disclosures(doc, answers),
+      disclosures: await disclosures(doc, answers),
     };
     if (st.blocks.length) step.blocked = st.blocks;
     if (errors?.length) step.errors = errors;
@@ -318,9 +330,7 @@ export function createService(ctx, opts = {}) {
     }
   }
 
-  const normName = (n) => String(n ?? '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, ' ').trim();
-  const insuredNames = (snap) => (Array.isArray(snap?.namedInsureds) ? snap.namedInsureds : [])
-    .map((i) => normName(i?.name ?? `${i?.firstName ?? ''} ${i?.lastName ?? ''}`)).filter(Boolean);
+  const insureds = (snap) => (Array.isArray(snap?.namedInsureds) ? snap.namedInsureds : []).filter(Boolean);
   const zip5 = (z) => { const m = /^\s*(\d{5})(?:-?\d{4})?\s*$/.exec(String(z ?? '')); return m ? m[1] : ''; };
   /** Garaging, property and mailing postal codes on the snapshot (read through the coverage service; never returned). */
   const policyZips = (snap) => new Set([
@@ -328,12 +338,14 @@ export function createService(ctx, opts = {}) {
     ...(snap?.properties ?? []).map((p) => p?.address?.postalCode),
     snap?.mailingAddress?.postalCode, snap?.mailingPostalCode, snap?.address?.postalCode,
   ].map(zip5).filter(Boolean));
-  /** Holder check: last name equals the last word of a named insured (or the whole normalized name) and the ZIP is on the policy. */
+  /**
+   * Holder check: a person insured matches on the last name or the full name, an organisation insured only on
+   * the full business name (CLAIMANT-8: "Co" or "Freight" is not a name), and the ZIP must be on the policy.
+   */
   const holderMatches = (snap, lastName, zip) => {
-    const ln = normName(lastName);
     const z = zip5(zip);
-    if (!snap || !ln || !z) return false;
-    const nameOk = insuredNames(snap).some((n) => n === ln || n.split(' ').pop() === ln);
+    if (!snap || !String(lastName ?? '').trim() || !z) return false;
+    const nameOk = insureds(snap).some((i) => holderNameMatches(i, lastName));
     return nameOk && policyZips(snap).has(z);
   };
   const MAX_HOLDER_FAILURES = 5;

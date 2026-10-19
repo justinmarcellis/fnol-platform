@@ -5,3 +5,4 @@ import './status.test.mjs';
 import './submit-flow.test.mjs';
 import './structured.test.mjs';
 import './present.test.mjs';
+import './bugbash.test.mjs';

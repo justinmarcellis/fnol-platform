@@ -344,7 +344,10 @@ paths:
       tags: [claims]
       operationId: listClaims
       summary: List claims with filters (tenant-scoped)
-      x-roles: [csr, adjuster, supervisor, auditor, integration]
+      description: |
+        Staff roles list tenant-wide. A claimant lists the claims it reported; an agent lists the claims it reported and the claims
+        on policies it produces (S6-BUG-05). Both receive the claimant-safe projection.
+      x-roles: [claimant, agent, csr, adjuster, supervisor, auditor, integration]
       x-module: claims
       parameters:
         - { name: status, in: query, schema: { type: array, items: { type: string } }, style: form, explode: false }
@@ -376,7 +379,8 @@ paths:
     get:
       tags: [claims]
       operationId: getClaim
-      x-roles: [claimant, csr, adjuster, supervisor, auditor, integration]
+      description: Non-staff callers read only claims they reported (claimant, agent) or, for an agent, claims on a policy it produces; anything else is 404.
+      x-roles: [claimant, agent, csr, adjuster, supervisor, auditor, integration]
       x-module: claims
       responses:
         '200':
@@ -661,13 +665,17 @@ paths:
       summary: Free-text policy search for CSR and agent intake (added 1.2.0)
       description: |
         `q` is classified in this order: VIN (17 letters/digits), postal code (5 or 5+4 digits), phone (10 digits, or 11 starting with 1,
-        after removing punctuation), policy-number prefix (2-5 letters, optional dash, digits, e.g. `AUT-1000`), else last name.
-        PII criteria match only through HMAC blind indexes (`ctx.crypto.hmacIndex`); the policy-number prefix uses a plain indexed column.
-        Results are tenant-scoped, capped at 25 and carry masked contact data only. `matchedOn` says how `q` was read.
+        after removing punctuation), policy number or prefix in the seeded shape `LL-SS-NNNNNNN` (`HO`, `HO-IL`, `PA-IL-`, `HO-IL-10`,
+        `CA-MI-1421980`), the last 6 to 16 characters of a VIN, else a name: last name, full name (`Riley Lockhart`) or the leading words of a
+        business name (`Brightfield Freight`). An ambiguous `q` falls back to its next reading when the first finds nothing (`HO` as a last
+        name, then as the `HO-` prefix). PII criteria match only through HMAC blind indexes (`ctx.crypto.hmacIndex`); the policy-number prefix
+        and VIN tail match the PII-free policy record. Results are tenant-scoped, capped at 50 and carry masked contact data only; `total` is
+        the true number of matches and `truncated` says more exist than were returned. `matchedOn` says how `q` was read.
+        An agent without a staff role only finds the policies it produces (S6-BUG-05).
       x-roles: [csr, agent, adjuster, supervisor]
       x-module: coverage
       parameters:
-        - { name: q, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 100 }, description: 'VIN, phone, postal code, policy-number prefix or last name' }
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 100 }, description: 'Policy number or prefix, name, phone, postal code, VIN or VIN tail' }
       responses:
         '200':
           description: Matching policies (possibly empty)
@@ -677,8 +685,10 @@ paths:
                 type: object
                 required: [items, matchedOn]
                 properties:
-                  items: { type: array, maxItems: 25, items: { $ref: 'domain/PolicySummary.schema.json' } }
-                  matchedOn: { type: string, enum: [vin, postalCode, phone, policyNumberPrefix, lastName] }
+                  items: { type: array, maxItems: 50, items: { $ref: 'domain/PolicySummary.schema.json' } }
+                  matchedOn: { type: string, enum: [vin, vinSuffix, postalCode, phone, policyNumberPrefix, lastName] }
+                  total: { type: integer, minimum: 0, description: Number of matching policies (may exceed items) }
+                  truncated: { type: boolean, description: True when total is larger than the number of items returned }
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '502': { $ref: '#/components/responses/UpstreamError' }
@@ -687,7 +697,8 @@ paths:
       tags: [coverage]
       operationId: getPolicySnapshot
       summary: Policy lookup through the policy port (CSR intake helper)
-      x-roles: [csr, adjuster, supervisor, integration]
+      description: An agent (without a staff role) reads only policies it produces (`producer.agentId`), unmasked; any other policy is 404 (S6-BUG-05).
+      x-roles: [csr, agent, adjuster, supervisor, integration]
       x-module: coverage
       parameters:
         - { name: policyNumber, in: path, required: true, schema: { type: string } }
@@ -901,7 +912,7 @@ paths:
               required: [url, eventTypes]
               properties:
                 url: { type: string, format: uri }
-                eventTypes: { type: array, items: { type: string } }
+                eventTypes: { type: array, minItems: 1, description: 'Known event types (GET /integrations/event-types) or `*`; anything else is 422', items: { type: string } }
                 description: { type: string }
                 active: { type: boolean, default: true }
       responses:
@@ -914,6 +925,24 @@ paths:
                   - { $ref: 'domain/WebhookSubscription.schema.json' }
                   - { type: object, properties: { secret: { type: string } } }
         '422': { $ref: '#/components/responses/Unprocessable' }
+  /integrations/event-types:
+    get:
+      tags: [integrations]
+      operationId: listWebhookEventTypes
+      summary: Event types a webhook subscription may name (S6-BUG-05)
+      x-roles: [tenant_admin, carrier_admin]
+      x-module: integrations
+      responses:
+        '200':
+          description: Known event types
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { type: string } }
+                  wildcard: { type: string, enum: ['*'] }
   /integrations/webhooks/{webhookId}:
     parameters: [{ name: webhookId, in: path, required: true, schema: { type: string } }]
     get:

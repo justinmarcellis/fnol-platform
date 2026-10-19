@@ -136,9 +136,9 @@ test('decisionState reads the newest decision note and replaces the form', () =>
   ];
   assert.equal(R.decisionState(notes, 'fraud').status, 'dismissed');
   assert.equal(R.decisionState(notes, 'subrogation'), null);
-  const html = R.triagePanel(fakeView({ notes }));
+  const html = R.triagePanel(fakeView({ notes }), { dir: { people: { 'adj-1': 'Robin Example' }, queues: [], rules: {} } });
   assert.match(html, /data-decision="dismissed"/);
-  assert.match(html, /Dismissed by adj-1/);
+  assert.match(html, /Dismissed by Robin Example/);
   assert.ok(!html.includes('data-kind="fraud"'));
 });
 
@@ -169,8 +169,12 @@ test('NBA rows are actionable; AI rows need provenance or are hidden and counted
 });
 
 test('routing, coverage, timers, evidence panels', () => {
-  assert.match(R.routingPanel(fakeView()), /Siu/);
-  assert.match(R.routingPanel(fakeView()), /r-siu/);
+  const dir = { people: { 'adj-1': 'Robin Example' }, queues: [{ id: 'siu', label: { en: 'Special investigations', es: 'Investigaciones especiales' }, adjusters: ['adj-1'] }], rules: { 'r-siu': 'High fraud score to SIU' } };
+  const routing = R.routingPanel(fakeView(), { dir });
+  assert.match(routing, /Special investigations/);
+  assert.match(routing, /Robin Example/);
+  assert.match(routing, /High fraud score to SIU/);
+  assert.ok(!routing.includes('r-siu') && !routing.includes('adj-1'), 'rule and adjuster ids are not shown');
   assert.match(R.routingPanel(fakeView({ routing: undefined })), /has not been routed/);
   assert.match(R.coveragePanel(fakeView()), /status="partial"/);
   assert.match(R.coveragePanel(fakeView()), /Driver listed/);

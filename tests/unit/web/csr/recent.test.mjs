@@ -33,7 +33,7 @@ test('open claim reads GET /claims/{id} and summarises read-only', async () => {
   const r = createRecent({ api, t });
   await r.open('c1');
   const s = claimSummary(r.state.claim, t);
-  assert.equal(s.find((x) => x.key === 'severity').value, '42');
+  assert.equal(s.find((x) => x.key === 'severity').value, '42 of 100 (Moderate)', 'severity has a scale and a band (CSR-17)');
   assert.equal(s.find((x) => x.key === 'policyNumber').value, t('csr.claim.none'));
 });
 
@@ -49,7 +49,7 @@ test('string tables have en/es parity', () => {
 });
 
 test('pure modules do not import the kit; no innerHTML anywhere; page uses the shell and demo bar, no dev form', () => {
-  for (const f of ['search.js', 'assisted.js', 'recent.js', 'strings.js', 'errors.js', 'answers.js', 'panel.js', 'desk.js']) {
+  for (const f of ['search.js', 'assisted.js', 'recent.js', 'strings.js', 'errors.js', 'answers.js', 'panel.js', 'desk.js', 'roles.js']) {
     assert.doesNotMatch(readFileSync(new URL(f, dir), 'utf8'), /from ['"]\/shared|import ['"]\/shared/, f);
   }
   for (const f of readdirSync(dir)) {

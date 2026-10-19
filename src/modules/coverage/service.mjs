@@ -5,23 +5,49 @@ import { lossDateInTenantZone } from './dates.mjs';
 
 const SYSTEM_ACTOR = 'system:coverage';
 
+const NAME_RE = /^[A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F'\u2019. &-]{1,59}$/;
+// Policy-number prefix in the seeded shape LL-SS-NNNNNNN: "HO", "HO-", "HO-IL", "PA-IL-", "HO-IL-10", "CA-MI-1421980".
+const PREFIX_RE = /^[A-Za-z]{2,5}(?:-[A-Za-z]{1,3})?(?:-?\d*)?-?$/;
+const VIN_PART_RE = /^[A-HJ-NPR-Za-hj-npr-z0-9]{6,16}$/;
+
 /**
  * Classify a free-text search string. Order matters: VIN (17 alphanumerics), postal (5 or 9 digits),
- * phone (10 digits, or 11 with a leading 1), policy-number prefix (letters, optional dash, digits), last name.
- * @returns {{ kind: 'vin'|'postalCode'|'phone'|'policyNumberPrefix'|'lastName', criteria: object }|null}
+ * phone (10 digits, or 11 with a leading 1), policy number or prefix (LL, LL-SS, LL-SS-NNN...), the last
+ * 6 to 16 characters of a VIN, then a name (last name, full name or business name).
+ * `alternates` are tried in order when the primary reading finds nothing (e.g. "HO" as a last name, then
+ * as the HO- policy prefix; "MP394242" as a prefix, then as a VIN tail).
+ * @returns {{ kind: string, criteria: object, alternates: {kind:string, criteria:object}[] }|null}
  */
 export function classifyQuery(q) {
-  const s = String(q ?? '').trim();
+  const s = String(q ?? '').trim().replace(/\s+/g, ' ');
   if (!s) return null;
-  if (/^[A-Za-z0-9]{17}$/.test(s)) return { kind: 'vin', criteria: { vin: s } };
-  if (/^\d{5}(-\d{4})?$/.test(s)) return { kind: 'postalCode', criteria: { postalCode: s } };
+  const one = (kind, criteria, alternates = []) => ({ kind, criteria, alternates });
+  const vinTail = (v) => ({ kind: 'vinSuffix', criteria: { vinSuffix: v.toUpperCase() } });
+  const prefix = (v) => ({ kind: 'policyNumberPrefix', criteria: { policyNumberPrefix: v.toUpperCase() } });
+  const name = (v) => ({ kind: 'lastName', criteria: { lastName: v } });
+  if (/^[A-Za-z0-9]{17}$/.test(s)) return one('vin', { vin: s.toUpperCase() });
+  if (/^\d{5}(-\d{4})?$/.test(s)) return one('postalCode', { postalCode: s });
   if (/^[+(\d][\d\s().+-]*$/.test(s)) {
     const d = s.replace(/\D/g, '');
-    if (d.length === 10 || (d.length === 11 && d[0] === '1')) return { kind: 'phone', criteria: { phone: d } };
+    if (d.length === 10 || (d.length === 11 && d[0] === '1')) return one('phone', { phone: d.slice(-10) });
+    if (/^\d{6,16}$/.test(s)) { const t = vinTail(s); return one(t.kind, t.criteria); }
     return null;
   }
-  if (/^[A-Za-z]{2,5}-?\d*$/.test(s) && /[-\d]/.test(s)) return { kind: 'policyNumberPrefix', criteria: { policyNumberPrefix: s.toUpperCase() } };
-  if (/^[A-Za-z][A-Za-z'’. -]{1,59}$/.test(s)) return { kind: 'lastName', criteria: { lastName: s } };
+  if (PREFIX_RE.test(s)) {
+    const hasDash = s.includes('-');
+    const hasDigit = /\d/.test(s);
+    const p = prefix(s);
+    if (hasDash || hasDigit) {
+      const alts = [];
+      if (hasDigit && !hasDash && VIN_PART_RE.test(s)) alts.push(vinTail(s));
+      if (!hasDigit && NAME_RE.test(s)) alts.push(name(s)); // hyphenated surnames such as "Ray-Li"
+      return one(p.kind, p.criteria, alts);
+    }
+    // Letters only ("HO", "Lee"): a name first, then the policy-number prefix "HO-".
+    if (NAME_RE.test(s)) return one('lastName', { lastName: s }, s.length <= 3 ? [prefix(`${s}-`)] : []);
+  }
+  if (VIN_PART_RE.test(s) && /\d/.test(s) && /[A-Za-z]/.test(s)) { const t = vinTail(s); return one(t.kind, t.criteria); }
+  if (NAME_RE.test(s)) return one('lastName', { lastName: s });
   return null;
 }
 
@@ -106,7 +132,7 @@ export function createService(ctx) {
      * @returns {Promise<object[]>} PolicySummary[]
      */
     async searchPolicies(criteria = {}) {
-      const keys = ['lastName', 'postalCode', 'vin', 'phone', 'policyNumberPrefix'];
+      const keys = ['lastName', 'postalCode', 'vin', 'phone', 'policyNumberPrefix', 'vinSuffix'];
       const given = keys.filter((k) => criteria[k] !== undefined && criteria[k] !== null && String(criteria[k]).trim() !== '');
       if (!given.length) throw new AppError('bad_request', 'Provide at least one of lastName, postalCode, vin, phone', 400);
       try {
@@ -123,21 +149,56 @@ export function createService(ctx) {
      * @param {string} q
      * @returns {Promise<{ kind: string, items: object[] }>}
      */
-    async searchByQuery(q) {
+    async searchByQuery(q, { producerId } = {}) {
       const text = typeof q === 'string' ? q.trim() : '';
       if (!text) throw new AppError('bad_request', 'q is required', 400);
       const parsed = classifyQuery(text);
-      if (!parsed) throw new AppError('bad_request', 'q must be a VIN, phone number, postal code, policy number prefix or last name', 400);
+      if (!parsed) {
+        throw new AppError('bad_request', 'q must be a policy number or prefix (e.g. PA-IL-6671841, HO-IL), a last name, full name or business name, a phone number, a postal code, or a full VIN or its last 6 or more characters', 400);
+      }
       const a = adapter();
+      const run = async (criteria) => {
+        const c = producerId ? { ...criteria, producerId } : criteria;
+        if (typeof a.searchPage === 'function') return a.searchPage(c);
+        const items = typeof a.searchSummaries === 'function' ? await a.searchSummaries(c) : await a.search(c);
+        return { items, total: items.length };
+      };
       try {
-        const items = typeof a.searchSummaries === 'function'
-          ? await a.searchSummaries(parsed.criteria)
-          : await a.search(parsed.criteria);
-        return { kind: parsed.kind, items };
+        let kind = parsed.kind;
+        let page = await run(parsed.criteria);
+        for (const alt of parsed.alternates ?? []) {
+          if (page.items.length) break;
+          const next = await run(alt.criteria);
+          if (next.items.length) { kind = alt.kind; page = next; }
+        }
+        const total = Number.isInteger(page.total) ? page.total : page.items.length;
+        return { kind, items: page.items, total, truncated: total > page.items.length };
       } catch (e) {
         if (e?.status) throw e;
         throw new AppError('upstream_error', 'Policy system unavailable', 502);
       }
+    },
+
+    /**
+     * True when the agent produces the policy (the stored producer.agentId). Fail closed.
+     * @param {string} policyNumber
+     * @param {string} agentId
+     */
+    async isProducer(policyNumber, agentId) {
+      if (!policyNumber || !agentId) return false;
+      try {
+        const a = adapter();
+        if (typeof a.producedPolicyNumbers !== 'function') return false;
+        return (await a.producedPolicyNumbers(agentId)).includes(policyNumber);
+      } catch { return false; }
+    },
+
+    /** Policy numbers the agent produces ([] when the adapter has no producer data). */
+    async producedPolicyNumbers(agentId) {
+      try {
+        const a = adapter();
+        return typeof a.producedPolicyNumbers === 'function' ? await a.producedPolicyNumbers(agentId) : [];
+      } catch { return []; }
     },
 
     /**

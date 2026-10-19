@@ -61,45 +61,45 @@ const isBlank = (v) => v === undefined || v === null || v === '' || (Array.isArr
 export function validateAnswer(q, value, { locale = 'en', today } = {}) {
   const es = String(locale).startsWith('es');
   const m = (en, sp) => (es ? sp : en);
-  if (isBlank(value)) return q.type === 'disclosure' ? m('Acknowledgement is required.', 'Se requiere confirmacion.') : m('A value is required.', 'Se requiere un valor.');
+  if (isBlank(value)) return q.type === 'disclosure' ? m('Acknowledgement is required.', 'Se requiere confirmación.') : m('A value is required.', 'Se requiere un valor.');
   const v = q.validation ?? {};
   const num = () => (typeof value === 'number' ? value : (typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN));
   switch (q.type) {
     case 'number':
     case 'currency': {
       const n = num();
-      if (!Number.isFinite(n)) return m('Enter a number.', 'Ingrese un numero.');
+      if (!Number.isFinite(n)) return m('Enter a number.', 'Ingrese un número.');
       if (v.min !== undefined && n < v.min) return m(`Must be at least ${v.min}.`, `Debe ser al menos ${v.min}.`);
-      if (v.max !== undefined && n > v.max) return m(`Must be at most ${v.max}.`, `Debe ser como maximo ${v.max}.`);
+      if (v.max !== undefined && n > v.max) return m(`Must be at most ${v.max}.`, `Debe ser como máximo ${v.max}.`);
       return null;
     }
     case 'boolean':
-      return typeof value === 'boolean' ? null : m('Answer yes or no.', 'Responda si o no.');
+      return typeof value === 'boolean' ? null : m('Answer yes or no.', 'Responda sí o no.');
     case 'disclosure':
-      return value === true ? null : m('You must acknowledge this statement.', 'Debe confirmar esta declaracion.');
+      return value === true ? null : m('You must acknowledge this statement.', 'Debe confirmar esta declaración.');
     case 'date':
     case 'datetime': {
       const s = String(value);
       const day = s.slice(0, 10);
-      if (!DATE_RE.test(day) || Number.isNaN(Date.parse(day)) || new Date(day).toISOString().slice(0, 10) !== day) return m('Enter a valid date (YYYY-MM-DD).', 'Ingrese una fecha valida (AAAA-MM-DD).');
-      if (q.type === 'date' && s.length !== 10) return m('Enter a valid date (YYYY-MM-DD).', 'Ingrese una fecha valida (AAAA-MM-DD).');
+      if (!DATE_RE.test(day) || Number.isNaN(Date.parse(day)) || new Date(day).toISOString().slice(0, 10) !== day) return m('Enter a valid date (YYYY-MM-DD).', 'Ingrese una fecha válida (AAAA-MM-DD).');
+      if (q.type === 'date' && s.length !== 10) return m('Enter a valid date (YYYY-MM-DD).', 'Ingrese una fecha válida (AAAA-MM-DD).');
       if (v.notInFuture && today && day > today) return m('The date cannot be in the future.', 'La fecha no puede ser futura.');
       return null;
     }
     case 'time':
       return TIME_RE.test(String(value)) ? null : m('Enter a time as HH:MM.', 'Ingrese la hora como HH:MM.');
     case 'select':
-      if (typeof value !== 'string') return m('Choose one option.', 'Elija una opcion.');
+      if (typeof value !== 'string') return m('Choose one option.', 'Elija una opción.');
       return (q.options ?? []).some((o) => o.value === value) ? null : m('Choose one of the listed options.', 'Elija una de las opciones.');
     case 'multiselect': {
-      if (!Array.isArray(value)) return m('Choose one or more options.', 'Elija una o mas opciones.');
+      if (!Array.isArray(value)) return m('Choose one or more options.', 'Elija una o más opciones.');
       const allowed = new Set((q.options ?? []).map((o) => o.value));
       return value.every((x) => allowed.has(x)) ? null : m('Choose from the listed options.', 'Elija entre las opciones.');
     }
     case 'phone':
-      return PHONE_RE.test(String(value)) ? null : m('Enter a valid phone number.', 'Ingrese un telefono valido.');
+      return PHONE_RE.test(String(value)) ? null : m('Enter a valid phone number.', 'Ingrese un teléfono válido.');
     case 'email':
-      return EMAIL_RE.test(String(value)) ? null : m('Enter a valid email address.', 'Ingrese un correo valido.');
+      return EMAIL_RE.test(String(value)) ? null : m('Enter a valid email address.', 'Ingrese un correo válido.');
     case 'vin':
       return VIN_RE.test(String(value)) ? null : m('A VIN has 17 characters (no I, O or Q).', 'El VIN tiene 17 caracteres (sin I, O ni Q).');
     case 'party':
@@ -121,7 +121,7 @@ export function validateAnswer(q, value, { locale = 'en', today } = {}) {
         // Unsafe or invalid tenant patterns are skipped (never executed): they can neither hang nor block the claimant.
         const re = compileSafePattern(v.pattern);
         // Input is capped (SEC3-003) and evaluation is time-boxed; a timeout counts as invalid.
-        if (re && matchWithBudget(re, value) !== true) return m('The format is not valid.', 'El formato no es valido.');
+        if (re && matchWithBudget(re, value) !== true) return m('The format is not valid.', 'El formato no es válido.');
       }
       return null;
     }
@@ -151,9 +151,15 @@ export function plan(visible, required, answers) {
   };
 }
 
-/** Question as sent to clients: contract fields only (text/help/options keep every locale). */
-export function publicQuestion(q) {
+/**
+ * Question as sent to clients: contract fields only (text/help/options keep every locale).
+ * `required` is the requiredness right now: pass opts.required from applicable() so a question made required by
+ * requiredIf (or an intake rule) is not labelled optional (CSR-14). Without it, the static q.required applies.
+ * @param {object} q
+ * @param {{ required?: boolean }} [opts]
+ */
+export function publicQuestion(q, opts = {}) {
   if (!q) return null;
   const { mapsTo, ...rest } = q; // eslint-disable-line no-unused-vars
-  return { ...rest, required: !!q.required };
+  return { ...rest, required: typeof opts.required === 'boolean' ? opts.required : !!q.required };
 }

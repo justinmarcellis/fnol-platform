@@ -9,6 +9,11 @@ const STATUS_TARGETS = ['in_review', 'pending_info', 'closed', 'withdrawn'];
 const actorOf = (req) => ({ type: req.user.roles.includes('integration') ? 'integration' : 'user', id: req.user.sub, role: req.user.roles[0], roles: req.user.roles });
 const canSeePii = (req) => req.user.roles.some((r) => PII_ROLES.includes(r));
 const claims = (req) => req.ctx.modules.claims;
+/** Policy numbers the caller produces when it acts as an agent ([] otherwise, or when coverage has no producer data). */
+const producedBy = async (req) => {
+  if (!req.user.roles.includes('agent')) return [];
+  try { return (await req.ctx.modules.coverage?.producedPolicyNumbers?.(req.user.sub)) ?? []; } catch { return []; }
+};
 // ClaimCreate (openapi.yaml) is additionalProperties:false and defines no `answers`; unknown properties are rejected, never dropped.
 const CLAIM_CREATE_KEYS = new Set(['tenantId', 'lob', 'lossType', 'channel', 'policyNumber', 'riskState', 'lossEvent', 'parties', 'vehicles', 'properties', 'externalRef']);
 const REASON_CODE = /^[a-z][a-z0-9_]{1,39}$/;
@@ -36,21 +41,26 @@ export function registerRoutes(router) {
     res.json(201, out);
   }, { roles: ['integration', 'csr'] });
 
+  // Staff list tenant-wide. Claimants list the claims they reported; agents the claims they reported or that sit
+  // on a policy they produce (DATA-5). Both get the claimant-safe projection.
   router.get(BASE, async (req, res) => {
-    const { limit, cursor, ...filter } = req.query;
+    const { limit, cursor, reportedById: _r, visibleTo: _v, ...filter } = req.query;
     const staff = isStaff(req.user);
-    const page = await claims(req).listClaims({ ...filter, redact: !canSeePii(req), ...(staff ? {} : { reportedById: req.user.sub }) }, { limit, cursor });
+    const scope = staff ? {} : { visibleTo: { reportedById: req.user.sub, policyNumbers: await producedBy(req) } };
+    const page = await claims(req).listClaims({ ...filter, redact: !canSeePii(req), ...scope }, { limit, cursor });
     res.json(200, staff ? page : { ...page, items: page.items.map((c) => viewFor(req.user, c)) });
-  }, { roles: READ });
+  }, { roles: ['claimant', 'agent', ...READ] });
 
   router.get(`${BASE}/:claimId`, async (req, res) => {
     const include = [].concat(req.query.include ?? []).flatMap((s) => String(s).split(','));
     const claim = await claims(req).getClaim(req.params.claimId, { include, redact: !canSeePii(req) });
     // Non-staff read only their own claims; a foreign id is indistinguishable from a missing one.
-    if (!isStaff(req.user) && !ownsClaim(claim, req.user)) throw new req.ctx.AppError('not_found', 'Claim not found', 404);
+    if (!isStaff(req.user) && !ownsClaim(claim, req.user) && !(await producedBy(req)).includes(claim.policyNumber)) {
+      throw new req.ctx.AppError('not_found', 'Claim not found', 404);
+    }
     etag(res, claim);
     res.json(200, viewFor(req.user, claim));
-  }, { roles: ['claimant', ...READ] });
+  }, { roles: ['claimant', 'agent', ...READ] });
 
   router.post(`${BASE}/:claimId/status`, async (req, res) => {
     const b = req.body ?? {};

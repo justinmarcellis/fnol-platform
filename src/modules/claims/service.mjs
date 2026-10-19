@@ -203,6 +203,10 @@ export function createService(ctx) {
     };
   }
 
+  /** Non-staff scope: the caller reported the claim, or the claim is on one of the given policies. */
+  const visibleTo = (claim, { reportedById, policyNumbers = [] }) =>
+    (reportedById !== undefined && claim.reportedBy?.id === reportedById) || (claim.policyNumber && policyNumbers.includes(claim.policyNumber));
+
   function listClaimsSync(filter = {}, { limit = 50, cursor } = {}) {
     limit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 200);
     const where = [];
@@ -241,6 +245,7 @@ export function createService(ctx) {
         const claim = { ...JSON.parse(r.doc), status: r.status, version: r.version, updatedAt: r.updated_at };
         if (filter.flag && !claim.flags?.includes(filter.flag)) continue;
         if (filter.reportedById !== undefined && claim.reportedBy?.id !== filter.reportedById) continue;
+        if (filter.visibleTo && !visibleTo(claim, filter.visibleTo)) continue;
         if (items.length === limit) { more = true; scanned--; break; }
         items.push(claim);
       }

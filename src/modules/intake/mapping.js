@@ -172,8 +172,31 @@ function applyProperty(out, loc) {
   out.properties = properties;
 }
 
+const ORG_HINT = /\b(co|company|inc|llc|ltd|corp|group|logistics|freight|delivery|services|transport)\b/i;
+
 /**
- * Add policy number and the matched insured vehicle / insured location to a ClaimCreate. Never throws.
+ * DATA-1: the insured on the claim is the policy's named insured. When no party carries the insured role, the first
+ * named insured of the snapshot is added (a person by first/last name, a business by organizationName).
+ */
+function applyInsuredParty(out, snapshot) {
+  const named = (Array.isArray(snapshot.namedInsureds) ? snapshot.namedInsureds : []).find((n) => n && typeof n.name === 'string' && n.name.trim());
+  if (!named) return;
+  const parties = Array.isArray(out.parties) ? out.parties : [];
+  if (parties.some((p) => (p.roles ?? []).includes('insured'))) return;
+  const name = named.name.trim();
+  const org = named.kind === 'organization' || (named.kind !== 'person' && ORG_HINT.test(name.replace(/\([^)]*\)/g, ' ')));
+  let party;
+  if (org) party = { kind: 'organization', organizationName: name, roles: ['insured'], isPolicyParty: true };
+  else {
+    const words = name.split(/\s+/);
+    party = { kind: 'person', ...(words.length > 1 ? { firstName: words.slice(0, -1).join(' ') } : {}), lastName: words.at(-1), roles: ['insured'], isPolicyParty: true };
+  }
+  out.parties = [party, ...parties];
+}
+
+/**
+ * Add policy number, the policy's named insured (when no insured party was given) and the matched insured
+ * vehicle / insured location to a ClaimCreate. Never throws.
  * Policy number: an answer mapped to policyNumber, else session.policyNumber. Vehicle: matched by VIN
  * (case-insensitive) or unit id against snapshot.vehicles; with no identifier a single-vehicle policy is used.
  * Property LOBs: the matched snapshot location becomes properties[role=insured_location]. When there is no
@@ -201,6 +224,7 @@ export async function enrichClaimCreate(input, { session, answers, questions, ge
     try { snapshot = await getSnapshot(policyNumber, out.lossEvent?.lossDate); } catch { snapshot = null; } // lookup failure is not an intake failure
     if (!snapshot || typeof snapshot !== 'object') return setMeta(out, meta);
 
+    applyInsuredParty(out, snapshot);
     if (isAutoLob(out.lob) || (!out.lob && Array.isArray(snapshot.vehicles))) {
       const ids = vehicleIds(out, answers, questions);
       const pv = pickVehicle(snapshot, ids);

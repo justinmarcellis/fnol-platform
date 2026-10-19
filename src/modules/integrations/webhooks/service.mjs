@@ -2,6 +2,19 @@ import { generateSecret } from './signing.mjs';
 import { validateWebhookUrl, checkAllowedHost } from './url-guard.mjs';
 
 const EVENT_TYPE_RE = /^(?:(?:claim|tenant)\.[a-z_.]+|\*)$/;
+
+/**
+ * Event types a webhook can subscribe to: every domain event the platform publishes (architecture/contracts/events,
+ * plus claim.acknowledged), or '*' for all of them. Anything else is rejected (ADMIN-15).
+ */
+export const KNOWN_EVENT_TYPES = Object.freeze([
+  'claim.reported', 'claim.acknowledged', 'claim.updated', 'claim.coverage.verified', 'claim.evidence.added',
+  'claim.evidence.extracted', 'claim.triaged', 'claim.routed', 'claim.status.changed', 'claim.note.added',
+  'claim.timer.due', 'claim.timer.breached', 'tenant.config.updated',
+]);
+
+/** Common synonyms accepted on input and stored under the canonical event name. */
+export const EVENT_TYPE_ALIASES = Object.freeze({ 'claim.created': 'claim.reported' });
 const KNOWN_INPUT = new Set(['url', 'eventTypes', 'description', 'active', 'retryPolicy', 'tenantId']);
 const KNOWN_PATCH = new Set([...KNOWN_INPUT, 'rotateSecret']);
 export const DEFAULT_MAX_ATTEMPTS = 5;
@@ -89,7 +102,10 @@ export function createWebhookService(ctx) {
     if (!Array.isArray(types) || !types.length) throw invalid(ctx, 'eventTypes must be a non-empty array');
     const bad = types.filter((t) => typeof t !== 'string' || !EVENT_TYPE_RE.test(t));
     if (bad.length) throw invalid(ctx, `invalid event type(s): ${bad.map(String).join(', ')}`);
-    return [...new Set(types)];
+    const canonical = types.map((t) => EVENT_TYPE_ALIASES[t] ?? t);
+    const unknown = canonical.filter((t) => t !== '*' && !KNOWN_EVENT_TYPES.includes(t));
+    if (unknown.length) throw invalid(ctx, `unknown event type(s): ${unknown.join(', ')}. Known: ${KNOWN_EVENT_TYPES.join(', ')} or *`);
+    return [...new Set(canonical)];
   }
 
   function checkRetryPolicy(rp) {

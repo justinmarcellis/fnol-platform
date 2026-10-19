@@ -91,7 +91,7 @@ export function createService(ctx) {
     const cfg = tenantCfg.triage ?? {};
     // Band cut-offs: TenantConfig.severityBands (contract), legacy triage.severityBands, else 25/50/75.
     const severity = computeSeverity(sevAi?.output ?? null, rules.deltas, facts, tenantCfg.severityBands ?? cfg.severityBands);
-    const complexity = computeComplexity(facts, rules.complexity);
+    const complexity = computeComplexity(facts, rules.complexity, severity);
     const fraud = mergeFraud(deterministicIndicators(facts, cfg.fraud), fraudAi?.output ?? null, cfg.fraud);
     const subrogation = computeSubrogation(facts, subAi?.output ?? null);
     const degraded = !sevAi;

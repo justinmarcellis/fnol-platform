@@ -40,10 +40,20 @@ export function menuIndex(index, key, count) {
  * Sets --fx-demo-height (on itself and :root) to the demo band height. Emits fx-signout from the account menu.
  * `.navItems = [{href,label,icon?,current?}]` renders nav links. Collapses nav into a menu button below 768 px.
  */
+/** Shared product icon for every app page, so browsers do not fall back to a missing /favicon.ico (DATA-17). */
+export const FAVICON_HREF = '/shared/favicon.svg';
+export function ensureFavicon(doc) {
+  if (!doc?.head || doc.head.querySelector('link[rel~="icon"]')) return;
+  const link = doc.createElement('link');
+  link.rel = 'icon'; link.type = 'image/svg+xml'; link.href = FAVICON_HREF;
+  doc.head.appendChild(link);
+}
+
 export class FxAppShell extends HE {
   static get observedAttributes() { return ['product', 'tenant-name', 'heading', 'subheading', 'user-name', 'user-role', 'nav-label', 'home-href', 'logo']; }
   constructor() { super(); this._id = `fxshell${++uid}`; this._onDoc = (e) => this.onDocument(e); }
   connectedCallback() {
+    ensureFavicon(this.ownerDocument);
     if (!this._built) this.build();
     this.ownerDocument.addEventListener('click', this._onDoc);
     this.ownerDocument.addEventListener('keydown', this._onDoc);

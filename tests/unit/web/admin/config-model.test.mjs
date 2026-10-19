@@ -116,7 +116,9 @@ test('normalizeHistory accepts version rows and audit entries and sorts newest f
   ] });
   assert.deepEqual(rows.map((r) => r.version), [3, 2, 1]);
   assert.equal(rows[0].actor, 'ann');
-  assert.deepEqual(rows[0].changed, ['rules']);
+  assert.deepEqual(rows[0].changed, ['Routing rules'], 'section names are readable (ADMIN-2)');
+  assert.equal(rows[0].actorName, 'ann');
+  assert.equal(rows[2].actorName, 'System (tenant file)');
   assert.deepEqual(m.normalizeHistory(null), []);
 });
 

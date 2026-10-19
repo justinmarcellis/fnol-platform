@@ -43,7 +43,8 @@ test('AI prefill appears as pending suggestion with provenance and can be confir
   assert.equal(sg.ai.explanation, 'From your narrative');
   assert.equal(answers.length, 0, 'not sent until confirmed');
   await chat.confirmSuggestion('loss_type');
-  assert.deepEqual(answers[0], { questionId: 'loss_type', value: 'collision' });
+  // S6-BUG-01: an unedited confirmation carries provenance so the claim records the AI source and confidence.
+  assert.deepEqual(answers[0], { questionId: 'loss_type', value: 'collision', provenance: 'ai_extraction' });
   assert.equal(chat.messages.find((m) => m.kind === 'suggestion').status, 'confirmed');
 });
 

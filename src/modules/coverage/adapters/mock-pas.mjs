@@ -4,15 +4,18 @@
 // indexes from ctx.crypto.hmacIndex.
 
 import { summarizePolicy } from '../summarize.mjs';
+import { nameKeys, normName } from '../names.mjs';
+
+/** Most rows a search returns; the true total is reported alongside (CSR-7). */
+export const SEARCH_LIMIT = 50;
 
 const digits = (v) => String(v ?? '').replace(/\D/g, '');
 const norm = {
-  lastName: (v) => String(v ?? '').trim().toLowerCase(),
+  lastName: (v) => normName(v),
   postalCode: (v) => String(v ?? '').trim().slice(0, 5),
   vin: (v) => String(v ?? '').trim().toUpperCase(),
   phone: (v) => digits(v).slice(-10),
 };
-const lastNameOf = (insured) => insured.lastName ?? String(insured.name ?? '').trim().split(/\s+/).pop();
 
 /** ",h1,h2," list so a single hash can be matched with LIKE '%,h,%'. */
 const packIdx = (hashes) => {
@@ -53,7 +56,7 @@ function splitPii(p) {
 function joinPii(doc, pii) {
   const out = { ...doc };
   if (pii) {
-    out.namedInsureds = pii.insureds.map((i) => ({ name: i.name, relation: i.relation }));
+    out.namedInsureds = pii.insureds.map((i) => ({ name: i.name, relation: i.relation, ...(i.kind ? { kind: i.kind } : {}) }));
     out.drivers = (doc.drivers ?? []).map((d, i) => (pii.drivers[i] ? { ...d, name: pii.drivers[i] } : d));
     out.vehicles = (doc.vehicles ?? []).map((v) => (pii.garaging[v.unitId] ? { ...v, garagingPostalCode: pii.garaging[v.unitId] } : v));
     out.properties = (doc.properties ?? []).map((p) => (pii.addresses[p.locationId] ? { ...p, address: pii.addresses[p.locationId] } : p));
@@ -67,8 +70,12 @@ function joinPii(doc, pii) {
 export function createMockPas(ctx) {
   const readPii = (row) => (row.pii ? JSON.parse(ctx.crypto.decryptPii(row.pii)) : null);
 
-  /** Blind-index lookup (AND semantics). policyNumberPrefix is not PII and uses a plain, escaped prefix match. */
-  function queryRows(criteria) {
+  /**
+   * Blind-index lookup (AND semantics). policyNumberPrefix and vinSuffix are not PII: plain, escaped matches on
+   * the policy number and on the stored (PII-free) doc. producerId restricts rows to one producer's book.
+   * @returns {{ rows: object[], total: number }}
+   */
+  function queryRows(criteria, { limit = SEARCH_LIMIT } = {}) {
     const where = [];
     const args = [];
     const add = (col, key) => {
@@ -85,8 +92,20 @@ export function createMockPas(ctx) {
       where.push("policy_number LIKE ? ESCAPE '\\'");
       args.push(`${prefix.replace(/[\\%_]/g, '\\$&')}%`);
     }
-    if (!where.length) return [];
-    return ctx.db.all(`SELECT * FROM coverage_policies WHERE ${where.join(' AND ')} ORDER BY policy_number LIMIT 50`, ...args);
+    const suffix = String(criteria.vinSuffix ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (suffix) {
+      where.push('doc LIKE ?');
+      args.push(`%"vin":"%${suffix}"%`);
+    }
+    if (!where.length) return { rows: [], total: 0 };
+    if (criteria.producerId) {
+      where.push("json_extract(doc, '$.producer.agentId') = ?");
+      args.push(String(criteria.producerId));
+    }
+    const sqlWhere = where.join(' AND ');
+    const total = ctx.db.get(`SELECT COUNT(*) AS n FROM coverage_policies WHERE ${sqlWhere}`, ...args)?.n ?? 0;
+    const rows = ctx.db.all(`SELECT * FROM coverage_policies WHERE ${sqlWhere} ORDER BY policy_number LIMIT ?`, ...args, limit);
+    return { rows, total };
   }
 
   return {
@@ -108,7 +127,7 @@ export function createMockPas(ctx) {
     },
 
     async search(criteria = {}) {
-      return queryRows(criteria).map((row) => {
+      return queryRows(criteria).rows.map((row) => {
         const doc = JSON.parse(row.doc);
         const pii = readPii(row);
         return {
@@ -125,7 +144,20 @@ export function createMockPas(ctx) {
 
     /** Same lookup as search(), returning masked PolicySummary rows (see summarize.mjs). */
     async searchSummaries(criteria = {}) {
-      return queryRows(criteria).map((row) => summarizePolicy(JSON.parse(row.doc), readPii(row)));
+      return queryRows(criteria).rows.map((row) => summarizePolicy(JSON.parse(row.doc), readPii(row)));
+    },
+
+    /** searchSummaries plus the true number of matches, so callers can say "showing 50 of N". */
+    async searchPage(criteria = {}) {
+      const { rows, total } = queryRows(criteria);
+      return { items: rows.map((row) => summarizePolicy(JSON.parse(row.doc), readPii(row))), total, limit: SEARCH_LIMIT };
+    },
+
+    /** Policy numbers a producer writes (not PII), for agent-scoped reads. */
+    async producedPolicyNumbers(agentId) {
+      if (!agentId) return [];
+      return ctx.db.all("SELECT policy_number FROM coverage_policies WHERE json_extract(doc, '$.producer.agentId') = ? ORDER BY policy_number", String(agentId))
+        .map((r) => r.policy_number);
     },
 
     /** Insert or replace synthetic policies for this tenant. Returns { inserted }. */
@@ -142,7 +174,7 @@ export function createMockPas(ctx) {
             lob: p.lob,
             doc,
             pii: ctx.crypto.encryptPii(JSON.stringify(pii)),
-            last_name_idx: idx(() => insureds.map((i) => norm.lastName(lastNameOf(i)))),
+            last_name_idx: idx(() => insureds.flatMap((i) => nameKeys(i))),
             postal_idx: idx(() => [
               ...Object.values(pii.garaging).map(norm.postalCode),
               ...Object.values(pii.addresses).map((a) => norm.postalCode(a.postalCode)),
