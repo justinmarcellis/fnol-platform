@@ -1,0 +1,42 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T13:17:40.124Z",
+  "history": [
+    {
+      "at": "2026-10-19T13:17:53.168Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S6-EXP-07",
+  "team": "experience",
+  "title": "Design QA polish across the four apps (orchestrator review of Wave B screenshots)",
+  "story": "As the sponsor I want the redesigned apps to feel consistent and correct in every detail so that nothing in the demo looks unfinished",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-ux-designer",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/shared/",
+    "src/web/adjuster/",
+    "src/modules/adjuster/",
+    "tests/unit/web/shared/",
+    "tests/unit/web/adjuster/",
+    "tests/unit/adjuster/",
+    "tests/ui/adjuster.test.mjs",
+    "tests/ui/demo-bar.test.mjs",
+    "tests/ui/design-system.test.mjs",
+    "docs/design/"
+  ],
+  "acceptance": [
+    "Fonts: the tenant brand font (e.g. Georgia for Aurelia Mutual) applies only to the brand mark and tenant name; page titles, the demo bar and all controls use the product UI font (--fx-font-ui); the demo bar selects never render in a serif fallback (screenshots before/after for Aurelia)",
+    "Identity shown once: when the demo bar is present the shell user menu shows the persona and the demo bar does not repeat the name and avatar (or vice versa); decide in design-system.md",
+    "Adjuster inbox timers agree with the claim view: the inbox regulatory timer column shows the next open timer (e.g. Contact: 2d 23h left) from the same source the claim view uses, and the Due today and Overdue tiles count from it; today every row says No timer while the claim view shows live timers (fix the projection or query in src/modules/adjuster, with a unit test)",
+    "AI summary card: dates through format.js (no raw 2026-03-30), the debug line Facts used: lossType=... is removed or moved into a collapsed Details section, provider/model/confidence/explanation stay visible",
+    "Regenerate screenshots docs/design/screens/adjuster-inbox, adjuster-claim, demo-bar and kitchen-sink-light; the reviewer opens them; full npm test no new failures"
+  ],
+  "brief": "Orchestrator design review of Wave B found these issues in docs/design/screens/adjuster-*.png, admin-*.png, csr-*.png, claimant-question.png. Do not edit src/web/claimant, csr or admin (they inherit the shared font fix), src/server.mjs or test harness files (S6-PLT-01 runs in parallel).",
+  "startedAt": "2026-10-19T13:17:53.168Z"
+}

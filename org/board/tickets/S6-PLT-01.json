@@ -1,8 +1,14 @@
 {
-  "status": "ready",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:47:39.640Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T13:17:53.252Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
   "id": "S6-PLT-01",
   "team": "platform",
   "title": "Dev mode is an explicit opt-in (fail closed); deploy config consistent",
@@ -34,5 +40,6 @@
     "Dockerfile, infra/cloudrun/service.yaml and docs/deploy-fnol-poc.md agree: the fnol-poc deploy sets FNOL_DEV_MODE=1 explicitly (IAP-only PoC, accepted R2 risk) and the deploy command in the runbook is updated; the deployment-files test checks the manifest and runbook agree",
     "Full npm test no new failures"
   ],
-  "brief": "src/server.mjs:69-70 computes devMode. Grep tests for devMode/NODE_ENV usages (IMP-14) and include any test that must change in your result; post to the platform hub if a test outside your paths must change. Sequenced after the Wave B redesigns (they edit tests/ui). Test harnesses that rely on the old default are in your paths; set devMode explicitly there."
+  "brief": "src/server.mjs:69-70 computes devMode. Grep tests for devMode/NODE_ENV usages (IMP-14) and include any test that must change in your result; post to the platform hub if a test outside your paths must change. Sequenced after the Wave B redesigns (they edit tests/ui). Test harnesses that rely on the old default are in your paths; set devMode explicitly there.",
+  "startedAt": "2026-10-19T13:17:53.252Z"
 }
