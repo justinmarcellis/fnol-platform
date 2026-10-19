@@ -47,7 +47,8 @@ test('GET /config/public marks lines a claimant cannot use on the web (Kestrel)'
   const r = await call(app, 'GET', '/api/v1/config/public', { token: claimant });
   assert.equal(r.status, 200);
   assert.equal(r.json.channel, 'claimant_web');
-  assert.deepEqual(r.json.availableLobs, [], 'Kestrel takes personal and commercial auto by phone and API only');
+  // S6-BUG-05 opened claimant_web for Kestrel personal auto (demo blocker CLAIMANT-1); commercial auto stays phone/API only.
+  assert.deepEqual(r.json.availableLobs, ['personal_auto'], 'Kestrel takes commercial auto by phone and API only');
   // The lob list itself still mirrors the tenant (contract shape unchanged).
   assert.deepEqual(r.json.lobs.map((l) => l.id).sort(), ['commercial_auto', 'personal_auto']);
   const csr = await call(app, 'GET', '/api/v1/config/public', { token: app.token(['csr'], 'kestrel-point') });

@@ -5,12 +5,17 @@ import { isDevMode } from '/shared/devlogin.js';
 import { applyBranding } from '/shared/theme.js';
 import { clearSession, readSession } from '/shared/personas.js';
 import { createAdminClient } from './client.js';
-import { changedSections, clone, diffConfig, isDirty, parsePointer, parseCsv } from './config-model.js';
+import { clone, diffConfig, isDirty, parsePointer, parseCsv } from './config-model.js';
 import { applyFieldEdit, applyListAction } from './edit.js';
-import { SECTION_LABEL, TABS, diffHtml, markHtml, panelHtml, summaryHtml, tabsHtml } from './render.js';
+import { READ_ONLY_TABS, SECTION_LABEL, TABS, diffHtml, markHtml, panelHtml, summaryHtml, tabsHtml } from './render.js';
 
 const $ = (id) => document.getElementById(id);
-const toast = (m, kind = 'info') => $('toast').show(m, { kind });
+/** One toast at a time: a new one replaces the last, and every toast (errors too) closes itself (ADMIN-13). */
+function toast(m, kind = 'info') {
+  const el = $('toast');
+  for (const it of [...(el.items ?? [])]) el.dismiss(it.id);
+  return el.show(m, { kind, timeout: kind === 'error' ? 8000 : 5000 });
+}
 
 let token = null;
 try { token = sessionStorage.getItem('admin.token'); } catch { /* storage may be blocked */ }
@@ -18,7 +23,7 @@ const client = createAdminClient({ baseUrl: '/api/v1', getToken: () => token });
 
 const state = {
   cfg: null, saved: null, version: 0, tab: 'branding', qSet: 0, report: null, localErrors: {}, rawText: {},
-  webhooks: null, history: null, kpis: null, who: '',
+  webhooks: null, history: null, kpis: null, who: '', newSecret: null,
 };
 
 function ctx() { return { ...state }; }
@@ -42,11 +47,19 @@ function changeCounts() {
 function paintStatus() {
   $('version-label').textContent = `Version ${state.version}`;
   const dirty = isDirty(state.saved, state.cfg);
+  // Text that did not parse (bad JSON, a non-number) never reaches state.cfg, but it is still an edit to discard (ADMIN-5).
+  const invalid = Object.keys(state.localErrors ?? {}).length;
   const counts = changeCounts();
   const names = [...new Set(Object.keys(counts).map((k) => SECTION_LABEL[k] ?? 'Other'))];
-  $('dirty-label').textContent = dirty ? `Unsaved changes${names.length ? `: ${names.join(', ')}` : ''}` : 'No unsaved changes';
-  $('savebar').dataset.dirty = String(dirty);
-  $('revert').disabled = !dirty;
+  const parts = [];
+  if (dirty) parts.push(`Unsaved changes${names.length ? `: ${names.join(', ')}` : ''}`);
+  if (invalid) parts.push(`${invalid} field${invalid === 1 ? ' needs' : 's need'} fixing`);
+  const readOnly = READ_ONLY_TABS.includes(state.tab);
+  $('dirty-label').textContent = parts.length ? parts.join('. ') : readOnly ? 'This section is read-only.' : 'No unsaved changes';
+  $('savebar').dataset.dirty = String(dirty || invalid > 0);
+  // KPIs and history have nothing to save; the buttons come back only when edits elsewhere are pending (ADMIN-19).
+  $('savebar').dataset.readonly = String(readOnly && !dirty && !invalid);
+  $('revert').disabled = !dirty && !invalid;
   paintNav(counts);
   const shell = $('shell');
   if (state.cfg) shell.setAttribute('tenant-name', state.cfg.displayName ?? state.cfg.tenantId ?? '');
@@ -55,7 +68,13 @@ function paintStatus() {
 /** Update the nav in place so a link is never replaced between mouse-down and click. */
 function paintNav(counts) {
   const nav = $('tabs');
-  if (nav.dataset.active !== state.tab || !nav.children.length) { nav.innerHTML = tabsHtml(state.tab, state.report, counts); nav.dataset.active = state.tab; return; }
+  if (nav.dataset.active !== state.tab || !nav.children.length) {
+    nav.innerHTML = tabsHtml(state.tab, state.report, counts); nav.dataset.active = state.tab;
+    // On narrow screens the nav is a scrolling strip: keep the active section fully in view (ADMIN-16).
+    const cur = nav.querySelector('[aria-current="page"]');
+    if (cur && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2);
+    return;
+  }
   for (const [id] of TABS) {
     const mark = nav.querySelector(`#tab-${id} .adm-mark`);
     const html = markHtml(state.report?.bySection?.[id] ?? 0, counts[id] ?? 0);
@@ -98,7 +117,7 @@ async function loadAll() {
   if (!res) return;
   state.cfg = clone(res.config); state.saved = clone(res.config); state.version = res.version;
   state.report = null; state.localErrors = {}; state.rawText = {};
-  state.webhooks = null; state.history = null; state.kpis = null;
+  state.webhooks = null; state.history = null; state.kpis = null; state.newSecret = null;
   $('conflict').hidden = true;
   try { applyBranding(res.config); } catch { /* branding is cosmetic */ }
   showOnly('console');
@@ -125,8 +144,13 @@ async function loadTabData() {
 const TAB_IDS = TABS.map((t) => t[0]);
 function selectTab(id) {
   state.tab = id;
+  // A success banner belongs to the section it was shown on; problems stay until they are fixed (ADMIN-19).
+  if (state.report?.valid) state.report = null;
   try { history.replaceState(null, '', `#/${id}`); } catch { /* ignore */ }
   renderPanel();
+  // Open the new section at its heading, not at the old scroll position (ADMIN-17).
+  try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch { window.scrollTo(0, 0); }
+  document.getElementById(`h-${id}`)?.focus({ preventScroll: true });
   loadTabData();
 }
 $('tabs').addEventListener('click', (e) => {
@@ -185,6 +209,15 @@ $('panel').addEventListener('click', async (e) => {
     return;
   }
   if (act === 'kpi-refresh') { state.kpis = null; renderPanel(); loadTabData(); return; }
+  if (act === 'wh-copy' && state.newSecret) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(state.newSecret.secret); ok = true; } catch { /* clipboard may be blocked */ }
+    if (!ok) { const r = document.createRange(); const v = $('wh-secret-value'); if (v) { r.selectNodeContents(v); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } }
+    state.newSecret.copied = ok; renderPanel(); $('wh-copy')?.focus();
+    toast(ok ? 'Signing secret copied.' : 'Select the secret and copy it with your keyboard.', ok ? 'success' : 'info');
+    return;
+  }
+  if (act === 'wh-secret-done') { state.newSecret = null; renderPanel(); $('h-webhooks')?.focus(); return; }
   if (act === 'wh-toggle') {
     await guarded(() => client.setWebhookActive(b.dataset.id, b.dataset.active === 'true'));
     state.webhooks = null; renderPanel(); loadTabData(); return;
@@ -204,8 +237,11 @@ $('panel').addEventListener('submit', async (e) => {
   const r = await guarded(() => client.createWebhook({ url, eventTypes }));
   if (!r) return;
   if (!r.ok) { $('wh-msg').textContent = r.message; return; }
-  toast(r.webhook?.secret ? `Webhook created. Signing secret (shown once): ${r.webhook.secret}` : 'Webhook created.', 'success');
+  // The secret goes to a panel that stays until the admin confirms they stored it, never into a toast (ADMIN-14).
+  state.newSecret = r.webhook?.secret ? { url, secret: r.webhook.secret, copied: false } : null;
+  toast('Webhook created.', 'success');
   state.webhooks = null; renderPanel(); loadTabData();
+  if (state.newSecret) $('wh-secret')?.scrollIntoView?.({ block: 'nearest' });
 });
 
 // ---- validate / save / revert
@@ -225,7 +261,8 @@ function reportLocal() {
   renderPanel();
   document.querySelector(`[data-path="${CSS.escape(first)}"]`)?.focus();
 }
-$('validate').addEventListener('click', async () => { const r = await runValidate(); if (r?.valid) toast('Configuration is valid.', 'success'); });
+// The summary banner reports the result (with any warnings); no toast on top of it.
+$('validate').addEventListener('click', async () => { const r = await runValidate(); if (r) $('summary').focus(); });
 // Save is two steps: validate, then a diff preview the admin confirms.
 $('save').addEventListener('click', async () => {
   if (Object.keys(state.localErrors).length) { reportLocal(); return; }
@@ -249,7 +286,8 @@ $('diff-confirm').addEventListener('click', async () => {
   if (res.outcome === 'invalid') { state.report = res.report; renderPanel(); firstProblemFocus(); return; }
   if (res.outcome === 'conflict') { $('conflict-body').textContent = `${res.message} Reload to see the latest version, then re-apply your edits.`; showConflict(); return; }
   state.cfg = clone(res.config); state.saved = clone(res.config); state.version = res.version;
-  state.report = { valid: true, errors: [], warnings: [], bySection: {} };
+  // The "Saved as version N" toast says it all; no extra "Configuration is valid" banner (ADMIN-13).
+  state.report = null;
   state.history = null;
   try { applyBranding(res.config); } catch { /* cosmetic */ }
   renderPanel();
@@ -257,7 +295,8 @@ $('diff-confirm').addEventListener('click', async () => {
   if (state.tab === 'history') loadTabData();
 });
 function showConflict() { $('conflict').hidden = false; $('conflict').scrollIntoView?.({ block: 'nearest' }); $('conflict-reload').focus(); }
-$('revert').addEventListener('click', () => { state.cfg = clone(state.saved); state.report = null; state.localErrors = {}; state.rawText = {}; renderPanel(); });
+// Revert also drops text that never parsed, which clears its field error and unblocks saving (ADMIN-5).
+$('revert').addEventListener('click', () => { state.cfg = clone(state.saved); state.report = null; state.localErrors = {}; state.rawText = {}; renderPanel(); toast('Edits reverted to the saved version.'); });
 $('conflict-reload').addEventListener('click', loadAll);
 
 // Jump from an error summary link to the field.

@@ -89,11 +89,41 @@ td.actions { white-space: nowrap; text-align: end; }
 .diff-table td.del { background: var(--fx-danger-subtle); }
 .diff-table td.add { background: var(--fx-success-subtle); }
 
+/* Read-only sections (KPIs, history): nothing to validate or save (ADMIN-19). */
+.adm-savebar[data-readonly='true'] .fx-btn-group { display: none; }
+.adm-savebar[data-readonly='true'] { box-shadow: none; }
+
+/* Toasts sit above the save bar, inside the viewport, and never cover its buttons (ADMIN-13). */
+#toast { inset-inline-end: var(--fx-space-4); inset-block-end: calc(var(--fx-space-4) + 5.5rem); width: min(calc(100vw - 2 * var(--fx-space-4)), 26rem); max-width: calc(100vw - 2 * var(--fx-space-4)); }
+#toast .fx-toast-msg { overflow-wrap: anywhere; min-width: 0; }
+
+/* Webhook secret panel (ADMIN-14) and warnings list (ADMIN-8). */
+.wh-secret-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--fx-space-3); margin-top: var(--fx-space-2); }
+.wh-secret-row code { padding: var(--fx-space-1) var(--fx-space-2); border: 1px solid var(--fx-border); border-radius: var(--fx-radius-sm); background: var(--fx-bg); overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+.adm-warnings { margin: var(--fx-space-1) 0 0; padding-left: var(--fx-space-5); }
+.summary .adm-warnings a { font-weight: 600; }
+.adm-fieldset { border: 1px solid var(--fx-divider); border-radius: var(--fx-radius); padding: var(--fx-space-3) var(--fx-space-4) var(--fx-space-4); margin: var(--fx-space-4) 0 0; min-width: 0; }
+.adm-fieldset legend { padding: 0 var(--fx-space-1); font-weight: var(--fx-fw-medium, 500); }
+.fx-card-body > .adm-fieldset + .field { margin-top: var(--fx-space-4); }
+
 @media (max-width: 56rem) {
   .adm-layout { grid-template-columns: minmax(0, 1fr); gap: var(--fx-space-4); }
-  .adm-nav { position: static; display: flex; overflow-x: auto; gap: var(--fx-space-1); }
+  .adm-nav { position: static; display: flex; overflow-x: auto; gap: var(--fx-space-1); scroll-padding-inline: var(--fx-space-4); }
   .adm-navlink { flex: none; }
-  .adm-savebar { padding: var(--fx-space-3); }
-  .adm-savebar .fx-btn-group { width: 100%; }
-  .adm-savebar .fx-btn-group .fx-btn { flex: 1 1 auto; }
+  /* Compact save bar: status on one line, the three buttons on one row (ADMIN-16). */
+  .adm-savebar { padding: var(--fx-space-2) var(--fx-space-3); gap: var(--fx-space-2); }
+  .adm-savestate { flex-wrap: nowrap; width: 100%; }
+  .adm-dirty { font-size: var(--fx-fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .adm-savebar .fx-btn-group { width: 100%; display: flex; flex-wrap: nowrap; gap: var(--fx-space-2); }
+  .adm-savebar .fx-btn-group .fx-btn { flex: 1 1 auto; min-width: 0; padding-inline: var(--fx-space-2); font-size: var(--fx-fs-sm); white-space: nowrap; }
+  .adm-savebar .fx-btn-group #revert { flex: 0 1 auto; }
+  #toast { inset-block-end: calc(var(--fx-space-4) + 7rem); inset-inline: var(--fx-space-4); width: auto; }
+  /* The subscriptions table becomes one block per subscription, so the page never scrolls sideways. */
+  .wh-table, .wh-table tbody, .wh-table tr, .wh-table td { display: block; width: auto; }
+  .wh-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .wh-table tr { padding: var(--fx-space-3) var(--fx-space-4); border-bottom: 1px solid var(--fx-divider); }
+  .wh-table td { padding: var(--fx-space-1) 0; border: 0; text-align: start; white-space: normal; }
+  .wh-table td[data-label]::before { content: attr(data-label); display: block; color: var(--fx-text-muted); font-size: var(--fx-fs-xs); font-family: var(--fx-font-ui); }
+  .wh-table td.actions { text-align: start; }
+  .diff-table th[scope='row'] { min-width: 8rem; }
 }

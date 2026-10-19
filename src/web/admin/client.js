@@ -48,10 +48,10 @@ export function createAdminClient({ baseUrl = '/api/v1', getToken, fetchImpl } =
       return { config: r.body, version: r.etag ?? r.body?.version ?? 0 };
     },
 
-    /** POST /config/validate -> normalised report. */
+    /** POST /config/validate -> normalised report (labels name items from the config being validated). */
     async validate(config) {
       const r = must(await call('POST', '/config/validate', { body: config }));
-      return normalizeReport(r.body);
+      return normalizeReport(r.body, config);
     },
 
     /**
@@ -63,25 +63,19 @@ export function createAdminClient({ baseUrl = '/api/v1', getToken, fetchImpl } =
       if (!report.valid) return { outcome: 'invalid', report };
       const r = await call('PUT', '/config', { body: config, headers: { 'if-match': ifMatch(version) } });
       if (r.status === 409) return { outcome: 'conflict', message: r.body?.error?.message ?? 'The configuration changed since you loaded it.' };
-      if (r.status === 422) return { outcome: 'invalid', report: normalizeReport(r.body) };
+      if (r.status === 422) return { outcome: 'invalid', report: normalizeReport(r.body, config) };
       must(r);
       return { outcome: 'saved', config: r.body, version: r.etag ?? r.body?.version ?? version + 1 };
     },
 
     /**
-     * Version history: GET /config/versions, else audit entries, else a 404 fallback.
+     * Version history from GET /config/versions (every version from 1, with the saver's name).
+     * The config module always serves it, so there is no second request and no audit fallback.
      * @returns {Promise<{available:boolean, source:string, rows:Array}>}
      */
     async loadHistory() {
-      const v = await call('GET', '/config/versions');
-      if (v.ok) return { available: true, source: 'versions', rows: normalizeHistory(v.body) };
-      if (v.status !== 404) throw fail(v);
-      const a = await call('GET', '/audit', { query: { limit: 200 } });
-      if (a.ok) {
-        const rows = normalizeHistory(a.body);
-        if (rows.length) return { available: true, source: 'audit', rows };
-      } else if (a.status !== 404 && a.status !== 403) throw fail(a);
-      return { available: false, source: 'none', rows: [] };
+      const v = must(await call('GET', '/config/versions'));
+      return { available: true, source: 'versions', rows: normalizeHistory(v.body) };
     },
 
     /** GET /kpis; a 404 (module not deployed) yields {available:false}. */

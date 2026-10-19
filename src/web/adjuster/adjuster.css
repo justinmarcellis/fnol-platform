@@ -56,7 +56,30 @@ fx-table tr[data-claim-id] { cursor: pointer; }
 .decision-done { display: flex; flex-wrap: wrap; gap: var(--fx-space-2); align-items: center; margin: 0; }
 #subro-banner .fx-alert p { margin: 2px 0; }
 #panel-header .fx-card-body { padding-bottom: var(--fx-space-3); }
+/* Inbox table: claim numbers never wrap mid-number; on narrow screens the table scrolls sideways. */
+.adj-claim-link { white-space: nowrap; }
+
+#inbox-body fx-table td, #inbox-body fx-table th { white-space: nowrap; }
+.adj-scroll-hint { display: none; margin: 0; padding: var(--fx-space-2) var(--fx-space-4); font-size: var(--fx-fs-sm); color: var(--fx-text-muted); border-bottom: 1px solid var(--fx-divider); }
+
+/* Policy, loss and actions panels */
+.adj-table-wrap { overflow-x: auto; }
+.adj-cov-table { width: 100%; border-collapse: collapse; font-size: var(--fx-fs-md); }
+.adj-cov-table caption { text-align: start; font-weight: var(--fx-fw-semibold); padding: var(--fx-space-2) 0; }
+.adj-cov-table th, .adj-cov-table td { text-align: start; padding: var(--fx-space-2) var(--fx-space-3); border-bottom: 1px solid var(--fx-divider); vertical-align: top; }
+.adj-cov-table thead th { font-size: var(--fx-fs-xs); text-transform: uppercase; letter-spacing: var(--fx-tracking-caps); color: var(--fx-text-muted); }
+.adj-cov-table tbody th { font-weight: var(--fx-fw-medium); }
+.adj-quote { margin: 0; padding: var(--fx-space-3) var(--fx-space-4); border-inline-start: 3px solid var(--fx-divider); background: var(--fx-surface); border-radius: var(--fx-radius-md, 8px); }
+.adj-quote p { margin: 0; line-height: var(--fx-lh); }
+#panel-policy h3, #panel-loss h3, #panel-actions h3, #panel-routing h3 { margin: var(--fx-space-2) 0 0; font-size: var(--fx-fs-md); font-weight: var(--fx-fw-semibold); }
+.close-form, .request-form, .override-form { padding-top: var(--fx-space-3); border-top: 1px solid var(--fx-divider); }
+.close-form label, .request-form label, .override-form label { font-weight: var(--fx-fw-medium); font-size: var(--fx-fs-md); }
+.request-form:focus { outline: 2px solid var(--fx-focus); outline-offset: 2px; }
+#panel-tasks .fx-btn-group { margin-top: var(--fx-space-2); }
+
 @media (max-width: 767px) {
+  .adj-scroll-hint { display: block; }
+  #inbox-body fx-table table { min-width: 760px; }
   .adj-filters { padding: var(--fx-space-3) var(--fx-space-4); }
   .adj-count { margin-left: 0; width: 100%; }
   .adj-action { grid-template-columns: auto 1fr; }

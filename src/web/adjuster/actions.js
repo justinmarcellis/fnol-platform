@@ -28,6 +28,47 @@ export async function submitDecision(api, claimId, { kind, action, note, tasks }
   return { ok: true, note: saved };
 }
 
+/** GET the display directory (adjuster names, queues, rule names). Never fails: an empty directory is the fallback. */
+export async function loadDirectory(api) {
+  try {
+    const d = await api.get('/adjuster/directory');
+    return { people: d?.people ?? {}, queues: d?.queues ?? [], rules: d?.rules ?? {} };
+  } catch { return { people: {}, queues: [], rules: {} }; }
+}
+
+/** POST a status move. Closing needs a closeReason (the server validates every move against the lifecycle). */
+export function changeStatus(api, claimId, { to, reason, closeReason } = {}) {
+  return api.post(`/claims/${encodeURIComponent(claimId)}/status`, { to, ...(reason ? { reason } : {}), ...(closeReason ? { closeReason } : {}) });
+}
+
+/** PATCH a task's status (open, in_progress, done, cancelled). */
+export function updateTask(api, claimId, taskId, status) {
+  return api.patch(`/claims/${encodeURIComponent(claimId)}/tasks/${encodeURIComponent(taskId)}`, { status });
+}
+
+/**
+ * Ask the claimant for information: a contact note shared with the claimant, then, when the claim is
+ * in review, a move to pending_info so the queue shows it is waiting on the claimant.
+ * @returns {Promise<{ok:true, note:object, moved:boolean}>}
+ */
+export async function requestInfo(api, claimId, { body, status } = {}) {
+  const id = encodeURIComponent(claimId);
+  const note = await api.post(`/claims/${id}/notes`, { body: String(body).trim(), category: 'contact', visibility: 'shared_with_claimant' });
+  let moved = false;
+  if (status === 'in_review') {
+    await api.post(`/claims/${id}/status`, { to: 'pending_info', reason: 'awaiting information from the claimant' });
+    moved = true;
+  }
+  return { ok: true, note, moved };
+}
+
+/** Supervisor routing override (POST /claims/{id}/routing). The reason is mandatory. */
+export function overrideRouting(api, claimId, { queue, adjusterId, reason }) {
+  return api.post(`/claims/${encodeURIComponent(claimId)}/routing`, {
+    override: { reason: String(reason).trim(), ...(queue ? { queue } : {}), ...(adjusterId ? { adjusterId } : {}) },
+  });
+}
+
 /** Add a general note. */
 export function addNote(api, claimId, body) {
   return api.post(`/claims/${encodeURIComponent(claimId)}/notes`, { body: String(body).trim(), category: 'general', visibility: 'internal' });
@@ -42,7 +83,8 @@ export function saveChecklist(claimId, codes, storage = globalThis.localStorage)
 }
 
 /**
- * Insured names for inbox rows. The inbox feed carries no party data, so read each claim's parties
+ * Fallback only (feeds older than S6-BUG-03): the inbox feed now carries insuredName, so app.js no longer calls this.
+ * Insured names for inbox rows when the feed carries no party data: read each claim's parties
  * (GET /claims/{id}?include=parties) with bounded concurrency. Failures leave the name blank.
  * `onName(claimId, name)` fires as each one lands so the table can fill in progressively.
  * @returns {Promise<Record<string,string>>}

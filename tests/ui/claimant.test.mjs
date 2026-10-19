@@ -145,7 +145,8 @@ test('Spanish toggle switches labels on Aurelia', async (t) => {
 
 test('English-only tenant (Kestrel) does not show the language picker', async (t) => {
   if (skip) return t.skip(skip);
-  const page = await open('/claimant?tenant=kestrel-point');
+  // S6-BUG-01: Kestrel offers no line online (no claimant_web channel), so the start step explains that instead of a form.
+  const page = await openWelcome('/claimant?tenant=kestrel-point');
   try {
     // BUG S2-EXP-03-3: app.css `.ctl { display: flex }` overrides the [hidden] attribute on #lang-wrap, so an
     // empty language picker stays visible for tenants that only offer English.
@@ -461,5 +462,299 @@ test('claimant confirmation switches to Spanish without losing the claim', async
     assert.equal((await page.textContent('#claim-number')).trim(), number);
     assert.match(await page.textContent('.cl-claimmeta'), /Reportado el \d{1,2} \w+/, 'date formatted for es');
     assert.equal(await page.locator('#ev-files').count(), 1);
+  } finally { await page.close(); }
+});
+
+// ---- S6-BUG-01 bug bash round 1 (regressions for CLAIMANT-3..19, DATA-15)
+
+/** Answer the current guided question; for optional ones, give a real answer where the type allows it. */
+async function answerFully(page) {
+  const kind = await page.evaluate(() => {
+    const f = document.querySelector('main form');
+    return f.querySelector('[data-qtype]')?.dataset.qtype ?? null;
+  });
+  if (kind === 'media') {
+    await page.setInputFiles('main form input[type=file]', { name: 'damage.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a', 'hex') });
+    const label = (await page.locator('main form legend').first().textContent()).trim();
+    await page.click('main form button[type="submit"]');
+    return label;
+  }
+  return answerClaimantQuestion(page);
+}
+
+async function nextQuestion(page, prev) {
+  await page.waitForFunction((p) => {
+    const l = (document.querySelector('main legend, main form label') ?? {}).textContent?.trim();
+    return document.querySelector('#review-title') || l !== p;
+  }, prev, { timeout: 5000 });
+}
+
+test('S6-BUG-01 homeowners guided flow: no vehicle step, optional questions with Skip, Back and review Edit, photos uploaded after submit', async (t) => {
+  if (skip) return t.skip(skip);
+  const policy = (server.policies['aurelia-mutual'] ?? []).find((p) => /^HO-/.test(p.policyNumber));
+  const page = await open('/claimant?tenant=aurelia-mutual');
+  const uploads = [];
+  page.on('request', (r) => { if (r.method() === 'POST' && /\/claims\/[^/]+\/documents$/.test(r.url())) uploads.push(r.url()); });
+  try {
+    // CLAIMANT-17: a homeowners policy number preselects Homeowners; CLAIMANT-6: the help text does not mention vehicles.
+    if (policy) {
+      await page.fill('#policy-number', policy.policyNumber);
+      await page.dispatchEvent('#policy-number', 'change');
+      assert.equal(await page.locator('input[name="lob"][value="homeowners"]').isChecked(), true, 'HO policy preselects Homeowners');
+    } else {
+      await page.check('input[name="lob"][value="homeowners"]');
+    }
+    assert.doesNotMatch(await page.textContent('#policy-number-help'), /vehicle/i);
+    await page.check('input[name="lossType"][value="water"]');
+    await page.click('form button[type="submit"]');
+    await page.waitForSelector('main form');
+    // DATA-15 / CLAIMANT-6: no holder check or vehicle picker for a property line.
+    assert.equal(await page.locator('#holder-check').count(), 0, 'no "Find my vehicles" for homeowners');
+
+    const asked = []; let skips = 0; let backs = 0;
+    for (let i = 0; i < 25 && !(await page.locator('#review-title').count()); i += 1) {
+      if (await page.locator('#q-skip').count()) skips += 1;
+      if (await page.locator('#q-back').count()) backs += 1;
+      const legend = (await page.locator('main form legend, main form label').first().textContent()).trim();
+      let q;
+      if (/caused/i.test(legend)) { // choose the plumbing cause so water_source_stopped applies
+        await page.evaluate(() => { const s = document.querySelector('main form select'); if (s) s.value = 'water_plumbing'; else { const r = document.querySelector('main form input[value="water_plumbing"]'); r.checked = true; } });
+        await page.click('main form button[type="submit"]'); q = legend;
+      } else q = await answerFully(page);
+      asked.push(q);
+      await nextQuestion(page, q);
+    }
+    // CLAIMANT-4: optional questions (multiselect, water shut-off, currency, photos) are offered with a Skip button.
+    for (const re of [/areas/i, /water been shut off/i, /estimate/i, /photos/i]) assert.ok(asked.some((a) => re.test(a)), `asked ${re}; got ${asked.join(' | ')}`);
+    assert.ok(skips >= 4, `Skip offered on optional questions (${skips})`);
+    assert.ok(backs >= asked.length - 1, 'Back offered after the first question');
+
+    // CLAIMANT-11: Edit from the review re-opens the answer prefilled; saving returns to the review.
+    assert.ok(await page.locator('[data-edit]').count() >= 5, 'review rows have Edit');
+    await page.click('[data-edit="loss_date"]');
+    await page.waitForSelector('main form input[type="date"]');
+    assert.equal(await page.inputValue('main form input[type="date"]'), '2026-09-10', 'edit is prefilled');
+    await page.fill('main form input[type="date"]', '2026-09-09');
+    await page.click('main form button[type="submit"]');
+    await page.waitForSelector('#review-title');
+    assert.match(await page.textContent('.cl-row[data-qid="loss_date"]'), /Sep 9, 2026/);
+    assert.doesNotMatch(await page.textContent('.cl-rows'), /\[object Object\]/);
+
+    await page.click('#submit-claim');
+    await page.waitForSelector('#claim-number');
+    await page.waitForFunction(() => document.querySelectorAll('#ev-received li').length > 0, null, { timeout: 8000 });
+    assert.equal(uploads.length, 1, 'the photo chosen in the question is uploaded once the claim exists');
+    assert.match(await page.textContent('#activity-box'), /Document received/);
+  } finally { await page.close(); }
+});
+
+test('S6-BUG-01 status page survives reload and is reachable again from the welcome screen; completed steps carry a time', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await open('/claimant?tenant=aurelia-mutual');
+  try {
+    await completeGuided(page, t);
+    await page.click('#submit-claim');
+    await page.waitForSelector('#claim-number');
+    const number = (await page.textContent('#claim-number')).trim();
+    assert.match(page.url(), /[?&]claim=clm_/, 'CLAIMANT-10: the status page has its own address');
+    await page.reload();
+    await page.waitForSelector('#claim-number');
+    assert.equal((await page.textContent('#claim-number')).trim(), number, 'reload reopens the same claim');
+    // CLAIMANT-15: every completed step shows when it happened.
+    await page.waitForSelector('#status-box li');
+    const undated = await page.evaluate(() => [...document.querySelectorAll('#status-box li.done')].filter((li) => !li.querySelector('.cl-step-when')).length);
+    assert.equal(undated, 0, 'completed steps have times');
+    // Back to the welcome screen offers the claim again.
+    await page.goto(`${server.app.url}/claimant?tenant=aurelia-mutual`);
+    await page.waitForSelector('#welcome-start');
+    assert.ok(await page.locator('.cl-track [data-claim]').count() >= 1, 'Track a claim lists the claim');
+    await page.locator('.cl-track [data-claim]').first().click();
+    await page.waitForSelector('#claim-number');
+    assert.equal((await page.textContent('#claim-number')).trim(), number);
+  } finally { await page.close(); }
+});
+
+test('S6-BUG-01 Kestrel: plain-language message, no raw server codes, no Spanish promise', async (t) => {
+  if (skip) return t.skip(skip);
+  // Kestrel offers personal auto online since S6-BUG-05 (claimant persona); take the claimant channel away to reach the
+  // "not available online" message.
+  const ctx = await browser.newContext();
+  await ctx.route(/\/api\/v1\/config\/public$/, async (route) => {
+    const res = await route.fetch();
+    const cfg = await res.json();
+    for (const l of cfg.lobs ?? []) l.channels = (l.channels ?? []).filter((c) => c !== 'claimant_web');
+    await route.fulfill({ response: res, json: cfg });
+  });
+  const page = await ctx.newPage();
+  await page.goto(`${server.app.url}/claimant?tenant=kestrel-point`);
+  await page.waitForSelector('#welcome-start');
+  try {
+    // CLAIMANT-14: Kestrel locales are ['en'].
+    assert.doesNotMatch(await page.textContent('.cl-hero-lede'), /Spanish/);
+    await page.click('#welcome-start');
+    await page.waitForSelector('#start-unavailable');
+    const text = await page.textContent('main');
+    // CLAIMANT-3: no channel id, lob code or raw API text.
+    assert.doesNotMatch(text, /claimant_web|commercial_auto|personal_auto|Something went wrong:/);
+    assert.match(text, /Online reporting is not available/);
+    assert.match(text, /\(555\) 010-0177/, 'tenant support phone');
+  } finally { await ctx.close(); }
+});
+
+test('S6-BUG-01 start: implausible policy number caught; language switch keeps typed text and localizes notices', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await open('/claimant?tenant=aurelia-mutual');
+  try {
+    // CLAIMANT-16
+    await page.fill('#policy-number', 'ZZ-999');
+    await page.click('form button[type="submit"]');
+    await page.waitForSelector('#policy-number-error:not([hidden])');
+    assert.equal(await page.locator('input[name="lob"]').count() > 0, true, 'still on the start step');
+    await page.fill('#policy-number', '');
+    // CLAIMANT-18: the policy field keeps the same gap as the other fieldsets.
+    const gap = await page.evaluate(() => { const b = document.querySelector('#policy-box'); return b.nextElementSibling.getBoundingClientRect().top - b.getBoundingClientRect().bottom; });
+    assert.ok(gap >= 16, `gap under the policy field (${gap}px)`);
+    await page.check('input[name="lob"][value="personal_auto"]');
+    await page.click('form button[type="submit"]');
+    await page.waitForSelector('main form input[type="date"]');
+    await page.fill('main form input[type="date"]', '2026-09-10');
+    await page.click('main form button[type="submit"]');
+    await page.waitForSelector('main form textarea');
+    await page.fill('main form textarea', 'Typed before switching language');
+    // CLAIMANT-12
+    await page.selectOption('#lang-picker', 'es');
+    await page.waitForFunction(() => /\d+ respondida, faltan \d+/.test(document.querySelector('.cl-progress-sub')?.textContent ?? ''));
+    assert.equal(await page.inputValue('main form textarea'), 'Typed before switching language', 'typed text kept');
+    const notices = await page.evaluate(() => [...document.querySelectorAll('.disclosure')].map((d) => d.textContent).join(' '));
+    assert.doesNotMatch(notices, /Illustrative notice/);
+    assert.match(notices, /Aviso ilustrativo/);
+    // CLAIMANT-11: browser Back steps to the previous question instead of leaving the intake.
+    await page.goBack();
+    await page.waitForSelector('main form input[type="date"]');
+    assert.equal(await page.inputValue('main form input[type="date"]'), '2026-09-10');
+  } finally { await page.close(); }
+});
+
+test('S6-BUG-01 chat: narrative is extracted with AI provenance, party question uses a sub-form, errors are not repeated', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await open('/claimant?tenant=aurelia-mutual');
+  const narrative = [];
+  page.on('request', (r) => { if (r.method() === 'POST' && /\/narrative$/.test(r.url())) narrative.push(r.postDataJSON()); });
+  try {
+    await page.check('input[name="lob"][value="personal_auto"]');
+    await page.check('input[name="mode"][value="chat"]');
+    await page.click('form button[type="submit"]');
+    await page.waitForSelector('#chat-input');
+    const say = async (text) => { await page.fill('#chat-input', text); await page.click('#chat-send'); await page.waitForTimeout(400); };
+    await say('Yesterday around 5pm another car rear-ended me at a stop light. Nobody was hurt.');
+    await page.waitForSelector('#chat-log li[data-kind="suggestion"]');
+    assert.equal(narrative.length, 1, 'CLAIMANT-5: narrative endpoint called');
+    assert.match(await page.textContent('#chat-log li[data-kind="suggestion"]'), /AI suggestion \(.+, .+\), confidence \d+%/);
+    for (let i = 0; i < 4 && await page.locator('#chat-log button:has-text("Confirm")').count(); i += 1) {
+      await page.locator('#chat-log button:has-text("Confirm")').first().click(); await page.waitForTimeout(300);
+    }
+    await say('not a date');
+    await say('also not a date');
+    for (let i = 0; i < 15 && !(await page.locator('#submit-claim').count()); i += 1) {
+      const q = await page.evaluate(() => [...document.querySelectorAll('#chat-log li[data-kind="question"]')].pop()?.textContent ?? '');
+      if (await page.locator('fieldset.sf[data-qtype="party"]').count()) {
+        await page.fill('fieldset.sf input[name="lastName"]', 'Quill'); await page.click('#chat-send'); await page.waitForTimeout(400); continue;
+      }
+      if (await page.locator('#chat-skip').count()) { await page.click('#chat-skip'); await page.waitForTimeout(300); continue; }
+      if (/when/i.test(q)) await say('yesterday');
+      else if (/another vehicle/i.test(q)) await say('yes');
+      else if (/false information/i.test(q)) await say('yes');
+      else if (/driven|hurt/i.test(q)) await say('no');
+      else await say('Rear-ended at a light.');
+    }
+    assert.equal(await page.locator('#submit-claim').count(), 1, 'chat reaches submit');
+    const errors = await page.evaluate(() => [...document.querySelectorAll('#chat-log li.error')].map((l) => l.textContent));
+    assert.equal(errors.length, 2, `each bad date reported once: ${errors.join(' | ')}`);
+    assert.ok(errors.every((e) => !/answer\(s\)|not accepted|YYYY/.test(e)), 'no raw API text');
+    await page.click('#submit-claim');
+    await page.waitForSelector('#claim-number');
+  } finally { await page.close(); }
+});
+
+// ---- S6-BUG-01 round 2 (S6-RA-08, S6-RA-09)
+test('S6-RA-08 chat: holder check and policy vehicle pick come before the conversation; the claim carries the picked vehicle', async (t) => {
+  if (skip) return t.skip(skip);
+  const pol = server.policies['aurelia-mutual'][0];
+  const unit = pol.vehicles[pol.vehicles.length - 1];
+  const page = await open('/claimant?tenant=aurelia-mutual');
+  const sent = [];
+  page.on('request', (r) => { if (r.method() === 'POST' && /\/intake\/sessions\/[^/]+\/answers$/.test(r.url())) sent.push(r.postDataJSON()); });
+  try {
+    await page.check('input[name="mode"][value="chat"]');
+    await startWithPolicy(page, pol);
+    assert.equal(await page.locator('#chat-log').count(), 0, 'the chat waits for the holder check');
+    await holderCheck(page, pol);
+    assert.equal(await page.locator('input[name="insured_vehicle"]').count(), pol.vehicles.length, 'every policy vehicle offered');
+    await page.check(`input[name="insured_vehicle"][value="${unit.unitId}"]`);
+    await page.waitForSelector('.cl-saved');
+    assert.ok(sent.some((b) => b.value?.policyVehicleId === unit.unitId), 'pick sent with the policy unit id');
+    await page.click('#vehicle-continue');
+    await page.waitForSelector('#chat-log li[data-kind="picked"]');
+    const order = await page.evaluate(() => [...document.querySelectorAll('#chat-log li')].map((l) => l.dataset.kind));
+    assert.deepEqual(order.slice(0, 3), ['question', 'picked', 'question'], `the pick is in the transcript before the open question: ${order.join(',')}`);
+    assert.match(await page.textContent('#chat-log li[data-kind="picked"]'), new RegExp(unit.model));
+    const say = async (text) => { await page.fill('#chat-input', text); await page.click('#chat-send'); await page.waitForTimeout(350); };
+    let manualVehicle = false;
+    for (let i = 0; i < 20 && !(await page.locator('#submit-claim').count()); i += 1) {
+      if (await page.locator('#chat-form fieldset.sf[data-qtype="vehicle"]').count()) manualVehicle = true;
+      const q = await page.evaluate(() => [...document.querySelectorAll('#chat-log li[data-kind="question"]')].pop()?.textContent ?? '');
+      if (await page.locator('#chat-skip').count()) { await page.click('#chat-skip'); await page.waitForTimeout(300); continue; }
+      if (/when|date/i.test(q)) await say('yesterday');
+      else if (/false information/i.test(q)) await say('yes');
+      else if (/another vehicle|hurt|injur|driv/i.test(q)) await say('no');
+      else await say('Synthetic test: a stone cracked the windshield on the highway.');
+    }
+    assert.equal(manualVehicle, false, 'no hand-typed vehicle sub-form after the pick');
+    await page.click('#submit-claim');
+    await page.waitForSelector('#claim-number');
+    const number = (await page.textContent('#claim-number')).trim();
+    const mod = server.app.ctx.forTenant('aurelia-mutual').modules.claims;
+    const list = await mod.listClaims({});
+    const row = (list.items ?? list).find((c) => c.claimNumber === number);
+    const claim = await mod.getClaim(row.id, { include: ['vehicles'] });
+    const insured = (claim.vehicles ?? []).filter((v) => v.role === 'insured');
+    assert.equal(insured.length, 1, 'claim carries one insured vehicle');
+    assert.equal(insured[0].vin, unit.vin, 'the picked policy unit');
+    assert.deepEqual(page.pageErrors, []);
+  } finally { await page.close(); }
+});
+
+test('S6-RA-09 guided (Spanish, glass): the first question after the vehicle pick is Pregunta 1 and no number repeats', async (t) => {
+  if (skip) return t.skip(skip);
+  const pol = server.policies['aurelia-mutual'][0];
+  const page = await open('/claimant?tenant=aurelia-mutual');
+  try {
+    await page.selectOption('#lang-picker', 'es');
+    await page.waitForFunction(() => document.documentElement.lang === 'es');
+    await page.check('input[name="lob"][value="personal_auto"]');
+    await page.fill('#policy-number', pol.policyNumber);
+    await page.check('input[name="lossType"][value="glass"]');
+    await page.click('form button[type="submit"]');
+    await page.waitForSelector('#holder-check');
+    await holderCheck(page, pol);
+    await page.locator('input[name="insured_vehicle"]').first().check();
+    await page.waitForSelector('.cl-saved');
+    await page.click('#vehicle-continue');
+    const seen = [];
+    for (let i = 0; i < 20; i += 1) {
+      await page.waitForSelector('#review-title, main .cl-q .cl-eyebrow');
+      if (await page.locator('#review-title').count()) break;
+      const eyebrow = (await page.textContent('main .cl-q .cl-eyebrow')).trim();
+      const sub = (await page.textContent('.cl-progress-sub')).trim();
+      seen.push({ eyebrow, sub });
+      const label = (await page.locator('main form legend, main form label').first().textContent()).trim();
+      if (await page.locator('#q-skip').count()) await page.click('#q-skip'); else await answerClaimantQuestion(page);
+      await page.waitForFunction((prev) => document.querySelector('#review-title') || (document.querySelector('main form legend, main form label')?.textContent?.trim() !== prev), label, { timeout: 5000 });
+    }
+    assert.ok(seen.length >= 3, `questions seen: ${JSON.stringify(seen)}`);
+    assert.equal(seen[0].eyebrow, 'Pregunta 1');
+    assert.match(seen[0].sub, /^0 respondidas/);
+    const numbers = seen.map((x) => Number(/\d+/.exec(x.eyebrow)?.[0]));
+    assert.deepEqual(numbers, numbers.map((_, i) => i + 1), `each question has its own number: ${seen.map((x) => x.eyebrow).join(', ')}`);
   } finally { await page.close(); }
 });

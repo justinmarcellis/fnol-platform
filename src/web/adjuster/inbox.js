@@ -26,7 +26,7 @@ export function timerBadge(row, doc = document, now = Date.now()) {
 export function inboxColumns(doc = document) {
   return [
     { key: 'claimNumber', label: t('adj.inbox.col.claim'), render: (r) => {
-      return el(doc, 'a', { href: `#/claim/${encodeURIComponent(r.claimId)}`, class: 'adj-claim-link', 'data-claim-id': r.claimId }, r.claimNumber);
+      return el(doc, 'a', { href: `#/claim/${encodeURIComponent(r.claimId)}`, class: 'adj-claim-link', 'data-claim-id': r.claimId, translate: 'no' }, r.claimNumber);
     } },
     { key: 'insured', label: t('adj.inbox.col.insured'), render: (r) => (r.insured ? r.insured : (() => el(doc, 'span', { class: 'adj-pending' }, '—'))()) },
     { key: 'lob', label: t('adj.inbox.col.line'), render: (r) => (r.lob ? formatEnum(r.lob) : '—') },
@@ -49,7 +49,7 @@ export function inboxColumns(doc = document) {
 export function renderKpis(container, kpis, doc = document) {
   container.textContent = '';
   const defs = [
-    ['open', 'inbox', kpis.open], ['dueToday', 'clock', kpis.dueToday], ['overdue', 'alert-triangle', kpis.overdue], ['fastTracked', 'gauge', kpis.fastTracked],
+    ['open', 'inbox', kpis.open], ['dueSoon', 'clock', kpis.dueSoon], ['overdue', 'alert-triangle', kpis.overdue], ['fastTracked', 'gauge', kpis.fastTracked],
   ];
   for (const [key, icon, value] of defs) {
     const s = el(doc, 'fx-stat', { label: t(`adj.kpi.${key}`), value: String(value), icon, hint: t(`adj.kpi.${key}.hint`), 'data-kpi': key });

@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { checkDocument, reportWarnings } from '../../src/web/shared/a11y-check.js';
 import { generatePolicies } from '../synthetic/index.mjs';
+import { enrichPolicy } from '../../scripts/demo-data.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(HERE, '..', '..');
@@ -44,7 +45,9 @@ export async function bootApp({ tenants = ['aurelia-mutual', 'kestrel-point'] } 
   }
   const policies = {};
   for (const tenantId of tenants) {
-    policies[tenantId] = generatePolicies({ tenantId, lob: 'personal_auto', count: 3, seed: 7, state: 'WI' });
+    // The first policy is produced by the demo agent (same enrichment as scripts/seed.mjs) so the agent persona has a book.
+    policies[tenantId] = generatePolicies({ tenantId, lob: 'personal_auto', count: 3, seed: 7, state: 'WI' })
+      .map((p, i) => enrichPolicy(p, { tenantId, produce: i === 0 }));
     await app.ctx.forTenant(tenantId).modules.coverage.seedPolicies(policies[tenantId]);
   }
   return {

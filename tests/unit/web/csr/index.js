@@ -6,3 +6,4 @@ import './answers.test.mjs';
 import './structured.test.mjs';
 import './desk.test.mjs';
 import './bugbash.test.mjs';
+import './bugbash2.test.mjs';

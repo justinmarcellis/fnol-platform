@@ -12,13 +12,39 @@ const SLOT = { fast_tracked: 'assigned', pending_info: 'in_review' };
 /** @param {string} status */
 export function isTerminal(status) { return TERMINAL_STATUSES.includes(status); }
 
+/** Timeline slot (stage id) of a claim status. */
+export function stageOf(status) {
+  return SLOT[status] ?? status;
+}
+
+/**
+ * Remember when each stage was reached, so completed steps keep a date (the claimant projection has no status history).
+ * Stages passed between two observations get the time of the observation that showed them complete (claim.updatedAt):
+ * the claim had moved past them by then. Pure: returns a new map.
+ * @param {Record<string, string>} times stage id -> ISO time
+ * @param {{ status: string, reportedAt?: string, updatedAt?: string }} claim
+ * @returns {Record<string, string>}
+ */
+export function mergeStageTimes(times, claim) {
+  const out = { ...(times ?? {}) };
+  if (!claim?.status) return out;
+  if (claim.reportedAt && !out.reported) out.reported = claim.reportedAt;
+  const stages = claim.status === 'withdrawn' ? ['reported', 'withdrawn'] : STAGES;
+  const idx = stages.indexOf(stageOf(claim.status));
+  const at = claim.updatedAt ?? claim.reportedAt;
+  if (idx < 0 || !at) return out;
+  for (let i = 1; i <= idx; i += 1) if (!out[stages[i]]) out[stages[i]] = at;
+  return out;
+}
+
 /**
  * Build timeline items for fx-timeline.
  * @param {{ status: string, reportedAt?: string, updatedAt?: string }} claim
  * @param {Function} t
+ * @param {Record<string, string>} [times] stage id -> when it was reached (mergeStageTimes); completed steps show it
  * @returns {{ id: string, label: string, state: 'done'|'current'|'upcoming', stateLabel: string, at?: string, attention?: boolean }[]}
  */
-export function buildTimeline(claim, t) {
+export function buildTimeline(claim, t, times = {}) {
   const status = claim?.status ?? 'reported';
   const stages = status === 'withdrawn' ? ['reported', 'withdrawn'] : [...STAGES];
   const slot = SLOT[status] ?? status;
@@ -34,8 +60,9 @@ export function buildTimeline(claim, t) {
       state,
       stateLabel: t(state === 'done' ? 'claimant.status.complete' : state === 'current' ? 'claimant.status.current' : 'claimant.status.upcoming')
     };
+    if (state !== 'upcoming' && times?.[id]) item.at = times[id];
     if (i === 0 && claim?.reportedAt) item.at = claim.reportedAt;
-    if (i === idx && claim?.updatedAt) item.at = claim.updatedAt;
+    if (i === idx && claim?.updatedAt && !(times?.[id])) item.at = claim.updatedAt;
     if (status === 'pending_info' && i === idx) item.attention = true;
     return item;
   });

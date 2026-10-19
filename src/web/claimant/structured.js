@@ -130,5 +130,25 @@ export async function fetchPolicyVehicles(api, sessionId, holder = {}) {
   }
 }
 
+/**
+ * Holder check with a result the UI can explain (CLAIMANT-6): `{ ok: true, vehicles }` when the holder matched, even
+ * when the policy has no vehicles (200 []); `{ ok: false, reason: 'not_matched' }` for the uniform 404 (unknown policy,
+ * wrong name or ZIP, locked); `{ ok: false, reason: 'unavailable' }` for network or server failures.
+ * @param {{ get: (path: string, query?: object) => Promise<any> }} api
+ * @param {string} sessionId
+ * @param {{ lastName?: string, zip?: string }} [holder]
+ */
+export async function checkPolicyHolder(api, sessionId, holder = {}) {
+  if (!sessionId) return { ok: false, reason: 'not_matched' };
+  const lastName = String(holder.lastName ?? '').trim();
+  const zip = String(holder.zip ?? '').trim();
+  try {
+    const rows = await api.get(`/intake/sessions/${encodeURIComponent(sessionId)}/policy-vehicles`, { lastName, zip });
+    return { ok: true, vehicles: policyVehicleOptions(rows) };
+  } catch (err) {
+    return { ok: false, reason: err?.status === 404 && err?.code !== 'service_unavailable' ? 'not_matched' : 'unavailable' };
+  }
+}
+
 /** Question id of the shipped tenants' insured-vehicle question. */
 export const INSURED_VEHICLE_QUESTION = 'insured_vehicle';

@@ -87,8 +87,8 @@ test('DATA-14: agents use agent_portal where the tenant enables it for the line,
   assert.equal(api.calls[1].body.channel, 'csr_phone', 'default stays csr_phone');
 });
 
-test('CSR-8/CSR-10: the agent desk skips the reads the server refuses for agents; the CSR keeps all of them', () => {
-  assert.deepEqual({ ...deskAccess('agent') }, { policySnapshot: false, policyVehicles: false, recentClaims: false, claimView: false });
+test('CSR-8/CSR-10: the desk gates each read on the role (S6-RA-04: the server now allows all of them for agents)', () => {
+  assert.deepEqual({ ...deskAccess('agent') }, { policySnapshot: true, policyVehicles: true, recentClaims: true, claimView: true });
   assert.deepEqual({ ...deskAccess('csr') }, { policySnapshot: true, policyVehicles: true, recentClaims: true, claimView: true });
   // Without the snapshot the panel still shows what the search row knows (insured, term, risk description).
   const m = contextModel({ summary: { policyNumber: 'PA-WI-1', lob: 'personal_auto', status: 'in_force', insuredName: 'Sloane Dunmore', description: '2020 Corvane Cruiser', period: { effectiveDate: '2026-01-01', expirationDate: '2027-01-01' } }, snapshot: null }, { t, fmt });

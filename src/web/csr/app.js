@@ -9,10 +9,11 @@ import { t, registerStrings, setLocale, resolveText } from '/shared/i18n.js';
 import { applyBranding } from '/shared/theme.js';
 import { registerCsrStrings } from './strings.js';
 import { createPolicySearch } from './search.js';
-import { createAssistedIntake, claimLink } from './assisted.js';
-import { isDisclosure, fieldType, coerceAnswer, disclosureAccepted, isStructured, structuredFields, buildStructured, missingStructured, errorFor, fetchPolicyVehicles } from './answers.js';
+import { createAssistedIntake, claimLink, lossTypeOptions, initialLossType } from './assisted.js';
+import { isDisclosure, fieldType, coerceAnswer, disclosureAccepted, isStructured, structuredFields, buildStructured, missingStructured, errorFor, fetchPolicyVehicles, isMultiSelect, fieldRules } from './answers.js';
 import { renderMissing } from './panel.js';
-import { createRecent, recentColumns, claimSummary } from './recent.js';
+import { createRecent, recentColumns, claimSummary, currentStatus, visibleColumns } from './recent.js';
+import { deskRole, deskAccess, channelFor, roleKeys, policyExamples } from './roles.js';
 import { policyTone } from './desk.js';
 import { isoDate } from './errors.js';
 import { contextModel, progressModel } from './desk.js';
@@ -22,6 +23,9 @@ const $ = (id) => document.getElementById(id);
 const qs = new URLSearchParams(location.search);
 let token = null;
 try { token = sessionStorage.getItem('csr.token'); } catch { /* storage may be blocked */ }
+// CSR or agent (the demo persona, else the token's roles): labels, intake channel and which reads the server allows.
+const role = deskRole(readSession(), token);
+const access = deskAccess(role);
 
 const base = createApiClient({ baseUrl: '/api/v1', getToken: () => token });
 // The shared client's post() has no headers option; build a one-off client when headers are needed.
@@ -54,29 +58,37 @@ const intake = createAssistedIntake({ api, t });
 const recent = createRecent({ api, t });
 let lobs = [];
 
+/** Search hint with policy-number prefixes the tenant really issues (PA-WI, HO-WI; CA-MI), from GET /config/public. */
+function searchHint() {
+  const ex = policyExamples(lobs);
+  return ex.length ? t('csr.search.hint', { examples: ex.join(t('csr.search.or')) }) : t('csr.search.hintNoExample');
+}
 function labelStatic() {
-  document.title = t('csr.title');
+  const rk = roleKeys(role);
+  document.title = t(rk.title);
   const shell = $('shell');
-  shell.setAttribute('product', t('csr.product')); shell.setAttribute('heading', t('csr.heading'));
+  shell.setAttribute('product', t('csr.product')); shell.setAttribute('heading', t(rk.heading));
   $('skip').textContent = t('csr.skip');
   $('signin-title').textContent = t('csr.signin.title'); $('signin-body').textContent = t('csr.signin.body');
   $('un-title').textContent = t('csr.unavailable.title');
   $('un-retry').textContent = t('csr.unavailable.retry');
   $('search-sec').setAttribute('heading', t('csr.search.heading'));
   const f = $('search-field');
-  f.setAttribute('label', t('csr.search.label')); f.setAttribute('hint', t('csr.search.hint')); f.setAttribute('required', '');
+  f.setAttribute('label', t('csr.search.label')); f.setAttribute('hint', searchHint()); f.setAttribute('required', '');
   $('search-go').textContent = t('csr.search.go');
   $('search-hint').textContent = t('csr.search.typeahead');
-  $('search-table').setAttribute('caption', t('csr.search.results'));
+  searchTable.setAttribute('caption', t('csr.search.results'));
   $('new-call').textContent = t('csr.newCall');
   $('ctx-card').setAttribute('heading', t('csr.ctx.heading'));
   $('ctx-change').textContent = t('csr.ctx.change');
   $('progress-h').textContent = t('csr.progress.heading');
   $('answer-go').textContent = t('csr.intake.answer');
+  $('answer-skip').textContent = t('csr.intake.skip');
+  $('answer-optional').textContent = t('csr.intake.optionalHint');
   $('submit-go').textContent = t('csr.submit.go');
   $('panel-h').textContent = t('csr.panel.heading');
   $('script-h').textContent = t('csr.script.heading');
-  $('done-sec').setAttribute('heading', t('csr.step.submit'));
+  $('done-sec').setAttribute('heading', t('csr.submit.heading'));
   $('done-again').textContent = t('csr.submit.another');
   $('recent-sec').setAttribute('heading', t('csr.recent.heading'));
   $('recent-refresh').textContent = t('csr.recent.refresh');
@@ -116,10 +128,14 @@ const searchCols = () => [
   { key: 'status', label: t('csr.search.col.status'), render: (r) => badge(r.status, null, policyTone(r.status)) },
   { key: 'period', label: t('csr.search.col.period'), sortable: false, render: (r) => (r.summary?.period?.effectiveDate ? `${formatDate(r.summary.period.effectiveDate)} – ${formatDate(r.summary.period.expirationDate)}` : '') },
 ];
+const searchTable = $('search-table');
 search.subscribe((s) => {
-  const tbl = $('search-table');
+  const tbl = searchTable;
   tbl.columns = searchCols(); tbl.rows = s.results;
   $('search-results').hidden = !s.results.length;
+  // Detached while empty: a hidden table with a "No results." row is not a result list (and is not clickable).
+  if (s.results.length && !tbl.isConnected) $('search-results').appendChild(tbl);
+  else if (!s.results.length && tbl.isConnected) tbl.remove();
   $('search-msg').textContent = s.message;
   if (s.phase === 'unavailable') showUnavailable(() => search.retry()); else if (s.phase !== 'searching') hideUnavailable();
 });
@@ -127,14 +143,14 @@ let typeTimer = null;
 $('search-field').addEventListener('fx-change', (e) => {
   clearTimeout(typeTimer);
   const v = String(e.detail?.value ?? '').trim();
-  if (v.length < 2) { typeTimer = setTimeout(() => search.clear(), 150); return; }
+  if (!v.length) { typeTimer = setTimeout(() => search.clear(), 150); return; }
   typeTimer = setTimeout(() => search.search(v), 250);
 });
 $('search-field').addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowDown') { const first = $('search-table').querySelector('tbody tr[tabindex]'); if (first) { e.preventDefault(); first.focus(); } }
+  if (e.key === 'ArrowDown') { const first = searchTable.querySelector('tbody tr[tabindex]'); if (first) { e.preventDefault(); first.focus(); } }
 });
 $('search-form').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(typeTimer); search.search($('search-field').value); });
-$('search-table').addEventListener('fx-select', (e) => {
+searchTable.addEventListener('fx-select', (e) => {
   const row = search.select(e.detail.row);
   if (row) beginIntake(row);
 });
@@ -153,6 +169,7 @@ function renderContext() {
   const kv = el('dl', 'fx-kv');
   kv.append(el('dt', null, t('csr.search.col.lob')), el('dd', null, m.lob), el('dt', null, t('csr.search.col.period')), el('dd', null, m.term || '—'));
   body.appendChild(kv);
+  if (m.risk) { kv.append(el('dt', null, t('csr.ctx.risk')), el('dd', null, m.risk)); }
   if (ctxNote) body.appendChild(el('p', 'muted', ctxNote));
   const section = (title) => { const h = el('h3', 'fx-section-title csr-sec-title', title); body.appendChild(h); return h; };
   section(t('csr.ctx.insured'));
@@ -165,20 +182,7 @@ function renderContext() {
     for (const d of m.drivers) { const li = el('li', null, d.name); if (d.excluded) { li.append(' ', badge('excluded', null, 'warning', t('csr.ctx.excluded'))); } ul.appendChild(li); }
     body.appendChild(ul);
   }
-  if (m.vehicles.length) {
-    section(t('csr.ctx.vehicles'));
-    for (const v of m.vehicles) {
-      const card = el('div', 'csr-tile'); card.dataset.unit = v.id;
-      card.append(el('div', 'csr-tile-title', v.title));
-      if (v.sub) card.append(el('div', 'csr-tile-detail', v.sub));
-      if (v.coverages.length) {
-        const ul = el('ul');
-        for (const c of v.coverages) { const li = el('li'); li.append(el('span', null, c.title), el('span', null, c.detail)); ul.appendChild(li); }
-        card.appendChild(ul);
-      }
-      body.appendChild(card);
-    }
-  }
+  // Policy-level coverages come before the vehicles, so liability limits are visible without scrolling (CSR-21).
   if (m.coverages.length) {
     section(t('csr.ctx.coverages'));
     for (const c of m.coverages) {
@@ -190,6 +194,27 @@ function renderContext() {
       body.appendChild(card);
     }
   }
+  if (m.vehicles.length) {
+    section(t('csr.ctx.vehicles'));
+    // A fleet (more than a few units) is folded into one disclosure; a family policy shows its cars open.
+    let host = body;
+    if (m.collapseVehicles) {
+      const det = el('details', 'csr-units'); det.id = 'ctx-units';
+      det.appendChild(el('summary', null, t('csr.ctx.vehiclesSummary', { count: m.vehicles.length })));
+      body.appendChild(det); host = det;
+    }
+    for (const v of m.vehicles) {
+      const card = el('div', 'csr-tile'); card.dataset.unit = v.id;
+      card.append(el('div', 'csr-tile-title', v.title));
+      if (v.sub) card.append(el('div', 'csr-tile-detail', v.sub));
+      if (v.coverages.length) {
+        const ul = el('ul');
+        for (const c of v.coverages) { const li = el('li'); li.append(el('span', null, c.title), el('span', null, c.detail)); ul.appendChild(li); }
+        card.appendChild(ul);
+      }
+      host.appendChild(card);
+    }
+  }
 }
 let ctxFor = null;
 async function loadContext(row) {
@@ -197,6 +222,12 @@ async function loadContext(row) {
   ctxModel = contextModel({ summary: row.summary, snapshot: null, vehicleOptions: [] }, { t, fmt });
   renderContext();
   let snapshot = null;
+  if (!access.policySnapshot) { // the server does not let this role read the snapshot: say so instead of a failed call
+    ctxNote = t('csr.ctx.limited.agent');
+    ctxModel = contextModel({ summary: row.summary, snapshot: null, vehicleOptions: pickerVehicles }, { t, fmt });
+    renderContext();
+    return;
+  }
   try { snapshot = await api.get(`/policies/${encodeURIComponent(row.policyNumber)}/snapshot`, { asOf: isoDate() }); } catch { snapshot = null; }
   if (ctxFor !== row.policyNumber) return;
   ctxNote = snapshot ? '' : t('csr.ctx.unavailable');
@@ -212,7 +243,7 @@ function showStage(stage) {
   $('stepper').setAttribute('current', String({ search: 0, intake: 1, done: 2 }[stage]));
 }
 function newCall() {
-  intake.reset(); renderedQ = null; pickerVehicles = []; renderVehiclePicker(); ctxModel = null; ctxFor = null;
+  intake.reset(); renderedQ = null; pickerVehicles = []; doneClaim = null; lossOptions = []; renderLossType(); renderVehiclePicker(); ctxModel = null; ctxFor = null;
   search.clear(); const box = $('search-field').querySelector('input'); if (box) box.value = '';
   showStage('search');
   $('search-field').querySelector('input')?.focus();
@@ -226,12 +257,55 @@ async function beginIntake(row) {
   const lob = row.lob || lobs[0]?.id;
   pickerVehicles = [];
   renderVehiclePicker();
+  // S6-RA-02: the loss type is sent with the session (as the claimant app does); without it the claim's cause is 'other'.
+  const locale = document.documentElement.lang || 'en';
+  lossOptions = lossTypeOptions(lobs, lob, locale);
+  const lossType = initialLossType(lossOptions);
+  renderLossType(lossType);
   const ctx = loadContext(row);
-  await intake.start({ lob, policyNumber: row.policyNumber, locale: document.documentElement.lang || 'en' });
-  pickerVehicles = await fetchPolicyVehicles(api, intake.state.sessionId);
+  await intake.start({ lob, policyNumber: row.policyNumber, locale, lossType, channel: channelFor(role, lobs, lob) });
+  // The picker records the tenant's vehicle-type question; without one (commercial auto today) it is not offered (CSR-12).
+  const vq = intake.state.vehicleQuestionId;
+  pickerVehicles = vq && access.policyVehicles ? await fetchPolicyVehicles(api, intake.state.sessionId) : [];
   renderVehiclePicker();
+  if (vq && pickerVehicles.length) intake.setExternal([vq]); // asked through the picker, not again in the script
   await ctx;
   if (ctxFor === row.policyNumber && !ctxModel?.detailed) { ctxModel = contextModel({ summary: row.summary, snapshot: null, vehicleOptions: pickerVehicles }, { t, fmt }); renderContext(); }
+}
+
+// ---- loss type (from the tenant's lossTypes for the line; can change until the first answer is recorded)
+let lossOptions = [];
+function renderLossType(value) {
+  const box = $('loss-type-pick');
+  box.textContent = '';
+  box.hidden = !lossOptions.length;
+  if (!lossOptions.length) return;
+  const f = document.createElement('fx-field');
+  f.setAttribute('name', 'loss_type'); f.setAttribute('label', t('csr.lossType.label')); f.setAttribute('type', 'select'); f.setAttribute('required', '');
+  f.setAttribute('hint', t('csr.lossType.hint'));
+  f.options = lossOptions.map((o) => ({ value: o.value, label: o.label }));
+  if (value) f.setAttribute('value', value);
+  f.addEventListener('change', async (e) => {
+    const v = e.target.value;
+    if (!v || v === intake.state.lossType) return;
+    if (!intake.canChangeLossType) { e.target.value = intake.state.lossType ?? ''; return; }
+    renderedQ = null; // the new session may ask a different first question
+    await intake.changeLossType(v);
+  });
+  box.appendChild(f);
+}
+/** The loss type control locks once an answer (or the vehicle pick) is recorded in the session. */
+function syncLossType(s) {
+  const f = $('loss-type-pick').querySelector('fx-field');
+  if (!f) return;
+  const locked = !intake.canChangeLossType && s.phase !== 'starting';
+  const hint = t(locked ? 'csr.lossType.locked' : 'csr.lossType.hint');
+  if (f.getAttribute('hint') !== hint) f.setAttribute('hint', hint); // fx-field re-renders its control on a hint change
+  if (s.lossType && f.getAttribute('value') !== s.lossType) f.setAttribute('value', s.lossType);
+  const sel = f.querySelector('select');
+  if (!sel) return;
+  if (s.lossType && sel.value !== s.lossType) sel.value = s.lossType;
+  sel.disabled = locked;
 }
 
 // ---- insured vehicle picker (hidden when the policy lists no vehicles)
@@ -310,17 +384,39 @@ function showStructuredError(msg) {
   const fs = err.closest('fieldset');
   if (msg) fs.setAttribute('aria-invalid', 'true'); else fs.removeAttribute('aria-invalid');
 }
+/** Multi-select (damaged areas): a fieldset of checkboxes; the answer is the array of ticked option values. */
+function buildMultiSelect(q, slot) {
+  const fs = document.createElement('fieldset'); fs.className = 'sf csr-multi'; fs.dataset.qtype = q.type; fs.id = `ms-${q.id}`;
+  const lg = document.createElement('legend'); lg.textContent = resolveText(q.text);
+  fs.appendChild(lg);
+  const help = resolveText(q.help);
+  if (help) { const h = document.createElement('p'); h.className = 'muted'; h.textContent = help; fs.appendChild(h); }
+  (q.options ?? []).forEach((o, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'fx-check';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = `${fs.id}-${i}`; cb.name = q.id; cb.value = o.value;
+    const lab = document.createElement('label'); lab.setAttribute('for', cb.id); lab.textContent = resolveText(o.label) || o.value;
+    wrap.append(cb, lab); fs.appendChild(wrap);
+  });
+  const err = document.createElement('p'); err.id = `${fs.id}-err`; err.className = 'fx-error sf-error'; err.setAttribute('role', 'alert'); err.hidden = true;
+  fs.setAttribute('aria-describedby', err.id);
+  fs.appendChild(err);
+  slot.appendChild(fs);
+}
 function buildInput(q) {
   const slot = $('answer-slot'); slot.textContent = '';
   slot.dataset.qid = q?.id ?? ''; // lets tests and assistive tooling tell which question is on screen
+  slot.dataset.optional = q && q.required === false ? 'true' : 'false';
   if (!q) return;
   if (isDisclosure(q)) return buildDisclosure(q, slot);
   if (isStructured(q)) return buildStructuredForm(q, slot);
+  if (isMultiSelect(q)) return buildMultiSelect(q, slot);
   const f = document.createElement('fx-field');
   f.setAttribute('name', q.id); f.setAttribute('label', resolveText(q.text));
   const help = resolveText(q.help); if (help) f.setAttribute('hint', help);
   if (q.required) f.setAttribute('required', '');
   f.setAttribute('type', fieldType(q.type));
+  const rules = fieldRules(q); // the server's length limit, checked here first so the error shows on the field (CSR-15)
+  if (rules.maxLength) f.setAttribute('maxlength', String(rules.maxLength));
   const choose = { value: '', label: t('csr.intake.select.choose') }; // an unanswered select must not look answered
   if (q.type === 'select') f.options = [choose, ...(q.options ?? []).map((o) => ({ value: o.value, label: resolveText(o.label) }))];
   if (q.type === 'boolean') f.options = [choose, { value: 'true', label: t('csr.intake.yes') }, { value: 'false', label: t('csr.intake.no') }];
@@ -353,16 +449,42 @@ function readAnswer(q) {
     showStructuredError('');
     return { ok: true, value: buildStructured(q.type, raw) };
   }
+  if (isMultiSelect(q)) {
+    const ticked = [...slot.querySelectorAll('input[type=checkbox]:checked')].map((cb) => cb.value);
+    return { ok: true, value: coerceAnswer(q, ticked) };
+  }
   const f = slot.querySelector('fx-field');
-  if (!f || !f.validate()) return { ok: false };
+  if (!f) return { ok: false };
+  f.setError(null); // a server message from the previous attempt is cleared before the field is checked again
+  if (!f.validate()) { f.querySelector('input,select,textarea')?.focus(); return { ok: false }; }
   return { ok: true, value: coerceAnswer(q, f.value) };
 }
+/** Show the server's message for the question on screen next to its control (never as a stack of toasts). */
+function showInlineError(q, msg) {
+  const slot = $('answer-slot');
+  if (!q || slot.dataset.qid !== q.id) return false;
+  if (isStructured(q)) { showStructuredError(msg); return true; }
+  if (isMultiSelect(q) || isDisclosure(q)) {
+    const err = slot.querySelector('.fx-error');
+    if (!err) return false;
+    err.textContent = msg || (isDisclosure(q) ? t('kit.field.required', { label: resolveText(q.text) }) : '');
+    err.hidden = !msg;
+    return true;
+  }
+  const f = slot.querySelector('fx-field');
+  if (!f) return false;
+  f.setError(msg || null);
+  return true;
+}
 let renderedQ = null;
+let lastToast = '';
 intake.subscribe((s) => {
   if (s.phase === 'unavailable') { showUnavailable(() => intake.retry()); return; }
   if (s.phase !== 'starting' && s.phase !== 'submitting') hideUnavailable();
   if (s.phase === 'idle') return;
-  $('progress').textContent = s.done ? t('csr.intake.ready') : t('csr.intake.progress', { answered: s.progress.answered ?? 0, remaining: s.progress.requiredRemaining ?? 0 });
+  syncLossType(s);
+  const optionalOnScreen = !!s.question && s.question.required === false;
+  $('progress').textContent = s.done ? t(optionalOnScreen ? 'csr.intake.readyOptional' : 'csr.intake.ready') : t('csr.intake.progress', { answered: s.progress.answered ?? 0, remaining: s.progress.requiredRemaining ?? 0 });
   const pm = progressModel(s.progress, s.done);
   $('progress-fill').style.width = `${pm.percent}%`;
   $('progress-bar').setAttribute('aria-valuenow', String(pm.percent));
@@ -374,13 +496,20 @@ intake.subscribe((s) => {
   $('unlisted').textContent = s.unlisted ? t('csr.panel.more', { count: s.unlisted }) : '';
   $('script').textContent = s.script.text;
   if (renderedQ !== (s.question?.id ?? null)) { renderedQ = s.question?.id ?? null; buildInput(s.question); $('answer-slot').querySelector('input,select,textarea')?.focus(); }
-  const sfMsg = s.question && isStructured(s.question) ? errorFor(s.errors, s.question.id) : '';
-  if (s.question && isStructured(s.question)) showStructuredError(sfMsg);
-  if (s.errors.length) toast(t('csr.intake.fixErrors', { message: s.errors.map((x) => x.message).join('; ') }), 'error');
+  // Server errors (422 errors[]) show on the question's own control; only an error for a question that is not on
+  // screen falls back to one toast, and the same message is not toasted twice in a row (CSR-15).
+  const mine = s.question ? errorFor(s.errors, s.question.id) : '';
+  if (s.question) showInlineError(s.question, mine);
+  const others = s.errors.filter((x) => x?.questionId !== s.question?.id).map((x) => x.message).filter(Boolean).join('; ');
+  if (others && others !== lastToast) toast(t('csr.intake.fixErrors', { message: others }), 'error');
+  lastToast = others;
   $('answer-form').hidden = !s.question;
+  $('answer-skip').hidden = !optionalOnScreen;
+  $('answer-optional').hidden = !optionalOnScreen;
   // One answer in flight at a time: a second click or Enter while the server is still replying must not re-send.
   const inFlight = s.busy && s.phase !== 'starting';
   $('answer-go').disabled = inFlight;
+  $('answer-skip').disabled = inFlight;
   $('answer-form').dataset.busy = inFlight ? 'true' : 'false';
   $('submit-go').hidden = !(s.done && s.phase !== 'submitted');
   if (s.phase === 'submitted' && s.claim) showDone(s.claim);
@@ -392,47 +521,94 @@ $('answer-form').addEventListener('submit', (e) => {
   const a = readAnswer(q);
   if (a.ok) intake.answer(q.id, a.value);
 });
+$('answer-skip').addEventListener('click', () => {
+  const q = intake.state.question;
+  if (q && q.required === false && !intake.state.busy) intake.skip(q.id);
+});
 $('submit-go').addEventListener('click', () => intake.submit());
 
 function showDone(claim) {
   showStage('done');
-  $('done-h').textContent = t('csr.submit.done');
-  $('done-number').textContent = t('csr.submit.number', { number: claim.claimNumber ?? '' });
-  const a = $('done-link'); a.textContent = t('csr.submit.open', { number: claim.claimNumber ?? '' }); a.setAttribute('href', claimLink(claim));
+  $('done-h').textContent = t('csr.submit.recorded'); // the card heading already reads "Claim submitted" (CSR-20)
+  $('done-number').textContent = t('csr.submit.number', { number: formatClaimNumber(claim.claimNumber ?? '') });
+  doneClaim = claim;
+  showDoneStatus(recent.state.rows);
+  const a = $('done-link'); a.textContent = t('csr.submit.open', { number: formatClaimNumber(claim.claimNumber ?? '') }); a.setAttribute('href', claimLink(claim));
+  // Agents cannot open the claim (GET /claims/{id} is not allowed for the role): no dead link, a note instead (CSR-10).
+  a.hidden = !access.claimView || !claimLink(claim);
+  $('done-note').hidden = access.claimView;
+  $('done-note').textContent = access.claimView ? '' : t('csr.submit.agentNote');
   toast(t('csr.submit.done'), 'success');
   $('done-h').focus();
-  recent.load();
+  // The pipeline settles the new claim a moment later (validating -> assigned); keep the list in step (CSR-18).
+  if (access.recentClaims && claim.id) recent.refreshUntilSettled(claim.id);
+}
+/** S6-RA-14: the confirmation shows the claim's current status, kept in step with its row in Recent claims. */
+let doneClaim = null;
+function showDoneStatus(rows) {
+  const st = currentStatus(doneClaim, rows);
+  $('done-status').textContent = st ? t('csr.submit.status', { status: formatEnum(st) }) : '';
 }
 $('done-again').addEventListener('click', newCall);
 
 // ---- recent claims + read-only claim
 recent.subscribe((s) => {
   if (s.phase === 'unavailable') { showUnavailable(() => recent.retry()); return; }
-  const tbl = $('recent-table'); tbl.columns = recentCells(); tbl.rows = s.rows;
-  if (s.claim && !$('claim-sec').hidden) renderClaim(s.claim);
+  if (doneClaim && s.kind !== 'open') showDoneStatus(s.rows);
+  if (!access.recentClaims) return; // the agent view explains the section instead (see signedIn)
+  const failed = s.phase === 'failed';
+  if (s.kind !== 'open') {
+    const tbl = $('recent-table'); tbl.columns = visibleColumns(recentCells(), s.rows); tbl.rows = s.rows;
+    // A failed load (403, 404, other) says so; it never shows the table's "No results." as if there were no claims.
+    tbl.hidden = failed || (s.phase === 'done' && !s.rows.length);
+    $('recent-msg').textContent = failed ? s.message : (s.phase === 'done' && !s.rows.length ? t('csr.recent.empty') : '');
+  }
+  if (!$('claim-sec').hidden && s.kind === 'open') {
+    if (s.claim) renderClaim(s.claim);
+    else if (failed) showClaimMessage(s.message);
+  }
 });
 function reportedCell(r) {
   const tm = document.createElement('time'); tm.dateTime = r.reportedAt; tm.title = formatDateTime(r.reportedAt); tm.textContent = formatRelative(r.reportedAt); return tm;
 }
+const claimHref = (id) => `/csr?claim=${encodeURIComponent(id)}`;
+/** The claim number is a real link (click, middle-click, keyboard), like the row itself (CSR-19). */
+function claimNumberLink(r) {
+  if (!r.id) return cell(formatClaimNumber(r.claimNumber), 'csr-ref');
+  const a = document.createElement('a'); a.className = 'csr-mono'; a.href = claimHref(r.id); a.textContent = formatClaimNumber(r.claimNumber);
+  a.addEventListener('click', (e) => e.stopPropagation()); // the browser follows the link; the row handler must not run too
+  a.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); });
+  return a;
+}
 function recentCells() { return recentColumns(t).map((c) => ({
-  claimNumber: { ...c, render: (r) => cell(formatClaimNumber(r.claimNumber), 'csr-mono') },
+  claimNumber: { ...c, render: claimNumberLink },
   status: { ...c, render: (r) => badge(r.status, 'claim') },
   lob: { ...c, render: (r) => formatEnum(r.lob) },
-  policyNumber: { ...c, render: (r) => cell(formatPolicyNumber(r.policyNumber), 'csr-mono') },
+  policyNumber: { ...c, render: (r) => cell(formatPolicyNumber(r.policyNumber), 'csr-ref') },
   reportedAt: { ...c, render: reportedCell },
 }[c.key] ?? c)); }
-$('recent-table').addEventListener('fx-select', (e) => { if (e.detail.row?.id) location.assign(`/csr?claim=${encodeURIComponent(e.detail.row.id)}`); });
+// A click anywhere on the row (or Enter on a focused row) opens the claim, the same as a search row starts intake.
+$('recent-table').addEventListener('fx-select', (e) => { if (e.detail.row?.id) location.assign(claimHref(e.detail.row.id)); });
 $('recent-refresh').addEventListener('click', () => recent.load());
+/** A missing, forbidden or failed claim says what happened (never an empty card). */
+function showClaimMessage(msg) {
+  $('claim-dl').textContent = '';
+  const box = $('claim-msg'); box.textContent = msg; box.hidden = !msg;
+}
 function renderClaim(c) {
+  $('claim-msg').hidden = true;
   $('claim-sec').setAttribute('heading', t('csr.claim.heading', { number: formatClaimNumber(c.claimNumber ?? '') }));
   const dl = $('claim-dl'); dl.textContent = '';
-  for (const f of claimSummary(c, t)) {
+  for (const f of claimSummary(c, t, { projected: role === 'agent' })) {
     const dt = document.createElement('dt'); dt.textContent = f.label;
     const dd = document.createElement('dd');
     if (f.key === 'status' && c.status) dd.appendChild(badge(c.status, 'claim'));
     else if (f.key === 'lob' && c.lob) dd.textContent = formatEnum(c.lob);
+    else if (f.key === 'lossType' && c.lossType) dd.textContent = lossTypeOptions(lobs, c.lob, document.documentElement.lang || 'en').find((o) => o.value === c.lossType)?.label ?? formatEnum(c.lossType);
     else if (f.key === 'reportedAt' && c.reportedAt) dd.textContent = formatDateTime(c.reportedAt);
     else if (f.key === 'channel' && c.channel) dd.textContent = formatEnum(c.channel);
+    else if (f.key === 'lossDate' && c.lossEvent?.lossDate) dd.textContent = formatDate(c.lossEvent.lossDate);
+    else if (f.key === 'policyNumber' && c.policyNumber) dd.textContent = formatPolicyNumber(c.policyNumber);
     else dd.textContent = f.value;
     dl.append(dt, dd);
   }
@@ -443,7 +619,7 @@ function showWho() {
   const shell = $('shell');
   const sess = readSession();
   shell.setAttribute('user-name', sess?.persona?.displayName ?? t('csr.signedIn'));
-  shell.setAttribute('user-role', 'csr');
+  shell.setAttribute('user-role', t(roleKeys(role).role)); // 'Agent' for the agent persona, 'CSR' otherwise (CSR-11)
 }
 $('shell').addEventListener('fx-signout', () => {
   clearSession();
@@ -460,13 +636,22 @@ async function signedIn() {
     lobs = cfg?.lobs ?? []; applyBranding(cfg);
     if (cfg?.displayName) $('shell').setAttribute('tenant-name', cfg.displayName);
   } catch { /* branding optional; unavailable is surfaced by the calls that matter */ }
+  $('search-field').setAttribute('hint', searchHint()); // tenant prefixes are known once the config is in
   const claimId = qs.get('claim');
   if (claimId) {
     $('desk').hidden = true; $('claim-sec').hidden = false;
+    $('claim-sec').setAttribute('heading', t('csr.claim.heading', { number: '' }).trim());
+    if (!access.claimView) { showClaimMessage(t('csr.recent.forbidden.claim')); $('main').focus(); return; }
     await recent.open(claimId);
-    if (recent.state.claim) { renderClaim(recent.state.claim); $('claim-sec').scrollIntoView?.(); $('main').focus(); }
+    if (recent.state.claim) { renderClaim(recent.state.claim); $('claim-sec').scrollIntoView?.(); }
+    else if (recent.state.phase === 'failed') showClaimMessage(recent.state.message);
+    $('main').focus();
   } else {
-    recent.load();
+    if (access.recentClaims) recent.load();
+    else { // agents: the server does not list claims for the role; explain the section instead of a failed call (CSR-10)
+      $('recent-table').hidden = true; $('recent-refresh').hidden = true; $('recent-hint').hidden = true;
+      $('recent-msg').textContent = t('csr.recent.agent');
+    }
     $('search-field').querySelector('input')?.focus();
   }
 }

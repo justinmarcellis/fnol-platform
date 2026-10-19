@@ -4,6 +4,8 @@ const READ = ['tenant_admin', 'carrier_admin', 'supervisor', 'auditor'];
 const WRITE = ['tenant_admin', 'carrier_admin'];
 const PUBLIC = ['claimant', 'agent', 'csr', 'adjuster', 'supervisor', 'tenant_admin', 'carrier_admin', 'integration', 'auditor'];
 
+import { channelForCaller } from './service.js';
+
 const parseIfMatch = (h) => {
   if (h == null || h === '') return undefined;
   const n = Number(String(h).replace(/^W\//, '').replace(/"/g, ''));
@@ -21,7 +23,7 @@ export function registerRoutes(router) {
     const expected = parseIfMatch(req.headers?.['if-match']);
     if (Number.isNaN(expected)) throw new req.ctx.AppError('bad_request', 'If-Match must be the numeric config version', 400);
     try {
-      const saved = req.ctx.modules.config.putTenantConfig(req.body, { expectedVersion: expected, actor: req.user.sub });
+      const saved = req.ctx.modules.config.putTenantConfig(req.body, { expectedVersion: expected, actor: req.user.sub, actorName: req.user.name });
       res.setHeader('ETag', `"${saved.version}"`);
       res.json(200, saved);
     } catch (e) {
@@ -34,7 +36,14 @@ export function registerRoutes(router) {
     res.json(200, req.ctx.modules.config.validateTenantConfig(req.body));
   }, { roles: WRITE });
 
+  // Version history for the admin console: every stored version from 1 onward, newest first.
+  router.get('/api/v1/config/versions', (req, res) => {
+    res.json(200, req.ctx.modules.config.listVersions({ viewer: { sub: req.user?.sub, name: req.user?.name } }));
+  }, { roles: READ });
+
+  // availableLobs follows the caller's intake channel (claimant -> claimant_web), or ?channel= when it names a known channel.
   router.get('/api/v1/config/public', (req, res) => {
-    res.json(200, req.ctx.modules.config.getPublicConfig());
+    const channel = channelForCaller(req.user?.roles ?? [], typeof req.query?.channel === 'string' ? req.query.channel : undefined);
+    res.json(200, req.ctx.modules.config.getPublicConfig({ channel }));
   }, { roles: PUBLIC });
 }

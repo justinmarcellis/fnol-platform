@@ -84,7 +84,8 @@
 
 /* ---- questions and controls --------------------------------------------------------------------------------- */
 .cl-form { display: block; }
-.cl-q, .cl-card .cl-qfield:last-of-type { margin-bottom: 0; }
+/* Only the last field of a card loses its bottom gap (:last-of-type matched the policy <div> before the mode fieldset). */
+.cl-q, .cl-card > .cl-qfield:last-child { margin-bottom: 0; }
 .cl-qfield { margin: 0 0 var(--fx-space-5); border: 0; padding: 0; min-width: 0; }
 .cl-qfield:last-child { margin-bottom: 0; }
 .cl-qlabel { display: block; padding: 0; margin: 0 0 var(--fx-space-2); font-size: var(--fx-fs-xl); font-weight: var(--fx-fw-semibold); line-height: var(--fx-lh-tight); letter-spacing: var(--fx-tracking-tight); color: var(--fx-text); }
@@ -154,7 +155,14 @@
 .cl-row:nth-child(even) { background: var(--fx-surface); }
 .cl-row dt { font-size: var(--fx-fs-sm); color: var(--fx-text-muted); font-weight: var(--fx-fw-medium); }
 .cl-row dd { margin: 0; font-weight: var(--fx-fw-medium); overflow-wrap: anywhere; }
-@media (min-width: 560px) { .cl-row { grid-template-columns: 5fr 7fr; gap: var(--fx-space-4); align-items: baseline; } }
+@media (min-width: 560px) { .cl-row { grid-template-columns: 5fr 7fr auto; gap: var(--fx-space-4); align-items: baseline; } }
+.cl-row dd.cl-row-edit { justify-self: start; }
+.cl-quick { display: flex; flex-wrap: wrap; gap: var(--fx-space-2); margin: 0 0 var(--fx-space-3); }
+.cl-chatsub { margin-top: var(--fx-space-2); }
+.cl-activity { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--fx-space-2); }
+.cl-activity li { display: grid; gap: 2px; }
+.cl-hero-notice { margin: 0 0 var(--fx-space-4); padding: var(--fx-space-3) var(--fx-space-4); border-radius: var(--fx-radius); background: color-mix(in srgb, currentColor 12%, transparent); }
+#activity-box:empty { display: none; }
 .cl-review .cl-note { margin-bottom: var(--fx-space-3); }
 .cl-review .cl-fine { margin: var(--fx-space-4) 0 0; }
 

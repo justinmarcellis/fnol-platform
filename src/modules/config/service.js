@@ -13,6 +13,29 @@ const resolver = fileResolver(SCHEMA_DIR);
 /** Claim lifecycle states (architecture/overview.md section 7). */
 export const LIFECYCLE_STATES = ['reported', 'validating', 'triaged', 'assigned', 'fast_tracked', 'in_review', 'pending_info', 'closed', 'withdrawn'];
 
+/** Intake channels (common.schema.json#/$defs/Channel). */
+export const CHANNELS = ['claimant_web', 'claimant_mobile', 'csr_phone', 'agent_portal', 'api', 'email', 'partner'];
+/** The intake channel a caller of GET /config/public reports through, by role (first match wins). */
+const ROLE_CHANNEL = [['claimant', 'claimant_web'], ['agent', 'agent_portal'], ['csr', 'csr_phone'], ['integration', 'api']];
+
+/**
+ * Channel a caller uses: an explicit, known channel wins; otherwise the first role with a channel.
+ * @param {string[]} roles @param {string} [explicit]
+ * @returns {string|null}
+ */
+export function channelForCaller(roles = [], explicit) {
+  if (explicit && CHANNELS.includes(explicit)) return explicit;
+  for (const [role, channel] of ROLE_CHANNEL) if (roles.includes(role)) return channel;
+  return null;
+}
+
+/** A line of business accepts claims on a channel (no channels list means every channel). */
+export const lobOffersChannel = (lob, channel) => !!lob && lob.enabled !== false
+  && (!channel || !Array.isArray(lob.channels) || !lob.channels.length || lob.channels.includes(channel));
+
+/** Placeholder text the console gives a new question; it must be replaced before the set goes live. */
+const PLACEHOLDER_TEXT = /^\s*new question\s*$/i;
+
 const SECTIONS = ['branding', 'lobs', 'questionSets', 'rules', 'queues', 'timers', 'notifications', 'integrations', 'ai', 'security', 'fastTrack', 'severityBands', 'holidays'];
 const META_KEYS = new Set(['$schema', 'tenantId', 'version', 'displayName', 'claimNumberPrefix', 'timeZone', 'locales', 'updatedAt', 'updatedBy']);
 
@@ -57,6 +80,7 @@ export function validateTenantConfig(cfg, deps = {}) {
   // Semantic checks need a structurally sound document in the sections they read.
   const arr = (v) => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : []);
 
+  const locales = Array.isArray(cfg.locales) && cfg.locales.length ? cfg.locales.filter((l) => typeof l === 'string') : ['en'];
   const lobs = arr(cfg.lobs);
   const lobIds = new Set(lobs.map((l) => l.id));
   const knownStates = new Set(lobs.flatMap((l) => (Array.isArray(l.states) ? l.states : [])));
@@ -83,6 +107,14 @@ export function validateTenantConfig(cfg, deps = {}) {
       if (typeById.has(q.id) && typeById.get(q.id) !== q.type) err(`${qp}/type`, 'question_type_conflict', `question id "${q.id}" is used with different types across question sets`);
       typeById.set(q.id, q.type);
       if ((q.type === 'select' || q.type === 'multiselect') && !(Array.isArray(q.options) && q.options.length)) err(`${qp}/options`, 'missing_options', `${q.type} question "${q.id}" needs options`);
+      const texts = typeof q.text === 'string' ? { en: q.text } : (q.text && typeof q.text === 'object' ? q.text : {});
+      const present = Object.entries(texts).filter(([, v]) => typeof v === 'string' && v.trim());
+      if (!present.length) err(`${qp}/text`, 'missing_text', `question "${q.id}" needs text that claimants will read`);
+      else if (present.some(([, v]) => PLACEHOLDER_TEXT.test(v))) err(`${qp}/text`, 'placeholder_text', `question "${q.id}" still has the placeholder text "New question"`);
+      if (present.length) {
+        const missing = locales.filter((l) => !present.some(([k]) => k === l));
+        if (missing.length) warn(`${qp}/text`, `question "${q.id}" has no ${missing.join(', ')} text; claimants using ${missing.length === 1 ? 'that language' : 'those languages'} will see the English text`);
+      }
       for (const key of ['showIf', 'requiredIf']) {
         for (const f of factPaths(q[key])) {
           const m = /^answers\.([a-z][a-z0-9_]*)/.exec(f);
@@ -166,6 +198,13 @@ export function validateTenantConfig(cfg, deps = {}) {
   return { valid: errors.length === 0, errors, warnings };
 }
 
+/** Top-level keys whose value differs between two configs (version stamps ignored). */
+export function changedKeys(before, after) {
+  const skip = new Set(['version', 'updatedAt', 'updatedBy']);
+  const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]);
+  return [...keys].filter((k) => !skip.has(k) && JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k])).sort();
+}
+
 const stripMeta = (c) => { const { version, updatedAt, updatedBy, ...rest } = c ?? {}; return rest; };
 
 /** Which top-level sections differ between two configs (event enum names). */
@@ -174,6 +213,16 @@ export function changedSections(before, after) {
   const metaChanged = [...META_KEYS].some((k) => !['version', 'updatedAt', 'updatedBy'].includes(k) && JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k]));
   if (metaChanged) out.push('other');
   return out;
+}
+
+/** Readable fallback for an actor id without a recorded name: 'dev-aurelia-mutual-carrier-admin' -> 'Carrier admin'. */
+export function humanizeActor(actor) {
+  const a = String(actor ?? '').trim();
+  if (!a) return 'Unknown';
+  if (a === 'system') return 'System';
+  const role = /(carrier-admin|tenant-admin|supervisor|auditor|integration)$/.exec(a)?.[1];
+  if (role) return role.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  return a;
 }
 
 const inLossTypes = (set, lossType) => !set.lossTypes?.length || (lossType != null && set.lossTypes.includes(lossType));
@@ -196,10 +245,45 @@ export function createService(ctx) {
     /** @returns {object} current TenantConfig; version is the stored version number */
     getTenantConfig: () => need(),
 
-    /** @returns {{tenantId, displayName, branding, lobs, locales}} UI-safe subset */
-    getPublicConfig() {
+    /**
+     * UI-safe subset. With a channel, availableLobs lists only the enabled lines of business that accept
+     * claims on that channel, so a claimant screen never offers a line that intake would refuse.
+     * @param {{channel?: string|null}} [opts]
+     * @returns {{tenantId, displayName, branding, lobs, locales, channel: string|null, availableLobs: string[]}}
+     */
+    getPublicConfig({ channel = null } = {}) {
       const c = need();
-      return { tenantId: c.tenantId ?? tenantId(), displayName: c.displayName, branding: c.branding, lobs: c.lobs, locales: c.locales ?? ['en'] };
+      const lobs = c.lobs ?? [];
+      return {
+        tenantId: c.tenantId ?? tenantId(), displayName: c.displayName, branding: c.branding, lobs, locales: c.locales ?? ['en'],
+        channel, availableLobs: lobs.filter((l) => lobOffersChannel(l, channel)).map((l) => l.id),
+      };
+    },
+
+    /**
+     * Every stored version, newest first, from version 1 (the tenant file) onward.
+     * @param {{viewer?: {sub?: string, name?: string}}} [opts] the caller, to name their own saves
+     * @returns {{items: Array<{version:number, actor:string, actorName:string, createdAt:string, changedKeys:string[], changedSections:string[], source:'console'|'tenant_file'|'api'}>}}
+     */
+    listVersions({ viewer } = {}) {
+      const id = tenantId();
+      const rows = typeof ctx.tenants.history === 'function' ? ctx.tenants.history(id) : [];
+      const audits = typeof ctx.audit?.list === 'function' ? ctx.audit.list(id, { action: 'tenant.config.updated', entityType: 'tenant_config', limit: 1000 }) : [];
+      const byVersion = new Map();
+      for (const a of audits) if (Number.isInteger(a.details?.version) && !byVersion.has(a.details.version)) byVersion.set(a.details.version, a);
+      const items = rows.map((r) => {
+        const a = byVersion.get(r.version);
+        const fromFile = r.actor === 'boot';
+        const actorName = a?.details?.actorName
+          ?? (fromFile ? 'System (tenant file)' : viewer?.sub && viewer.sub === r.actor && viewer.name && viewer.name !== viewer.sub ? viewer.name : null)
+          ?? humanizeActor(r.actor);
+        return {
+          version: r.version, actor: r.actor, actorName, createdAt: r.created_at,
+          changedKeys: a?.details?.changedKeys ?? [], changedSections: a?.details?.changedSections ?? [],
+          source: fromFile ? 'tenant_file' : a ? 'console' : 'api',
+        };
+      });
+      return { items };
     },
 
     /** Most specific matching question set (lossType and channel narrow; highest version breaks ties). */
@@ -237,7 +321,7 @@ export function createService(ctx) {
      * (err.report holds the ValidationReport). Identical content is a no-op (no version, no event).
      * @returns {object} saved TenantConfig
      */
-    putTenantConfig(doc, { expectedVersion, actor = 'system' } = {}) {
+    putTenantConfig(doc, { expectedVersion, actor = 'system', actorName } = {}) {
       const id = tenantId();
       if (doc && typeof doc === 'object' && doc.tenantId && doc.tenantId !== id) throw new ctx.AppError('tenant_mismatch', 'tenantId in body does not match the authenticated tenant', 403);
       const current = ctx.tenants.version(id);
@@ -254,7 +338,9 @@ export function createService(ctx) {
       const saved = { ...doc, version, updatedAt: ctx.clock.nowIso(), updatedBy: actor };
       ctx.tenants.put(id, saved, actor);
       const sections = changedSections(before, saved);
-      ctx.audit.record(id, { actor, action: 'tenant.config.updated', entityType: 'tenant_config', entityId: id, details: { version, previousVersion: current || undefined, changedSections: sections } });
+      const details = { version, previousVersion: current || undefined, changedSections: sections, changedKeys: changedKeys(before, saved) };
+      if (actorName && actorName !== actor) details.actorName = String(actorName).slice(0, 120);
+      ctx.audit.record(id, { actor, action: 'tenant.config.updated', entityType: 'tenant_config', entityId: id, details });
       const data = { version, changedSections: sections.length ? sections : ['other'] };
       if (current) data.previousVersion = current;
       ctx.bus.publish(id, 'tenant.config.updated', id, data);

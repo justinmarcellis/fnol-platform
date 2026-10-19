@@ -3,7 +3,7 @@ import { createService, validateTenantConfig } from './service.js';
 import { registerRoutes } from './routes.js';
 
 export { validate, fileResolver } from './validator.js';
-export { validateTenantConfig, changedSections, LIFECYCLE_STATES } from './service.js';
+export { validateTenantConfig, changedSections, changedKeys, channelForCaller, humanizeActor, LIFECYCLE_STATES } from './service.js';
 
 const CONFIG_KEYS = ['tenantId', 'lobs', 'questionSets', 'rules', 'queues', 'timers', 'branding', 'ai'];
 

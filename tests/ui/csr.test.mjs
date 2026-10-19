@@ -50,7 +50,13 @@ async function lookupAndStart(page) {
 
 /** Answer the current question through the UI. Disclosures are acknowledged by ticking the checkbox. Returns a label or null. */
 async function answerQuestion(page) {
-  const box = page.locator('#answer-slot input[type=checkbox]');
+  // S6-BUG-02: optional questions (IntakeStep.optional[]) are asked too; ones the generic filler cannot answer are skipped.
+  const optional = (await page.getAttribute('#answer-slot', 'data-optional')) === 'true';
+  if (optional && !(await page.locator('#answer-slot > fx-field').count())) {
+    await page.click('#answer-skip');
+    return `skipped ${await currentQid(page)}`;
+  }
+  const box = page.locator('#answer-slot [data-qtype="disclosure"] input[type=checkbox]');
   if (await box.count()) {
     const label = (await page.textContent('#answer-slot label')).trim();
     await box.check();
@@ -480,5 +486,232 @@ test('CSR desk screenshots at 1440x900', async (t) => {
     for (const n of ['csr-search', 'csr-context-intake', 'csr-recent']) assert.ok(fs.statSync(path.join(outDir, `${n}.png`)).size > 20000, `${n}.png written`);
   } finally {
     await ctx.close();
+  }
+});
+
+
+// ---- S6-BUG-02 bug bash: CSR and agent desk
+/** Sign in as any demo persona of the tenant (agent, csr). */
+async function signInAs(page, tenant, role) {
+  await page.goto(`${server.app.url}/csr?tenant=${tenant}`);
+  await page.waitForSelector(`fx-demo-bar #fxd-persona option[value="${tenant}:${role}"]`, { state: 'attached' });
+  await page.selectOption('#fxd-persona', `${tenant}:${role}`);
+  await page.waitForURL('**/csr');
+  await page.waitForSelector('#desk:not([hidden])');
+}
+/** Failed API calls and console errors seen by the page. */
+function watchFailures(page) {
+  const bad = [];
+  page.on('response', (r) => { if (r.status() >= 400 && r.url().includes('/api/')) bad.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`); });
+  page.on('console', (m) => { if (m.type() === 'error') bad.push(`console: ${m.text()}`); });
+  page.on('pageerror', (e) => bad.push(`pageerror: ${e.message}`));
+  return bad;
+}
+async function finishIntake(page) {
+  for (let i = 0; i < 40 && !(await page.locator('#submit-go:not([hidden])').count()); i += 1) {
+    const qid = await currentQid(page);
+    const label = await answerQuestion(page);
+    if (label === null) { await page.waitForTimeout(100); continue; }
+    await waitForNext(page, qid);
+  }
+  assert.equal(await page.locator('#submit-go:not([hidden])').count(), 1, 'intake finished');
+}
+
+test('S6-BUG-02 agent desk: Agent labels, agent_portal channel, full policy context, vehicle picker, recent claims, claim link (S6-RA-04)', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await browser.newPage();
+  const bad = watchFailures(page);
+  const channels = [];
+  page.on('request', (r) => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/intake/sessions') channels.push(r.postDataJSON().channel); });
+  try {
+    // The agent persona sees only the policies it produces (coverage routes, DATA-5): use one of its own.
+    const personas = await (await fetch(`${server.app.url}/api/v1/dev/personas`)).json();
+    const agentId = personas.tenants.find((x) => x.id === TENANT).personas.find((x) => x.role === 'agent').userId;
+    const policy = server.policies[TENANT].find((p) => (p.producer?.agentId ?? p.producer?.id ?? p.producerId ?? p.agentId) === agentId);
+    assert.ok(policy, `seeded data has a policy produced by the agent persona ${agentId}`);
+    await signInAs(page, TENANT, 'agent');
+    assert.equal(await page.getAttribute('fx-app-shell', 'user-role'), 'Agent', 'CSR-11: role reads Agent');
+    assert.equal(await page.getAttribute('fx-app-shell', 'heading'), 'Agent desk');
+    assert.equal(await page.title(), 'Agent claims desk');
+    // S6-RA-04: GET /claims is allowed for agents, so Recent claims is a table, not an explanation.
+    await page.waitForFunction(() => !document.querySelector('#recent-table')?.hidden || /\S/.test(document.querySelector('#recent-msg')?.textContent ?? ''));
+    assert.doesNotMatch(await page.textContent('#recent-msg'), /shown to CSRs/);
+    // CSR-5: a two-segment prefix of the tenant format finds policies.
+    await page.fill('#search-field input', policy.policyNumber.split('-').slice(0, 2).join('-'));
+    const row = page.locator('#search-table tbody tr[tabindex]', { hasText: policy.policyNumber });
+    await row.waitFor();
+    await row.click();
+    await page.waitForSelector('#answer-slot[data-qid]:not([data-qid=""])');
+    const ctx = page.locator('#ctx-body');
+    // S6-RA-04: the snapshot is read for the agent too: coverages and drivers, not the "not available to agents" note.
+    await page.waitForSelector('#ctx-body [data-coverage]');
+    assert.doesNotMatch(await ctx.textContent(), /not available to agents/);
+    assert.match(await ctx.textContent(), new RegExp(policy.namedInsureds[0].name), 'CSR-8: the insured is shown');
+    await page.waitForSelector('#vehicle-pick:not([hidden]) select');
+    await page.selectOption('#vehicle-pick select', policy.vehicles[0].unitId);
+    await page.waitForFunction(() => /recorded/i.test(document.querySelector('#vehicle-picked')?.textContent ?? ''));
+    assert.deepEqual(channels, ['agent_portal'], 'DATA-14: agent sessions use agent_portal');
+    await finishIntake(page);
+    await page.click('#submit-go');
+    await page.waitForSelector('#done-sec:not([hidden])');
+    assert.equal(await page.locator('#done-link').isHidden(), false, 'S6-RA-04: the agent can open the claim');
+    assert.match(await page.textContent('#done-number'), /AUR-\d{4}-\d+/);
+    const number = (await page.textContent('#done-number')).match(/[A-Z]+-\d{4}-\d+/)[0];
+    await page.locator('#recent-table tbody tr', { hasText: number }).waitFor({ timeout: 10000 });
+    await page.waitForTimeout(500);
+    assert.deepEqual(bad, [], 'no failed API call or console error on the agent desk');
+  } finally {
+    await page.close();
+  }
+});
+
+test('S6-BUG-02 round 2: the CSR claim carries a loss type (covered with the picked vehicle) and the confirmation status follows the claim (S6-RA-02, S6-RA-14)', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await browser.newPage();
+  const bad = watchFailures(page);
+  const bodies = [];
+  page.on('request', (r) => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/v1/intake/sessions') bodies.push(r.postDataJSON()); });
+  try {
+    await signIn(page);
+    await page.fill('#search-field input', policy.policyNumber);
+    const row = page.locator('#search-table tbody tr[tabindex]', { hasText: policy.policyNumber });
+    await row.waitFor();
+    await row.click();
+    await page.waitForSelector('#answer-slot[data-qid]:not([data-qid=""])');
+    // S6-RA-02: a loss type control, defaulted to the tenant's first loss type for the line, is sent with the session.
+    await page.waitForSelector('#loss-type-pick:not([hidden]) select');
+    assert.equal(await page.inputValue('#loss-type-pick select'), 'collision');
+    assert.equal(bodies[0].lossType, 'collision');
+    // Switching before the first answer starts a new session with the new loss type; then back to collision.
+    await page.selectOption('#loss-type-pick select', 'glass');
+    await page.waitForFunction(() => document.querySelector('#loss-type-pick select')?.value === 'glass');
+    await page.waitForTimeout(300);
+    assert.equal(bodies.at(-1).lossType, 'glass');
+    await page.selectOption('#loss-type-pick select', 'collision');
+    await page.waitForTimeout(300);
+    assert.equal(bodies.at(-1).lossType, 'collision');
+    await page.waitForSelector('#vehicle-pick:not([hidden]) select');
+    await page.selectOption('#vehicle-pick select', policy.vehicles[0].unitId);
+    await page.waitForFunction(() => /recorded/i.test(document.querySelector('#vehicle-picked')?.textContent ?? ''));
+    assert.equal(await page.locator('#loss-type-pick select').isDisabled(), true, 'locked once an answer is recorded');
+    await finishIntake(page);
+    await page.click('#submit-go');
+    await page.waitForSelector('#done-sec:not([hidden])');
+    const number = (await page.textContent('#done-number')).match(/[A-Z]+-\d{4}-\d+/)[0];
+    const claimId = decodeURIComponent((await page.getAttribute('#done-link', 'href')).split('claim=')[1]);
+    // S6-RA-14: once the recent row settles, the confirmation reads the same status.
+    await page.waitForFunction((n) => { const r = [...document.querySelectorAll('#recent-table tbody tr')].find((x) => x.textContent.includes(n)); return r && !/Validating|Reported|Triaged/.test(r.textContent); }, number, { timeout: 15000 });
+    const rowStatus = (await page.locator('#recent-table tbody tr', { hasText: number }).locator('fx-badge').first().textContent()).trim();
+    assert.equal((await page.textContent('#done-status')).trim(), `Status: ${rowStatus}`);
+    const claim = await server.app.ctx.forTenant(TENANT).modules.claims.getClaim(claimId);
+    assert.equal(claim.lossType, 'collision');
+    assert.equal(claim.lossEvent.cause, 'collision', 'not the "other" fallback');
+    assert.equal(claim.checks?.coverage, 'covered', 'picked vehicle + mapped cause = covered');
+    assert.deepEqual(bad, [], 'no failed API call or console error');
+  } finally {
+    await page.close();
+  }
+});
+
+test('S6-BUG-02 CSR desk: tenant hint, full policy number search, optional questions, settled recent row, links and claim view', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await browser.newPage();
+  const bad = watchFailures(page);
+  try {
+    await signIn(page);
+    const hint = await page.getAttribute('#search-field', 'hint');
+    assert.match(hint, /PA-WI/, 'CSR-5: hint uses the tenant format');
+    assert.doesNotMatch(hint, /AUT-1000/);
+    assert.equal(await page.locator('fx-app-shell').getAttribute('user-role'), 'CSR');
+    // CSR-5: the full policy number finds exactly that policy.
+    await page.fill('#search-field input', policy.policyNumber);
+    const row = page.locator('#search-table tbody tr[tabindex]', { hasText: policy.policyNumber });
+    await row.waitFor();
+    assert.equal(await page.locator('#search-table tbody tr[tabindex]').count(), 1);
+    await row.click();
+    await page.waitForSelector('#answer-slot[data-qid]:not([data-qid=""])');
+    // CSR-13: optional questions are offered with a Skip button.
+    let sawOptional = false;
+    for (let i = 0; i < 40 && !(await page.locator('#submit-go:not([hidden])').count()); i += 1) {
+      if ((await page.getAttribute('#answer-slot', 'data-optional')) === 'true') { sawOptional = true; assert.equal(await page.locator('#answer-skip').isVisible(), true); }
+      const qid = await currentQid(page);
+      const label = await answerQuestion(page);
+      if (label === null) { await page.waitForTimeout(100); continue; }
+      await waitForNext(page, qid);
+    }
+    assert.ok(sawOptional, 'an optional question was asked');
+    await page.click('#submit-go');
+    await page.waitForSelector('#done-sec:not([hidden])');
+    assert.equal(await page.locator('#done-sec h2').first().textContent(), 'Claim submitted', 'CSR-20');
+    const number = (await page.textContent('#done-number')).match(/[A-Z]+-\d{4}-\d+/)[0];
+    // CSR-18: the row settles without a manual refresh.
+    const recentRow = page.locator('#recent-table tbody tr', { hasText: number });
+    await recentRow.waitFor({ timeout: 8000 });
+    await page.waitForFunction((n) => { const r = [...document.querySelectorAll('#recent-table tbody tr')].find((x) => x.textContent.includes(n)); return r && !/Validating|Reported/.test(r.textContent); }, number, { timeout: 15000 });
+    // CSR-19: the claim number is a link, and one click on the row opens the claim.
+    assert.equal(await recentRow.locator('a.csr-mono').count(), 1, 'claim number is a link');
+    await recentRow.locator('td').nth(2).click();
+    await page.waitForURL('**/csr?claim=*');
+    await page.waitForSelector('#claim-dl dt');
+    const view = await page.textContent('#claim-dl');
+    assert.match(view, /of 100 \(/, 'CSR-17: severity has a scale');
+    assert.match(view, /Date of loss/); assert.match(view, /What happened/);
+    // CSR-17: a missing claim says so.
+    await page.goto(`${server.app.url}/csr?claim=clm_doesnotexist`);
+    await page.waitForSelector('#claim-msg:not([hidden])');
+    assert.match(await page.textContent('#claim-msg'), /No claim matches/);
+    assert.deepEqual(bad.filter((b) => !/clm_doesnotexist|404 \(Not Found\)/.test(b)), [], 'no other failures');
+  } finally {
+    await page.close();
+  }
+});
+
+test('S6-BUG-02 Kestrel: commercial policy has no failing picker and folds its units; long answers fail inline', async (t) => {
+  if (skip) return t.skip(skip);
+  const KP = 'kestrel-point';
+  const { generatePolicies } = await import('../synthetic/index.mjs');
+  const [fleet] = generatePolicies({ tenantId: KP, lob: 'commercial_auto', count: 1, seed: 11, state: 'MI' });
+  await server.app.ctx.forTenant(KP).modules.coverage.seedPolicies([fleet]);
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const bad = watchFailures(page);
+  try {
+    await signInAs(page, KP, 'csr');
+    assert.match(await page.getAttribute('#search-field', 'hint'), /CA-MI/);
+    await page.fill('#search-field input', fleet.policyNumber);
+    const row = page.locator('#search-table tbody tr[tabindex]', { hasText: fleet.policyNumber });
+    await row.waitFor();
+    await row.click();
+    await page.waitForSelector('#answer-slot[data-qid]:not([data-qid=""])');
+    await page.locator('#ctx-body .csr-tile[data-coverage]').first().waitFor();
+    await page.waitForTimeout(500);
+    assert.equal(await page.locator('#vehicle-pick').isHidden(), true, 'CSR-12: no picker without a vehicle question');
+    if (fleet.vehicles.length > 3) assert.equal(await page.locator('#ctx-units').evaluate((d) => d.open), false, 'CSR-21: units folded');
+    const offsets = await page.evaluate(() => { const hs = [...document.querySelectorAll('#ctx-body h3')]; const at = (re) => hs.find((h) => re.test(h.textContent))?.offsetTop ?? -1; return { cov: at(/Coverages/), veh: at(/Vehicles/) }; });
+    assert.ok(offsets.cov >= 0 && offsets.cov < offsets.veh && offsets.cov < 900, `CSR-21: coverages near the top (${JSON.stringify(offsets)})`);
+
+    // CSR-15: back to a Kestrel personal auto policy; injuries=yes makes the police report required (maxLength 40).
+    await page.click('#ctx-change');
+    const pa = server.policies[KP][0];
+    await page.fill('#search-field input', pa.policyNumber);
+    await page.locator('#search-table tbody tr[tabindex]', { hasText: pa.policyNumber }).click();
+    await page.waitForSelector('#answer-slot[data-qid]:not([data-qid=""])');
+    const sent = [];
+    page.on('request', (r) => { if (r.method() === 'POST' && /\/answers$/.test(r.url())) sent.push(r.postDataJSON().questionId); });
+    for (let i = 0; i < 15 && (await currentQid(page)) !== 'police_report_number'; i += 1) {
+      const qid = await currentQid(page);
+      if (qid === 'injuries') { await page.locator('#answer-slot select').selectOption('true'); await page.click('#answer-go'); } else await answerQuestion(page);
+      await waitForNext(page, qid);
+    }
+    assert.equal(await currentQid(page), 'police_report_number');
+    await page.fill('#answer-slot input', 'X'.repeat(55));
+    const before = sent.length;
+    for (let i = 0; i < 3; i += 1) await page.click('#answer-go');
+    await page.waitForTimeout(300);
+    assert.equal(sent.length, before, 'nothing is posted while the answer is too long');
+    assert.match(await page.getAttribute('#answer-slot fx-field', 'error'), /40/);
+    assert.equal(await page.locator('#answer-slot fx-field[invalid]').count(), 1, 'the field is marked invalid');
+    assert.deepEqual(bad, [], 'no failed API call or console error');
+  } finally {
+    await page.close();
   }
 });

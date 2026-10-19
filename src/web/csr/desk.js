@@ -33,6 +33,9 @@ export function coverageDetail(cov, { t, fmt }) {
   return parts.join(', ');
 }
 
+/** Above this many vehicles the context panel folds the vehicle list (CSR-21). */
+export const VEHICLES_OPEN_MAX = 3;
+
 const vehicleTitle = (v) => [v?.year, v?.make, v?.model].filter(Boolean).join(' ') || v?.unitId || '';
 
 /**
@@ -70,5 +73,9 @@ export function contextModel({ summary, snapshot, vehicleOptions = [] } = {}, { 
     vehicles,
     coverages: (snapshot?.coverages ?? []).map(toCoverage),
     detailed: !!snapshot,
+    // Search-row facts shown when the snapshot is not (yet) available: "2020 Corvane Cruiser", "townhouse in Westfield".
+    risk: !snapshot && summary?.description ? String(summary.description) : '',
+    // Fleet policies list many units: the panel shows policy-level coverages first and folds the units away.
+    collapseVehicles: vehicles.length > VEHICLES_OPEN_MAX,
   };
 }
