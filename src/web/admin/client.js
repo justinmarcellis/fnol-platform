@@ -13,7 +13,7 @@ export function createAdminClient({ baseUrl = '/api/v1', getToken, fetchImpl } =
     const doFetch = fetchImpl ?? globalThis.fetch;
     const h = { accept: 'application/json', ...headers };
     const token = getToken ? getToken() : null;
-    if (token) h.authorization = `Bearer ${token}`;
+    if (token) h['x-fnol-authorization'] = `Bearer ${token}`; // IAP rejects app tokens in Authorization;
     let payload;
     if (body !== undefined) { h['content-type'] = 'application/json'; payload = JSON.stringify(body); }
     let res;

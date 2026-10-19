@@ -209,6 +209,7 @@ export function createService(ctx, opts = {}) {
     const { doc, set, answers } = await load(sessionId, actor);
     const out = { ...doc, answers };
     delete out.suggestions;
+    delete out.holderFailures;
     out.progress = set ? (await evaluateState(doc, set, answers)).progress : { answered: Object.keys(answers).length, requiredRemaining: 0, percent: 0 };
     return out;
   }
@@ -317,17 +318,59 @@ export function createService(ctx, opts = {}) {
     }
   }
 
+  const normName = (n) => String(n ?? '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, ' ').trim();
+  const insuredNames = (snap) => (Array.isArray(snap?.namedInsureds) ? snap.namedInsureds : [])
+    .map((i) => normName(i?.name ?? `${i?.firstName ?? ''} ${i?.lastName ?? ''}`)).filter(Boolean);
+  const zip5 = (z) => { const m = /^\s*(\d{5})(?:-?\d{4})?\s*$/.exec(String(z ?? '')); return m ? m[1] : ''; };
+  /** Garaging, property and mailing postal codes on the snapshot (read through the coverage service; never returned). */
+  const policyZips = (snap) => new Set([
+    ...(snap?.vehicles ?? []).map((v) => v?.garagingPostalCode),
+    ...(snap?.properties ?? []).map((p) => p?.address?.postalCode),
+    snap?.mailingAddress?.postalCode, snap?.mailingPostalCode, snap?.address?.postalCode,
+  ].map(zip5).filter(Boolean));
+  /** Holder check: last name equals the last word of a named insured (or the whole normalized name) and the ZIP is on the policy. */
+  const holderMatches = (snap, lastName, zip) => {
+    const ln = normName(lastName);
+    const z = zip5(zip);
+    if (!snap || !ln || !z) return false;
+    const nameOk = insuredNames(snap).some((n) => n === ln || n.split(' ').pop() === ln);
+    return nameOk && policyZips(snap).has(z);
+  };
+  const MAX_HOLDER_FAILURES = 5;
+
   /**
    * Vehicles on the session's policy for the insured_vehicle picker. Same access rule as the rest of the session
    * (404 for anyone else). Only unitId, year, make, model and vinLast4 leave the service: no full VIN, no insured PII.
+   *
+   * S5-WFL-04: a claimant is verified as policy holder with { lastName, zip } (GET query parameters lastName and zip):
+   * the last name must match a named insured and the ZIP a garaging/mailing postal code of the coverage snapshot.
+   * Unknown policy, wrong name, wrong ZIP, missing fields, another tenant's policy and a locked session all give the same 404, so the
+   * endpoint is not a policy-number oracle. Verifications that supply both fields and fail are counted on the session;
+   * after 5 the session answers 404 for good. Names and ZIPs are never logged. csr unchanged; an agent
+   * sees vehicles only for policies it produces (S5-WFL-03).
    */
-  async function policyVehicles(sessionId, { actor } = {}) {
+  async function policyVehicles(sessionId, { actor, lastName, zip } = {}) {
     const { doc } = await load(sessionId, actor);
     if (!doc.policyNumber) return [];
+    // Timing: always perform the snapshot lookup and the comparison, even for numbers that do not exist.
     let snap = null;
     try {
       snap = await mod('coverage')?.getPolicySnapshot?.({ policyNumber: doc.policyNumber, asOf: (doc.startedAt ?? nowIso()).slice(0, 10) }) ?? null;
     } catch { snap = null; }
+    if (actor?.role === 'claimant') {
+      const locked = (doc.holderFailures ?? 0) >= MAX_HOLDER_FAILURES;
+      const ok = holderMatches(snap, lastName, zip);
+      if (locked || !ok) {
+        if (!locked && lastName && zip) {
+          doc.holderFailures = (doc.holderFailures ?? 0) + 1;
+          saveDoc(sessionId, doc);
+        }
+        throw err('not_found', 'Policy vehicles not found', 404);
+      }
+    } else if (actor?.role === 'agent') {
+      // S5-WFL-03: an agent sees vehicles only for policies it produces (same rule as assertAccess), else the uniform 404.
+      if (!(await producesPolicy(doc, actor))) throw err('not_found', 'Policy vehicles not found', 404);
+    }
     return (Array.isArray(snap?.vehicles) ? snap.vehicles : []).filter((v) => v && v.unitId).map((v) => ({
       unitId: v.unitId,
       ...(v.year !== undefined ? { year: v.year } : {}), ...(v.make ? { make: v.make } : {}), ...(v.model ? { model: v.model } : {}),

@@ -315,7 +315,7 @@ beat('Beat 6: webhook outbox event and core adapter payload differ per tenant', 
   const aEv = (await routed(A, 'carrier_admin', aid)).event;
   const ev = typeof kEv === 'string' ? JSON.parse(kEv) : kEv;
   assert.equal(ev.type, 'claim.routed');
-  assert.ok(!/Fenwick|555/.test(JSON.stringify(ev)), 'events carry ids and codes, no personal data');
+  assert.ok(!/Fenwick|Avery|010-0119|5550100119/.test(JSON.stringify(ev)), 'events carry ids and codes, no personal data');
   assert.notEqual(ev.tenantId ?? ev.data?.tenantId, (typeof aEv === 'string' ? JSON.parse(aEv) : aEv).tenantId ?? undefined);
 
   const adapters = await call('GET', '/integrations/adapters', K, 'carrier_admin');

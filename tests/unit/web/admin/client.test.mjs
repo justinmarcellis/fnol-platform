@@ -22,7 +22,7 @@ test('loadConfig takes the version from the ETag and sends the bearer token', as
   const { f, c } = mk({ 'GET /config': { status: 200, headers: { etag: '"5"' }, body: cfg } });
   const r = await c.loadConfig();
   assert.equal(r.version, 5);
-  assert.equal(f.calls[0].init.headers.authorization, 'Bearer tok');
+  assert.equal(f.calls[0].init.headers['x-fnol-authorization'], 'Bearer tok');
 });
 
 test('save validates first, then PUTs with If-Match', async () => {

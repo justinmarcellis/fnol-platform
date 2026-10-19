@@ -28,6 +28,23 @@ const store = {
 };
 
 registerClaimantStrings(registerStrings);
+// S5-WFL-04 holder check strings (kept here: strings.js belongs to another ticket).
+registerStrings('en', {
+  'claimant.holder.heading': 'Confirm your policy to choose your insured vehicle',
+  'claimant.holder.lastName': 'Last name on the policy',
+  'claimant.holder.zip': 'ZIP code where the vehicle is kept or mail is sent',
+  'claimant.holder.submit': 'Find my vehicles',
+  'claimant.holder.failed': 'We could not confirm that policy with those details. Check them and try again, or continue without choosing a vehicle.',
+  'claimant.holder.zipInvalid': 'Enter a 5-digit ZIP code.',
+});
+registerStrings('es', {
+  'claimant.holder.heading': 'Confirme su póliza para elegir su vehículo asegurado',
+  'claimant.holder.lastName': 'Apellido en la póliza',
+  'claimant.holder.zip': 'Código postal donde se guarda el vehículo o se envía el correo',
+  'claimant.holder.submit': 'Buscar mis vehículos',
+  'claimant.holder.failed': 'No pudimos confirmar esa póliza con esos datos. Revíselos e inténtelo de nuevo, o continúe sin elegir un vehículo.',
+  'claimant.holder.zipInvalid': 'Ingrese un código postal de 5 dígitos.',
+});
 
 let token = null; // memory only
 // Adapter over the kit client: adds per-call headers (Idempotency-Key) and accepts a FormData for upload.
@@ -186,12 +203,40 @@ async function startSession() {
   app.chat = app.mode === 'chat' ? createChat({ flow, t: (k, p) => t(k, p), locale: getLocale }) : null;
   teardown();
   app.unsubs.push(flow.subscribe(onFlow));
-  app.vehicles = []; app.pickedUnit = null; app.draft = null;
+  app.vehicles = []; app.pickedUnit = null; app.draft = null; app.holder = { failed: false, busy: false };
   await flow.start({ lob: app.lob, lossType: app.lossType ?? undefined, locale: getLocale(), policyNumber: app.policyNumber || undefined });
-  if (app.policyNumber && flow.state.sessionId) {
-    app.vehicles = await fetchPolicyVehicles(api, flow.state.sessionId);
-    if (app.view === 'guided' && app.vehicles.length) showGuided(flow.state);
-  }
+  if (app.policyNumber && flow.state.sessionId && app.view === 'guided') showGuided(flow.state); // reveals the holder check
+}
+
+/** Holder check (S5-WFL-04): last name + ZIP, then the vehicles. Values live only in the inputs and the request. */
+async function verifyHolder(lastName, zip) {
+  app.holder = { failed: false, busy: true };
+  const rows = await fetchPolicyVehicles(api, app.flow.state.sessionId, { lastName, zip });
+  app.vehicles = rows;
+  app.holder = { failed: !rows.length, busy: false };
+  showGuided(app.flow.state);
+  if (!rows.length) { announce(t('claimant.holder.failed')); $('holder-last-name')?.focus(); }
+}
+
+function holderForm() {
+  if (!app.policyNumber || app.vehicles.length) return null;
+  const zipErr = h('p', { id: 'holder-zip-error', class: 'field-error', role: 'alert', hidden: true, text: t('claimant.holder.zipInvalid') });
+  const failed = h('p', { id: 'holder-error', class: 'field-error', role: 'alert', hidden: app.holder?.failed ? null : true, text: app.holder?.failed ? t('claimant.holder.failed') : '' });
+  const last = h('input', { id: 'holder-last-name', name: 'holder_last_name', type: 'text', autocomplete: 'family-name' });
+  const zip = h('input', { id: 'holder-zip', name: 'holder_zip', type: 'text', inputmode: 'numeric', autocomplete: 'postal-code', maxlength: '10', 'aria-describedby': 'holder-zip-error' });
+  // A group, not a <form>: the question form stays the only form in main.
+  const go = () => {
+    zipErr.hidden = /^\d{5}(-?\d{4})?$/.test(zip.value.trim());
+    if (!zipErr.hidden) return zip.focus();
+    verifyHolder(last.value, zip.value);
+  };
+  const enter = (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+  last.addEventListener('keydown', enter); zip.addEventListener('keydown', enter);
+  return h('div', { id: 'holder-check', class: 'card', role: 'group', 'aria-labelledby': 'holder-heading' },
+  h('h2', { id: 'holder-heading', text: t('claimant.holder.heading') }),
+  h('label', { for: 'holder-last-name', text: t('claimant.holder.lastName') }), last,
+  h('label', { for: 'holder-zip', text: t('claimant.holder.zip') }), zip, zipErr, failed,
+  h('div', { class: 'row' }, h('button', { class: 'btn secondary', type: 'button', onclick: go, disabled: app.holder?.busy || null }, t('claimant.holder.submit'))));
 }
 
 /** Insured vehicle picker: only rendered when the policy lists vehicles. */
@@ -246,7 +291,7 @@ function submitBlock(s) {
 /** Guided mode: exactly the question the server returned, one at a time. */
 function showGuided(s) {
   app.view = 'guided';
-  const root = [h('h1', { id: 'view-title', tabindex: '-1', text: t('claimant.title') }), progressBar(s), ...disclosures(s), vehiclePicker()].filter(Boolean);
+  const root = [h('h1', { id: 'view-title', tabindex: '-1', text: t('claimant.title') }), progressBar(s), ...disclosures(s), holderForm(), vehiclePicker()].filter(Boolean);
   let focusTarget = $('view-title');
   if (s.question) {
     const errId = 'q-error';

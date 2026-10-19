@@ -1,0 +1,22 @@
+{
+  "status": "review",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T02:21:00.456Z",
+  "history": [],
+  "id": "S5-QE-02",
+  "team": "quality",
+  "title": "Demo Beat 6 PII assertion matched random ids containing 555",
+  "story": "As QE I want the no-PII check on events to match the actual demo PII so that random ids never fail the demo test",
+  "points": 1,
+  "tier": "fast",
+  "owner": "ceo",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "tests/e2e/demo-script.test.mjs"
+  ],
+  "acceptance": [
+    "Assertion matches the staged party name and phone, not any 555 substring; demo test passes"
+  ],
+  "brief": "Orchestrator follow-up: /Fenwick|555/ matched random hex ids in claim.routed events (intermittent failure in the full run after S5-WFL-04/S5-EXP-01)."
+}

@@ -52,8 +52,10 @@ export function createAuth(ctx) {
      * @returns {void}
      */
     authenticate(req) {
-      const h = req.headers.authorization ?? '';
-      const m = /^Bearer\s+(.+)$/i.exec(h);
+      // Authorization first; X-Fnol-Authorization is the fallback for callers behind IAP,
+      // which consumes the Authorization header for its own credentials.
+      const re = /^Bearer\s+(.+)$/i;
+      const m = re.exec(req.headers.authorization ?? '') ?? re.exec(req.headers['x-fnol-authorization'] ?? '');
       if (!m) throw unauthorized();
       const c = auth.verifyToken(m[1]);
       req.user = { sub: c.sub, tenantId: c.tenantId, roles: c.roles ?? [], name: c.name };

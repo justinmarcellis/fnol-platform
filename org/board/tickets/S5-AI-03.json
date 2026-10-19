@@ -59,5 +59,41 @@
       }
     ],
     "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6754,
+    "inputTokens": 38,
+    "cacheWriteTokens": 142715,
+    "cacheReadTokens": 1436913,
+    "outputTokens": 3118,
+    "agents": {
+      "a05dd85d92311538a": {
+        "label": "S5-AI-03 ic-ai-eval-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 78787,
+        "cacheReadTokens": 1032498,
+        "outputTokens": 2228,
+        "usd": 0.4258
+      },
+      "a1687420aa17c6381": {
+        "label": "S5-AI-03 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 39016,
+        "cacheReadTokens": 176214,
+        "outputTokens": 34,
+        "usd": 0.1331
+      },
+      "ab9af485a4927d756": {
+        "label": "S5-AI-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 24912,
+        "cacheReadTokens": 228201,
+        "outputTokens": 856,
+        "usd": 0.1165
+      }
+    }
   }
 }

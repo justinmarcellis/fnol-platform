@@ -132,6 +132,13 @@ export async function createApp(opts = {}) {
       attachJson(res);
       if (await ctx.router.handle(req, res)) return;
       const url = new URL(req.url, 'http://localhost');
+      if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/runtime-config.js') {
+        // Public, non-secret: only tells the web apps whether dev login exists on this server.
+        const body = Buffer.from(`window.__FNOL_DEV__ = ${ctx.config.devMode === true ? 'true' : 'false'};\n`);
+        res.writeHead(200, { 'content-type': MIME['.js'], 'content-length': body.length, 'cache-control': 'no-store' });
+        res.end(req.method === 'HEAD' ? undefined : body);
+        return;
+      }
       if ((req.method === 'GET' || req.method === 'HEAD') && !url.pathname.startsWith('/api/')) {
         const file = resolveStatic(webDir, url.pathname);
         if (file) {

@@ -112,14 +112,19 @@ export function policyVehicleOptions(rows) {
 }
 
 /**
- * Load the session policy's vehicles through GET /intake/sessions/{sessionId}/policy-vehicles. Any failure (404, network)
- * yields [] so the picker stays hidden.
+ * Load the session policy's vehicles through GET /intake/sessions/{sessionId}/policy-vehicles?lastName=&zip= (S5-WFL-04
+ * holder check: last name of a named insured + 5-digit ZIP on the policy). Any failure (uniform 404, network) yields [] so
+ * the picker stays hidden. Names and ZIPs are sent only as query parameters and never stored or logged.
  * @param {{ get: (path: string, query?: object) => Promise<any> }} api
+ * @param {string} sessionId
+ * @param {{ lastName?: string, zip?: string }} [holder]
  */
-export async function fetchPolicyVehicles(api, sessionId) {
+export async function fetchPolicyVehicles(api, sessionId, holder = {}) {
   if (!sessionId) return [];
+  const lastName = holder.lastName === undefined ? undefined : String(holder.lastName).trim();
+  const zip = holder.zip === undefined ? undefined : String(holder.zip).trim();
   try {
-    return policyVehicleOptions(await api.get(`/intake/sessions/${encodeURIComponent(sessionId)}/policy-vehicles`));
+    return policyVehicleOptions(await api.get(`/intake/sessions/${encodeURIComponent(sessionId)}/policy-vehicles`, { lastName, zip }));
   } catch {
     return [];
   }

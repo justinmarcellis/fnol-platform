@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T02:13:58.506Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-19T02:17:04.932Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T02:19:01.399Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-EXP-01",
@@ -48,5 +53,54 @@
   "valueDrivers": [
     "VD-1"
   ],
-  "startedAt": "2026-10-19T02:14:41.210Z"
+  "startedAt": "2026-10-19T02:14:41.210Z",
+  "doneAt": "2026-10-19T02:19:01.399Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T02:19:01.398Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: runtime-config route + script tags, X-Fnol-Authorization fallback, 6 new tests pass, e2e/security 372 pass 0 fail; one intermittent csr UI timeout (passes on rerun, WFL-04 flow) noted"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.7824,
+    "inputTokens": 48,
+    "cacheWriteTokens": 185284,
+    "cacheReadTokens": 1505655,
+    "outputTokens": 1801,
+    "agents": {
+      "a01a22021650f7544": {
+        "label": "S5-EXP-01 ic-experience-claimant-web-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 26,
+        "cacheWriteTokens": 82256,
+        "cacheReadTokens": 872427,
+        "outputTokens": 1664,
+        "usd": 0.3968
+      },
+      "a7f33ffc5c8f455dd": {
+        "label": "S5-EXP-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 34742,
+        "cacheReadTokens": 310477,
+        "outputTokens": 42,
+        "usd": 0.1494
+      },
+      "ab8aed169afae2174": {
+        "label": "S5-EXP-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 68286,
+        "cacheReadTokens": 322751,
+        "outputTokens": 95,
+        "usd": 0.2362
+      }
+    }
+  }
 }

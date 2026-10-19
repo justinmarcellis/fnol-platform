@@ -7,7 +7,7 @@ const ROLE_ORDER = ['csr', 'agent', 'integration', 'platform_admin', 'claimant']
 
 const actorOf = (req) => {
   const role = ROLE_ORDER.find((r) => (req.user.roles ?? []).includes(r)) ?? req.user.roles?.[0];
-  return { type: role === 'integration' ? 'integration' : 'user', id: req.user.sub, role, ...(req.user.name ? { name: req.user.name } : {}) };
+  return { type: role === 'integration' ? 'integration' : 'user', id: req.user.sub, role };
 };
 
 export function registerRoutes(router) {
@@ -51,7 +51,7 @@ export function registerRoutes(router) {
   }, { roles: ROLES });
 
   router.get('/api/v1/intake/sessions/:sessionId/policy-vehicles', async (req, res) => {
-    res.json(200, await svc(req).policyVehicles(req.params.sessionId, { actor: actorOf(req) }));
+    res.json(200, await svc(req).policyVehicles(req.params.sessionId, { actor: actorOf(req), lastName: req.query?.lastName, zip: req.query?.zip }));
   }, { roles: ['claimant', 'csr', 'agent'] });
 
   router.post('/api/v1/intake/sessions/:sessionId/narrative', async (req, res) => {

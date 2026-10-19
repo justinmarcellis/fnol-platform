@@ -14,13 +14,15 @@ after(async () => { setCoverageLookup(); await app.close(); });
 beforeEach(() => {
   reset(); setCoverageLookup();
   snapshots.set('AUT-1', { policyNumber: 'AUT-1', vehicles: [
-    { unitId: 'V1', vin: '1FNOL00000A900001', year: 2021, make: 'Fabrikam', model: 'Roadster', licensePlate: 'ZZ-1' },
+    { unitId: 'V1', vin: '1FNOL00000A900001', year: 2021, make: 'Fabrikam', model: 'Roadster', licensePlate: 'ZZ-1', garagingPostalCode: '60601' },
     { unitId: 'V2', vin: '1FNOL00000A900002', year: 2018, make: 'Contoso', model: 'Hatch' },
   ], namedInsureds: [{ name: 'Zelda Quartz', relation: 'named_insured' }] });
 });
 
 const start = (token, extra = {}) => call(app, 'POST', base, { token, body: { lob: 'personal_auto', channel: 'claimant_web', policyNumber: 'AUT-1', ...extra } });
-const vehicles = (id, token) => call(app, 'GET', `${base}/${id}/policy-vehicles`, { token });
+// S5-WFL-04: claimants verify with last name + ZIP; the holder check no longer uses the token name.
+const HOLDER = '?lastName=Quartz&zip=60601';
+const vehicles = (id, token, q = HOLDER) => call(app, 'GET', `${base}/${id}/policy-vehicles${q}`, { token });
 
 test('owner claimant gets masked vehicles only', async () => {
   const s = await start(tok(['claimant'], 'c1'));
@@ -40,9 +42,10 @@ test('csr can read any session; other claimant and unrelated agent get 404', asy
   assert.equal((await vehicles(s.body.sessionId, tok(['agent'], 'ag9'))).status, 404);
 });
 
-test('agent who owns the session (started it) can read; producer agent too', async () => {
+// S5-WFL-03/S5-WFL-04: an agent sees vehicles only for policies it produces; starting the session is not enough.
+test('agent sees vehicles only for a policy it produces', async () => {
   const own = await start(tok(['agent'], 'ag1'));
-  assert.equal((await vehicles(own.body.sessionId, tok(['agent'], 'ag1'))).status, 200);
+  assert.equal((await vehicles(own.body.sessionId, tok(['agent'], 'ag1'))).status, 404);
   const c = await start(tok(['claimant'], 'c1'));
   setCoverageLookup(async ({ actor }) => actor.id === 'ag2');
   assert.equal((await vehicles(c.body.sessionId, tok(['agent'], 'ag2'))).status, 200);

@@ -60,7 +60,7 @@ export function createApiClient({ baseUrl = '/api/v1', getToken, fetchImpl } = {
     const doFetch = fetchImpl ?? globalThis.fetch;
     const h = { accept: 'application/json', ...headers };
     const token = getToken ? await getToken() : null;
-    if (token) h.authorization = `Bearer ${token}`;
+    if (token) h['x-fnol-authorization'] = `Bearer ${token}`; // IAP rejects app tokens in Authorization;
     let payload = raw;
     if (raw === undefined && body !== undefined) {
       h['content-type'] = 'application/json';

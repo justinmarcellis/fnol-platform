@@ -66,5 +66,41 @@
       }
     ],
     "firstPass": true
+  },
+  "spend": {
+    "usd": 0.9831,
+    "inputTokens": 66,
+    "cacheWriteTokens": 168750,
+    "cacheReadTokens": 2660565,
+    "outputTokens": 2894,
+    "agents": {
+      "a47f0ecbc522f426c": {
+        "label": "S5-WFL-04 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 28039,
+        "cacheReadTokens": 301007,
+        "outputTokens": 821,
+        "usd": 0.1385
+      },
+      "ace4b54bf0972147b": {
+        "label": "S5-WFL-04 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 69455,
+        "cacheReadTokens": 184139,
+        "outputTokens": 38,
+        "usd": 0.2109
+      },
+      "ad29ec594ef1e63a9": {
+        "label": "S5-WFL-04 ic-workflow-intake-flow-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 48,
+        "cacheWriteTokens": 71256,
+        "cacheReadTokens": 2175419,
+        "outputTokens": 2035,
+        "usd": 0.6337
+      }
+    }
   }
 }

@@ -162,6 +162,16 @@ test('Kestrel branding differs from Aurelia (name and brand colour token)', asyn
 });
 
 // ---- S4-EXP-01: structured party sub-form and insured-vehicle picker
+/** S5-WFL-04: confirm the policy with the seeded policy's synthetic last name and a ZIP from its snapshot, then wait for the picker. */
+async function holderCheck(page, policy) {
+  const lastName = policy.namedInsureds[0].name.trim().split(/\s+/).pop();
+  const zip = policy.vehicles[0].garagingPostalCode;
+  await page.fill('#holder-last-name', lastName);
+  await page.fill('#holder-zip', zip);
+  await page.click('#holder-check button');
+  await page.waitForSelector('#insured-vehicle');
+}
+
 const PARTY_FIELDS = { lastName: 'Example', firstName: 'Pat', phone: '(555) 010-0142', insurerName: 'Fictional Mutual', otherPolicyNumber: 'OTH-000123' };
 
 /** Walk the guided flow, answering "another party involved" yes, until the party sub-form shows. Returns the labels asked. */
@@ -262,7 +272,7 @@ test('claimant insured-vehicle picker lists policy vehicles and sends policyVehi
       await page.fill('#policy-number', policy.policyNumber);
       await page.click('form button[type="submit"]');
       await page.waitForSelector('main form');
-      await page.waitForSelector('#insured-vehicle');
+      await holderCheck(page, policy);
       assert.equal(await page.locator('label[for="insured-vehicle"]').count(), 1, 'picker is labelled');
       assert.equal(await page.locator('#insured-vehicle option[value]:not([value=""])').count(), policy.vehicles.length);
       await page.selectOption('#insured-vehicle', unit.unitId);
@@ -293,7 +303,7 @@ test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insu
   const page = await open('/claimant?tenant=aurelia-mutual');
   try {
     await startWithPolicy(page, pol);
-    await page.waitForSelector('#insured-vehicle');
+    await holderCheck(page, pol);
     await page.selectOption('#insured-vehicle', unit.unitId);
     await page.waitForFunction(() => document.activeElement?.id === 'insured-vehicle');
     assert.equal(await page.locator('#vehicle-error:not([hidden])').count(), 0, 'no failure when the server accepts the pick');

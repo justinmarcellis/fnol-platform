@@ -15,7 +15,7 @@ test('sends bearer header and JSON body, parses JSON', async () => {
   const r = await api.post('/claims', { a: 1 });
   assert.deepEqual(r, { ok: 1 });
   assert.equal(log[0].url, '/api/v1/claims');
-  assert.equal(log[0].init.headers.authorization, 'Bearer tok');
+  assert.equal(log[0].init.headers['x-fnol-authorization'], 'Bearer tok');
   assert.equal(log[0].init.body, '{"a":1}');
   assert.equal(log[0].init.method, 'POST');
 });
@@ -25,7 +25,7 @@ test('no token means no authorization header; query is encoded', async () => {
   const api = createApiClient({ baseUrl: '/x/', fetchImpl: fakeFetch(200, {}, log) });
   await api.get('/a', { q: 'a b', skip: undefined });
   assert.equal(log[0].url, '/x/a?q=a+b');
-  assert.equal(log[0].init.headers.authorization, undefined);
+  assert.equal(log[0].init.headers['x-fnol-authorization'], undefined);
   assert.equal(buildUrl('/b', 'c'), '/b/c');
 });
 
@@ -60,7 +60,7 @@ test('upload sends multipart FormData without forcing content-type', async () =>
   assert.equal(log[0].init.body.get('kind'), 'photo');
   assert.ok(log[0].init.body.get('file'));
   assert.equal(log[0].init.headers['content-type'], undefined);
-  assert.equal(log[0].init.headers.authorization, 'Bearer t');
+  assert.equal(log[0].init.headers['x-fnol-authorization'], 'Bearer t');
 });
 
 test('put, patch and del use the right methods', async () => {
