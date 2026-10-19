@@ -1,8 +1,14 @@
 {
-  "status": "ready",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:00:55.178Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T16:01:01.082Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
   "id": "S6-PMO-03",
   "team": "pmo",
   "title": "Make the program dashboard live: near-real-time data and the animated decision-network replay",
@@ -33,5 +39,6 @@
     "org/live-export.mjs also writes org/live/metrics.json = the dashboard computeMetrics output (from dashboard/server.mjs build) plus generatedAt, so Velocity, Quality, Cost, Flow and Performance tabs update live; every document stays under 600 KB (test)",
     "Playwright: the snapshot file still renders every tab offline with no errors; a second test serves the dashboard locally, changes org/live data, and sees the page update within 10 s; screenshots dashboard-network.png (mid-replay) and dashboard-overview.png; full npm test no new failures"
   ],
-  "brief": "Read dashboard/live.html fully first (network renderer, replay, scrub, followLive, data loader) and the S6-PMO-02 changes in dashboard/app.js. Zero dependencies (no d3 from CDN; reuse the canvas code). The orchestrator publishes snapshot.html with capabilities {db} and writes the live documents with ArtifactData after each wave."
+  "brief": "Read dashboard/live.html fully first (network renderer, replay, scrub, followLive, data loader) and the S6-PMO-02 changes in dashboard/app.js. Zero dependencies (no d3 from CDN; reuse the canvas code). The orchestrator publishes snapshot.html with capabilities {db} and writes the live documents with ArtifactData after each wave.",
+  "startedAt": "2026-10-19T16:01:01.082Z"
 }
