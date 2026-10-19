@@ -1,7 +1,7 @@
 {
   "number": 6,
   "name": "Sprint 6: production-grade experience",
-  "status": "active",
+  "status": "closed",
   "startedAt": "2026-10-19T12:26:39.668Z",
   "budgetUsd": 50,
   "goal": "Sponsor feedback: the UI must look and feel like a production application, with a demo persona switcher. Design system and shell, persona switcher, four app redesigns reviewed on screenshots, redeploy.",
@@ -12,5 +12,31 @@
   },
   "carryOver": [
     "S5-QE-03 intermittent CSR UI test (folded into the CSR redesign ticket)"
-  ]
+  ],
+  "closedAt": "2026-10-19T21:34:47.208Z",
+  "review": {
+    "completedPoints": 86,
+    "committedPoints": 86,
+    "usd": 76.42,
+    "pointsPerDollar": 1.1,
+    "firstPassAcceptance": 0.625,
+    "reworkRate": 0.375,
+    "testPassRate": 0.9924,
+    "testsPassed": "1445/1456"
+  },
+  "retro": {
+    "went_well": [
+      "Production-grade redesign of all four apps, demo persona bar, one live program dashboard",
+      "Demo audit tool (scripts/demo-audit.mjs) found 33 real demo defects; 12 personas now load clean"
+    ],
+    "didnt": [
+      "Bug-bash fix rounds were expensive ($57 for five tickets); two review rounds per ticket plus the full suite per review",
+      "Agents hit the weekly usage limit mid-workflow; the orchestrator finished round 2 directly"
+    ],
+    "carryOver": [
+      "RA-07..14 minor demo defects (raw coverage codes in triage text, claimant chat skips holder check, counter off by one, KPI label, document-read audit rows, repeated names, placeholder narrative, stale CSR status)",
+      "Claimant Spanish confirmation UI test is load-sensitive under the full suite (passes alone)"
+    ],
+    "change": "Sponsor directive 2026-10-19: wrap-up within $75; review and QA only where a defect would show in the demo. One review per ticket, the orchestrator runs the full suite once per wave."
+  }
 }

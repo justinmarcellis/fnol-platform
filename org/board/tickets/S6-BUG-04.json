@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
   "history": [
@@ -17,6 +17,13 @@
       "at": "2026-10-19T20:37:28.731Z",
       "from": "review",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T21:34:47.063Z",
+      "from": "in_progress",
+      "to": "done",
+      "by": "orchestrator",
+      "note": "Round-2 rework finished by the orchestrator; second review waived by sponsor directive (wrap up within $75). Accepted on full npm test (1705 pass) and a clean scripts/demo-audit.mjs run; commits 6070531, d7c7efc."
     }
   ],
   "id": "S6-BUG-04",
@@ -107,5 +114,6 @@
         "usd": 1.2931
       }
     }
-  }
+  },
+  "doneAt": "2026-10-19T21:34:47.063Z"
 }
