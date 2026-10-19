@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "review",
   "dependsOn": [],
   "createdAt": "2026-10-19T03:18:54.886Z",
   "history": [
@@ -7,6 +7,11 @@
       "at": "2026-10-19T03:19:05.812Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T03:19:16.897Z",
+      "from": "in_progress",
+      "to": "review"
     }
   ],
   "id": "S5-AI-07",

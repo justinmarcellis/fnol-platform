@@ -1,8 +1,14 @@
 {
-  "status": "ready",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T03:18:54.887Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T03:19:24.252Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
   "id": "S5-WFL-05",
   "team": "workflow",
   "title": "Holder verification lockout per policy, atomic (S5-WFL-04 gate mediums)",
@@ -26,5 +32,6 @@
   "brief": "Findings from the S5-WFL-04 security gate: the lockout counter lives on the session document (bypass by new sessions) and is read-await-write (race). Use ctx.db (tenant-scoped) with an UPSERT ... SET failures = failures + 1 RETURNING failures, or an equivalent single statement. Store a keyed hash of the policy number (use ctx.crypto blind index or HMAC helper if one exists), not the plain number.",
   "valueDrivers": [
     "VD-7"
-  ]
+  ],
+  "startedAt": "2026-10-19T03:19:24.252Z"
 }
