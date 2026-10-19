@@ -7,7 +7,7 @@ const ROLE_ORDER = ['csr', 'agent', 'integration', 'platform_admin', 'claimant']
 
 const actorOf = (req) => {
   const role = ROLE_ORDER.find((r) => (req.user.roles ?? []).includes(r)) ?? req.user.roles?.[0];
-  return { type: role === 'integration' ? 'integration' : 'user', id: req.user.sub, role };
+  return { type: role === 'integration' ? 'integration' : 'user', id: req.user.sub, role, ...(req.user.name ? { name: req.user.name } : {}) };
 };
 
 export function registerRoutes(router) {

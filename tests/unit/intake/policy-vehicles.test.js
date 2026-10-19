@@ -9,14 +9,14 @@ import { enrichClaimCreate } from '../../../src/modules/intake/mapping.js';
 const base = '/api/v1/intake/sessions';
 let app;
 let tok;
-before(async () => { app = await bootIntakeApp({ tenants: [sampleTenant('tn-one')] }); tok = (roles, sub) => app.token(roles, 'tn-one', sub); });
+before(async () => { app = await bootIntakeApp({ tenants: [sampleTenant('tn-one')] }); tok = (roles, sub) => app.ctx.auth.issueToken({ sub, tenantId: 'tn-one', roles, name: sub === 'c1' ? 'Zelda Quartz' : sub }); });
 after(async () => { setCoverageLookup(); await app.close(); });
 beforeEach(() => {
   reset(); setCoverageLookup();
   snapshots.set('AUT-1', { policyNumber: 'AUT-1', vehicles: [
     { unitId: 'V1', vin: '1FNOL00000A900001', year: 2021, make: 'Fabrikam', model: 'Roadster', licensePlate: 'ZZ-1' },
     { unitId: 'V2', vin: '1FNOL00000A900002', year: 2018, make: 'Contoso', model: 'Hatch' },
-  ], insureds: [{ firstName: 'Zelda', lastName: 'Quartz' }] });
+  ], namedInsureds: [{ name: 'Zelda Quartz', relation: 'named_insured' }] });
 });
 
 const start = (token, extra = {}) => call(app, 'POST', base, { token, body: { lob: 'personal_auto', channel: 'claimant_web', policyNumber: 'AUT-1', ...extra } });
@@ -48,11 +48,12 @@ test('agent who owns the session (started it) can read; producer agent too', asy
   assert.equal((await vehicles(c.body.sessionId, tok(['agent'], 'ag2'))).status, 200);
 });
 
-test('no policy or unknown policy returns []; unknown session is 404', async () => {
+test('no policy returns []; unknown policy is 404 for a claimant (S5-WFL-01); unknown session is 404', async () => {
   const none = await start(tok(['claimant'], 'c1'), { policyNumber: undefined });
   assert.deepEqual((await vehicles(none.body.sessionId, tok(['claimant'], 'c1'))).body, []);
   const unk = await start(tok(['claimant'], 'c1'), { policyNumber: 'NOPE' });
-  assert.deepEqual((await vehicles(unk.body.sessionId, tok(['claimant'], 'c1'))).body, []);
+  assert.equal((await vehicles(unk.body.sessionId, tok(['claimant'], 'c1'))).status, 404);
+  assert.deepEqual((await vehicles(unk.body.sessionId, tok(['csr'], 'u9'))).body, []);
   assert.equal((await vehicles('ins_missing', tok(['csr'], 'u9'))).status, 404);
 });
 

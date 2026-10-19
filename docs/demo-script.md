@@ -137,3 +137,27 @@ To undo only beat 4 without a full reset: admin console, Rules tab, Maximum frau
 - **Is the Spanish complete?** The screens, notices and status wording are Spanish; AI-written summary text is English in this PoC.
 - **What would a pilot need?** See `docs/cots-readiness.md` and `docs/deployment.md`.
 - **How do we change a rule?** `docs/configuration-guide.md`.
+
+## Run against the deployed service
+
+Ticket S5-QE-01. The automated beats (1 to 6) can run over HTTP(S) against a deployed service instead of an in-process app, so every sprint proves the live system. The deployment must run with `devMode` on (it mints demo tokens at `POST /api/v1/auth/token`) and carry the seed data.
+
+| Variable | Meaning |
+| --- | --- |
+| `FNOL_BASE_URL` | Service root, for example `https://<your-service-url>`. Unset means the default local run (in-process app, real seed). |
+| `FNOL_IAP_TOKEN` | Optional. When set, every request also sends `Proxy-Authorization: Bearer <token>` so an identity-aware proxy can authenticate the caller; the app token stays in `Authorization`. Obtain it from your own tooling; never commit it. |
+
+```
+FNOL_BASE_URL=https://<your-service-url> FNOL_IAP_TOKEN="$(<your token command>)" \
+  node --test --disable-warning=ExperimentalWarning tests/e2e/demo-script.test.mjs
+```
+
+Behaviour in remote mode:
+
+- App tokens come from the remote `POST /auth/token`, one per tenant and role. Nothing is seeded locally.
+- The run prints no IAP token, no app token and no response body. A failure reads `remote beat failed: Beat N (last HTTP status S, ErrorName)`.
+- Beat 4's Kestrel config change is reverted in `after()`, as locally, and the Beat 6 webhook subscription is deleted. Claims staged by the run stay on the service (they are synthetic and cannot be deleted through the API).
+- Beat 5 skips the exact stp_rate counts (1 of 3), which assume an empty database, and checks the counts are at least that. No beat needs in-process access, so none is skipped outright.
+- Run it only against a demo deployment: it changes the Kestrel fraud limit for the duration of the run.
+
+Proving remote mode without the service: `FNOL_REMOTE_SELFTEST=1 node --test --disable-warning=ExperimentalWarning tests/e2e/demo-script.test.mjs` starts a fresh seeded `devMode` app on a local port behind a small gate that refuses requests lacking `Proxy-Authorization`, then re-runs the beats against it with `FNOL_BASE_URL=http://127.0.0.1:<port>`. It checks the credential is sent on every request, nothing secret is printed, a run without `FNOL_IAP_TOKEN` fails, and the Kestrel config is restored. It is skipped unless that variable is set.

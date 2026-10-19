@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:58:57.856Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T01:59:13.337Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T02:02:40.747Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T02:03:05.285Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-AI-03",
@@ -36,5 +46,18 @@
   "valueDrivers": [
     "VD-4"
   ],
-  "startedAt": "2026-10-19T01:59:13.337Z"
+  "startedAt": "2026-10-19T01:59:13.337Z",
+  "doneAt": "2026-10-19T02:03:05.285Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T02:03:05.285Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 6 criteria met: 22 tests pass with fakes, fail-closed exit 2, price table/estimate/cap/repeats, metrics, selection rule documented, offline path unchanged; prices need verification before live run"
+      }
+    ],
+    "firstPass": true
+  }
 }

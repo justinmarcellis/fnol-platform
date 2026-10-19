@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isSafePattern } from '../../core/safe-pattern.mjs';
 
 const DEFAULT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../architecture/contracts/domain');
 
@@ -15,6 +16,17 @@ const FORMATS = {
   'date-time': (s) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(s) && !Number.isNaN(Date.parse(s)),
   email: (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s),
 };
+
+const UNSAFE = 'is not a safe pattern (whitelist grammar, counts <= 50, no nested or ambiguous quantifiers, max 200 characters)';
+
+/** Tenant-authored regexes (any "pattern" string, any {op:"matches", value}) must pass the shared checker (SEC2-013/014). */
+function scanPatterns(node, p, depth, errors) {
+  if (depth > 64 || !node || typeof node !== 'object') return;
+  if (Array.isArray(node)) { node.forEach((x, i) => scanPatterns(x, `${p}/${i}`, depth + 1, errors)); return; }
+  if (typeof node.pattern === 'string' && !isSafePattern(node.pattern)) errors.push({ path: `${p}/pattern`, code: 'unsafe_pattern', message: UNSAFE });
+  if (node.op === 'matches' && typeof node.value === 'string' && !isSafePattern(node.value)) errors.push({ path: `${p}/value`, code: 'unsafe_pattern', message: UNSAFE });
+  for (const [k, v] of Object.entries(node)) scanPatterns(v, `${p}/${k}`, depth + 1, errors);
+}
 
 /**
  * Create a resolver that loads sibling schema files from a directory.
@@ -166,5 +178,6 @@ export function validate(schema, data, opts = {}) {
 
   const root = opts.root ?? schema;
   check(schema, data, '', root, 0);
+  scanPatterns(data, '', 0, errors);
   return { valid: errors.length === 0, errors };
 }

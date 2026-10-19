@@ -270,6 +270,9 @@ paths:
         Only `unitId`, `year`, `make`, `model` and the last four VIN characters are returned: never the full VIN or any insured PII.
         Readable by the session owner: the claimant who started it, the agent who owns it (started it or produces the policy), or a csr.
         Any other caller gets 404. A session without a policy, or a policy with no vehicles, returns `[]`.
+        Sprint 5 (S5-WFL-01, proposed behaviour): vehicles are returned only when the session's claimant matches the policy holder.
+        Otherwise the response is the same 404 (same status, same body) whether the session is unknown or the policy is not the
+        caller's, so the endpoint cannot be used to test whether a policy number exists.
       x-roles: [claimant, csr, agent]
       x-module: intake
       responses:
@@ -288,7 +291,12 @@ paths:
                     make: { type: string }
                     model: { type: string }
                     vinLast4: { type: string, maxLength: 4 }
-        '404': { $ref: '#/components/responses/NotFound' }
+        '404':
+          description: Unknown session and not-your-policy are indistinguishable (identical body); a claimant who is not the policy holder also gets this response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: { code: not_found, message: Intake session not found } }
   /intake/sessions/{sessionId}/submit:
     parameters: [{ $ref: '#/components/parameters/SessionId' }]
     post:
@@ -838,7 +846,11 @@ paths:
         '200': { description: Saved, content: { application/json: { schema: { $ref: 'domain/TenantConfig.schema.json' } } } }
         '409': { $ref: '#/components/responses/Conflict' }
         '422':
-          description: Invalid config
+          description: |
+            Invalid config (code `validation_failed`). Includes an unsafe tenant regex: any `validation.pattern` (question sets) or rule
+            `matches` pattern that is not in the linear-time safe subset (lookaround, backreferences, nested or adjacent unbounded
+            quantifiers, over-long patterns) is rejected at save time, with an `errors[]` entry naming the `path` of the pattern
+            (S5-WFL-02, SEC2-013/014, SEC3-003). Same report as POST /config/validate.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ValidationReport' }
@@ -1081,6 +1093,14 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: 'Claims: sub (user id), tenantId, roles, name, exp (seconds). Dev tokens are HS256 HMAC-signed with a key derived from the master key. claimIds is reserved and not issued in 1.2.0.'
+    oidcBearer:
+      x-status: proposed
+      type: openIdConnect
+      openIdConnectUrl: https://idp.example.invalid/.well-known/openid-configuration
+      description: |
+        PROPOSED (Sprint 5 spike, not applied to any operation, not implemented). RS256 ID/access token verified against the issuer JWKS
+        when devMode is off; the tenant is resolved from a tenantId claim (or a configured claim mapping) and roles from a roles claim.
+        Dev HS256 tokens (bearerAuth) remain the only accepted scheme in 1.x until the verifier ships. The issuer URL above is a placeholder.
   parameters:
     ClaimId: { name: claimId, in: path, required: true, schema: { type: string } }
     SessionId: { name: sessionId, in: path, required: true, schema: { type: string } }

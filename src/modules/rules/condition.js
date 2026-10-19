@@ -1,5 +1,6 @@
 // Condition language v1 (common.schema.json#/$defs/Condition, domain-model.md section 4).
 // Pure and deterministic: no I/O, no clock reads, no randomness. Callers pass `now` inside the facts.
+import { isSafePattern, matchWithBudget, MAX_PATTERN_LEN } from '../../core/safe-pattern.mjs';
 
 export const OPERATORS = Object.freeze([
   'eq', 'ne', 'in', 'nin', 'gt', 'gte', 'lt', 'lte', 'between',
@@ -7,7 +8,6 @@ export const OPERATORS = Object.freeze([
 ]);
 
 export const FACT_PATTERN = /^(claim|loss|policy|coverage|triage|parties|vehicles|property|evidence|answers|session|tenant|now)(\.[A-Za-z0-9_[\]*]+)*$/;
-const MAX_REGEX = 200;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/;
 
 /** Thrown for a malformed condition (unknown operator, bad value shape). */
@@ -90,14 +90,8 @@ function compare(a, b) {
   return null;
 }
 
-/** Reject patterns outside an RE2-like subset: lookaround, backreferences, nested quantifiers. */
-export function isSafeRegex(pattern) {
-  if (typeof pattern !== 'string' || pattern.length === 0 || pattern.length > MAX_REGEX) return false;
-  if (/\(\?[=!<]/.test(pattern) || /\\[1-9]/.test(pattern) || /\\k</.test(pattern)) return false;
-  if (/\([^)]*[+*}][^)]*\)[+*{]/.test(pattern)) return false;
-  try { new RegExp(pattern); } catch { return false; }
-  return true;
-}
+/** Shared strict checker (src/core/safe-pattern.mjs): whitelist grammar, bounded quantifiers, no nesting hazards. */
+export const isSafeRegex = isSafePattern;
 
 function dayDiff(a, b) {
   const ta = Date.parse(a);
@@ -135,7 +129,7 @@ function evalLeaf(op, actual, value, facts) {
       if (typeof actual === 'string' && typeof value === 'string') return actual.toLowerCase().includes(value.toLowerCase());
       return false;
     case 'matches':
-      return typeof actual === 'string' && isSafeRegex(value) && new RegExp(value).test(actual);
+      return typeof actual === 'string' && typeof value === 'string' && matchWithBudget(value, actual) === true;
     case 'any_eq': return Array.isArray(actual) && actual.some((v) => deepEqual(v, value));
     case 'count_gte': return Array.isArray(actual) && typeof value === 'number' && actual.length >= value;
     case 'within_days': {
@@ -235,7 +229,7 @@ export function validateCondition(condition, path = '') {
         if (!Array.isArray(v) || v.length !== 2) err(vp, 'invalid_value', '"between" needs [lo, hi]');
         break;
       case 'matches':
-        if (typeof v !== 'string' || !isSafeRegex(v)) err(vp, 'invalid_value', `"matches" needs a safe regex of at most ${MAX_REGEX} characters (no lookaround, backreferences or nested quantifiers)`);
+        if (typeof v !== 'string' || !isSafeRegex(v)) err(vp, 'invalid_value', `"matches" needs a safe regex of at most ${MAX_PATTERN_LEN} characters (no lookaround, backreferences, nested or stacked quantifiers)`);
         break;
       case 'count_gte':
         if (typeof v !== 'number') err(vp, 'invalid_value', '"count_gte" needs a number');

@@ -43,13 +43,19 @@
   ],
   "startedAt": "2026-10-19T01:59:55.091Z",
   "review": {
-    "reworkCount": 1,
+    "reworkCount": 2,
     "verdicts": [
       {
         "at": "2026-10-19T02:01:54.668Z",
         "by": "qe-acceptance",
         "verdict": "rework",
         "reason": "Code is correct and e2e/security clean, but criterion 3 (tests/unit/intake passes) fails: policy-vehicles.test.js 'agent who owns the session...' and policy-vehicles-holder.test.js 'csr and agent keep current behaviour' encode superseded behavior and must be updated (ticket paths need widening)"
+      },
+      {
+        "at": "2026-10-19T02:03:01.739Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Round 2: code correct, but node --test tests/unit/intake/*.test.js still fails 2/71 (policy-vehicles.test.js 'agent who owns the session...' and policy-vehicles-holder.test.js 'csr and agent keep current behaviour') encode superseded behavior; criterion 3 unmet, ticket paths must be widened to those test files"
       }
     ],
     "firstPass": false

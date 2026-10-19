@@ -4,7 +4,7 @@
 //   redact        PII placeholders for cloud providers (reverse map stays local)
 //   validateOutput  mini JSON-schema check against src/ai/schemas.mjs
 //   guard         wrap a provider: sanitize -> cap -> redact (cloud only) -> call -> validate
-import { schemaFor } from './schemas.mjs';
+import { schemaFor, inputCapFor } from './schemas.mjs';
 
 export const REMOVED = '[removed-instruction]';
 export const DEFAULT_MAX_CHARS = 20000;
@@ -110,6 +110,7 @@ const PHONE_KEY = /^(?:phone|phoneNumber|mobile|cell|telephone|tel)$/i;
 const EMAIL_KEY = /^(?:email|emailAddress)$/i;
 const SSN_KEY = /^(?:ssn|socialSecurityNumber)$/i;
 const MBI_KEY = /^(?:mbi|medicareId|medicareNumber)$/i;
+const HEALTH_KEY = /^(?:injuryDescription|injuryDetails|injuriesDescription|injuryText|medicalNotes|medicalDetails|diagnosis|treatment)$/i;
 const PLATE_KEY = /^(?:plate|licensePlate|license_plate|plateNumber|licencePlate|tag)$/i;
 
 const MBI_C = 'AC-HJKMNP-RT-Y';
@@ -147,7 +148,7 @@ function token(state, kind, original) {
   return t;
 }
 
-const RE_PLACEHOLDER_LIKE = /\[(NAME|PHONE|EMAIL|SSN|MBI|PLATE)_(\d+)\]/g;
+const RE_PLACEHOLDER_LIKE = /\[(NAME|PHONE|EMAIL|SSN|MBI|PLATE|INJURY)_(\d+)\]/g;
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function plainName(s) {
@@ -225,6 +226,7 @@ export function redactValue(value, opts = {}) {
     if (SSN_KEY.test(key)) return token(state, 'SSN', s);
     if (MBI_KEY.test(key)) return token(state, 'MBI', s);
     if (PLATE_KEY.test(key)) return token(state, 'PLATE', s);
+    if (HEALTH_KEY.test(key)) return token(state, 'INJURY', s); // health free text never leaves unredacted (data-protection.md row 7)
     return null;
   };
   const out = mapStrings(value, (s, key) => (s.trim() && byKey(key, s)) || redact(s, { state }).text);
@@ -235,12 +237,12 @@ export function redactValue(value, opts = {}) {
 export function restore(value, map) {
   const toks = Object.keys(map ?? {});
   if (!toks.length) return value;
-  return mapStrings(value, (s) => s.replace(/\[(?:NAME|PHONE|EMAIL|SSN|MBI|PLATE)_\d+\]/g, (t) => map[t] ?? t));
+  return mapStrings(value, (s) => s.replace(/\[(?:NAME|PHONE|EMAIL|SSN|MBI|PLATE|INJURY)_\d+\]/g, (t) => map[t] ?? t));
 }
 
 // ---------- output validation ----------
 /**
- * Minimal JSON-schema check (type, enum, const, required, properties, items, minimum, maximum).
+ * Minimal JSON-schema check (type, enum, const, required, properties, items, minimum, maximum, minLength, maxLength, minItems, maxItems).
  * Extra properties are allowed. Returns a list of error strings; empty means valid.
  */
 export function validateAgainst(schema, value, path = '$') {
@@ -250,7 +252,7 @@ export function validateAgainst(schema, value, path = '$') {
   const typeOf = (v) => (v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v);
   if (types) {
     const t = typeOf(value);
-    const ok = types.some((x) => x === t || (x === 'integer' && Number.isInteger(value)) || (x === 'number' && t === 'number' && Number.isFinite(value)));
+    const ok = types.some((x) => (x === 'number' ? t === 'number' && Number.isFinite(value) : x === t) || (x === 'integer' && Number.isInteger(value)));
     if (!ok) return [`${path}: expected ${types.join('|')}, got ${t}`];
   }
   if ('const' in schema && value !== schema.const) errs.push(`${path}: must equal ${JSON.stringify(schema.const)}`);
@@ -258,6 +260,14 @@ export function validateAgainst(schema, value, path = '$') {
   if (typeof value === 'number') {
     if (schema.minimum !== undefined && value < schema.minimum) errs.push(`${path}: below minimum`);
     if (schema.maximum !== undefined && value > schema.maximum) errs.push(`${path}: above maximum`);
+  }
+  if (typeof value === 'string') {
+    if (schema.maxLength !== undefined && value.length > schema.maxLength) errs.push(`${path}: longer than ${schema.maxLength}`);
+    if (schema.minLength !== undefined && value.length < schema.minLength) errs.push(`${path}: shorter than ${schema.minLength}`);
+  }
+  if (Array.isArray(value)) {
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) errs.push(`${path}: more than ${schema.maxItems} items`);
+    if (schema.minItems !== undefined && value.length < schema.minItems) errs.push(`${path}: fewer than ${schema.minItems} items`);
   }
   if (Array.isArray(value) && schema.items) value.forEach((v, i) => errs.push(...validateAgainst(schema.items, v, `${path}[${i}]`)));
   if (isObj(value) && !Array.isArray(value)) {
@@ -304,7 +314,6 @@ export function isCloudProvider(provider) {
  */
 export function guard(provider, task, opts = {}) {
   if (isObj(task)) { opts = task; task = undefined; }
-  const maxChars = opts.maxChars ?? DEFAULT_MAX_CHARS;
   const cloud = isCloudProvider(provider);
 
   return {
@@ -329,6 +338,7 @@ export function guard(provider, task, opts = {}) {
       try {
         if (!schemaFor(t)) { report.errors.push(`unknown task '${t}'`); return done({ refusal: true, error: 'unknown_task' }, 'guard_unknown_task'); }
         let safe = input ?? {};
+        const maxChars = opts.maxChars ?? inputCapFor(t);
         // Cap first so the sanitizer only ever sees bounded input.
         const capped = capValue(safe, maxChars);
         report.truncated = capped.truncated;

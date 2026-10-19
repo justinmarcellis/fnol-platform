@@ -1,6 +1,6 @@
 // Cascade router: provider order, per-task confidence thresholds, hard escalation, fallback to local.
-import { guard, redactValue, restore } from './guardrails.mjs';
-import { hasRequiredShape, schemaFor, TASKS } from './schemas.mjs';
+import { capValue, guard, redactValue, restore, validateOutput } from './guardrails.mjs';
+import { hasRequiredShape, inputCapFor, schemaFor, TASKS } from './schemas.mjs';
 
 const KNOWN = ['local', 'vertex-claude', 'vertex-gemini'];
 const DEFAULT_THRESHOLD = 0.7;
@@ -87,8 +87,16 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
     if (!TASKS.includes(task)) {
       throw new ctx.AppError('validation_error', `Unknown AI task '${task}'. Expected one of: ${TASKS.join(', ')}`, 400);
     }
+    // SEC2-010: every AI call is attributed to a tenant. No silent fallback to local without one.
     const tenantId = opts.tenantId ?? ctx.tenant?.id;
-    const aiConfig = (tenantId && ctx.tenants?.get?.(tenantId)?.ai) || { provider: 'local' };
+    if (!tenantId || typeof tenantId !== 'string') {
+      const E = ctx.AppError ?? Error;
+      const err = new E('ai_tenant_required', `ai.run('${task}') needs a tenantId (pass opts.tenantId or use a tenant-bound ctx)`, 500);
+      if (!err.code) err.code = 'ai_tenant_required';
+      throw err;
+    }
+    const tenantCfg = ctx.tenants?.get?.(tenantId);
+    const aiConfig = tenantCfg?.ai || { provider: 'local' };
     const humanConfirm = aiConfig.humanConfirmRequired === true;
     const redactSetting = aiConfig.redactPiiBeforeModel; // cloud is always redacted; only an explicit true affects local
     const maxTokens = Number(aiConfig.maxTokensPerClaim);
@@ -134,14 +142,16 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
           continue;
         }
         const explicitRedact = redactSetting === true;
+        // Cloud tiers always get redacted text (SEC2-011, data-protection.md); local only when the tenant asks.
+        const redactHere = (explicitRedact || entry.provider !== 'local') && !p.guarded;
         let sendInput = input;
         // Guarded providers redact themselves (forceRedact); injected/unguarded ones are redacted here.
-        if (explicitRedact && !p.guarded) {
-          const r = redactValue(input ?? {});
+        if (redactHere) {
+          const r = redactValue(capValue(input ?? {}, inputCapFor(task)).value);
           sendInput = r.value; map = r.map;
         }
         res = await p.run(task, sendInput, { tier: entry.tier, schema, model: entry.model, tenantId, ...(claimId ? { claimId } : {}), ...(explicitRedact ? { forceRedact: true } : {}) });
-        if (res && !res.refusal && explicitRedact && !p.guarded && Object.keys(map).length) {
+        if (res && !res.refusal && redactHere && Object.keys(map).length) {
           res = { ...res, output: restore(res.output, map), explanation: restore(res.explanation ?? '', map) };
         }
         if (!res || res.refusal) {
@@ -149,7 +159,9 @@ export function createCascade(ctx, { log, providers: injected = {} } = {}) {
           logIt({ model: res?.model, usage: { ...spent(res?.usage), skipped: 'refusal' } });
           continue;
         }
-        if (!hasRequiredShape(task, res.output) || typeof res.confidence !== 'number') {
+        // SEC2-009: full schema check (types, enums, ranges, array items, length caps), not just key presence.
+        if (!hasRequiredShape(task, res.output) || !validateOutput(task, res.output).valid
+          || typeof res.confidence !== 'number' || !Number.isFinite(res.confidence) || res.confidence < 0 || res.confidence > 1) {
           tried.push(entry.provider);
           logIt({ model: res.model, usage: { ...spent(res.usage), skipped: 'invalid_output' } });
           continue;

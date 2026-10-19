@@ -49,7 +49,8 @@ export function keywordExtract(text, today) {
 }
 
 async function extract(ctx, text, today, claimId) {
-  if (ctx.ai?.run) {
+  // SEC2-010: the AI call is always attributed to the tenant; an unbound ctx uses the keyword fallback.
+  if (ctx.ai?.run && ctx.tenant?.id) {
     try {
       const res = await ctx.ai.run('extract_narrative', { text }, { tenantId: ctx.tenant?.id, ...(claimId ? { claimId } : {}) });
       if (res?.output && typeof res.confidence === 'number') {
