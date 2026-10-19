@@ -1,0 +1,37 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T16:00:55.178Z",
+  "history": [],
+  "id": "S6-PMO-03",
+  "team": "pmo",
+  "title": "Make the program dashboard live: near-real-time data and the animated decision-network replay",
+  "story": "As the sponsor I want the one program dashboard to update itself in near real time and replay how work moved through the organisation so that I can watch the program, not a frozen snapshot",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-pmo-dashboard-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "dashboard/app.js",
+    "dashboard/styles.css",
+    "dashboard/index.html",
+    "dashboard/export.mjs",
+    "dashboard/server.mjs",
+    "dashboard/snapshot.html",
+    "org/live-export.mjs",
+    "tests/unit/dashboard/",
+    "tests/unit/org/live-export.test.mjs",
+    "tests/ui/dashboard-snapshot.test.mjs",
+    "docs/design/screens/dashboard-*.png"
+  ],
+  "acceptance": [
+    "Sponsor feedback (2026-10-19): the merged dashboard is static; the old live board (dashboard/live.html) showed near-real-time and historical movement visually. Port that behaviour into dashboard/app.js so dashboard/live.html is no longer needed by the sponsor",
+    "Live data layer copied from live.html (lines ~413-436): on load render the embedded snapshot, then const db = await window.claude?.use?.(\"db\"); if db, subscribe ONCE to db.collection(\"live\").onSnapshot and re-render from the documents board, rank, graph, events and a new metrics document; else, when served by dashboard/server.mjs, poll /api/live/<name> every 5 s; else stay on the snapshot. Never subscribe inside render. A header pill shows the source (live / local / snapshot) and the age of the data (updated 2 min ago), turning amber after 30 min",
+    "Decision network tab: the animated canvas from live.html (event pulses travelling along the edge each recorded event happened on, Replay button that plays the real event order time-compressed, a timeline scrubber, Follow live toggle, recently-active edges lit, legend and filters), keyboard-operable controls, light and dark; the static SVG from S6-PMO-02 may be replaced",
+    "Sprint board and Agent rank views from live.html are available as tabs (or the existing Sprint board/Performance tabs gain the live board columns and stack rank), driven by the live documents",
+    "org/live-export.mjs also writes org/live/metrics.json = the dashboard computeMetrics output (from dashboard/server.mjs build) plus generatedAt, so Velocity, Quality, Cost, Flow and Performance tabs update live; every document stays under 600 KB (test)",
+    "Playwright: the snapshot file still renders every tab offline with no errors; a second test serves the dashboard locally, changes org/live data, and sees the page update within 10 s; screenshots dashboard-network.png (mid-replay) and dashboard-overview.png; full npm test no new failures"
+  ],
+  "brief": "Read dashboard/live.html fully first (network renderer, replay, scrub, followLive, data loader) and the S6-PMO-02 changes in dashboard/app.js. Zero dependencies (no d3 from CDN; reuse the canvas code). The orchestrator publishes snapshot.html with capabilities {db} and writes the live documents with ArtifactData after each wave."
+}
