@@ -1,4 +1,7 @@
 import { t } from '../i18n.js';
+import { createIcon } from '../icons.js';
+
+const TOAST_ICON = { success: 'check-circle', error: 'x-circle', warning: 'alert-triangle', info: 'info' };
 const HE = typeof HTMLElement !== 'undefined' ? HTMLElement : class {};
 
 /** Toast queue logic. Pure. Keeps at most `limit` items (oldest dropped). */
@@ -35,10 +38,14 @@ export class FxToast extends HE {
       const d = doc.createElement('div');
       d.className = 'fx-toast-item'; d.dataset.kind = it.kind;
       d.setAttribute('role', it.kind === 'error' || it.kind === 'warning' ? 'alert' : 'status');
-      const m = doc.createElement('span'); m.textContent = it.message;
+      const ic = createIcon(TOAST_ICON[it.kind] ?? 'info', { size: 20, doc, className: 'fx-icon fx-toast-icon' });
+      const m = doc.createElement('span'); m.className = 'fx-toast-msg'; m.textContent = it.message;
       const b = doc.createElement('button');
-      b.type = 'button'; b.textContent = '×'; b.setAttribute('aria-label', t('kit.toast.dismiss'));
+      b.type = 'button'; b.className = 'fx-toast-close'; b.setAttribute('aria-label', t('kit.toast.dismiss'));
+      const x = createIcon('x', { size: 16, doc });
+      if (x) b.appendChild(x); else b.textContent = '×';
       b.addEventListener('click', () => this.dismiss(it.id));
+      if (ic) d.appendChild(ic);
       d.append(m, b);
       this.appendChild(d);
     }

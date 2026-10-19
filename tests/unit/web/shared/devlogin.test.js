@@ -24,3 +24,12 @@ test('isDevMode detects localhost and explicit flag', () => {
   assert.equal(isDevMode({ __FNOL_DEV__: true, location: { hostname: 'x' } }), true);
   assert.equal(isDevMode({ __FNOL_DEV__: false, location: { hostname: 'localhost' } }), false);
 });
+
+test('devLogin sends explicit roles when given (persona login)', async () => {
+  let body;
+  const api = { post: async (_p, b) => { body = b; return { token: 't' }; } };
+  await devLogin(api, { tenant: 'tenant-a', role: 'carrier_admin', roles: ['carrier_admin', 'tenant_admin'], userId: 'u1', name: 'Pat' }, { dev: true });
+  assert.deepEqual(body.roles, ['carrier_admin', 'tenant_admin']);
+  assert.equal(body.userId, 'u1');
+  assert.equal(body.displayName, 'Pat');
+});

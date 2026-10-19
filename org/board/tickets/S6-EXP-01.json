@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:26:39.628Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T12:27:07.585Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T12:45:14.387Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T12:46:30.096Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-EXP-01",
@@ -46,5 +56,45 @@
     "VD-1",
     "VD-3"
   ],
-  "startedAt": "2026-10-19T12:27:07.585Z"
+  "startedAt": "2026-10-19T12:27:07.585Z",
+  "doneAt": "2026-10-19T12:46:30.096Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T12:46:30.096Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 7 criteria met; 33 ticket tests pass, full npm test 1487 pass/0 fail/3 baseline todos; screenshots match design-system.md, no external requests"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 3.3699,
+    "inputTokens": 120,
+    "cacheWriteTokens": 322283,
+    "cacheReadTokens": 8990344,
+    "outputTokens": 6577,
+    "agents": {
+      "a07df81f0ee54ff8e": {
+        "label": "S6-EXP-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 68076,
+        "cacheReadTokens": 253222,
+        "outputTokens": 139,
+        "usd": 0.2222
+      },
+      "a43d970b0a5fba5a7": {
+        "label": "S6-EXP-01 ic-experience-ux-designer",
+        "model": "claude-opus-5-5",
+        "inputTokens": 110,
+        "cacheWriteTokens": 254207,
+        "cacheReadTokens": 8737122,
+        "outputTokens": 6438,
+        "usd": 3.1477
+      }
+    }
+  }
 }

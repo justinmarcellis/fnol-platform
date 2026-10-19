@@ -14,7 +14,10 @@ export function formatWhen(iso, locale = getLocale()) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(d);
 }
 
-/** <fx-timeline> with `.events=[{at,title,detail,actor}]`. Semantic ordered list with <time>. */
+/**
+ * <fx-timeline> with `.events=[{at,title,detail,actor,tone?}]`. Semantic ordered list with <time>.
+ * Optional tone (info|success|warning|danger|brand|neutral) colours the event marker.
+ */
 export class FxTimeline extends HE {
   constructor() { super(); this._events = []; }
   connectedCallback() { this.render(); }
@@ -28,6 +31,7 @@ export class FxTimeline extends HE {
     ol.setAttribute('aria-label', t('kit.timeline.label'));
     for (const e of sortEvents(this._events, this.getAttribute('order') ?? 'desc')) {
       const li = doc.createElement('li');
+      if (e.tone) li.dataset.tone = String(e.tone);
       const time = doc.createElement('time'); time.dateTime = e.at; time.textContent = formatWhen(e.at);
       const strong = doc.createElement('strong'); strong.textContent = e.title ?? '';
       li.append(time, doc.createElement('br'), strong);

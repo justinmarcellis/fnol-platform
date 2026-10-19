@@ -88,3 +88,13 @@ npm reports these as unmet optional dependencies; they are not in the lockfile i
 | @modelcontextprotocol/sdk | @google/genai (peer, optional) | MIT |
 | bufferutil | ws (optional) | MIT |
 | utf-8-validate | ws (optional) | MIT |
+
+## Web UI assets: fonts and icons (S6-EXP-01, design system v2)
+
+| Asset | Source | License | Shipped in repo |
+|---|---|---|---|
+| UI typeface | Platform system UI stack (`ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial`). `Inter` is named first in `--fx-font-ui` and is used only when the viewer already has it installed locally (Inter is SIL OFL 1.1). | n/a (no font redistributed) | No |
+| Icons (`src/web/shared/icons.js`) | Original drawings made for this product on a 24 px grid | Product code (same terms as the platform) | Yes, inline SVG |
+
+- No webfonts, icon fonts, CDNs or other third-party UI assets are loaded at runtime. `tests/ui/design-system.test.mjs` fails on any non-same-origin request from the kitchen sink.
+- If a later sprint self-hosts a font, commit it under `src/web/shared/fonts/` with its OFL license text and add a row here.

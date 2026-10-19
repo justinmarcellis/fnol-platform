@@ -1,65 +1,258 @@
-/* Design tokens. Light default, dark via prefers-color-scheme or [data-theme]. Text pairs target >= 4.5:1. */
+/*
+ * FNOL design tokens, v2. See docs/design/design-system.md.
+ * Light is the default. Dark applies via prefers-color-scheme (unless [data-theme='light']) or [data-theme='dark'].
+ * Every text/background pair below meets WCAG AA (>= 4.5:1); control borders meet 3:1 (tests/unit/web/shared/theme.test.js).
+ * Tenant branding (theme.js applyBranding) overrides --fx-brand, --fx-on-brand, --fx-accent, --fx-on-accent, --fx-font, --fx-logo-url.
+ * Order matters for the contrast test: light :root first, then media-query blocks, the [data-theme='dark'] block last.
+ */
 :root {
+  /* Neutral ramp (cool slate). Raw values; prefer the semantic aliases below in components. */
+  --fx-gray-0: #ffffff;
+  --fx-gray-25: #fafbfc;
+  --fx-gray-50: #f5f6f8;
+  --fx-gray-100: #eceef2;
+  --fx-gray-200: #e1e4e9;
+  --fx-gray-300: #cdd2da;
+  --fx-gray-400: #9ba3af;
+  --fx-gray-500: #6c7584;
+  --fx-gray-600: #505967;
+  --fx-gray-700: #3a414d;
+  --fx-gray-800: #252b35;
+  --fx-gray-900: #161a21;
+
+  /* Surfaces. canvas = app background, bg = raised surface (cards, inputs, menus), surface = subtle fill. */
+  --fx-canvas: #f5f6f8;
   --fx-bg: #ffffff;
-  --fx-surface: #f5f7fa;
-  --fx-surface-2: #e8edf3;
-  --fx-text: #14202e;
-  --fx-text-muted: #4a5a6b;
-  --fx-border: #8392a3;
-  --fx-brand: #0b5cad;
+  --fx-surface: #f5f6f8;
+  --fx-surface-2: #eceef2;
+  --fx-surface-hover: #f0f2f5;
+  --fx-overlay: rgba(22, 26, 33, 0.45);
+
+  /* Text */
+  --fx-text: #161a21;
+  --fx-text-muted: #545d6b;
+  --fx-text-subtle: #5f6876;
+  --fx-text-inverse: #ffffff;
+
+  /* Borders. border = control edge (>= 3:1 on bg), divider = decorative hairline. */
+  --fx-border: #7f8897;
+  --fx-border-strong: #6c7584;
+  --fx-divider: #e1e4e9;
+
+  /* Brand: one accent colour, overridden per tenant by applyBranding. */
+  --fx-brand: #2a55c4;
   --fx-on-brand: #ffffff;
-  --fx-accent: #7a3e00;
+  --fx-accent: #8a4a00;
   --fx-on-accent: #ffffff;
-  --fx-focus: #0b5cad;
-  --fx-success: #0a6b3a;
-  --fx-warning: #8a5300;
-  --fx-danger: #b00020;
-  --fx-info: #0b5cad;
-  --fx-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Focus */
+  --fx-focus: #2a55c4;
+
+  /* Semantic: foreground (text/icon on bg), subtle background, and border. */
+  --fx-success: #0f6e45;
+  --fx-success-subtle: #e7f5ee;
+  --fx-success-border: #9fd5b9;
+  --fx-warning: #8a5000;
+  --fx-warning-subtle: #fdf3e2;
+  --fx-warning-border: #f0c98a;
+  --fx-danger: #b4232b;
+  --fx-danger-subtle: #fdecec;
+  --fx-danger-border: #f2b1b4;
+  --fx-info: #1f5bb8;
+  --fx-info-subtle: #e9f1fd;
+  --fx-info-border: #a9c6f2;
+  --fx-neutral: #4a5361;
+  --fx-neutral-subtle: #eceef2;
+  --fx-neutral-border: #cdd2da;
+
+  /* Demo band (persona switcher slot in fx-app-shell). Always dark ink so it reads as "not the product". */
+  --fx-demo-bg: #1b1f27;
+  --fx-demo-fg: #f2f4f7;
+  --fx-demo-muted: #b8c0cc;
+  --fx-demo-border: #343b47;
+  --fx-demo-accent: #f5b84a;
+  --fx-demo-height: 0px;
+
+  /* Typography. --fx-font is the brand face (tenant may override); --fx-font-ui is the product UI face. */
+  --fx-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fx-font-ui: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fx-font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+  --fx-font-size: 1rem;
+  --fx-font-size-sm: 0.875rem;
+  --fx-font-size-lg: 1.25rem;
+  --fx-fs-xs: 0.75rem;
+  --fx-fs-sm: 0.8125rem;
+  --fx-fs-md: 0.875rem;
+  --fx-fs-base: 1rem;
+  --fx-fs-lg: 1.125rem;
+  --fx-fs-xl: 1.25rem;
+  --fx-fs-2xl: 1.5rem;
+  --fx-fs-3xl: 1.875rem;
+  --fx-lh-tight: 1.25;
+  --fx-lh: 1.5;
+  --fx-fw-regular: 400;
+  --fx-fw-medium: 500;
+  --fx-fw-semibold: 600;
+  --fx-fw-bold: 700;
+  --fx-tracking-tight: -0.011em;
+  --fx-tracking-caps: 0.04em;
   --fx-logo-url: none;
+
+  /* Spacing: 8 px grid with a 4 px half step. */
   --fx-space-1: 4px;
   --fx-space-2: 8px;
   --fx-space-3: 12px;
   --fx-space-4: 16px;
   --fx-space-5: 24px;
   --fx-space-6: 32px;
+  --fx-space-7: 40px;
+  --fx-space-8: 48px;
+  --fx-space-9: 64px;
+
+  /* Radius */
+  --fx-radius-sm: 6px;
   --fx-radius: 8px;
+  --fx-radius-lg: 12px;
+  --fx-radius-pill: 999px;
+
+  /* Elevation: borders do most of the work; shadows are soft and reserved for things that float. */
+  --fx-shadow-xs: 0 1px 2px rgba(22, 26, 33, 0.05);
+  --fx-shadow: 0 1px 2px rgba(22, 26, 33, 0.06), 0 1px 3px rgba(22, 26, 33, 0.08);
+  --fx-shadow-md: 0 2px 4px -1px rgba(22, 26, 33, 0.06), 0 6px 16px -4px rgba(22, 26, 33, 0.10);
+  --fx-shadow-lg: 0 4px 8px -2px rgba(22, 26, 33, 0.08), 0 16px 40px -8px rgba(22, 26, 33, 0.20);
+  --fx-ring: 0 0 0 3px color-mix(in srgb, var(--fx-focus) 28%, transparent);
+
+  /* Motion */
+  --fx-ease: cubic-bezier(0.2, 0, 0, 1);
+  --fx-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fx-dur-fast: 120ms;
+  --fx-dur: 180ms;
+  --fx-dur-slow: 280ms;
+
+  /* Density and targets. --fx-target is the minimum touch target; --fx-control-h the standard control height. */
   --fx-target: 44px;
   --fx-target-min: 24px;
-  --fx-font-size: 1rem;
-  --fx-font-size-sm: 0.875rem;
-  --fx-font-size-lg: 1.25rem;
-  --fx-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  --fx-control-h: 40px;
+  --fx-control-h-sm: 32px;
+  --fx-control-h-lg: 48px;
+  --fx-row-h: 48px;
+
+  /* Layout */
+  --fx-topbar-h: 60px;
+  --fx-content-max: 1280px;
+  --fx-z-sticky: 20;
+  --fx-z-shell: 30;
+  --fx-z-menu: 40;
+  --fx-z-toast: 60;
+
+  /* Brand derivatives (computed, so tenant overrides flow through). */
+  --fx-brand-subtle: color-mix(in srgb, var(--fx-brand) 9%, var(--fx-bg));
+  --fx-brand-muted: color-mix(in srgb, var(--fx-brand) 22%, var(--fx-bg));
+  --fx-brand-hover: color-mix(in srgb, var(--fx-brand) 86%, #000000);
+  --fx-brand-text: var(--fx-brand);
+
   color-scheme: light dark;
 }
+
+/* Fine pointers get the denser desktop control height; touch keeps 44 px targets. */
+@media (pointer: fine) {
+  :root { --fx-target: 40px; }
+}
+
+/* Compact density for data-heavy desks (adjuster inbox, admin tables). */
+[data-density='compact'] {
+  --fx-control-h: 32px;
+  --fx-control-h-sm: 28px;
+  --fx-row-h: 36px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --fx-bg: #10161d;
-    --fx-surface: #18212b;
-    --fx-surface-2: #223040;
-    --fx-text: #eef2f6;
-    --fx-text-muted: #b4c0cd;
-    --fx-border: #7d8da0;
-    --fx-focus: #7db8f5;
-    --fx-success: #5fd394;
-    --fx-warning: #f0b25a;
-    --fx-danger: #ff8a9b;
-    --fx-info: #7db8f5;
+    --fx-canvas: #0c0f13;
+    --fx-bg: #13171d;
+    --fx-surface: #191e25;
+    --fx-surface-2: #232a33;
+    --fx-surface-hover: #1d232b;
+    --fx-overlay: rgba(0, 0, 0, 0.6);
+    --fx-text: #ebeef2;
+    --fx-text-muted: #a7b0bd;
+    --fx-text-subtle: #8a94a2;
+    --fx-text-inverse: #13171d;
+    --fx-border: #6b7585;
+    --fx-border-strong: #8a94a2;
+    --fx-divider: #262d37;
+    --fx-focus: #7aa7ff;
+    --fx-success: #5cc995;
+    --fx-success-subtle: #12261d;
+    --fx-success-border: #24573d;
+    --fx-warning: #eab05a;
+    --fx-warning-subtle: #2a2113;
+    --fx-warning-border: #5e4520;
+    --fx-danger: #ff8b91;
+    --fx-danger-subtle: #2c1618;
+    --fx-danger-border: #6a2a2f;
+    --fx-info: #82b1ff;
+    --fx-info-subtle: #142036;
+    --fx-info-border: #2c4a7c;
+    --fx-neutral: #b3bcc8;
+    --fx-neutral-subtle: #212730;
+    --fx-neutral-border: #3a424e;
+    --fx-demo-bg: #05070a;
+    --fx-demo-border: #232a33;
+    --fx-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --fx-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --fx-shadow-md: 0 2px 4px -1px rgba(0, 0, 0, 0.4), 0 8px 20px -4px rgba(0, 0, 0, 0.5);
+    --fx-shadow-lg: 0 4px 8px -2px rgba(0, 0, 0, 0.5), 0 18px 44px -8px rgba(0, 0, 0, 0.65);
+    --fx-brand-subtle: color-mix(in srgb, var(--fx-brand) 22%, var(--fx-bg));
+    --fx-brand-muted: color-mix(in srgb, var(--fx-brand) 38%, var(--fx-bg));
+    --fx-brand-hover: color-mix(in srgb, var(--fx-brand) 82%, #ffffff);
+    --fx-brand-text: color-mix(in srgb, var(--fx-brand) 35%, #ffffff);
   }
 }
-:root[data-theme='dark'] {
-  --fx-bg: #10161d;
-  --fx-surface: #18212b;
-  --fx-surface-2: #223040;
-  --fx-text: #eef2f6;
-  --fx-text-muted: #b4c0cd;
-  --fx-border: #7d8da0;
-  --fx-focus: #7db8f5;
-  --fx-success: #5fd394;
-  --fx-warning: #f0b25a;
-  --fx-danger: #ff8a9b;
-  --fx-info: #7db8f5;
-}
+
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Explicit dark theme. Keep this block last (the contrast test reads the dark values from here). */
+:root[data-theme='dark'] {
+  --fx-canvas: #0c0f13;
+  --fx-bg: #13171d;
+  --fx-surface: #191e25;
+  --fx-surface-2: #232a33;
+  --fx-surface-hover: #1d232b;
+  --fx-overlay: rgba(0, 0, 0, 0.6);
+  --fx-text: #ebeef2;
+  --fx-text-muted: #a7b0bd;
+  --fx-text-subtle: #8a94a2;
+  --fx-text-inverse: #13171d;
+  --fx-border: #6b7585;
+  --fx-border-strong: #8a94a2;
+  --fx-divider: #262d37;
+  --fx-focus: #7aa7ff;
+  --fx-success: #5cc995;
+  --fx-success-subtle: #12261d;
+  --fx-success-border: #24573d;
+  --fx-warning: #eab05a;
+  --fx-warning-subtle: #2a2113;
+  --fx-warning-border: #5e4520;
+  --fx-danger: #ff8b91;
+  --fx-danger-subtle: #2c1618;
+  --fx-danger-border: #6a2a2f;
+  --fx-info: #82b1ff;
+  --fx-info-subtle: #142036;
+  --fx-info-border: #2c4a7c;
+  --fx-neutral: #b3bcc8;
+  --fx-neutral-subtle: #212730;
+  --fx-neutral-border: #3a424e;
+  --fx-demo-bg: #05070a;
+  --fx-demo-border: #232a33;
+  --fx-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --fx-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --fx-shadow-md: 0 2px 4px -1px rgba(0, 0, 0, 0.4), 0 8px 20px -4px rgba(0, 0, 0, 0.5);
+  --fx-shadow-lg: 0 4px 8px -2px rgba(0, 0, 0, 0.5), 0 18px 44px -8px rgba(0, 0, 0, 0.65);
+  --fx-brand-subtle: color-mix(in srgb, var(--fx-brand) 22%, var(--fx-bg));
+  --fx-brand-muted: color-mix(in srgb, var(--fx-brand) 38%, var(--fx-bg));
+  --fx-brand-hover: color-mix(in srgb, var(--fx-brand) 82%, #ffffff);
+  --fx-brand-text: color-mix(in srgb, var(--fx-brand) 35%, #ffffff);
 }

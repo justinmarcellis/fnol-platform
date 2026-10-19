@@ -98,3 +98,75 @@ test('chat, timeline, toast, table pure logic', () => {
   assert.deepEqual(nextSort(null, 'a'), { key: 'a', dir: 'asc' });
   assert.deepEqual(nextSort({ key: 'a', dir: 'asc' }, 'a'), { key: 'a', dir: 'desc' });
 });
+
+// ---- Design system v2 (S6-EXP-01) ----
+import { registerAll, elementsV2 } from '../../../../src/web/shared/components/index.js';
+import { statusMeta, STATUS_TONES, TONES } from '../../../../src/web/shared/components/badge.js';
+import { groupSlots, skeletonWidths, trendOf, trendTone } from '../../../../src/web/shared/components/surfaces.js';
+import { roleLabel, menuIndex, SHELL_SLOTS } from '../../../../src/web/shared/components/app-shell.js';
+import { kitStringTables } from '../../../../src/web/shared/components/kit-strings.js';
+import { icon, iconNames, ICONS } from '../../../../src/web/shared/icons.js';
+
+test('registerAll defines v1 and v2 elements once; registerComponents keeps the v1 set', () => {
+  const defined = new Map();
+  const reg = { get: (n) => defined.get(n), define: (n, c) => defined.set(n, c) };
+  assert.equal(registerAll(reg), 8 + Object.keys(elementsV2).length);
+  assert.equal(registerAll(reg), 0);
+  for (const n of ['fx-app-shell', 'fx-badge', 'fx-card', 'fx-empty-state', 'fx-skeleton', 'fx-stat']) assert.ok(defined.has(n), n);
+  assert.equal(registerAll(null), 0);
+});
+
+test('statusMeta maps claim statuses and severity bands to labels and semantic tones', () => {
+  setLocale('en');
+  assert.deepEqual(statusMeta('pending_info', 'claim'), { value: 'pending_info', label: 'Pending info', tone: 'warning', kind: 'claim' });
+  assert.equal(statusMeta('fast_tracked').tone, 'success');
+  assert.equal(statusMeta('closed').tone, 'neutral');
+  assert.deepEqual(['minor', 'moderate', 'major', 'severe'].map((s) => statusMeta(s, 'severity').tone), ['success', 'info', 'warning', 'danger']);
+  assert.equal(statusMeta('severe').label, 'Severe');
+  assert.equal(statusMeta('pending_info', 'claim', { locale: 'es' }).label, 'Información pendiente');
+  assert.deepEqual(statusMeta('mystery_state'), { value: 'mystery_state', label: 'Mystery state', tone: 'neutral', kind: null });
+  for (const vocab of Object.values(STATUS_TONES)) for (const tone of Object.values(vocab)) assert.ok(TONES.includes(tone));
+  // Every claim status in the contract has a mapping.
+  for (const s of ['reported', 'validating', 'triaged', 'assigned', 'fast_tracked', 'in_review', 'pending_info', 'closed', 'withdrawn']) assert.ok(STATUS_TONES.claim[s], s);
+});
+
+test('surface helpers', () => {
+  const el = (slot) => ({ getAttribute: (n) => (n === 'slot' ? slot : null) });
+  const g = groupSlots([el('actions'), el(null), el('footer'), el(null)]);
+  assert.equal(g.actions.length, 1); assert.equal(g[''].length, 2); assert.equal(g.footer.length, 1);
+  assert.deepEqual(skeletonWidths(3), [100, 92, 60]);
+  assert.equal(skeletonWidths(0).length, 3);
+  assert.equal(skeletonWidths(99).length, 20);
+  assert.equal(trendOf('+12%'), 'up'); assert.equal(trendOf('-6 min'), 'down'); assert.equal(trendOf('0'), 'flat'); assert.equal(trendOf(null), 'flat');
+  assert.equal(trendTone('down', 'down'), 'success'); assert.equal(trendTone('up', 'down'), 'danger'); assert.equal(trendTone('flat'), 'neutral');
+});
+
+test('app shell helpers', () => {
+  assert.equal(roleLabel('tenant_admin'), 'Tenant admin');
+  assert.equal(roleLabel('csr'), 'CSR');
+  assert.equal(roleLabel('adjuster'), 'Adjuster');
+  assert.equal(roleLabel(''), '');
+  assert.equal(menuIndex(2, 'ArrowDown', 3), 0);
+  assert.equal(menuIndex(-1, 'ArrowDown', 3), 0);
+  assert.equal(menuIndex(0, 'ArrowUp', 3), 2);
+  assert.equal(menuIndex(1, 'End', 3), 2);
+  assert.equal(menuIndex(1, 'x', 3), null);
+  assert.deepEqual(SHELL_SLOTS, ['demo', 'nav', 'actions', 'user-menu']);
+});
+
+test('v2 kit strings have en/es parity', () => {
+  const { en, es } = kitStringTables();
+  assert.deepEqual(Object.keys(en).sort(), Object.keys(es).sort());
+  for (const k of Object.keys(en)) assert.equal((es[k].match(/\{\w+\}/g) ?? []).join(), (en[k].match(/\{\w+\}/g) ?? []).join(), k);
+});
+
+test('icons are inline SVG, decorative by default, labelled on request, escaped', () => {
+  assert.ok(iconNames.length >= 40);
+  const svg = icon('search');
+  assert.match(svg, /^<svg /); assert.match(svg, /aria-hidden="true"/); assert.match(svg, /stroke="currentColor"/);
+  assert.doesNotMatch(svg, /https?:\/\/(?!www\.w3\.org)/);
+  const labelled = icon('alert-circle', { label: 'Error "x" <b>' });
+  assert.match(labelled, /role="img"/); assert.match(labelled, /aria-label="Error &quot;x&quot; &lt;b&gt;"/); assert.match(labelled, /<title>Error "x" &lt;b&gt;<\/title>/);
+  assert.match(icon('nope'), /viewBox="0 0 24 24"/);
+  for (const [name, body] of Object.entries(ICONS)) assert.doesNotMatch(body, /<script|on\w+=|href/i, name);
+});

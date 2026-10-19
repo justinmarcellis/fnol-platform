@@ -14,6 +14,7 @@ import { createRouter, attachJson } from './core/router.mjs';
 import { HttpError, AppError } from './core/errors.mjs';
 import { createScheduler } from './core/scheduler.mjs';
 import { createTenantBinder } from './core/tenant-context.mjs';
+import { registerDevPersonaRoutes } from './core/dev-personas.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WEB_DIR = path.join(ROOT, 'src', 'web');
@@ -110,6 +111,7 @@ export async function createApp(opts = {}) {
   ctx.tenants.loadDir();
   registerAuthRoutes(ctx.router, ctx);
   registerAuditRoutes(ctx.router, ctx);
+  if (ctx.config.devMode) registerDevPersonaRoutes(ctx.router, ctx);
   for (const mod of loaded) {
     // modules.md names the hook service(ctx); init(ctx) is the original name, both work
     // Tenant-bound instances come from ctx.forTenant(id).modules; the root

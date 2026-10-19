@@ -57,3 +57,46 @@ test('tokens.css defines light and dark and text pairs meet 4.5:1', () => {
   assert.ok(contrastRatio(light['fx-brand'], light['fx-on-brand']) >= 4.5);
   assert.ok(contrastRatio(light['fx-accent'], light['fx-on-accent']) >= 4.5);
 });
+
+// ---- Design system v2 (S6-EXP-01) ----
+function v2Sets() {
+  const css = readFileSync(new URL('../../../../src/web/shared/tokens.css', import.meta.url), 'utf8');
+  const light = tokensOf(css.split('@media')[0]);
+  const darkMedia = tokensOf(css.slice(css.indexOf('@media (prefers-color-scheme: dark)'), css.indexOf('@media (prefers-reduced-motion')));
+  const dark = { ...light, ...tokensOf(css.slice(css.indexOf(":root[data-theme='dark']"))) };
+  return { css, light, dark, darkMedia };
+}
+
+test('v2: text and semantic pairs meet 4.5:1 on every surface; control borders 3:1 (light and dark)', () => {
+  const { light, dark } = v2Sets();
+  for (const [name, set] of [['light', light], ['dark', dark]]) {
+    for (const fg of ['fx-text', 'fx-text-muted', 'fx-text-subtle', 'fx-success', 'fx-warning', 'fx-danger', 'fx-info', 'fx-neutral']) {
+      for (const bg of ['fx-bg', 'fx-surface', 'fx-canvas']) assert.ok(contrastRatio(set[fg], set[bg]) >= 4.5, `${name} ${fg} on ${bg}`);
+    }
+    for (const k of ['success', 'warning', 'danger', 'info', 'neutral']) assert.ok(contrastRatio(set[`fx-${k}`], set[`fx-${k}-subtle`]) >= 4.5, `${name} ${k} badge`);
+    for (const bg of ['fx-bg', 'fx-surface', 'fx-canvas']) assert.ok(contrastRatio(set['fx-border'], set[bg]) >= 3, `${name} border on ${bg}`);
+    assert.ok(contrastRatio(set['fx-focus'], set['fx-bg']) >= 3, `${name} focus`);
+    assert.ok(contrastRatio(set['fx-demo-fg'], set['fx-demo-bg']) >= 4.5, `${name} demo band`);
+    assert.ok(contrastRatio(set['fx-demo-muted'], set['fx-demo-bg']) >= 4.5, `${name} demo muted`);
+  }
+});
+
+test('v2: dark media block and [data-theme=dark] block define the same values', () => {
+  const { css, darkMedia } = v2Sets();
+  const explicit = tokensOf(css.slice(css.indexOf(":root[data-theme='dark']")));
+  assert.deepEqual(darkMedia, explicit);
+});
+
+test('v2: tokens cover type, spacing, radius, elevation, motion and density; no external URLs', () => {
+  const { css } = v2Sets();
+  for (const t of ['--fx-fs-xs', '--fx-fs-3xl', '--fx-space-9', '--fx-radius-lg', '--fx-shadow-lg', '--fx-dur', '--fx-ease', '--fx-control-h', '--fx-row-h', '--fx-demo-height', '--fx-font-ui']) assert.match(css, new RegExp(`${t}:`), t);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /\[data-density='compact'\]/);
+  const comp = readFileSync(new URL('../../../../src/web/shared/components.css', import.meta.url), 'utf8');
+  for (const s of [css, comp]) { assert.doesNotMatch(s, /@import|url\(\s*['"]?https?:/i); assert.doesNotMatch(s, /@font-face/); }
+  assert.match(comp, /:focus-visible \{ outline: 2px solid var\(--fx-focus\)/);
+});
+
+test('v2: tenant brands in tenants/*.json keep readable button text', () => {
+  for (const hex of ['#1f5f4a', '#243b6b']) assert.ok(contrastRatio(hex, readableOn(hex)) >= 4.5, hex);
+});

@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:26:39.630Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T12:27:11.862Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T12:31:49.022Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T12:32:56.080Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-EXP-02",
@@ -40,5 +50,54 @@
   "valueDrivers": [
     "VD-1"
   ],
-  "startedAt": "2026-10-19T12:27:11.862Z"
+  "startedAt": "2026-10-19T12:27:11.862Z",
+  "doneAt": "2026-10-19T12:32:56.080Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T12:32:56.079Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 4 Playwright demo-bar tests and unit tests pass; full npm test 1466 pass, 0 fail, 3 todo (baseline known todos); screenshot shows adjuster inbox with 2 claims"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.3516,
+    "inputTokens": 78,
+    "cacheWriteTokens": 246766,
+    "cacheReadTokens": 3649108,
+    "outputTokens": 464,
+    "agents": {
+      "a19b57d8cd4c45a8c": {
+        "label": "S6-EXP-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 31006,
+        "cacheReadTokens": 375738,
+        "outputTokens": 79,
+        "usd": 0.1535
+      },
+      "ab3f2a8a3654a96b8": {
+        "label": "S6-EXP-02 ic-experience-admin-ui-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 56,
+        "cacheWriteTokens": 142878,
+        "cacheReadTokens": 3005818,
+        "outputTokens": 312,
+        "usd": 0.9616
+      },
+      "abbb852b568934524": {
+        "label": "S6-EXP-02 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 72882,
+        "cacheReadTokens": 267552,
+        "outputTokens": 73,
+        "usd": 0.2365
+      }
+    }
+  }
 }

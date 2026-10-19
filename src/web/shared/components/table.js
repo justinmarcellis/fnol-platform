@@ -21,7 +21,9 @@ export function nextSort(sort, key) {
 }
 
 /**
- * <fx-table caption> with `.columns=[{key,label,render?}]` and `.rows=[...]`.
+ * <fx-table caption> with `.columns=[{key,label,render?,align?,numeric?,sortable?}]` and `.rows=[...]`.
+ * `render(row)` may return a string or a DOM Node (e.g. a badge). `numeric`/`align:'end'` right-aligns with tabular figures.
+ * `sortable:false` renders a plain header.
  * Sortable headers are buttons (aria-sort). Rows are keyboard focusable; Enter/Space emits fx-select {row}.
  * ArrowUp/Down move between rows.
  */
@@ -41,9 +43,14 @@ export class FxTable extends HE {
     const thead = doc.createElement('thead'); const hr = doc.createElement('tr');
     for (const col of this._cols) {
       const th = doc.createElement('th'); th.scope = 'col';
+      if (col.numeric || col.align === 'end') th.className = 'fx-num';
+      if (col.sortable === false) { th.textContent = col.label; hr.appendChild(th); continue; }
       const active = this.sort?.key === col.key;
       th.setAttribute('aria-sort', active ? (this.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
-      const b = doc.createElement('button'); b.type = 'button'; b.textContent = col.label;
+      const b = doc.createElement('button'); b.type = 'button'; b.className = 'fx-sort';
+      const bl = doc.createElement('span'); bl.textContent = col.label; b.appendChild(bl);
+      const arrow = doc.createElement('span'); arrow.className = 'fx-sort-arrow'; arrow.setAttribute('aria-hidden', 'true');
+      b.appendChild(arrow); // glyph drawn in CSS from th[aria-sort], so the button text stays the label
       b.setAttribute('aria-label', t('kit.table.sortBy', { column: col.label }));
       b.addEventListener('click', () => { this.sort = nextSort(this.sort, col.key); this.render(); this.querySelector(`th:nth-child(${this._cols.indexOf(col) + 1}) button`)?.focus(); });
       th.appendChild(b); hr.appendChild(th);
@@ -51,11 +58,17 @@ export class FxTable extends HE {
     thead.appendChild(hr); table.appendChild(thead);
     const tbody = doc.createElement('tbody');
     if (!rows.length) {
-      const tr = doc.createElement('tr'); const td = doc.createElement('td'); td.colSpan = Math.max(1, this._cols.length); td.textContent = t('kit.table.empty'); tr.appendChild(td); tbody.appendChild(tr);
+      const tr = doc.createElement('tr'); tr.className = 'fx-table-empty'; const td = doc.createElement('td'); td.colSpan = Math.max(1, this._cols.length); td.textContent = t('kit.table.empty'); tr.appendChild(td); tbody.appendChild(tr);
     }
     rows.forEach((row, i) => {
       const tr = doc.createElement('tr'); tr.tabIndex = 0;
-      for (const col of this._cols) { const td = doc.createElement('td'); td.textContent = col.render ? col.render(row) : String(row[col.key] ?? ''); tr.appendChild(td); }
+      for (const col of this._cols) {
+        const td = doc.createElement('td');
+        if (col.numeric || col.align === 'end') td.className = 'fx-num';
+        const v = col.render ? col.render(row) : String(row[col.key] ?? '');
+        if (v && typeof v === 'object' && typeof v.nodeType === 'number') td.appendChild(v); else td.textContent = v ?? '';
+        tr.appendChild(td);
+      }
       const select = () => this.dispatchEvent(new CustomEvent('fx-select', { bubbles: true, detail: { row } }));
       tr.addEventListener('click', select);
       tr.addEventListener('keydown', (e) => {

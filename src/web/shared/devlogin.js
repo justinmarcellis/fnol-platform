@@ -11,10 +11,10 @@ export function isDevMode(env = globalThis) {
 /**
  * POST /auth/token for a tenant and role. Resolves to {token, claims}.
  * @param {{post:Function}} api
- * @param {{tenant:string, role:string, userId?:string, name?:string, claimIds?:string[]}} p
+ * @param {{tenant:string, role:string, roles?:string[], userId?:string, name?:string, claimIds?:string[]}} p
  * @param {{dev?:boolean}} [opts] override dev detection (tests)
  */
-export async function devLogin(api, { tenant, role, userId, name, claimIds } = {}, opts = {}) {
+export async function devLogin(api, { tenant, role, roles, userId, name, claimIds } = {}, opts = {}) {
   const dev = opts.dev ?? isDevMode();
   if (!dev) throw new Error('Dev login is only available in dev mode');
   if (!tenant || !role) throw new Error('tenant and role are required');
@@ -23,7 +23,7 @@ export async function devLogin(api, { tenant, role, userId, name, claimIds } = {
     tenantId: tenant,
     userId: sub, // contract field
     sub, // field read by the current core implementation
-    roles: [role],
+    roles: Array.isArray(roles) && roles.length ? roles : [role],
     displayName: name ?? `Dev ${role}`,
     name: name ?? `Dev ${role}`,
   };
