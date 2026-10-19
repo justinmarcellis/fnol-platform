@@ -67,25 +67,32 @@ test('SEC2-004: claimant claim reads are projected and limited to the claim the 
 });
 
 test('SEC2-017: auditor and integration roles do not see decrypted names in coverage or extraction responses', async (t) => {
-  t.todo('SEC2-017: GET /claims/{id}/coverage and /documents/{id}/extraction return insured names and pii:true fields to auditor/integration');
   const app = await bootReal();
   try {
     await app.ctx.forTenant(T1).modules.coverage.seedPolicies(policies);
     const id = await createClaimWithPii(app, T1, 'A', { policyNumber: 'AUT-100001' });
     const csr = app.as(T1, ['csr'], 'sec2-csr');
     await call(app, 'POST', `/api/v1/claims/${id}/coverage/verify`, { token: csr });
-    const cov = await call(app, 'GET', `/api/v1/claims/${id}/coverage`, { token: app.as(T1, ['auditor'], 'sec2-aud') });
-    assert.equal(cov.status, 200);
-    assert.ok(JSON.stringify(cov.json.policy ?? {}).length > 2, 'precondition: a policy snapshot is returned');
-    assert.ok(!JSON.stringify(cov.json.policy ?? {}).includes('Avery Testwell'), 'auditor sees named insureds');
+    for (const role of ['auditor', 'integration']) {
+      const cov = await call(app, 'GET', `/api/v1/claims/${id}/coverage`, { token: app.as(T1, [role], 'sec2-aud') });
+      assert.equal(cov.status, 200, `${role} coverage read`);
+      assert.ok(JSON.stringify(cov.json.policy ?? {}).length > 2, 'precondition: a policy snapshot is returned');
+      assert.ok(!cov.text.includes('Avery') && !cov.text.includes('Testwell'), `${role} sees named insureds in coverage`);
+    }
+    // control: staff still see the names (the masking is by role, not a blanket removal)
+    const staff = await call(app, 'GET', `/api/v1/claims/${id}/coverage`, { token: csr });
+    assert.ok(staff.text.includes('Avery Testwell'), 'precondition: csr sees the named insured');
     const doc = await call(app, 'POST', `/api/v1/claims/${id}/documents`, {
       token: csr, body: { filename: 'pr.txt', kind: 'police_report', contentType: 'text/plain', contentBase64: Buffer.from('Police report no: PR-12345\nCited: Mallory Fictionton').toString('base64') },
     });
     await app.ctx.bus.drain();
     for (const role of ['auditor', 'integration']) {
       const ex = await call(app, 'GET', `/api/v1/claims/${id}/documents/${doc.json.id}/extraction`, { token: app.as(T1, [role], 'sec2-x') });
-      assert.ok(!ex.text.includes('Fictionton'), `${role} sees pii:true extraction values`);
+      assert.equal(ex.status, 200, `${role} extraction read`);
+      assert.ok(!ex.text.includes('Fictionton'), `${role} sees pii:true extraction values or their provenance span`);
     }
+    const staffEx = await call(app, 'GET', `/api/v1/claims/${id}/documents/${doc.json.id}/extraction`, { token: csr });
+    assert.ok(staffEx.text.includes('Fictionton'), 'precondition: csr sees the cited party');
   } finally { await app.close(); }
 });
 

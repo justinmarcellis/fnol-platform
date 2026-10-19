@@ -137,3 +137,77 @@ Source: `architecture/security-gate-s3.json`. All are static or locally measured
 | SEC3-004 | Medium | S3-WFL-01 | `src/modules/intake/service.js (narrative, answer, mergeSuggestions, saveDoc), src/modules/intake/conversation.js:~96` | Narrative-derived suggestions are stored in plaintext in intake_sessions.doc. The narrative text and injury or loss details are PII at rest, contrary to the 'answers are encrypted' guarantee. | POST /narrative with up to 8000 chars. suggestFromNarrative pushes {questionId:'loss_description', value: text.slice(0,8000)}, plus injuries and lossDate. mergeSuggestions puts these in doc.suggestions, and saveDoc writes ctx.db.toJson(doc) unencrypted. Any DB dump, backup or SQL read shows free-text accident narratives and injury indicators for unsubmitted or abandoned sessions. Real answers go through encryptPii in intake_answers; suggestions are not covered. Sessions are only expired, never purged. Fix: encrypt doc.suggestions (or their values) with ctx.crypto.encryptPii and decrypt on read, and purge or redact on expiry or submit. | Open |
 | SEC3-005 | Medium | S3-AI-01 | `src/modules/evidence/parse.mjs` | The PDF text scan does not enforce its 100 ms deadline inside scanSection. An unterminated TJ array fills `parts` with millions of strings and holds the event loop for about 1.5 s. | A claimant uploads a roughly 10 MB PDF containing `%PDF-BT ` followed by `[(a)` repeated and a closing `ET`. I ran this locally against extractPdfText and a 12 MB input took 1470 ms, against a 100 ms budget. addDocument calls it synchronously through readableText when the kind is auto-detected, and extract() calls it again. A few concurrent uploads from a claimant token stall every tenant for seconds. SEC2-005's regex and inflate vectors are fixed, and BT-only, stream-only and unbalanced-paren inputs all finish in 150 ms or less. Fix: check the deadline and a parts-count cap inside the scanSection loops, and cap the per-section length. | Open |
 | SEC3-006 | Medium | S3-AI-01 | `src/modules/evidence/parse.mjs` | parseMultipart has no cap on part count and runs synchronously. Many tiny parts can take about 2 s with no time budget. | A request body of about 16 MB made of `--a\r\n\r\n` repeated, with `boundary=a`, took 2250 ms in my local run. Each part allocates slices and header objects, and the upload route is open to claimant, csr, adjuster and integration tokens. The 15 MB BODY_LIMIT is the only bound. Fix: stop after a small maximum number of parts, for example 20, and return a 400 error. | Open |
+
+## 13. Sprint 5 re-review (S5-SEC-01)
+
+Reviewer: ic-security-security-reviewer, 2026-10-19, against the working tree at `bb4b3ba` (Sprint 5 wave 2a). Method: for each finding the code was read at HEAD and then exercised through the running platform (booted app, real HTTP, real SQLite file), not through ticket verdicts. A finding is marked **closed** only when a passing test in `tests/security/` drives the secure behaviour end to end. Where a unit test already existed under `tests/unit/` it was run (192 intake, evidence and AI unit tests pass) but is not what closes the finding. No product code was edited.
+
+### 13.1 Verdicts
+
+| Finding | Verdict | Evidence (what was run) | Test that closes it |
+| --- | --- | --- | --- |
+| SEC2-009 AI output type check | **Fixed** | `cascade.mjs:163` now calls `validateOutput` (types, enums, ranges, lengths). Hostile providers returning `{score:'DROP', band:{}, drivers:'x'}` (severity), `{summary:{}, bullets:'abc'}` (summarize) and `{score:1e9, band:'x'*5000}` are all rejected and fall through to the next tier. | `sec2-availability-ai.test.mjs` SEC2-009 (todo removed, extended with two more tasks) |
+| SEC2-010 tenant attribution | **Fixed** | `createAi` has no default tenant: `ctx.ai.run` on the root object throws `ai_tenant_required`; `ctx.forTenant(t).ai` is tenant-bound. An intake narrative posted over HTTP writes an `ai_inference` row for the tenant (0 rows before, 1 after). | `sec2-availability-ai.test.mjs` SEC2-010 (todo removed; adds root-throws and HTTP narrative checks) |
+| SEC2-011 prompt injection and cloud redaction | **Partly fixed** (stays open, Medium) | Fixed: prompts carry an untrusted-data preamble and delimiters the data cannot close (`_shared.mjs`); cloud tiers always receive redacted input; labelled capitalised names and phones are redacted and restored. Residual, reproduced through `ai.run` to a cloud provider: `claimant: morgan ellis` (lowercase) is sent as is; `Insured: José Müller` is sent as `[NAME_1]é Müller` (accented letters are not matched, so the surname leaks); `Spouse: Priya Natarajan` (label not in the list) is sent as is; `Owner: Morgan A. Ellis III` and `Driver: Ellis, Morgan` are only partly covered (first occurrence of an unlabelled name in free text is not caught until the same name has been seen). Prompt-injection resistance of a live model is still not measured (no live run in this review). | `sec2-availability-ai.test.mjs` SEC2-011 (framing) and `s5-regressions.test.mjs` S5-AI-08 tests (labelled names, golden set, linear time) pass, but they do not cover the residual cases, so the finding is not closed |
+| SEC2-013 ambiguous alternation regex | **Fixed** | `src/core/safe-pattern.mjs` is a whitelist parser (bounded counts, no alternation under a repeat, at most 2 unbounded quantifiers per run, 200 character cap). 21 hostile patterns including `(a|aa)+$`, `(a|a)*b`, `(\w|\d)+x$`, `(a*)*b`, `(.*a){20}`, backreferences and lookahead are rejected; three ordinary formats are accepted. `matches` conditions are checked by the same function and matched with a time budget. | `sec2-availability-ai.test.mjs` SEC2-013 (todo removed) and `s5-regressions.test.mjs` SEC2-013 |
+| SEC2-014 / SEC3-003 question `validation.pattern` | **Fixed** | `PUT /api/v1/config` with each of `^(a+)+$`, `(a|aa)+$`, `^a*a*a*a*a*a*b`, `.*.*.*.*.*x`, `(a?){30}a{30}`, `(\w|\d)+x$` returns 422 with an `unsafe_pattern` error and the stored config version does not change; `POST /config/validate` reports an unsafe rule `matches` value too. Evaluation is also bounded (input cap 200, 50 ms budget). | `s5-regressions.test.mjs` SEC2-014 / SEC3-003 (two tests) |
+| SEC2-017 coverage and extraction PII | **Fixed** | The Sprint 3 gap is closed: `provenance.span` no longer carries the cited name. `auditor` and `integration` get 200 on coverage and extraction with no `Avery`, `Testwell` or `Fictionton` anywhere in the body, while `csr` still sees both (so the masking is by role). | `sec2-rbac-pii.test.mjs` SEC2-017 (todo removed; now checks both roles and a staff control) |
+| SEC3-002 client Idempotency-Key | **Fixed** | Key is stored as `intake:<sessionId>[:<key>]`. Two claimants submitting complete sessions with the same key get two different claims; the attacker cannot read the victim's claim (404); an oversized key gets 400. | `s5-regressions.test.mjs` SEC3-002 |
+| SEC3-004 suggestions at rest | **Fixed** | Narrative `Marlon Zzyzx ... whiplash` posted over HTTP; a dump of every table contains neither string; the session still reads back. Suggestions are sealed in `doc.suggestionsEnc`. | `s5-regressions.test.mjs` SEC3-004 |
+| SEC3-005 PDF scan deadline | **Fixed** | A 12 MB `BT [(a)[(a)... ET` PDF no longer holds the loop for 1.5 s (now well under 400 ms in the test; whole upload request 270 ms). Section part and character caps plus deadline checks are inside `scanSection`. | `s5-regressions.test.mjs` SEC3-005 |
+| SEC3-006 multipart part cap | **Fixed** | 14 MB of `--a\r\n\r\n` returns 400 in about 160 ms (cap 20 parts, 100 ms parse budget). | `s5-regressions.test.mjs` SEC3-006 |
+| SEC3-001 (not on the list, re-checked because S5 touched submit) | **Fixed** | First submit and replay both return exactly `{id, claimNumber, status}` to a claimant; no triage, fraud, siu or routing text in the body. | `s5-regressions.test.mjs` SEC3-001 |
+| Policy-vehicles oracle (S5-WFL-01 then S5-WFL-04) | **Fixed** | See 13.2. Eight failure modes (wrong last name, first name only, wrong ZIP, missing ZIP, missing name, no query, unknown policy, another tenant's policy) return the same status and byte-identical body; another claimant's session gives the same 404 as a missing session; the token name claim is not used; the success body holds only `unitId, year, make, model, vinLast4`. | `s5-regressions.test.mjs` S5-WFL-04 (four tests) |
+
+SEC2-001 to 008, 012, 015, 016, 018 and 019 were closed in Sprint 3 and their tests still pass in this run. SEC2-020, 021 and 022 keep their `t.todo` and still fail as described in section 4 (re-run, same failure messages). SEC2-023 is an informational decision item and was not re-tested.
+
+### 13.2 Security gate for S5-WFL-05 (`src/modules/intake/service.js`, `intake/index.mjs`)
+
+Verdict: **no high or medium finding; no blocker.** Verified by running, not only reading:
+
+- The failure count is per (tenant, HMAC of policy number) in `intake_holder_lockouts`, outside the session document. Ten wrong ZIPs from ten different claimant identities and ten new sessions lock the policy; the correct answer then gets the same 404 body as an unknown policy.
+- The increment is one `UPDATE ... RETURNING` before the coverage result is used. 20 parallel wrong guesses across 20 sessions record `failures >= 20` in a single row; 20 parallel guesses on one session do the same.
+- The table holds no plain policy number (the dump does not contain `AUT-100001`), rows carry the tenant id, and a lock in one tenant did not change the counter or the result in the other (same policy number seeded in both).
+- The per-session limit of 5 is kept; csr is not affected by claimant lockout; an agent that does not produce the policy still gets the uniform 404.
+- Migration in `intake/index.mjs` is `CREATE TABLE IF NOT EXISTS`, boots clean on an existing database.
+
+Low findings from the gate (static read plus the runs above):
+
+| Id | Severity | File | Finding | Scenario | Suggested fix |
+| --- | --- | --- | --- | --- | --- |
+| SEC5-001 | Low | `intake/service.js` `recordPolicyAttempt`, `startSession` | Lockout rows are created for any policy-number string a claimant supplies, including numbers that do not exist, and are never purged. `policyNumber` has no length limit (a 100,000 character value is accepted at session start). | A claimant script starts sessions with random or very long policy numbers and one wrong guess each; each creates a permanent row in a shared table. Slow storage growth, no cross-tenant effect. | Cap `policyNumber` length (for example 40) and delete rows whose window has expired in `expireOrphaned`. |
+| SEC5-002 | Low | `intake/service.js` `POLICY_MAX_FAILURES` | The lock is a design trade-off that lets a third party deny the picker to the real holder: ten wrong guesses on a policy number the attacker knows (for example from a mailing or a claim form) lock that policy for 15 minutes, repeatably. The real holder falls back to the manual vehicle entry. | Attacker sends 10 wrong ZIPs every 15 minutes for a known policy number. | Accept and document, or add a per-source component to the key and alert on locks. |
+| SEC5-003 | Low | `intake/service.js` `holderMatches` | The last name test accepts the last word of the insured name, so an entity insured such as `... Holdings LLC` can be matched with the guess `llc` plus a ZIP; the ZIP then carries the whole check. Lockout caps this to 10 guesses per 15 minutes per policy, but an attacker can try many policy numbers (each has its own budget). | Enumerate policy numbers with `lastName=llc` and the ZIP of a large city. Responses stay uniform, so only a hit reveals anything, and then only vehicle year, make, model and last four VIN characters. | Require the full normalized name for entities, or a second factor for the vehicle list. |
+
+Not covered: response timing (the snapshot lookup always runs, which was read but not measured against a real adapter), and the live Cloud Run deployment.
+
+### 13.3 Routes snapshot
+
+`tests/security/routes.snapshot.json` is **not refreshed**. The role matrix did not change in Sprint 5: the only `openapi.yaml` operation edits since the Sprint 5 baseline (`8fb908a`) are descriptions and the 404 body of `GET /intake/sessions/{sessionId}/policy-vehicles` and the 422 text of `PUT /config`; `x-roles` is the same for every operation, and `routes.test.mjs` (55 tests including the drift check) passes. The new `/runtime-config.js` is a static, unauthenticated, non-API route and is outside the snapshot by design (checked in `s5-regressions.test.mjs`: it carries only the devMode flag and `Cache-Control: no-store`).
+
+### 13.4 Header change (S5-EXP-01)
+
+`X-Fnol-Authorization: Bearer <token>` is accepted when `Authorization` carries no Bearer token. Verified: the same token works in either header; a claimant token is refused (403) on a supervisor route through the alternate header; `X-Tenant-Id` override is still refused for non platform_admin tokens through it; garbage, tampered signature, forged payload, truncated and scheme-less tokens get 401 in either header; when both headers are present `Authorization` wins, so a bad primary header is not rescued by a good alternate one (fails closed). Residual note: a caller that sends an unrelated `Authorization: Bearer <IAP token>` plus a good `X-Fnol-Authorization` is rejected; this matches the IAP behaviour seen in the incident (IAP removes its own header) but should be rechecked on the live service.
+
+### 13.5 True tally of open findings (2026-10-19)
+
+Counted from this table, not from ticket status.
+
+| Severity | Open | Which |
+| --- | --- | --- |
+| Critical | 0 | |
+| High | 0 | |
+| Medium | 1 | SEC2-011 residual (partial name redaction before cloud calls) |
+| Low | 7 | SEC2-020 (no signed webhook timestamp), SEC2-021 (`/healthz` lists modules and tenant count), SEC2-022 (`system:triage` actor string), SEC2-023 (informational decision: adjuster inbox scope and missing `claim.pii.read` audit on first view), SEC5-001, SEC5-002, SEC5-003 |
+| Total | 8 | |
+
+Closed with a passing real test in this review: SEC2-009, 010, 013, 014, 017, SEC3-001 to 006 (12 findings). Compared with the Sprint 3 record (8 open SEC2 and 5 open SEC3 findings, 13 in all), 5 SEC2 findings (009, 010, 013, 014, 017) and all 5 open SEC3 findings are closed; SEC2-011, 020, 021, 022 and 023 stay open and three new Low findings were added.
+
+Known accepted risks (not counted above):
+
+- **R2, devMode on the IAP-only deployment.** Dev tokens can be minted by anyone who passes IAP, with any role. Deferred to Sprint 6 by decision; the `/runtime-config.js` route now publishes the flag so the UI works, which does not widen the risk.
+- **KMS spike envelope is not tenant-bound** (`architecture/spikes`). It is a spike and is not wired into the runtime.
+
+### 13.6 Test state
+
+Full `npm test` run twice at review end: 1456 tests, 1445 pass, 7 skipped, 3 todo, 1 fail. Security `t.todo` count fell from 7 (baseline in `org/quality-baseline.txt`) to 3 (SEC2-020, 021, 022); `tests/security` alone is 0 failures. The one failure is outside this scope and intermittent, and it also fails on the Sprint 5 parent commit `7843f5e` (2 of 3 isolated runs there), so it is not caused by the security tests: `tests/ui/csr.test.mjs` "CSR rear-end claim ... subrogation flag" times out waiting for `input[name="lastName"]` in the party sub-form (passes in about half of isolated runs). It is a UI timing defect for the experience team, not a security finding.

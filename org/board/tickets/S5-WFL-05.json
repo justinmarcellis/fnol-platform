@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T03:18:54.887Z",
   "history": [
@@ -22,6 +22,11 @@
       "at": "2026-10-19T03:22:53.220Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T03:37:19.450Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-WFL-05",
@@ -63,6 +68,12 @@
         "by": "qe-acceptance",
         "verdict": "rework",
         "reason": "tests/unit/intake still 77/78: policy-vehicles-holder.test.js 'four failures then the right answer still succeeds' fails because the cumulative per-policy lockout carries over; holder test needs lockout-table reset (path must be added to ticket or manager must authorize the edit)"
+      },
+      {
+        "at": "2026-10-19T03:37:19.450Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Security gate covered by S5-SEC-01 re-review (section 13: per-policy lockout verified, no high); full npm test 0 fail"
       }
     ],
     "firstPass": false
@@ -111,5 +122,6 @@
         "usd": 0.0888
       }
     }
-  }
+  },
+  "doneAt": "2026-10-19T03:37:19.450Z"
 }
