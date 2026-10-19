@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-19T19:57:19.098Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T20:24:52.328Z",
+      "from": "review",
+      "to": "in_progress"
     }
   ],
   "id": "S6-BUG-03",
@@ -36,5 +41,17 @@
     "Full npm test: no new failures"
   ],
   "brief": "Defect list comes from the audit phase.",
-  "startedAt": "2026-10-19T19:28:18.238Z"
+  "startedAt": "2026-10-19T19:28:18.238Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-19T20:24:52.328Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Independent run on port 18703 (screenshots /tmp/qe-adj-18703/audit and /tmp/qe-adj-18703/pw). Most of the fix holds: supervisors land on All claims and adjusters on My claims; the Policy panel is filled in; AI suggestions now show provider, model and confidence; the false 'could not reach its confidence threshold' text is gone (it now names carrier policy); KPT-000001/AUR-000001 show the police report; I saw no failed API calls on any adjuster or supervisor claim for either tenant; adjuster tests pass 76/76. BLOCKER, criterion 2 (audit clean, no raw codes): on Aurelia, the 'Why this triage' panel shows raw coverage codes to both the adjuster and the supervisor. AUR-2026-000007 and AUR-2026-000014 read 'Handling complexity is medium because coverage outcome is not_covered', and AUR-2026-000004 reads '...coverage outcome is needs_review'. The text comes from src/modules/triage/complexity.mjs:18 (reason string) through triage/explain.mjs. The adjuster view shows it as-is, and nothing was posted to the hub about it, which contradicts the report's claim of 'no raw codes'. Fix: humanise the coverage-outcome phrase in the adjuster render or service (or request the change from the triage owner and show a mapped label in the meantime), and add a regression test with a not_covered/needs_review claim. Minor: the IC's note says Kestrel Fast-tracked reads 0, but the supervisor inbox shows 3 (KPT-000002/7/12 are fast-tracked again in the current seed); please make sure no test hard-codes that count. Full npm test: 1635 pass, 10 fail (3 of them TODO). None of the failures are in adjuster files: route roles for agent (claims/coverage), tenants.test queues, mock-pas PII hashes, /config/public, admin/CSR/claimant UI. They come from other teams' changes that are still in progress. The adjuster-landing 404 in the audit is /favicon.ico (curl confirms 404), which is outside this ticket."
+      }
+    ],
+    "firstPass": false
+  }
 }

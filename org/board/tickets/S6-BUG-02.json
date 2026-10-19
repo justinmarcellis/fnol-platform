@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-19T19:34:53.608Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T20:17:02.506Z",
+      "from": "review",
+      "to": "in_progress"
     }
   ],
   "id": "S6-BUG-02",
@@ -34,5 +39,17 @@
     "Full npm test: no new failures"
   ],
   "brief": "Defect list comes from the audit phase.",
-  "startedAt": "2026-10-19T19:00:21.612Z"
+  "startedAt": "2026-10-19T19:00:21.612Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-19T20:17:02.504Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Not demo-ready on the agent desk, and the ticket's own regression test fails in the full suite. (1) Criterion 3 failed: npm test on the current tree has 10 failures. One of them is the new tests/ui/csr.test.mjs:520 'S6-BUG-02 agent desk': it times out waiting for PA-WI-3249113, because GET /policies is now scoped to the agent's own book (coverage/routes.mjs agentOnly/producerId, DATA-5). It fails the same way when tests/ui/csr.test.mjs runs alone. Change the test to search a policy produced by the agent persona (agt-aur-0142). (2) Criterion 2 / sponsor complaint 'policy information does not populate': the server now allows agent reads, but src/web/csr/roles.js AGENT_ACCESS keeps every flag false. As the agent persona in both tenants, GET /claims?limit=10&sort=-reportedAt returns 200 with items (AUR-2026-000014, KPT-2026-000010), and GET /policies/{own}/snapshot passes auth (400 only without asOf). The desk still shows 'Coverage, driver and vehicle details are not available to agents yet' with no coverages for PA-WI-2293338 and PA-MI-1310724. It also hides Recent claims behind 'shown to CSRs and the claims team' above an empty grey bar. Turn on policySnapshot, recentClaims and claimView, plus policyVehicles if the intake route allows it for produced policies. Show the full context for the agent's own policies and prove it with the agent UI test, with no failed calls. Verified OK on port 18702 (demo-audit: CSR and agent screens clean in both tenants, no console errors or failed calls). CSR policy search returns policy rows (HO-IL 3, PA-WI 29, HO-WI 28, PA-MI 37, CA-MI 28). Selecting one fills the full context: coverages, drivers, vehicles, and the vehicle picker for PA-MI. The tenant hint is correct. The CSR and Kestrel S6-BUG-02 UI tests and all 28 CSR unit tests pass. The other 9 npm failures are outside this area (admin UI, claimant UI, tenants config, security route roles, SEC2 TODOs)."
+      }
+    ],
+    "firstPass": false
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-19T19:59:43.535Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T20:37:28.731Z",
+      "from": "review",
+      "to": "in_progress"
     }
   ],
   "id": "S6-BUG-04",
@@ -36,5 +41,17 @@
     "Full npm test: no new failures"
   ],
   "brief": "Defect list comes from the audit phase.",
-  "startedAt": "2026-10-19T19:35:25.970Z"
+  "startedAt": "2026-10-19T19:35:25.970Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-19T20:37:28.727Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Admin area is otherwise demo-ready (both tenants, port 18704). All 9 sections load with no console errors or failed API calls. GET /config/versions works and history shows 'Taylor Brandt' / 'System (tenant file)' and readable section names. The save preview shows 'AI settings > Token budget per claim'. Only one toast appears. The webhook secret panel stays until the admin confirms. There is no sideways scroll at 390px, and save/diff work on mobile. tests/ui/admin.test.mjs passes 15/15 and tests/unit/web/admin passes. BLOCKER (criterion 3, full npm test, no new failures): in the current tree, your own new test tests/unit/config/versions-public.test.mjs:45 'GET /config/public marks lines a claimant cannot use on the web (Kestrel)' fails. It asserts availableLobs == [] for a Kestrel claimant. S6-BUG-05 (in progress, owns tenants/) has added claimant_web to Kestrel personal_auto so the claimant auto demo can work, so the API correctly returns ['personal_auto']. Fix it inside your paths: make the expectation come from the tenant's lob channels, or use a fixture config instead of the live tenant file, so the test stops encoding another ticket's tenant data. Also update the hub note to the experience hub that says 'Kestrel claimant_web -> []'. Other full-suite failures are not yours: routes snapshot drift (event-types, agent roles), S6-BUG-01 and S6-BUG-02. The earlier admin webhook UI failures came from S6-BUG-05's event-type allow-list and are resolved by its claim.created alias. Optional polish: the empty Default queue select should show a 'Platform chooses' label, and the rule hint 'Queues you can route to' lists raw queue ids instead of labels."
+      }
+    ],
+    "firstPass": false
+  }
 }

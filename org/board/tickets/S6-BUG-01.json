@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.376Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-19T19:27:22.244Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T20:10:47.799Z",
+      "from": "review",
+      "to": "in_progress"
     }
   ],
   "id": "S6-BUG-01",
@@ -34,5 +39,17 @@
     "Full npm test: no new failures"
   ],
   "brief": "Defect list comes from the audit phase of the bug-bash workflow.",
-  "startedAt": "2026-10-19T19:00:09.351Z"
+  "startedAt": "2026-10-19T19:00:09.351Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-19T20:10:47.798Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Independent check on :18701. Full npm test passes (1645 pass, 0 fail, 7 skipped). demo-audit is clean for claimant personas in both tenants. Guided homeowners flow (Aurelia) works end to end: optional questions with Skip, review with Edit, submit, status timeline, auto photo upload, reload via ?claim=, and the Track a claim card, all with no console or API errors. Spanish and the auto holder check (matched holder, no vehicles) work. Kestrel dead-end is explained and escalated to the product hub. ACCEPTANCE FAILS ON CHAT MODE, which the audit does not reach. (1) Raw codes on a claimant screen, against AC2: if the claimant starts chat with their story ('Yesterday evening a pipe under my kitchen sink burst and water flooded the kitchen and the basement. Nobody was hurt.'), each suggestion bubble shows 'AI suggestion (local, local-rules-v1), confidence 90%' and 'Why: Matched 1 narrative cue(s); loss type 'flood'.' This is the raw provider explanation (app.js:665 renders m.ai.explanation verbatim). It says flood although the claimant picked Water damage / plumbing. Keep provider, model and confidence, but present the explanation in plain language, localized, with no internal codes. (2) Transcript glitch: after Confirm, the confirmed values ('No' and the whole story) appear as YOU bubbles under the still-open 'When did the loss happen?', so the claimant appears to have answered the date with them. Show the confirmation in the suggestion bubble, not as a new user reply. Also, the date in the story ('Yesterday evening') is not used, so the date is asked again. (3) Natural answers are rejected: 'It happened yesterday, October 17' -> 'Please enter a date...'; 'about $1,800' -> 'Please enter a number.' The chat parser should pull the date or amount out of a sentence. The ticket claims chat 'reads natural dates'. Add regression tests for (1) to (3) in tests/unit/web/claimant and tests/ui/claimant.test.mjs (a chat run that starts with a narrative). Minor, not blocking: Spanish question text from the server has no accents ('Cuando ocurrio la perdida?'). Both WI and IL fraud notices show for an IL policy. Repro scripts: /tmp/qe-acc/chat6.mjs, /tmp/qe-acc/walk.mjs (screenshots in /tmp/qe-acc/chat6, /tmp/qe-acc/walk-chat)."
+      }
+    ],
+    "firstPass": false
+  }
 }

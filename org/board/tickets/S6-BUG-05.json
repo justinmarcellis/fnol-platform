@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T16:38:42.384Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T19:57:52.038Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T20:36:57.920Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T20:42:24.909Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-BUG-05",
@@ -41,5 +51,18 @@
     "Audit clean for shared kit and API errors across all personas; full npm test: no new failures"
   ],
   "brief": "Defect list comes from the audit phase. Do not edit tests/unit/web, tests/unit/adjuster, tests/unit/config (other fixers own them).",
-  "startedAt": "2026-10-19T19:57:52.038Z"
+  "startedAt": "2026-10-19T19:57:52.038Z",
+  "doneAt": "2026-10-19T20:42:24.909Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T20:42:24.908Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Independent check on a fresh deployed-config server (port 18705). demo-audit: 20/20 persona screens clean (no console errors, no failed API calls, no raw/empty values); screenshots reviewed (CSR claim view, adjuster claim AUR-2026-000001 with single 90% confidence, humanized cause/status/line, no hidden-AI NBA text; Kestrel claimant start on personal auto with policy prefilled). API: CSR policy search returns policy rows by name, ZIP, prefix and full number in both tenants; agent GET /claims?limit=10&sort=-reportedAt 200 (4 Aurelia, 3 Kestrel) and agent policy search scoped to produced policies; admin GET /config/versions 200; claimant personas hold PA-IL-3644079 (3 vehicles) and PA-MI-1310724 (2 vehicles), policy-vehicles returns them with correct last name+ZIP and 404 with wrong name; policy snapshots populate coverages and vehicles. Demo claims: loss-to-report 0-2 days except deliberate scenarios (12-day theft carries the only fraud score; 8-day prior-loss wind story); every claim insured matches policy. npm test: 1702 tests, 1688 pass, 4 fail; all 4 are tests owned by other tickets that encode behaviour this ticket was required to change (security route snapshot for agent/claimant roles + /integrations/event-types; tests/unit/config/versions-public.test.mjs:50 and tests/ui/claimant.test.mjs:577 Kestrel web channel; tests/ui/csr.test.mjs:520 agent searching a non-produced policy). Requests are posted to security, experience, architecture, platform and quality hubs; these are a scoping gap (IMP-14), not defects. Conditions before sprint close: security reviews and refreshes routes.snapshot.json; S6-BUG-01/02/04 owners update those 3 tests; S6-BUG-02 wires the agent Recent claims panel to GET /claims (it is still empty in the agent desk screenshot even though the API now returns rows)."
+      }
+    ],
+    "firstPass": true
+  }
 }
