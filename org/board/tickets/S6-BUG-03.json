@@ -1,0 +1,28 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T16:38:42.384Z",
+  "history": [],
+  "id": "S6-BUG-03",
+  "team": "experience",
+  "title": "Bug bash: adjuster workbench",
+  "story": "As the sponsor I want the adjuster demo to read as a finished product: human labels, consistent AI confidence, a useful activity feed",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-adjuster-view-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/adjuster/",
+    "src/modules/adjuster/",
+    "tests/ui/adjuster.test.mjs",
+    "tests/unit/web/adjuster/",
+    "tests/unit/adjuster/"
+  ],
+  "acceptance": [
+    "Every defect assigned to area 'adjuster' is fixed with a regression test, or explained",
+    "Audit clean on adjuster and supervisor screens for both tenants",
+    "Full npm test: no new failures"
+  ],
+  "brief": "Defect list comes from the audit phase."
+}

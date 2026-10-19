@@ -1,0 +1,26 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T16:38:42.384Z",
+  "history": [],
+  "id": "S6-BUG-02",
+  "team": "experience",
+  "title": "Bug bash: CSR and agent desk",
+  "story": "As the sponsor I want the CSR desk demo to find policies and populate the caller's policy context every time",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-csr-portal-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/csr/",
+    "tests/ui/csr.test.mjs",
+    "tests/unit/web/csr/"
+  ],
+  "acceptance": [
+    "Every defect assigned to area 'csr' is fixed with a regression test, or explained",
+    "Audit clean on CSR and agent screens for both tenants; policy search returns policy rows and selecting one populates the policy context",
+    "Full npm test: no new failures"
+  ],
+  "brief": "Defect list comes from the audit phase."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T16:38:42.376Z",
+  "history": [],
+  "id": "S6-BUG-01",
+  "team": "experience",
+  "title": "Bug bash: claimant app",
+  "story": "As the sponsor I want the claimant demo to work end to end with real data on every screen",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-claimant-web-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/claimant/",
+    "tests/ui/claimant.test.mjs",
+    "tests/unit/web/claimant/"
+  ],
+  "acceptance": [
+    "Every defect assigned to area 'claimant' by the bug-bash audit is fixed with a regression test, or explained",
+    "node scripts/demo-audit.mjs shows no console errors, failed API calls, raw codes or empty placeholders on claimant screens for both tenants",
+    "Full npm test: no new failures"
+  ],
+  "brief": "Defect list comes from the audit phase of the bug-bash workflow."
+}

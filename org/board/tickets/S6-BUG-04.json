@@ -1,0 +1,28 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T16:38:42.384Z",
+  "history": [],
+  "id": "S6-BUG-04",
+  "team": "experience",
+  "title": "Bug bash: carrier admin console",
+  "story": "As the sponsor I want every admin section to load and save without errors",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-experience-admin-ui-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/admin/",
+    "src/modules/config/",
+    "tests/ui/admin.test.mjs",
+    "tests/unit/web/admin/",
+    "tests/unit/config/"
+  ],
+  "acceptance": [
+    "Every defect assigned to area 'admin' is fixed with a regression test, or explained",
+    "Audit clean on admin screens for both tenants",
+    "Full npm test: no new failures"
+  ],
+  "brief": "Defect list comes from the audit phase."
+}

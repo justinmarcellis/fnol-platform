@@ -1,0 +1,38 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T16:38:42.384Z",
+  "history": [],
+  "id": "S6-BUG-05",
+  "team": "integration",
+  "title": "Bug bash: demo data, personas, shared kit and server modules",
+  "story": "As the sponsor I want the demo data and personas to tell a coherent story (auto claimant with vehicles, agent with produced policies, sensible dates) and every API the apps call to exist and allow the right roles",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-integration-integration-lead",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "scripts/seed.mjs",
+    "scripts/demo-data.mjs",
+    "src/core/dev-personas.mjs",
+    "src/web/shared/",
+    "src/modules/coverage/",
+    "src/modules/intake/",
+    "src/modules/claims/",
+    "src/modules/triage/",
+    "src/modules/rules/",
+    "src/modules/integrations/",
+    "tenants/",
+    "tests/unit/",
+    "tests/integration/",
+    "tests/e2e/",
+    "architecture/contracts/openapi.yaml"
+  ],
+  "acceptance": [
+    "Every defect assigned to area 'data' is fixed with a regression test, or explained",
+    "Each tenant's claimant persona holds a personal auto policy with vehicles and a consistent last name and ZIP; the agent persona produces seeded policies; demo claims have plausible loss and report dates",
+    "Audit clean for shared kit and API errors across all personas; full npm test: no new failures"
+  ],
+  "brief": "Defect list comes from the audit phase. Do not edit tests/unit/web, tests/unit/adjuster, tests/unit/config (other fixers own them)."
+}
