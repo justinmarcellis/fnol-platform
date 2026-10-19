@@ -1,8 +1,14 @@
 {
-  "status": "ready",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:28:28.987Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T12:48:10.048Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
   "id": "S6-EXP-06",
   "team": "experience",
   "title": "Carrier admin console redesign",
@@ -27,5 +33,6 @@
   "brief": "Compare with docs/design/before/admin*.png. Do not edit src/web/shared/.",
   "valueDrivers": [
     "VD-3"
-  ]
+  ],
+  "startedAt": "2026-10-19T12:48:10.048Z"
 }
