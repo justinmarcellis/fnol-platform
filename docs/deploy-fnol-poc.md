@@ -22,11 +22,25 @@ gcloud config set project $PROJECT
 
 # 2. APIs
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com \
-  cloudbuild.googleapis.com iap.googleapis.com secretmanager.googleapis.com
+  cloudbuild.googleapis.com iap.googleapis.com secretmanager.googleapis.com \
+  cloudresourcemanager.googleapis.com
 
-# 3. Image
+# 3. Image. The org enforces cloudbuild.disableCreateDefaultServiceAccount, so the
+#    build runs as a dedicated SA and logs to Cloud Logging only (no storage.admin).
 gcloud artifacts repositories create fnol --repository-format=docker --location=$REGION
-gcloud builds submit --tag $REGION-docker.pkg.dev/$PROJECT/fnol/platform:poc .
+BUILD_SA=fnol-build@$PROJECT.iam.gserviceaccount.com
+gcloud iam service-accounts create fnol-build --display-name="FNOL PoC image build"
+for r in roles/artifactregistry.writer roles/logging.logWriter; do
+  gcloud projects add-iam-policy-binding $PROJECT --condition=None --member=serviceAccount:$BUILD_SA --role=$r
+done
+gcloud storage buckets add-iam-policy-binding gs://${PROJECT}_${REGION}_cloudbuild \
+  --member=serviceAccount:$BUILD_SA --role=roles/storage.objectViewer
+IMAGE=$REGION-docker.pkg.dev/$PROJECT/fnol/platform:poc
+printf 'steps:\n- name: gcr.io/cloud-builders/docker\n  args: [build, -t, %s, .]\nimages: [%s]\noptions:\n  logging: CLOUD_LOGGING_ONLY\n' \
+  "$IMAGE" "$IMAGE" > /tmp/cloudbuild.yaml
+gcloud builds submit --region=$REGION --config=/tmp/cloudbuild.yaml \
+  --service-account=projects/$PROJECT/serviceAccounts/$BUILD_SA \
+  --default-buckets-behavior=regional-user-owned-bucket .
 
 # 4. Runtime identity with no roles beyond what the service needs
 gcloud iam service-accounts create fnol-run --display-name="FNOL PoC runtime"
@@ -35,15 +49,20 @@ gcloud iam service-accounts create fnol-run --display-name="FNOL PoC runtime"
 gcloud run deploy fnol-platform --image $REGION-docker.pkg.dev/$PROJECT/fnol/platform:poc \
   --region $REGION --service-account fnol-run@$PROJECT.iam.gserviceaccount.com \
   --no-allow-unauthenticated --max-instances 1 --min-instances 0 --memory 1Gi --port 8080 \
-  --iap
+  --set-env-vars NODE_ENV=development --iap
 gcloud iap web add-iam-policy-binding --member=user:<sponsor-email> \
   --role=roles/iap.httpsResourceAccessor --region $REGION --resource-type=cloud-run --service fnol-platform
 
 # 6. Verify
 #   - open the service URL in a browser signed in as the sponsor
-#   - /healthz returns ok with 11 modules and 2 tenants
+#   - the run.app frontend reserves /healthz (Google 404), so check the revision
+#     logs instead: four "seeded ... 25 policies" lines and "demo-data summary: created 29"
 #   - run docs/demo-script.md
 ```
+
+The image starts via `scripts/dev.mjs`, which seeds policies and demo claims on a new database and binds `HOST=0.0.0.0`. `NODE_ENV=development` turns on devMode. The startup log prints dev tokens; they only work against this ephemeral instance, behind IAP.
+
+If `gcloud` says it is using `CLOUDSDK_AUTH_ACCESS_TOKEN`, run it as `env -u CLOUDSDK_AUTH_ACCESS_TOKEN gcloud ...` so the activated service account is used.
 
 If IAP for Cloud Run is unavailable in the project, fall back to `--no-allow-unauthenticated` and `gcloud run services proxy fnol-platform --region $REGION` for local browser access.
 
