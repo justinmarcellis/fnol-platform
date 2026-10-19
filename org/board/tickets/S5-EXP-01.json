@@ -1,8 +1,19 @@
 {
-  "status": "ready",
+  "status": "review",
   "dependsOn": [],
   "createdAt": "2026-10-19T02:13:58.506Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T02:14:41.210Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T02:17:04.932Z",
+      "from": "in_progress",
+      "to": "review"
+    }
+  ],
   "id": "S5-EXP-01",
   "team": "experience",
   "title": "Web apps work on the deployed service behind IAP",
@@ -36,5 +47,6 @@
   "brief": "Squad ticket across experience and platform (playbook v2: a feature needing UI and server changes is one ticket). src/server.mjs and src/core/auth.mjs are Platform-owned and granted to this ticket. Keep zero dependencies. Static serving is in src/server.mjs resolveStatic; add the runtime-config route there (it is not under /api). Do not touch src/web/claimant/structured.js, flow.js, app.js or src/modules/intake (S5-WFL-04 runs in parallel).",
   "valueDrivers": [
     "VD-1"
-  ]
+  ],
+  "startedAt": "2026-10-19T02:14:41.210Z"
 }

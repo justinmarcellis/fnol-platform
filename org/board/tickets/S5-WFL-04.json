@@ -1,8 +1,24 @@
 {
-  "status": "ready",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T02:13:58.507Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T02:14:42.006Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T02:17:28.422Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T02:18:03.296Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "id": "S5-WFL-04",
   "team": "workflow",
   "title": "Verify the claimant as policy holder by last name and ZIP; restore the claimant vehicle picker",
@@ -36,5 +52,19 @@
   "valueDrivers": [
     "VD-1",
     "VD-7"
-  ]
+  ],
+  "startedAt": "2026-10-19T02:14:42.006Z",
+  "doneAt": "2026-10-19T02:18:03.296Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T02:18:03.294Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 6 criteria met: holder check (last name+ZIP) with uniform 404 deep-equal, 5-failure lockout, agent/CSR rules kept, claimant UI tests 9/9, intake unit+integration 80/80, e2e+security 372 pass 0 fail (matches baseline)"
+      }
+    ],
+    "firstPass": true
+  }
 }
