@@ -14,6 +14,8 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund || npm install --omi
 COPY src ./src
 COPY scripts ./scripts
 COPY tenants ./tenants
+# Synthetic generator used by scripts/seed.mjs and scripts/demo-data.mjs.
+COPY tests/synthetic ./tests/synthetic
 
 # /data holds the SQLite file (ephemeral on Cloud Run, see docs/deployment.md);
 # /app/.secrets receives master.key from a Secret Manager volume mount.

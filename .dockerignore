@@ -13,6 +13,7 @@ infra
 .secrets
 data
 tests
+!tests/synthetic
 docs
 org
 architecture
