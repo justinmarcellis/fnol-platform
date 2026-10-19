@@ -1,0 +1,33 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:28:28.986Z",
+  "history": [],
+  "id": "S6-EXP-04",
+  "team": "experience",
+  "title": "CSR desk redesign: two-pane assisted intake; fix the intermittent CSR test",
+  "story": "As a contact-centre CSR on a live call I want the caller's policy context and the guided intake side by side so that I can take a claim quickly without hunting across the screen",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-csr-portal-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/csr/",
+    "tests/ui/csr.test.mjs",
+    "tests/unit/web/csr/",
+    "docs/design/screens/csr-*.png"
+  ],
+  "acceptance": [
+    "Uses fx-app-shell, the design system and <fx-demo-bar> in the demo slot; old dev form gone when the bar is present",
+    "Desk layout at 1440 px: a search bar with type-ahead results as a proper table; after selecting a policy a left context panel (policy, named insured, vehicles, coverages as cards with status chips) and the guided intake on the right with a progress indicator; recent claims table with status chips, humanized dates and line-of-business labels; keyboard friendly (Enter selects, visible focus)",
+    "S5-QE-03 carry-over: the rear-end subrogation test no longer fails intermittently under full-suite load. Capture a Playwright trace of a failure (or show by analysis why it can no longer happen), name the root cause (test or product) in the ticket result, fix it, and show 3 consecutive full npm test runs with 0 failures",
+    "tests/ui/csr.test.mjs and tests/unit/web/csr/ updated to the new DOM and passing; full npm test no new failures",
+    "Screenshots: docs/design/screens/csr-search, -context-intake, -recent at 1440x900; reviewer opens them"
+  ],
+  "brief": "PI-1 re-measure (org/scorecards/interventions.json): this is a single squad ticket by design. Compare with docs/design/before/csr*.png. Do not edit src/web/shared/.",
+  "valueDrivers": [
+    "VD-1",
+    "VD-2"
+  ]
+}

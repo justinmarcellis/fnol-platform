@@ -1,0 +1,31 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:28:28.987Z",
+  "history": [],
+  "id": "S6-EXP-06",
+  "team": "experience",
+  "title": "Carrier admin console redesign",
+  "story": "As a carrier admin I want a settings console that looks like a real enterprise admin product so that configuring the platform feels safe and obvious",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-admin-ui-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/admin/",
+    "tests/ui/admin.test.mjs",
+    "tests/unit/web/admin/",
+    "docs/design/screens/admin-*.png"
+  ],
+  "acceptance": [
+    "Uses fx-app-shell, the design system and <fx-demo-bar>; old dev form gone when the bar is present",
+    "Left section navigation (branding, intake questions, routing and fast-track rules, regulatory timers, integrations and webhooks, AI settings, KPIs); each section as cards with labelled forms, help text, and a clear save bar showing unsaved changes and a diff preview before saving; KPI dashboard with stat tiles",
+    "Existing admin behaviour (versioned PUT /config with If-Match, webhook management) still works; tests/ui/admin.test.mjs and tests/unit/web/admin/ updated and passing; full npm test no new failures",
+    "Screenshots: docs/design/screens/admin-branding, -rules, -kpis at 1440x900; reviewer opens them"
+  ],
+  "brief": "Compare with docs/design/before/admin*.png. Do not edit src/web/shared/.",
+  "valueDrivers": [
+    "VD-3"
+  ]
+}

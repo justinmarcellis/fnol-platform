@@ -1,0 +1,33 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:28:28.984Z",
+  "history": [],
+  "id": "S6-EXP-03",
+  "team": "experience",
+  "title": "Claimant app redesign: production-grade guided FNOL",
+  "story": "As a policyholder reporting a loss on my phone I want a calm, clear, branded step-by-step experience so that I trust the insurer and finish my claim in minutes",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-claimant-web-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/claimant/",
+    "tests/ui/claimant.test.mjs",
+    "tests/ui/deployed-host.test.mjs",
+    "tests/unit/web/claimant/",
+    "docs/design/screens/claimant-*.png"
+  ],
+  "acceptance": [
+    "Uses fx-app-shell and the design system from S6-EXP-01 (docs/design/design-system.md) and places <fx-demo-bar> (S6-EXP-02) in the shell's demo slot; the old dev sign-in form is gone when the bar is present",
+    "Mobile-first guided flow: a welcome screen with the tenant brand and what to expect, a progress indicator, one focused question or group per step with large touch targets, inline validation, the last name + ZIP holder step and vehicle picker as a polished card, a review screen, and a confirmation screen with the claim number, what happens next as a timeline, and the claim status view; English and Spanish",
+    "Dates, statuses and enums via src/web/shared/format.js (no raw ISO timestamps or snake_case on screen)",
+    "All existing claimant behaviour still works: tests/ui/claimant.test.mjs and tests/unit/web/claimant/ updated to the new DOM and passing; tests/ui/deployed-host.test.mjs passing; full npm test no new failures",
+    "Screenshots written by the UI test: docs/design/screens/claimant-welcome, -question, -vehicle, -review, -confirmation at 390x844 and claimant-welcome at 1440x900; the reviewer opens them and rejects anything that looks unstyled or crude"
+  ],
+  "brief": "Compare with docs/design/before/claimant.png. Read docs/design/design-system.md and src/web/shared/kitchen-sink.html first. Do not edit src/web/shared/ (post a request to the experience hub if a shared component needs a change and work around it locally).",
+  "valueDrivers": [
+    "VD-1"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:28:28.987Z",
+  "history": [],
+  "id": "S6-EXP-05",
+  "team": "experience",
+  "title": "Adjuster workbench redesign: inbox and claim first view",
+  "story": "As an adjuster I want a dense, scannable inbox and a first view that tells me the claim story at a glance so that I can act on the right claims first",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-adjuster-view-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/adjuster/",
+    "tests/ui/adjuster.test.mjs",
+    "tests/unit/web/adjuster/",
+    "docs/design/screens/adjuster-*.png"
+  ],
+  "acceptance": [
+    "Uses fx-app-shell, the design system and <fx-demo-bar>; old dev form gone when the bar is present",
+    "Inbox: KPI tiles (open, due today, overdue, fast-tracked), a table with claim number, insured, line, severity chip, status chip, regulatory timer countdown (colour by urgency), assigned date; filters (mine/all, status, severity) and sorting; good empty state",
+    "Claim first view: header with claim number, status, severity, line, loss date and location; AI summary card that always shows provider, model, confidence and explanation (standards: never AI output without them); next best actions as actionable rows; regulatory timers; parties, vehicles and coverage cards; documents; audit timeline; the subrogation flag visible when present",
+    "tests/ui/adjuster.test.mjs and tests/unit/web/adjuster/ updated and passing; full npm test no new failures",
+    "Screenshots: docs/design/screens/adjuster-inbox and -claim at 1440x900 with the demo adjuster persona (inbox not empty); reviewer opens them"
+  ],
+  "brief": "Compare with docs/design/before/adjuster*.png. Do not edit src/web/shared/.",
+  "valueDrivers": [
+    "VD-1",
+    "VD-5"
+  ]
+}

@@ -1,8 +1,14 @@
 {
-  "status": "ready",
+  "status": "in_progress",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:26:39.630Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T12:27:11.862Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
   "id": "S6-EXP-02",
   "team": "experience",
   "title": "Demo persona switcher: tenant and persona dropdown on every app",
@@ -33,5 +39,6 @@
   "brief": "Seed and demo data: scripts/seed.mjs, scripts/demo-data.mjs, data/dev-users.json. Assignment: read how claims get assigned (src/modules/rules routing, claims assignee) to pick the adjuster with most claims; query through the store with the tenant ctx. Register the route in src/server.mjs only behind ctx.config.devMode. Do not edit the four app folders (Wave B wires the bar into each app) or tokens.css/components.css (S6-EXP-01). Post the persona list contract (shape) to the experience hub.",
   "valueDrivers": [
     "VD-1"
-  ]
+  ],
+  "startedAt": "2026-10-19T12:27:11.862Z"
 }
