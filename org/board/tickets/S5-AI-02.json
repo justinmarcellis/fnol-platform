@@ -1,0 +1,34 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:51:20.342Z",
+  "history": [],
+  "id": "S5-AI-02",
+  "team": "ai",
+  "title": "Mask PII in provenance spans and coverage for auditor and integration roles (SEC2-017)",
+  "story": "As a carrier privacy officer I want auditor and integration roles to never see claimant or cited-party names, including inside provenance spans, so that redaction is consistent across endpoints",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-ai-extraction-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/modules/evidence/routes.mjs",
+    "src/modules/coverage/routes.mjs",
+    "tests/unit/evidence/span-redaction.test.mjs",
+    "tests/unit/coverage/pii-roles.test.mjs"
+  ],
+  "contracts": [
+    "architecture/security-review-s2.md SEC2-017 and section 11 evidence"
+  ],
+  "acceptance": [
+    "For auditor and integration, GET /documents/{id}/extraction returns no pii:true values and provenance.span is masked or dropped whenever it contains any pii field value (the 'Cited: Mallory Fictionton' case from section 11 is the test fixture)",
+    "GET /claims/{id}/coverage applies the same PII_ROLES rule as claims/routes.mjs for auditor and integration",
+    "Adjuster and supervisor views unchanged (test)",
+    "The SEC2-017 todo test in tests/security/sec2-rbac-pii.test.mjs passes when run locally; do not edit tests/security; tests/e2e and tests/security show no new failures"
+  ],
+  "brief": "Squad ticket across ai (evidence) and integrations (coverage) per playbook v2. Reuse the PII_ROLES rule from src/modules/claims/routes.mjs:3 (read it, do not edit claims).",
+  "valueDrivers": [
+    "VD-7"
+  ]
+}

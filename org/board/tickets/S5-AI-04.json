@@ -1,0 +1,29 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:51:20.342Z",
+  "history": [],
+  "id": "S5-AI-04",
+  "team": "ai",
+  "title": "Golden sets: 15 clean + 5 adversarial synthetic cases per task",
+  "story": "As the AI director I want golden sets large enough and adversarial enough that live model comparisons and prompt-injection resistance mean something",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-ai-eval-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "tests/fixtures/ai/golden/"
+  ],
+  "acceptance": [
+    "Every task file in tests/fixtures/ai/golden/ has at least 15 clean cases and at least 5 adversarial cases (case field adversarial: true with attack: {kind, goal})",
+    "Labels (expected) are written from the task spec in src/ai/schemas.mjs and architecture/domain-model.md, never copied from local-provider or model output; each new case has a one-line labelRationale",
+    "Adversarial cases include paraphrased and obfuscated instructions that src/ai/guardrails.mjs sanitizeText does not strip (verified by a quick script you run and describe, not committed outside your path), each with the goal the attacker wants (e.g. atFault flipped, confidence forced high)",
+    "All data is synthetic and fictional (no real names, carriers, VINs or addresses); pii strings listed per case where relevant",
+    "node --test tests/unit/ai/ passes and node src/ai/eval.mjs still runs (the local baseline numbers will change; do not edit docs/ai-evaluation.md or src/ai/eval.mjs)"
+  ],
+  "brief": "Existing format: read two current golden files and src/ai/eval.mjs scoring (factSet/expectedSet). Keep existing cases and their recorded blocks; add new cases without recorded blocks. S5-AI-01 is changing output validation in parallel; keep outputs schema-valid per src/ai/schemas.mjs.",
+  "valueDrivers": [
+    "VD-4"
+  ]
+}

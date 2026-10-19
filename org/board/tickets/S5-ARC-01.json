@@ -1,0 +1,39 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:51:20.341Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:52:10.205Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-ARC-01",
+  "team": "integrations",
+  "title": "Architecture triage for Sprint 5 (IMP-5)",
+  "story": "As every Sprint 5 IC I want the contracts reconciled with the code for this sprint's touchpoints so that nobody builds against drift",
+  "points": 2,
+  "tier": "mid",
+  "owner": "ic-integrations-api-designer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "architecture/contracts/openapi.yaml",
+    "architecture/sprint-5-triage.md"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml"
+  ],
+  "acceptance": [
+    "architecture/sprint-5-triage.md lists, for each Sprint 5 touchpoint (GET /intake/sessions/{id}/policy-vehicles, AI output validation errors, tenant regex validation errors on PUT /config, OIDC bearer scheme), what openapi.yaml says vs what the code does today, with file:line citations",
+    "openapi.yaml: policy-vehicles documents 404 for both unknown and not-your-policy (same body), PUT /config documents the 422 for an unsafe pattern, and an OIDC securityScheme is added marked x-status: proposed (not applied to any operation)",
+    "x-roles are unchanged (the routes snapshot in tests/security is owned by S5-SEC-01); node --test tests/unit/contracts* (or whichever tests validate openapi.yaml) pass",
+    "One architecture-hub post per contract change (type contract-change) and one status post summarising the triage"
+  ],
+  "brief": "Read org/sprints/sprint-5-draft.md and the Sprint 5 tickets in org/board/tickets/S5-*.json. You own openapi.yaml for the sprint: other tickets post contract-change requests to the architecture hub; read the hub at start and again before you finish and apply any requests that are compatible. Do not change x-roles. Find the tests that validate openapi.yaml with grep -rl openapi.yaml tests/ and run them.",
+  "valueDrivers": [
+    "VD-7"
+  ],
+  "startedAt": "2026-10-19T01:52:10.205Z"
+}

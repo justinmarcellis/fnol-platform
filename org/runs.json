@@ -1672,5 +1672,104 @@
   "phase": "Review",
   "startedAt": "2026-10-18T22:19:16.896Z",
   "endedAt": "2026-10-18T22:19:34.975Z"
+ },
+ {
+  "id": "aa04f45a899b10368",
+  "workflow": "wf_5f487fed-e7e",
+  "label": "S5-LDR-01 dir-security",
+  "model": "opus",
+  "phase": "Council",
+  "startedAt": "2026-10-19T01:47:18.018Z",
+  "endedAt": "2026-10-19T01:47:25.602Z"
+ },
+ {
+  "id": "a9ab908c1521ba207",
+  "workflow": "wf_5f487fed-e7e",
+  "label": "S5-LDR-01 dir-platform",
+  "model": "opus",
+  "phase": "Council",
+  "startedAt": "2026-10-19T01:47:20.922Z",
+  "endedAt": "2026-10-19T01:47:25.645Z"
+ },
+ {
+  "id": "a09545b8b3a1d0cbb",
+  "workflow": "wf_f2d49d41-043",
+  "label": "S5-LDR-01 dir-security",
+  "model": "opus",
+  "phase": "Council",
+  "startedAt": "2026-10-19T01:47:47.983Z",
+  "endedAt": "2026-10-19T01:48:25.913Z"
+ },
+ {
+  "id": "ac7281ec04cc64fca",
+  "workflow": "wf_f2d49d41-043",
+  "label": "S5-LDR-01 dir-platform",
+  "model": "opus",
+  "phase": "Council",
+  "startedAt": "2026-10-19T01:47:47.988Z",
+  "endedAt": "2026-10-19T01:48:23.685Z"
+ },
+ {
+  "id": "afa900bb30d4ac0e5",
+  "workflow": "wf_f2d49d41-043",
+  "label": "S5-LDR-01 dir-ai",
+  "model": "opus",
+  "phase": "Council",
+  "startedAt": "2026-10-19T01:48:24.556Z",
+  "endedAt": "2026-10-19T01:48:58.262Z"
+ },
+ {
+  "id": "ae5f593778b9a280b",
+  "workflow": "wf_f2d49d41-043",
+  "label": "S5-LDR-01 dir-quality",
+  "model": "opus",
+  "phase": "Council",
+  "startedAt": "2026-10-19T01:48:26.916Z",
+  "endedAt": "2026-10-19T01:49:26.728Z"
+ },
+ {
+  "id": "a4e20973ed12c6761",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-WFL-01 ic-workflow-intake-flow-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:52:06.023Z",
+  "endedAt": "2026-10-19T01:52:11.151Z"
+ },
+ {
+  "id": "adf1be88a8c2d9282",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-00 mgr-platform planning",
+  "model": "sonnet",
+  "phase": "Plan",
+  "startedAt": "2026-10-19T01:52:06.297Z",
+  "endedAt": "2026-10-19T01:52:11.737Z"
+ },
+ {
+  "id": "af4adf73f9ff56058",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-WFL-02 ic-workflow-rules-engine-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:52:07.772Z",
+  "endedAt": "2026-10-19T01:52:10.597Z"
+ },
+ {
+  "id": "af7f17994ed4e9fd6",
+  "workflow": "wf_3d34f147-c0e",
+  "label": "S5-ARC-01 ic-integrations-api-designer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:52:07.774Z",
+  "endedAt": "2026-10-19T01:52:11.972Z"
+ },
+ {
+  "id": "a09f74c5730f85799",
+  "workflow": "wf_3d34f147-c0e",
+  "label": "S5-QE-01 ic-quality-e2e-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:52:07.775Z",
+  "endedAt": "2026-10-19T01:52:12.157Z"
  }
 ]

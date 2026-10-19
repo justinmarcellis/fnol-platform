@@ -1,0 +1,39 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:51:20.342Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:52:10.718Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-QE-01",
+  "team": "quality",
+  "title": "Demo-script e2e remote mode against the deployed service (IMP-11)",
+  "story": "As the sponsor I want the automated 10-minute demo to run against the deployed Cloud Run URL so that every sprint proves the live system, not just a local copy",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-quality-e2e-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "tests/e2e/demo-script.test.mjs",
+    "tests/e2e/harness.mjs",
+    "tests/e2e/remote.mjs",
+    "docs/demo-script.md"
+  ],
+  "acceptance": [
+    "Without FNOL_BASE_URL the test behaves exactly as today (in-process app, real seed); node --test tests/e2e/demo-script.test.mjs passes",
+    "With FNOL_BASE_URL set, beats run over HTTPS against that URL: app tokens come from POST /api/v1/auth/token on the remote (devMode deployment), and when FNOL_IAP_TOKEN is set every request also sends Proxy-Authorization: Bearer <token> so IAP and the app's Authorization header do not collide",
+    "Remote mode never logs or prints FNOL_IAP_TOKEN, minted app tokens or response bodies containing PII; failures report status and beat name only",
+    "Remote mode does not mutate state it cannot restore: beat 4's config change is reverted in after() exactly as locally; beats that depend on in-process access are skipped in remote mode with a named reason",
+    "docs/demo-script.md gets a short 'Run against the deployed service' section (env vars, no secrets)"
+  ],
+  "brief": "PI-2 re-measure (org/scorecards/interventions.json): this ticket was diagnosed as context drift last time, so read the architecture hub and the S5-ARC-01 triage before you start. harness.mjs:115 mints tokens in-process; remote mode must use the HTTP token endpoint instead. You cannot reach the deployed service (the orchestrator runs remote mode with credentials); prove remote mode against a local server started on a port (createApp with port and devMode) using FNOL_BASE_URL=http://127.0.0.1:<port>, in a test that is skipped unless FNOL_REMOTE_SELFTEST=1, and document how you ran it.",
+  "valueDrivers": [
+    "VD-1"
+  ],
+  "startedAt": "2026-10-19T01:52:10.718Z"
+}

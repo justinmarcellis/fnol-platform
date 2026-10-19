@@ -1,0 +1,45 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:51:20.342Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:52:09.180Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-WFL-01",
+  "team": "workflow",
+  "title": "Close the policy-vehicles policy-number oracle",
+  "story": "As a carrier I want the claimant vehicle picker to reveal vehicles only to the policy's own holder so that a claimant cannot probe arbitrary policy numbers",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/modules/intake/service.js",
+    "src/modules/intake/routes.js",
+    "tests/unit/intake/policy-vehicles.test.js",
+    "tests/unit/intake/policy-vehicles-holder.test.js"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml (policy-vehicles)"
+  ],
+  "acceptance": [
+    "GET /intake/sessions/{id}/policy-vehicles returns vehicles only when the session's claimant is the policy holder (match the claimant identity on the session against the policy snapshot's named insured/holder via the coverage service, not by trusting body fields); CSR and agent roles keep their current behaviour",
+    "An unknown policy number and a real policy that is not the caller's return the identical response (same status, same body, no vehicle data), so the endpoint is no longer an oracle; test asserts deep equality of the two responses",
+    "Timing is not a separate oracle: no early return that skips the policy lookup for unknown numbers (comment explains)",
+    "tests/unit/intake/policy-vehicles-holder.test.js covers holder, non-holder, unknown policy, other tenant; existing policy-vehicles tests still pass",
+    "Demo path unchanged: tests/e2e/demo-script.test.mjs passes; no edits under tests/security (post the new behaviour to the security hub for S5-SEC-01)"
+  ],
+  "brief": "Finding: docs/cots-readiness.md 'policy-vehicles policy-number oracle'. Route at src/modules/intake/routes.js, logic around src/modules/intake/service.js:324. Look at how claimant identity is represented on sessions and tokens (src/core/auth.mjs dev users, data/dev-users.json from scripts/seed.mjs) and how coverage exposes the policy holder (ctx.modules.coverage). If the session has no verifiable claimant identity, return the uniform not-found response. Do not edit questions.js (S5-WFL-02) or conversation.js (S5-AI-01). If openapi needs a change post a contract-change to the architecture hub (S5-ARC-01 owns openapi.yaml).",
+  "valueDrivers": [
+    "VD-7"
+  ],
+  "requirements": [
+    "REQ-01"
+  ],
+  "startedAt": "2026-10-19T01:52:09.180Z"
+}

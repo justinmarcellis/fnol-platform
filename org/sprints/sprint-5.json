@@ -1,0 +1,20 @@
+{
+  "number": 5,
+  "name": "Sprint 5",
+  "status": "planned",
+  "startedAt": "2026-10-19T01:52:12.302Z",
+  "committed": [
+    "S5-AI-01",
+    "S5-AI-02",
+    "S5-AI-04",
+    "S5-ARC-01",
+    "S5-LDR-01",
+    "S5-QE-01",
+    "S5-WFL-01",
+    "S5-WFL-02"
+  ],
+  "committedPoints": 32,
+  "targets": {
+    "committedPoints": 32
+  }
+}

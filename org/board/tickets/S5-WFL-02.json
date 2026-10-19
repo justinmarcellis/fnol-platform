@@ -1,0 +1,46 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:51:20.342Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:52:10.569Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-WFL-02",
+  "team": "workflow",
+  "title": "One safe-pattern checker for tenant regexes (SEC2-013, SEC2-014, SEC3-003)",
+  "story": "As the platform operator I want every tenant-authored regex checked by one strict, tested checker at save time and at evaluation so that one admin cannot freeze the server for every tenant",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-workflow-rules-engine-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/core/safe-pattern.mjs",
+    "src/modules/rules/condition.js",
+    "src/modules/intake/questions.js",
+    "src/modules/intake/security.js",
+    "src/modules/config/validator.js",
+    "tests/unit/core/safe-pattern.test.mjs",
+    "tests/unit/rules/safe-regex.test.js",
+    "tests/unit/config/pattern-validation.test.js"
+  ],
+  "contracts": [
+    "architecture/security-review-s2.md SEC2-013, SEC2-014, section 12 SEC3-003"
+  ],
+  "acceptance": [
+    "src/core/safe-pattern.mjs exports isSafePattern(src) implementing a strict whitelist grammar (literals, classes, anchors, bounded quantifiers {0,n} with n<=50 and at most one unbounded quantifier per alternation-free run, no backreferences, no nested quantifiers, no quantified groups containing alternation or optional bodies, max pattern length 200) and a matchWithBudget helper that caps input length at 200 chars for pattern checks",
+    "Rejected (test): (a|aa)+$, (a|a)*b, (\\w|\\d)+x$, (a+)+, ^a*a*a*a*a*a*b, .*.*.*.*.*x, (a?){30}a{30}. Accepted: the patterns used today in tenants/*.json (test loads both tenant files and checks every validation.pattern and every rule 'matches' value)",
+    "config/validator.js rejects an unsafe pattern at save time with a 422-style validation error naming the path; rules/condition.js and intake/questions.js both use the shared checker at evaluation; intake/security.js isSafePattern delegates to it",
+    "The SEC2-013 todo test (tests/security/sec2-availability-ai.test.mjs) passes when run locally (todo tests still run); do not edit tests/security",
+    "Each pathological pattern case in the tests finishes under 50 ms; tests/e2e and tests/security show no new failures"
+  ],
+  "brief": "src/core/ is Platform-owned; this one new file is granted to this squad ticket (posted to the decisions hub by the orchestrator). Keep it zero-dependency. Prefer a grammar parser over regex-on-regex heuristics. Check the existing heuristics at rules/condition.js:94-100 and intake/security.js:158-169 and remove duplication. Do not touch intake/service.js, routes.js (S5-WFL-01) or conversation.js (S5-AI-01).",
+  "valueDrivers": [
+    "VD-7"
+  ],
+  "startedAt": "2026-10-19T01:52:10.569Z"
+}
