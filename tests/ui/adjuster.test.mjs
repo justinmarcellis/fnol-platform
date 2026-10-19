@@ -1,7 +1,7 @@
 // Playwright smoke for /adjuster. Skips cleanly when Playwright or chromium is unavailable.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { launchBrowser, bootApp, apiClient, createSeededClaim } from './adjuster-harness.mjs';
+import { launchBrowser, bootApp, apiClient, createSeededClaim, sampleClaim } from './adjuster-harness.mjs';
 
 let server; let browser; let skip; let claim; let api;
 
@@ -18,39 +18,88 @@ after(async () => {
   await server?.close();
 });
 
-async function signIn(page) {
+/** Sign in through the demo bar, the way a demo user does. */
+async function signIn(page, persona = 'aurelia-mutual:adjuster') {
   await page.goto(`${server.app.url}/adjuster`);
-  await page.waitForSelector('#dev-form');
-  await page.click('#dev-go');
+  await page.waitForSelector(`fx-demo-bar #fxd-persona option[value="${persona}"]`, { state: 'attached' });
+  await page.selectOption('#fxd-persona', persona);
   await page.waitForSelector('#inbox-sec:not([hidden])');
 }
 
-test('adjuster signs in, sees the inbox and the claim summary with every panel', async (t) => {
+test('signed out with the demo bar: persona prompt, no legacy dev form', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await browser.newPage();
+  try {
+    await page.goto(`${server.app.url}/adjuster`);
+    await page.waitForSelector('fx-demo-bar .fxd');
+    await page.waitForSelector('#signin-empty');
+    assert.equal(await page.locator('#dev-form').count(), 0, 'old dev form is gone');
+    assert.equal(await page.locator('fx-app-shell').count(), 1);
+    assert.match(await page.textContent('#signin-empty'), /Choose a persona/);
+  } finally { await page.close(); }
+});
+
+test('inbox empty state offers the whole queue', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await browser.newPage();
+  try {
+    await signIn(page, 'aurelia-mutual:supervisor'); // owns no claims
+    await page.waitForSelector('#inbox-empty');
+    assert.match(await page.textContent('#inbox-empty'), /inbox is clear/);
+    await page.click('#inbox-empty button');
+    await page.waitForSelector('fx-table');
+  } finally { await page.close(); }
+});
+
+test('inbox: KPI tiles, filters, sorting; then the claim first view', async (t) => {
   if (skip) return t.skip(skip);
   const page = await browser.newPage();
   try {
     await signIn(page);
+    await page.waitForSelector('fx-table');
+    assert.equal(await page.locator('#kpis fx-stat').count(), 4);
 
-    // The claim is routed to another adjuster, so it only appears with "only my claims" off.
-    await page.uncheck('#inbox-mine');
-    const row = page.locator(`tr[data-claim-id="${claim.id}"]`);
-    await row.waitFor();
-    assert.ok(await row.locator('[data-chip="severity"]').count() > 0, 'severity chip');
-    assert.ok(await row.locator('[data-chip="flag"]').count() > 0, 'flag chip');
-    assert.ok(await row.locator('[data-chip="timer"]').count() > 0, 'timer chip');
+    await page.selectOption('#inbox-scope', 'all');
+    const link = page.locator(`a[data-claim-id="${claim.id}"]`);
+    await link.waitFor();
+    const row = page.locator('fx-table tbody tr', { has: link });
+    for (const chip of ['severity', 'status', 'timer']) assert.ok(await row.locator(`[data-chip="${chip}"]`).count() > 0, `${chip} chip`);
+    assert.ok(await page.locator('#kpis fx-stat[data-kpi="open"] .fx-stat-value').textContent() >= '1');
+    // Insured name loads after the table (claim created with an insured party).
+    const withParty = await api('POST', '/claims', { role: 'csr', body: { ...sampleClaim(), parties: [{ roles: ['insured'], kind: 'person', firstName: 'Avery', lastName: 'Teststone' }] } });
+    assert.equal(withParty.status, 201, JSON.stringify(withParty.json));
+    await page.click('#inbox-refresh');
+    await page.waitForSelector(`a[data-claim-id="${withParty.json.id}"]`);
+    await page.waitForSelector('fx-table td:has-text("Avery Teststone")');
 
-    await row.locator('a').click();
+    // Filters: a severity band nobody has leaves a no-match state, clearing restores the row.
+    await page.selectOption('#inbox-severity', 'severe');
+    const sev = await row.locator('[data-chip="severity"]').count().catch(() => 0);
+    if (!sev) {
+      await page.waitForSelector('#inbox-empty');
+      await page.click('#filters-clear');
+      await link.waitFor();
+    }
+    await page.selectOption('#inbox-severity', 'all');
+
+    // Sorting: header buttons set aria-sort.
+    await page.click('fx-table th:nth-child(1) button');
+    assert.equal(await page.getAttribute('fx-table th:nth-child(1)', 'aria-sort'), 'ascending');
+
+    await page.locator(`a[data-claim-id="${claim.id}"]`).click();
     await page.waitForSelector('#summary-text');
     assert.ok((await page.textContent('#summary-text')).trim().length > 0, 'summary has text');
-    for (const id of ['summary', 'nba', 'triage', 'coverage', 'routing', 'timers', 'documents', 'tasks', 'notes', 'timeline']) {
+    for (const id of ['header', 'summary', 'nba', 'triage', 'coverage', 'routing', 'timers', 'parties', 'vehicles', 'documents', 'tasks', 'notes', 'timeline']) {
       assert.equal(await page.locator(`#panel-${id}`).count(), 1, `panel ${id}`);
     }
+    assert.match(await page.textContent('fx-app-shell .fx-shell-title'), /Claim /);
 
-    // AI explain shows provenance.
-    await page.click('#panel-summary summary');
-    const explain = await page.textContent('#panel-summary .explain');
-    assert.match(explain, /Provider/);
-    assert.match(explain, /Confidence \d+%/);
+    // AI provenance is visible without any click.
+    const ai = await page.textContent('#summary-ai');
+    assert.match(ai, /Provider/);
+    assert.match(ai, /Model/);
+    assert.match(ai, /Confidence/);
+    assert.match(ai, /Explanation/);
 
     // Checklist ticks update progress.
     const boxes = page.locator('#panel-nba input[data-code]');
@@ -80,6 +129,7 @@ test('fraud item: note is required, accept records a decision', async (t) => {
     });
     await signIn(page);
     await page.goto(`${server.app.url}/adjuster#/claim/${claim.id}`);
+    await page.waitForSelector('#subro-banner');
     await page.waitForSelector('form.decision[data-kind="fraud"]');
 
     // Empty note is refused client side.

@@ -1,5 +1,6 @@
 // API calls for the adjuster app. Takes an api client ({get, post, patch}), never imports the kit.
 import { buildDecision } from './render.js';
+import { insuredName } from './model.js';
 
 /** GET the inbox. */
 export function loadInbox(api, { mine = true, limit = 50 } = {}) {
@@ -38,4 +39,26 @@ export function loadChecklist(claimId, storage = globalThis.localStorage) {
 }
 export function saveChecklist(claimId, codes, storage = globalThis.localStorage) {
   try { storage.setItem(`adjuster.nba.${claimId}`, JSON.stringify(codes)); } catch { /* ignore */ }
+}
+
+/**
+ * Insured names for inbox rows. The inbox feed carries no party data, so read each claim's parties
+ * (GET /claims/{id}?include=parties) with bounded concurrency. Failures leave the name blank.
+ * `onName(claimId, name)` fires as each one lands so the table can fill in progressively.
+ * @returns {Promise<Record<string,string>>}
+ */
+export async function loadInsureds(api, claimIds, { onName, concurrency = 6 } = {}) {
+  const out = {};
+  const queue = [...new Set(claimIds)];
+  const worker = async () => {
+    for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+      try {
+        const claim = await api.get(`/claims/${encodeURIComponent(id)}`, { include: 'parties' });
+        const name = insuredName(claim);
+        if (name) { out[id] = name; onName?.(id, name); }
+      } catch { /* a missing name never blocks the inbox */ }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, worker));
+  return out;
 }

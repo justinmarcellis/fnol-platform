@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:28:28.987Z",
   "history": [
@@ -7,6 +7,26 @@
       "at": "2026-10-19T12:48:06.706Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T12:58:21.213Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:07:22.039Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T13:08:34.512Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:09:54.676Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-EXP-05",
@@ -36,5 +56,69 @@
     "VD-1",
     "VD-5"
   ],
-  "startedAt": "2026-10-19T12:48:06.706Z"
+  "startedAt": "2026-10-19T12:48:06.706Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-19T13:07:22.038Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Own 35 tests pass and criteria met, but full npm test has a NEW regression: tests/ui/demo-bar.test.mjs 'switching claimant to adjuster lands signed in on the adjuster inbox' now times out on '#inbox-body tr[data-claim-id]' (data-claim-id moved to the anchor, not the row); also csr.test.mjs adjuster-view test waits on removed #dev-form. Keep a tr[data-claim-id] hook in the inbox rows and coordinate the demo-bar/csr test selectors; other csr failures (190-192,194,195) and recent.test.mjs innerHTML check look like CSR-ticket work in flight."
+      },
+      {
+        "at": "2026-10-19T13:09:54.676Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; adjuster/demo-bar/csr tests 48 pass; full npm test 1528 pass, 0 fail (3 baseline todos); screenshots show populated inbox and claim view"
+      }
+    ],
+    "firstPass": false
+  },
+  "doneAt": "2026-10-19T13:09:54.676Z",
+  "spend": {
+    "usd": 2.8436,
+    "inputTokens": 160,
+    "cacheWriteTokens": 283349,
+    "cacheReadTokens": 10627382,
+    "outputTokens": 936,
+    "agents": {
+      "a258410adba63304f": {
+        "label": "S6-EXP-05 ic-experience-adjuster-view-dev rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 20,
+        "cacheWriteTokens": 25904,
+        "cacheReadTokens": 610064,
+        "outputTokens": 160,
+        "usd": 0.1884
+      },
+      "a2e1aef3ea753602e": {
+        "label": "S6-EXP-05 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 32420,
+        "cacheReadTokens": 925222,
+        "outputTokens": 181,
+        "usd": 0.268
+      },
+      "a7eaf73a68ee3b450": {
+        "label": "S6-EXP-05 ic-experience-adjuster-view-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 102,
+        "cacheWriteTokens": 199681,
+        "cacheReadTokens": 8802331,
+        "outputTokens": 510,
+        "usd": 2.265
+      },
+      "af1b8daff86735f3e": {
+        "label": "S6-EXP-05 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 25344,
+        "cacheReadTokens": 289765,
+        "outputTokens": 85,
+        "usd": 0.1222
+      }
+    }
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:28:28.984Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T12:48:04.988Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T13:05:24.805Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:08:44.202Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-EXP-03",
@@ -36,5 +46,18 @@
   "valueDrivers": [
     "VD-1"
   ],
-  "startedAt": "2026-10-19T12:48:04.988Z"
+  "startedAt": "2026-10-19T12:48:04.988Z",
+  "doneAt": "2026-10-19T13:08:44.202Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T13:08:44.202Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; claimant UI/deployed-host/unit tests pass (58/58), screenshots polished; full suite failures (CSR guard/search, demo-bar switch flake passes on rerun) are CSR-owned/flaky, not claimant."
+      }
+    ],
+    "firstPass": true
+  }
 }

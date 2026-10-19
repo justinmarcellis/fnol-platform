@@ -85,6 +85,10 @@ test('normalizeReport maps errors to editor sections', () => {
   assert.equal(m.sectionOf('/fastTrack/maxSeverity'), 'rules');
   assert.equal(m.sectionOf('/notifications/webhooks'), 'webhooks');
   assert.equal(m.sectionOf('/zzz'), 'other');
+  assert.equal(m.sectionOf('/ai/tasks/summarize/threshold'), 'ai');
+  assert.equal(m.sectionOf('/locales'), 'branding');
+  assert.equal(m.sectionOf('/displayName'), 'branding');
+  assert.equal(m.sectionOf('/lobs/0/id'), 'questions');
 });
 
 test('etag, dirty tracking and changed sections', () => {
@@ -164,4 +168,30 @@ test('applyListAction adds typed items, resets transient state and tracks the qu
   assert.equal(st.cfg.lobs[0].id, 'b');
   assert.throws(() => applyListAction(st, 'add', '/nothing'));
   assert.throws(() => applyListAction(st, 'explode', '/lobs'));
+});
+
+test('diffConfig lists field-level changes, ignoring version stamps', () => {
+  const a = { version: 1, updatedAt: 'x', displayName: 'A', locales: ['en'], rules: [{ id: 'R1', then: [1] }], ai: { provider: 'local' } };
+  const b = { version: 2, updatedAt: 'y', displayName: 'B', locales: ['en', 'es'], rules: [{ id: 'R1', then: [1] }, { id: 'R2' }], ai: { provider: 'local', region: 'x' } };
+  const d = m.diffConfig(a, b);
+  assert.deepEqual(d.map((c) => [c.path, c.kind, c.section]), [
+    ['/ai/region', 'added', 'ai'], ['/displayName', 'changed', 'branding'], ['/locales/1', 'added', 'branding'], ['/rules/1', 'added', 'rules'],
+  ].sort((x, y) => d.findIndex((c) => c.path === x[0]) - d.findIndex((c) => c.path === y[0])));
+  assert.deepEqual(m.diffConfig(a, a), []);
+  assert.equal(m.diffConfig({ a: 1 }, {}).at(0).kind, 'removed');
+  assert.equal(m.previewValue(undefined), '(not set)');
+  assert.ok(m.previewValue('x'.repeat(200)).length <= 80);
+});
+
+test('kpiTiles formats ratios, minutes and counts; null becomes n/a', () => {
+  const tiles = m.kpiTiles({ metrics: [
+    { id: 'a_rate', label: 'A', valueDriver: 'VD-1', unit: 'ratio', value: 0.5, numerator: 1, denominator: 2 },
+    { id: 'b_min', label: 'B', valueDriver: 'VD-2', unit: 'minutes', value: 18.26, numerator: null, denominator: null },
+    { id: 'c_n', label: 'C', valueDriver: 'VD-7', unit: 'count', value: null, numerator: null, denominator: null, note: 'source failed' },
+  ] });
+  assert.deepEqual(tiles.map((t) => t.value), ['50%', '18.3 min', 'n/a']);
+  assert.equal(tiles[0].detail, '1 of 2');
+  assert.equal(tiles[2].hint, 'source failed');
+  assert.deepEqual(m.kpiTiles({ metrics: { x: 1 } }), []);
+  assert.equal(m.formatKpiValue(300, 'minutes'), '5 h');
 });

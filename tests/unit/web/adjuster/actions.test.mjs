@@ -56,3 +56,19 @@ test('checklist persistence survives blocked storage', () => {
   assert.deepEqual(loadChecklist('c1', blocked), []);
   assert.doesNotThrow(() => saveChecklist('c1', ['a'], blocked));
 });
+
+test('loadInsureds reads parties with bounded concurrency and skips failures', async () => {
+  const seen = [];
+  let active = 0; let peak = 0;
+  const api = { get: async (path, q) => {
+    active++; peak = Math.max(peak, active); await new Promise((r) => setTimeout(r, 2)); active--;
+    assert.deepEqual(q, { include: 'parties' });
+    if (path.endsWith('bad')) throw new Error('nope');
+    return { parties: [{ roles: ['insured'], firstName: 'N', lastName: path.slice(-1) }] };
+  } };
+  const { loadInsureds } = await import('../../../../src/web/adjuster/actions.js');
+  const out = await loadInsureds(api, ['/a', '/b', 'bad', '/c', '/a'].map((x) => x.replace('/', 'clm')), { concurrency: 2, onName: (id) => seen.push(id) });
+  assert.deepEqual(out, { clma: 'N a', clmb: 'N b', clmc: 'N c' });
+  assert.equal(seen.length, 3);
+  assert.ok(peak <= 2);
+});

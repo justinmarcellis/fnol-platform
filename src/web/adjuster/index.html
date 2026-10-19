@@ -10,46 +10,55 @@
 </head>
 <body>
   <a class="fx-btn skip" href="#main" id="skip">Skip to main content</a>
-  <header class="bar"><h1 id="title">Adjuster workbench</h1><span id="whoami" class="muted" aria-live="polite"></span></header>
-  <fx-toast id="toast"></fx-toast>
-  <main id="main" tabindex="-1">
-    <section id="dev-panel" hidden aria-labelledby="dev-h">
-      <h2 id="dev-h">Developer sign-in</h2>
-      <form id="dev-form">
-        <p><label for="dev-tenant" id="dev-tenant-l">Tenant</label>
-          <select id="dev-tenant" name="tenant"><option value="aurelia-mutual">aurelia-mutual</option><option value="kestrel-point">kestrel-point</option></select></p>
-        <p><label for="dev-role" id="dev-role-l">Role</label>
-          <select id="dev-role" name="role"><option value="adjuster">adjuster</option><option value="supervisor">supervisor</option></select></p>
-        <button class="fx-btn" type="submit" id="dev-go">Sign in as adjuster</button>
-      </form>
-    </section>
+  <fx-app-shell id="shell" product="Adjuster workbench" home-href="/adjuster#/" nav-label="Workbench">
+    <fx-demo-bar slot="demo"></fx-demo-bar>
+    <button slot="actions" class="fx-btn secondary" type="button" id="inbox-refresh" hidden></button>
+    <a slot="actions" class="fx-btn secondary" id="claim-back" href="#/" hidden></a>
 
-    <section id="unavailable" role="alert" hidden>
-      <h2 id="un-title">Service unavailable</h2>
-      <p id="un-body"></p>
-      <button class="fx-btn" type="button" id="un-retry">Retry</button>
-    </section>
+    <fx-toast id="toast"></fx-toast>
+    <main id="main" tabindex="-1">
+      <!-- Legacy developer sign-in: shown only when the demo bar is absent (see app.js). -->
+      <section id="dev-panel" hidden aria-labelledby="dev-h">
+        <fx-card heading="Developer sign-in" id="dev-card">
+          <form id="dev-form" class="fx-stack-sm">
+            <div class="fx-form-row">
+              <label>Tenant <select class="fx-select" id="dev-tenant" name="tenant"><option value="aurelia-mutual">aurelia-mutual</option><option value="kestrel-point">kestrel-point</option></select></label>
+              <label>Role <select class="fx-select" id="dev-role" name="role"><option value="adjuster">adjuster</option><option value="supervisor">supervisor</option></select></label>
+            </div>
+            <div><button class="fx-btn" type="submit" id="dev-go">Sign in as adjuster</button></div>
+          </form>
+        </fx-card>
+      </section>
 
-    <section id="inbox-sec" aria-labelledby="inbox-h" hidden>
-      <h2 id="inbox-h" tabindex="-1"></h2>
-      <p class="toolbar">
-        <label><input type="checkbox" id="inbox-mine" checked> <span id="inbox-mine-l"></span></label>
-        <button class="fx-btn secondary" type="button" id="inbox-refresh"></button>
-      </p>
-      <form id="lookup-form" class="toolbar" novalidate>
-        <label for="lookup-id" id="lookup-l"></label>
-        <input id="lookup-id" name="claimId" autocomplete="off">
-        <button class="fx-btn secondary" type="submit" id="lookup-go"></button>
-      </form>
-      <p id="inbox-count" class="muted" role="status"></p>
-      <div id="inbox-body"></div>
-    </section>
+      <section id="signin" hidden aria-live="polite"></section>
 
-    <section id="claim-sec" aria-labelledby="claim-h" hidden>
-      <p><a class="fx-btn secondary" id="claim-back" href="#/"></a></p>
-      <div id="claim-body" aria-live="polite"></div>
-    </section>
-  </main>
+      <div id="unavailable" class="fx-alert" data-tone="danger" role="alert" hidden>
+        <div><strong id="un-title">Service unavailable</strong><p id="un-body"></p>
+          <button class="fx-btn secondary small" type="button" id="un-retry">Retry</button></div>
+      </div>
+
+      <section id="inbox-sec" aria-labelledby="inbox-h" hidden class="fx-stack">
+        <h2 id="inbox-h" class="fx-visually-hidden" tabindex="-1"></h2>
+        <div class="fx-stat-grid" id="kpis"></div>
+        <fx-card id="inbox-card" padding="none">
+          <form class="adj-filters" id="filters" role="search" novalidate>
+            <label class="adj-filter"><span id="f-scope-l"></span>
+              <select class="fx-select" id="inbox-scope" name="scope"><option value="mine"></option><option value="all"></option></select></label>
+            <label class="adj-filter"><span id="f-status-l"></span><select class="fx-select" id="inbox-status" name="status"></select></label>
+            <label class="adj-filter"><span id="f-severity-l"></span><select class="fx-select" id="inbox-severity" name="severity"></select></label>
+            <button class="fx-btn ghost small" type="button" id="filters-clear" hidden></button>
+            <p id="inbox-count" class="adj-muted adj-count" role="status"></p>
+          </form>
+          <div id="inbox-body"></div>
+        </fx-card>
+      </section>
+
+      <section id="claim-sec" aria-labelledby="claim-h" hidden>
+        <h2 id="claim-h" class="fx-visually-hidden" tabindex="-1"></h2>
+        <div id="claim-body" aria-live="polite"></div>
+      </section>
+    </main>
+  </fx-app-shell>
   <script src="/runtime-config.js"></script>
   <script type="module" src="/adjuster/app.js"></script>
 </body>

@@ -163,16 +163,15 @@ export function describeCondition(c) {
   return 'invalid condition';
 }
 
-/** Section tabs a JSON pointer belongs to. @param {string} pointer */
+/** Console section a JSON pointer belongs to (branding, questions, rules, timers, webhooks, ai). @param {string} pointer */
 export function sectionOf(pointer) {
   const top = parsePointer(pointer)[0];
-  if (top === 'branding') return 'branding';
-  if (top === 'lobs') return 'lobs';
-  if (top === 'locales') return 'locales';
-  if (top === 'questionSets') return 'questions';
+  if (top === 'branding' || top === 'displayName' || top === 'claimNumberPrefix' || top === 'timeZone' || top === 'locales') return 'branding';
+  if (top === 'lobs' || top === 'questionSets') return 'questions';
   if (top === 'rules' || top === 'queues' || top === 'fastTrack') return 'rules';
   if (top === 'timers' || top === 'holidays') return 'timers';
-  if (top === 'notifications') return 'webhooks';
+  if (top === 'notifications' || top === 'integrations') return 'webhooks';
+  if (top === 'ai') return 'ai';
   return 'other';
 }
 
@@ -258,4 +257,51 @@ export function flattenKpis(body, prefix = '') {
     else rows.push({ key, value: String(v) });
   }
   return rows;
+}
+
+/** Short single-line preview of a JSON value for the diff table. */
+export function previewValue(v, max = 80) {
+  if (v === undefined) return '(not set)';
+  const t = typeof v === 'string' ? v : JSON.stringify(v);
+  return t.length > max ? `${t.slice(0, max - 1)}\u2026` : t;
+}
+
+/**
+ * Field-level differences between the saved config and the draft, for the save preview.
+ * Arrays and objects are walked; version/updatedAt/updatedBy are ignored.
+ * @returns {Array<{path:string, kind:'added'|'removed'|'changed', before:any, after:any, section:string}>}
+ */
+export function diffConfig(before, after, limit = 500) {
+  const out = [];
+  const skip = new Set(['/version', '/updatedAt', '/updatedBy']);
+  const isObj = (v) => v !== null && typeof v === 'object';
+  const walk = (a, b, ptr) => {
+    if (out.length >= limit || skip.has(ptr)) return;
+    if (JSON.stringify(a) === JSON.stringify(b)) return;
+    if (isObj(a) && isObj(b) && Array.isArray(a) === Array.isArray(b)) {
+      const keys = Array.isArray(a) ? Array.from({ length: Math.max(a.length, b.length) }, (_, i) => String(i)) : [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+      for (const k of keys) walk(a[k], b[k], `${ptr}/${k}`);
+      return;
+    }
+    out.push({ path: ptr, kind: a === undefined ? 'added' : b === undefined ? 'removed' : 'changed', before: a, after: b, section: sectionOf(ptr) });
+  };
+  walk(before ?? {}, after ?? {}, '');
+  return out;
+}
+
+const KPI_UNITS = { ratio: (v) => `${Math.round(v * 1000) / 10}%`, minutes: (v) => (v >= 120 ? `${Math.round(v / 6) / 10} h` : `${Math.round(v * 10) / 10} min`), count: (v) => String(Math.round(v)) };
+
+/** Format one KPI value for a stat tile ("n/a" when null). */
+export function formatKpiValue(value, unit) {
+  if (!Number.isFinite(value)) return 'n/a';
+  return (KPI_UNITS[unit] ?? String)(value);
+}
+
+/** Stat tiles from a GET /kpis body ({period, metrics:[...]}); falls back to flattened rows. */
+export function kpiTiles(body) {
+  const list = Array.isArray(body?.metrics) ? body.metrics : [];
+  return list.filter((m) => m && typeof m === 'object' && m.id).map((m) => ({
+    id: String(m.id), label: String(m.label ?? m.id), value: formatKpiValue(m.value, m.unit), driver: m.valueDriver ?? '',
+    hint: m.note ?? m.definition ?? '', detail: Number.isFinite(m.numerator) && Number.isFinite(m.denominator) ? `${m.numerator} of ${m.denominator}` : '',
+  }));
 }

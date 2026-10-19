@@ -10,49 +10,74 @@
 </head>
 <body>
   <a class="fx-btn skip" href="#main" id="skip">Skip to main content</a>
-  <header class="bar">
-    <h1 id="title">Carrier admin console</h1>
-    <span id="whoami" class="muted" aria-live="polite"></span>
-    <button type="button" class="fx-btn secondary small" id="signout" hidden>Sign out</button>
-  </header>
   <fx-toast id="toast"></fx-toast>
-  <main id="main" tabindex="-1">
-    <section id="dev-panel" hidden aria-labelledby="dev-h">
-      <h2 id="dev-h">Developer sign-in</h2>
-      <form id="dev-form">
-        <p><label for="dev-tenant">Tenant</label>
-          <select id="dev-tenant" name="tenant"><option value="aurelia-mutual">aurelia-mutual</option><option value="kestrel-point">kestrel-point</option></select></p>
-        <p class="muted">Signs in with the tenant_admin role.</p>
-        <button class="fx-btn" type="submit" id="dev-go">Sign in as tenant admin</button>
-      </form>
-    </section>
-    <section id="no-login" hidden><h2>Sign in required</h2><p>Open this console from your carrier identity provider. Developer sign-in is available only on localhost.</p></section>
+  <fx-app-shell id="shell" product="Admin console" heading="Settings" subheading="Configure how claims are taken in, routed and reported." nav-label="Admin console" home-href="/admin">
+    <fx-demo-bar slot="demo"></fx-demo-bar>
+    <main id="main" tabindex="-1">
+      <section id="dev-panel" hidden aria-labelledby="dev-h">
+        <fx-card heading="Developer sign-in" subheading="Local development only. Signs in with the tenant_admin role." id="dev-card">
+          <form id="dev-form">
+            <div class="field"><label for="dev-tenant">Tenant</label>
+              <select id="dev-tenant" class="fx-select" name="tenant"><option value="aurelia-mutual">aurelia-mutual</option><option value="kestrel-point">kestrel-point</option></select></div>
+            <button class="fx-btn" type="submit" id="dev-go">Sign in as tenant admin</button>
+          </form>
+        </fx-card>
+        <h2 id="dev-h" class="fx-visually-hidden">Developer sign-in</h2>
+      </section>
 
-    <section id="unavailable" role="alert" hidden>
-      <h2>Service unavailable</h2>
-      <p id="un-body">The configuration service did not respond. Nothing was changed.</p>
-      <button class="fx-btn" type="button" id="un-retry">Retry</button>
-    </section>
+      <section id="no-login" hidden>
+        <fx-empty-state icon="key" heading="Sign in required" description="Open this console from your carrier identity provider. Developer sign-in is available only on localhost."></fx-empty-state>
+      </section>
 
-    <section id="conflict" role="alert" hidden>
-      <h2>Configuration changed elsewhere</h2>
-      <p id="conflict-body"></p>
-      <button class="fx-btn" type="button" id="conflict-reload">Discard my edits and reload</button>
-    </section>
+      <section id="pick-persona" hidden>
+        <fx-empty-state id="pick-empty" icon="users" heading="Choose a carrier admin to begin" description="Use the Persona menu in the demo bar above and pick a Carrier admin for the tenant you want to configure."></fx-empty-state>
+      </section>
 
-    <section id="console" hidden aria-label="Configuration editor">
-      <div class="toolbar">
-        <span id="version-label" class="chip" role="status"></span>
-        <span id="dirty-label" class="muted" role="status"></span>
-        <button class="fx-btn secondary" type="button" id="validate">Validate</button>
-        <button class="fx-btn" type="button" id="save">Validate and save</button>
-        <button class="fx-btn secondary" type="button" id="revert">Revert edits</button>
-      </div>
-      <div id="summary" tabindex="-1"></div>
-      <div id="tabs" role="tablist" aria-label="Configuration sections"></div>
-      <div id="panel" role="tabpanel" aria-live="polite"></div>
-    </section>
-  </main>
+      <section id="unavailable" hidden>
+        <div class="fx-alert" data-tone="danger" role="alert">
+          <div><strong>Service unavailable</strong><p id="un-body">The configuration service did not respond. Nothing was changed.</p>
+            <p><button class="fx-btn secondary small" type="button" id="un-retry">Retry</button></p></div>
+        </div>
+      </section>
+
+      <section id="conflict" hidden>
+        <div class="fx-alert" data-tone="warning" role="alert">
+          <div><strong>Configuration changed elsewhere</strong><p id="conflict-body"></p>
+            <p><button class="fx-btn secondary small" type="button" id="conflict-reload">Discard my edits and reload</button></p></div>
+        </div>
+      </section>
+
+      <section id="console" class="adm-layout" hidden aria-label="Configuration editor">
+        <nav id="tabs" class="adm-nav" aria-label="Settings sections"></nav>
+        <div class="adm-body">
+          <div id="summary" tabindex="-1"></div>
+          <div id="panel" aria-live="polite"></div>
+        </div>
+        <div class="adm-savebar" id="savebar" role="region" aria-label="Save changes">
+          <div class="adm-savestate">
+            <span id="version-label" class="chip" role="status"></span>
+            <span id="dirty-label" class="adm-dirty" role="status"></span>
+          </div>
+          <div class="fx-btn-group">
+            <button class="fx-btn ghost" type="button" id="revert">Revert edits</button>
+            <button class="fx-btn secondary" type="button" id="validate">Validate</button>
+            <button class="fx-btn" type="button" id="save">Review and save</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </fx-app-shell>
+
+  <dialog id="diff" class="adm-dialog" aria-labelledby="diff-h">
+    <form method="dialog" id="diff-form">
+      <header><h2 id="diff-h">Review changes</h2><p class="muted" id="diff-sub"></p></header>
+      <div id="diff-body" class="adm-diff"></div>
+      <footer>
+        <button class="fx-btn secondary" type="button" id="diff-cancel">Keep editing</button>
+        <button class="fx-btn" type="button" id="diff-confirm">Save changes</button>
+      </footer>
+    </form>
+  </dialog>
   <script src="/runtime-config.js"></script>
   <script type="module" src="/admin/app.js"></script>
 </body>

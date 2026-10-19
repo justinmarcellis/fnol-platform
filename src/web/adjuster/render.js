@@ -1,6 +1,10 @@
-// Pure render functions for the adjuster app. They return HTML strings (every
-// dynamic value escaped) so they run and test in node without a DOM.
-import { t, getLocale } from '../shared/i18n.js';
+// Pure render functions for the adjuster claim first view. They return HTML strings built from
+// design-system components (fx-card, fx-badge, fx-timeline); every dynamic value is escaped, so
+// they run and test in node without a DOM. app.js sets the fx-timeline events after painting.
+import { t } from '../shared/i18n.js';
+import { formatDate, formatDateTime, formatEnum, formatMoney, formatPolicyNumber, formatClaimNumber } from '../shared/format.js';
+import { icon } from '../shared/icons.js';
+import { timerUrgency, nextOpenTimer, partyName, severityBand as bandOf } from './model.js';
 
 const ENT = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 /** Escape text for HTML content and attribute values. */
@@ -8,19 +12,17 @@ export function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, (c) => ENT[c]);
 }
 
-/** Translate a key with an enum value, falling back to the raw value. */
+/** Translate a key with an enum value, falling back to a humanised token. */
 function tEnum(prefix, value) {
   const key = `${prefix}.${value}`;
   const s = t(key);
-  return s === key ? String(value ?? '') : s;
+  return s === key ? formatEnum(value) : s;
 }
 
-/** Locale-aware UTC date/time. */
-export function fmtWhen(iso) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return String(iso ?? '');
-  return new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(d);
-}
+/** Locale-aware date and time in the viewer's zone. */
+export const fmtWhen = (iso) => formatDateTime(iso);
+/** Date-only values (YYYY-MM-DD) are calendar dates, so format them in UTC to avoid a day shift. */
+const fmtDay = (v) => formatDate(v, { timeZone: 'UTC' });
 
 /** Human duration like "2d 3h", "45m", "30s". ms is absolute. */
 export function formatDuration(ms) {
@@ -34,58 +36,57 @@ export function formatDuration(ms) {
   return `${m}m`;
 }
 
-/**
- * Timer state at `now`. Pure.
- * @returns {{state:'none'|'met'|'overdue'|'due_soon'|'running', ms:number, left:string, tone:string}}
- */
+/** Timer state at `now` (kept for callers that want the legacy shape). Pure. */
 export function timerState(timer, now = Date.now()) {
-  if (!timer) return { state: 'none', ms: 0, left: '', tone: 'neutral' };
-  if (timer.status === 'met') return { state: 'met', ms: 0, left: '', tone: 'ok' };
-  if (timer.status === 'cancelled') return { state: 'none', ms: 0, left: '', tone: 'neutral' };
-  const due = Date.parse(timer.dueAt);
-  const ms = Number.isNaN(due) ? 0 : due - now;
-  const overdue = timer.status === 'breached' || (!Number.isNaN(due) && ms < 0);
-  if (overdue) return { state: 'overdue', ms, left: formatDuration(ms), tone: 'danger' };
-  const dueSoon = timer.status === 'due_soon' || (timer.warnAt && Date.parse(timer.warnAt) <= now);
-  return { state: dueSoon ? 'due_soon' : 'running', ms, left: formatDuration(ms), tone: dueSoon ? 'warn' : 'neutral' };
+  const u = timerUrgency(timer, now);
+  return { state: u.state, ms: u.ms, left: u.state === 'none' || u.state === 'met' ? '' : formatDuration(u.ms), tone: u.tone };
 }
 
-/** A status chip. The text always carries the meaning; tone only adds colour. */
-export function chip(text, tone = 'neutral', extra = '') {
-  return `<span class="chip chip-${esc(tone)}"${extra}>${esc(text)}</span>`;
+/** A status badge. The label always carries the meaning; tone only adds colour. */
+export function badge(text, tone = 'neutral', { solid = false, attrs = '' } = {}) {
+  return `<fx-badge tone="${esc(tone)}" label="${esc(text)}"${solid ? ' variant="solid"' : ''}${attrs ? ` ${attrs}` : ''}></fx-badge>`;
 }
 
-/** Severity chip from a 0-100 score. Bands: 0-24 minor, 25-49 moderate, 50-74 major, 75+ severe. */
-export function severityBand(score) {
-  if (!Number.isFinite(score)) return null;
-  return score >= 75 ? 'severe' : score >= 50 ? 'major' : score >= 25 ? 'moderate' : 'minor';
-}
-export function severityChip(score, band = severityBand(score)) {
-  if (!band) return chip(t('adj.severity.unknown'), 'neutral', ' data-chip="severity"');
-  const tone = band === 'severe' ? 'danger' : band === 'major' ? 'warn' : 'neutral';
-  const label = `${t('adj.severity', { score })} (${t(`adj.severity.${band}`)})`;
-  return chip(label, tone, ` data-chip="severity"`);
+/** Severity band from a 0-100 score. */
+export const severityBand = bandOf;
+
+/** Severity badge: "Major · 62". */
+export function severityChip(score, band = bandOf(score)) {
+  if (!band) return badge(t('adj.severity.unknown'), 'neutral', { attrs: 'data-chip="severity"' });
+  const tone = { minor: 'success', moderate: 'info', major: 'warning', severe: 'danger' }[band] ?? 'neutral';
+  return badge(`${formatEnum(band)} · ${score}`, tone, { attrs: `data-chip="severity" data-band="${esc(band)}"` });
 }
 
-const FLAG_TONE = { siu: 'danger', fatality: 'danger', timer_breached: 'danger', injury: 'warn', coverage_question: 'warn', timer_due: 'warn', subrogation: 'info', cat: 'info' };
-/** Flag chips; unknown flags show their raw code. */
+/** Claim status badge using the shared claim vocabulary. */
+export function statusBadge(status) {
+  return `<fx-badge status="${esc(status)}" kind="claim" data-chip="status"></fx-badge>`;
+}
+
+const FLAG_TONE = { siu: 'danger', fatality: 'danger', timer_breached: 'danger', injury: 'warning', coverage_question: 'warning', timer_due: 'warning', subrogation: 'info', cat: 'info' };
+/** Flag badges; unknown flags show a humanised token. */
 export function flagChips(flags = []) {
-  return flags.map((f) => chip(tEnum('adj.flag', f), FLAG_TONE[f] ?? 'neutral', ` data-chip="flag" data-flag="${esc(f)}"`)).join(' ');
+  return flags.map((f) => badge(tEnum('adj.flag', f), FLAG_TONE[f] ?? 'neutral', { attrs: `data-chip="flag" data-flag="${esc(f)}"` })).join(' ');
 }
 
-/** Timer chip with live-updatable data-due attribute. */
-export function timerChip(timer, now = Date.now()) {
-  if (!timer) return chip(t('adj.timer.none'), 'neutral', ' data-chip="timer"');
+/** Timer label such as "Acknowledge: 2h 30m left". Pure. */
+export function timerLabel(timer, now = Date.now()) {
+  if (!timer) return t('adj.timer.none');
   const st = timerState(timer, now);
   const kind = tEnum('adj.timer.kind', timer.kind);
-  let text;
-  if (st.state === 'met') text = t('adj.timer.met', { kind });
-  else if (st.state === 'overdue') text = t('adj.timer.overdue', { kind, left: st.left });
-  else if (st.state === 'none') text = t('adj.timer.none');
-  else text = t('adj.timer.left', { kind, left: st.left });
-  const live = st.state === 'running' || st.state === 'due_soon' || st.state === 'overdue';
-  const attrs = ` data-chip="timer"${live ? ` data-due="${esc(timer.dueAt)}" data-kind="${esc(kind)}"` : ''}`;
-  return chip(text, st.tone, attrs);
+  if (st.state === 'met') return t('adj.timer.met', { kind });
+  if (st.state === 'overdue') return t('adj.timer.overdue', { kind, left: st.left });
+  if (st.state === 'none') return t('adj.timer.none');
+  return t('adj.timer.left', { kind, left: st.left });
+}
+
+/** Timer badge, coloured by urgency, with a live-updatable data-due attribute. */
+export function timerChip(timer, now = Date.now()) {
+  if (!timer) return badge(t('adj.timer.none'), 'neutral', { attrs: 'data-chip="timer"' });
+  const u = timerUrgency(timer, now);
+  const live = ['running', 'due_soon', 'overdue'].includes(u.state);
+  const kind = tEnum('adj.timer.kind', timer.kind);
+  const attrs = `data-chip="timer" data-state="${esc(u.state)}"${live ? ` data-due="${esc(timer.dueAt)}" data-kind="${esc(kind)}"` : ''}`;
+  return badge(timerLabel(timer, now), u.tone, { attrs, solid: u.state === 'overdue' });
 }
 
 /** Sort inbox rows: most urgent timer first, then severity (the server order; kept for local re-sorts). */
@@ -94,68 +95,123 @@ export function sortInbox(items) {
   return items.map((r, i) => [r, i]).sort(([a, i], [b, j]) => due(a) - due(b) || (b.severityScore ?? -1) - (a.severityScore ?? -1) || i - j).map(([r]) => r);
 }
 
-/** Inbox table. Each row has a real link so it works with keyboard and without script. */
-export function inboxHtml(items = [], now = Date.now()) {
-  if (!items.length) return `<p class="muted" id="inbox-empty">${esc(t('adj.inbox.empty'))}</p>`;
-  const head = ['claim', 'severity', 'flags', 'timer', 'status', 'queue'].map((c) => `<th scope="col">${esc(t(`adj.inbox.col.${c}`))}</th>`).join('');
-  const rows = items.map((r) => `<tr data-claim-id="${esc(r.claimId)}">
-<th scope="row"><a href="#/claim/${esc(encodeURIComponent(r.claimId))}">${esc(r.claimNumber ?? r.claimId)}</a><div class="muted">${esc(r.lob ?? '')}</div></th>
-<td>${severityChip(r.severityScore)}</td>
-<td>${flagChips(r.flags) || '<span class="muted">-</span>'}</td>
-<td>${timerChip(r.nextTimer, now)}</td>
-<td>${esc(r.status ?? '')}</td>
-<td>${esc(r.queue ?? '')}</td></tr>`).join('');
-  return `<table class="inbox"><caption class="fx-visually-hidden">${esc(t('adj.inbox.heading'))}</caption><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+/** Key/value rows; blank values are skipped. */
+function kv(pairs, cls = 'fx-kv') {
+  const rows = pairs.filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v?.__html ?? esc(v)}</dd>`).join('');
+  return rows ? `<dl class="${cls}">${rows}</dl>` : '';
 }
-
-/** Definition list rows. */
-function dl(pairs) {
-  return `<dl>${pairs.filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v?.__html ?? esc(v)}</dd>`).join('')}</dl>`;
+/** Header facts as a responsive grid of label/value cells; blank values are skipped. */
+function factsGrid(pairs) {
+  return `<div class="adj-facts">${pairs.filter(([, v]) => v).map(([k, v]) => `<div class="adj-fact"><span class="adj-fact-l">${esc(k)}</span><span class="adj-fact-v">${esc(v)}</span></div>`).join('')}</div>`;
 }
 const raw = (html) => ({ __html: html });
-const panel = (id, title, body) => `<section class="panel" id="panel-${id}" aria-labelledby="h-${id}"><h3 id="h-${id}">${esc(title)}</h3>${body}</section>`;
-const empty = (key = 'adj.empty') => `<p class="muted">${esc(t(key))}</p>`;
+const card = (id, heading, body, { sub = '', pad = '', actions = '' } = {}) =>
+  `<fx-card id="panel-${id}" heading="${esc(heading)}"${sub ? ` subheading="${esc(sub)}"` : ''}${pad ? ` padding="${pad}"` : ''} level="2">${actions}${body}</fx-card>`;
+const none = (key) => `<p class="adj-none">${esc(t(key))}</p>`;
+const alert = (tone, title, body, extra = '') =>
+  `<div class="fx-alert" data-tone="${tone}" role="note">${icon(tone === 'danger' || tone === 'warning' ? 'alert-triangle' : 'info', { size: 20 })}<div><strong>${esc(title)}</strong><p>${esc(body)}</p>${extra}</div></div>`;
 
-/** Claim header. */
+/** One-line location from LossEvent.location: description, else city and state. */
+export function locationText(loss) {
+  const loc = loss?.location;
+  if (!loc) return '';
+  if (loc.description) return loc.description;
+  const a = loc.address ?? {};
+  return [a.line1, a.city, a.state ?? loc.state].filter(Boolean).join(', ') || (loc.state ?? '');
+}
+
+/** True when the subrogation flag should show (derived flag or triage signal). */
+export function hasSubrogation(view) {
+  return (view.claim?.flags ?? []).includes('subrogation') || !!view.triage?.subrogation?.flag;
+}
+
+/** Insured name for the header, from claim.parties. */
+function insuredOf(claim) {
+  const ps = claim?.parties ?? [];
+  return partyName(ps.find((p) => (p.roles ?? []).includes('insured')) ?? ps.find((p) => p.isPolicyParty));
+}
+
+/** Claim header: status, severity, line, loss date and location, plus flag badges. */
 export function headerHtml(view, now = Date.now()) {
   const c = view.claim ?? {};
-  const next = [...(view.timers ?? [])].filter((x) => !['met', 'cancelled'].includes(x.status)).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0];
-  return `<h2 id="claim-h" tabindex="-1">${esc(t('adj.claim.heading', { number: c.claimNumber ?? c.id }))}</h2>
-<p class="chips">${severityChip(view.triage?.severityScore, view.triage?.severityBand)} ${flagChips(c.flags)} ${timerChip(next, now)}</p>
-${dl([[t('adj.claim.status'), c.status], [t('adj.claim.lob'), c.lob], [t('adj.claim.policy'), c.policyNumber], [t('adj.claim.state'), c.riskState],
-    [t('adj.claim.lossDate'), c.lossEvent?.lossDate], [t('adj.claim.loss'), c.lossEvent?.cause]])}
-<p class="muted">${esc(t('adj.claim.generated', { at: fmtWhen(view.generatedAt) }))}</p>`;
+  const next = nextOpenTimer(view.timers);
+  const facts = factsGrid([
+    [t('adj.claim.lob'), c.lob ? formatEnum(c.lob) : ''],
+    [t('adj.claim.insured'), insuredOf(c)],
+    [t('adj.claim.policy'), c.policyNumber ? formatPolicyNumber(c.policyNumber) : ''],
+    [t('adj.claim.lossDate'), c.lossEvent?.lossDate ? fmtDay(c.lossEvent.lossDate) : ''],
+    [t('adj.claim.location'), locationText(c.lossEvent)],
+    [t('adj.claim.cause'), c.lossEvent?.cause ? formatEnum(c.lossEvent.cause) : ''],
+    [t('adj.claim.state'), c.riskState],
+    [t('adj.claim.reported'), view.timestamps?.reportedAt ? fmtWhen(view.timestamps.reportedAt) : ''],
+  ]);
+  const chips = [statusBadge(c.status), severityChip(view.triage?.severityScore, view.triage?.severityBand), flagChips(c.flags), timerChip(next, now)].filter(Boolean).join(' ');
+  return `<fx-card id="panel-header" class="adj-hero" padding="md"><div class="fx-cluster adj-hero-chips" aria-label="${esc(t('adj.panel.header'))}" role="group">${chips}</div>${facts}</fx-card>`;
 }
 
-/** AI provenance explain block (provider, model, tier, confidence). Required wherever AI output shows. */
-export function aiExplainHtml(ai, text, title = t('adj.ai.explain')) {
-  if (!ai) return '';
-  const pct = Math.round((Number(ai.confidence) || 0) * 100);
-  const tier = ai.tier !== undefined ? dl([[t('adj.ai.tier'), ai.tier]]) : '';
-  const low = pct < 60 ? `<p class="warn-text" role="note">${esc(t('adj.ai.lowConfidence'))}</p>` : '';
-  return `<details class="explain"><summary>${esc(title)}</summary>
-${text ? `<p>${esc(text)}</p>` : ''}
-${dl([[t('adj.ai.provider'), ai.provider], [t('adj.ai.model'), ai.model]])}${tier}
-<p>${chip(t('adj.ai.confidence', { pct }), pct < 60 ? 'warn' : 'ok')}</p>${low}</details>`;
+/** Subrogation banner shown under the header when the flag is present, else ''. */
+export function subrogationBanner(view) {
+  if (!hasSubrogation(view)) return '';
+  const go = `<p><button class="fx-btn secondary small" type="button" data-goto="item-subrogation">${esc(t('adj.subro.banner.go'))}</button></p>`;
+  return `<div id="subro-banner" data-flag="subrogation">${alert('info', t('adj.subro.banner.title'), t('adj.subro.banner.body'), go)}</div>`;
 }
 
+/** Confidence in percent (0-100) or null. */
+function pctOf(ai) {
+  const c = Number(ai?.confidence);
+  return Number.isFinite(c) ? Math.round((c <= 1 ? c * 100 : c)) : null;
+}
+/** AI provenance is complete only with provider, model and a numeric confidence. */
+export function hasProvenance(ai) {
+  return !!(ai && ai.provider && ai.model && pctOf(ai) !== null);
+}
+
+/** Provider, model, confidence (and tier) rows. Required wherever AI output shows. */
+export function provenanceHtml(ai) {
+  const pct = pctOf(ai);
+  const low = pct < 60;
+  return kv([
+    [t('adj.ai.provider'), ai.provider], [t('adj.ai.model'), ai.model],
+    [t('adj.ai.confidenceLabel'), raw(badge(t('adj.ai.confidence', { pct }), low ? 'warning' : 'success', { attrs: 'data-chip="confidence"' }))],
+    [t('adj.ai.tier'), ai.tier],
+  ], 'fx-kv adj-prov');
+}
+
+/** Split the "Facts used:" trailer the summariser appends from the narrative. */
+export function splitSummary(text) {
+  const m = /\n+Facts used:\s*([\s\S]*)$/.exec(String(text ?? ''));
+  return m ? { body: text.slice(0, m.index).trim(), facts: m[1].trim() } : { body: String(text ?? '').trim(), facts: '' };
+}
+
+/** AI summary card. Provider, model, confidence and explanation are always visible, never collapsed. */
 export function summaryPanel(view) {
   const s = view.summary;
-  if (!s?.text) return panel('summary', t('adj.panel.summary'), empty('adj.ai.noSummary'));
-  return panel('summary', t('adj.panel.summary'),
-    `<p class="muted">${esc(t('adj.ai.label'))}</p><p id="summary-text">${esc(s.text)}</p>${aiExplainHtml(s.ai, view.triage?.explanation)}`);
+  const heading = t('adj.panel.summary');
+  if (!s?.text) return card('summary', heading, none('adj.ai.noSummary'));
+  if (!hasProvenance(s.ai)) return card('summary', heading, alert('warning', t('adj.panel.summary'), t('adj.ai.noProvenance')));
+  const { body, facts } = splitSummary(s.text);
+  const explanation = s.explanation ?? view.triage?.explanation;
+  const pct = pctOf(s.ai);
+  const bullets = (s.bullets ?? []).length && !body.includes('- ') ? `<ul>${s.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` : '';
+  const text = body.split(/\n+/).map((p) => (p.startsWith('- ') ? `<li>${esc(p.slice(2))}</li>` : `<p>${esc(p)}</p>`)).join('').replace(/(<li>.*?<\/li>)+/g, (m) => `<ul>${m}</ul>`);
+  return card('summary', heading, `<div id="summary-text" class="adj-summary-text">${text}${bullets}</div>
+${facts ? `<p class="adj-muted">${esc(t('adj.ai.facts'))}: ${esc(facts)}</p>` : ''}
+<div class="adj-ai" id="summary-ai">${provenanceHtml(s.ai)}
+<div class="adj-explain"><h3>${esc(t('adj.ai.explanation'))}</h3><p id="summary-explanation">${esc(explanation || t('adj.ai.noExplanation'))}</p></div>
+${pct < 60 ? `<p class="adj-warn" role="note">${esc(t('adj.ai.lowConfidence'))}</p>` : ''}${s.unconfirmed ? `<p class="adj-warn" role="note">${esc(t('adj.ai.unconfirmed'))}</p>` : ''}</div>`,
+  { sub: t('adj.ai.label') });
 }
 
 export function coveragePanel(view) {
   const c = view.coverage;
-  if (!c) return panel('coverage', t('adj.panel.coverage'), empty('adj.coverage.none'));
-  const tone = c.outcome === 'covered' ? 'ok' : c.outcome === 'partial' || c.outcome === 'needs_review' ? 'warn' : 'danger';
-  const checks = (c.checks ?? []).map((k) => `<li>${esc(k.code)}: ${esc(k.passed ? t('adj.coverage.check.pass') : t('adj.coverage.check.fail'))}${k.detail ? ` <span class="muted">${esc(k.detail)}</span>` : ''}</li>`).join('');
-  const ded = c.applicableDeductible ? `${c.applicableDeductible.amount ?? ''} ${c.applicableDeductible.currency ?? ''}`.trim() : '';
-  return panel('coverage', t('adj.panel.coverage'),
-    `<p>${esc(t('adj.coverage.outcome'))}: ${chip(tEnum('adj.coverage.outcome', c.outcome), tone)}</p>
-${ded ? dl([[t('adj.coverage.deductible'), ded]]) : ''}${checks ? `<ul>${checks}</ul>` : ''}
-${(c.reasons ?? []).length ? `<ul>${c.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}`);
+  if (!c) return card('coverage', t('adj.panel.coverage'), none('adj.coverage.none'));
+  const ded = c.applicableDeductible?.amount !== undefined ? formatMoney(c.applicableDeductible) : '';
+  const checks = (c.checks ?? []).map((k) => `<li class="adj-check">${badge(k.passed ? t('adj.coverage.check.pass') : t('adj.coverage.check.fail'), k.passed ? 'success' : 'danger')} <span>${esc(formatEnum(k.code))}</span>${k.detail ? ` <span class="adj-muted">${esc(k.detail)}</span>` : ''}</li>`).join('');
+  return card('coverage', t('adj.panel.coverage'), `<div class="fx-stack-sm">
+<div class="fx-cluster"><fx-badge status="${esc(c.outcome)}" kind="coverage" data-chip="coverage"></fx-badge></div>
+${kv([[t('adj.coverage.deductible'), ded]])}
+${checks ? `<ul class="adj-list">${checks}</ul>` : ''}
+${(c.reasons ?? []).length ? `<ul class="adj-list adj-muted">${c.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}</div>`);
 }
 
 /**
@@ -195,101 +251,188 @@ export function buildDecision({ kind, action, note, tasks = [] }) {
 function decisionForm(kind, state) {
   if (state) {
     const key = state.status === 'accepted' ? 'adj.decision.accepted' : 'adj.decision.dismissed';
-    return `<p class="decision-done" data-decision="${esc(state.status)}">${chip(t(key, { actor: state.actor }), state.status === 'accepted' ? 'ok' : 'neutral')} <span>${esc(state.note)}</span></p>`;
+    return `<p class="decision-done" data-decision="${esc(state.status)}">${badge(t(key, { actor: state.actor }), state.status === 'accepted' ? 'success' : 'neutral')} <span>${esc(state.note)}</span></p>`;
   }
   return `<form class="decision" data-kind="${esc(kind)}" novalidate>
 <label for="note-${kind}">${esc(t('adj.decision.note'))}</label>
-<textarea id="note-${kind}" name="note" rows="2" aria-describedby="hint-${kind}" required></textarea>
-<p class="muted" id="hint-${kind}">${esc(t('adj.decision.noteHint'))}</p>
+<textarea class="fx-textarea" id="note-${kind}" name="note" rows="2" aria-describedby="hint-${kind}" required></textarea>
+<p class="adj-muted" id="hint-${kind}">${esc(t('adj.decision.noteHint'))}</p>
 <p class="err" role="alert" hidden></p>
-<button class="fx-btn" type="submit" data-action="accepted">${esc(t('adj.decision.accept'))}</button>
-<button class="fx-btn secondary" type="submit" data-action="dismissed">${esc(t('adj.decision.dismiss'))}</button></form>`;
+<div class="fx-btn-group"><button class="fx-btn small" type="submit" data-action="accepted">${esc(t('adj.decision.accept'))}</button>
+<button class="fx-btn secondary small" type="submit" data-action="dismissed">${esc(t('adj.decision.dismiss'))}</button></div></form>`;
 }
 
 export function triagePanel(view) {
   const r = view.triage;
-  if (!r) return panel('triage', t('adj.panel.triage'), empty('adj.triage.none'));
+  if (!r) return card('triage', t('adj.panel.triage'), none('adj.triage.none'));
   const fraud = r.fraud ?? { score: 0, indicators: [] };
   const sub = r.subrogation ?? { flag: false, reasons: [] };
   const fraudOpen = fraud.referToSiu || fraud.score >= 70 || (fraud.indicators ?? []).length > 0;
+  const reasons = (list) => `<ul class="adj-list">${(list ?? []).map((i) => `<li><strong>${esc(formatEnum(i.code))}</strong> <span class="adj-muted">${esc(i.reason)}</span></li>`).join('')}</ul>`;
   const fraudBody = fraudOpen
-    ? `<p>${chip(t('adj.triage.fraudScore', { score: fraud.score }), fraud.referToSiu ? 'danger' : 'warn')}</p>
-<ul>${(fraud.indicators ?? []).map((i) => `<li><strong>${esc(i.code)}</strong>: ${esc(i.reason)}</li>`).join('')}</ul>${decisionForm('fraud', decisionState(view.notes, 'fraud'))}`
-    : `<p class="muted">${esc(t('adj.triage.fraud.none'))}</p>`;
+    ? `<p>${badge(t('adj.triage.fraudScore', { score: fraud.score }), fraud.referToSiu ? 'danger' : 'warning')}</p>${reasons(fraud.indicators)}${decisionForm('fraud', decisionState(view.notes, 'fraud'))}`
+    : `<p class="adj-none">${esc(t('adj.triage.fraud.none'))}</p>`;
   const subBody = sub.flag
-    ? `<ul>${(sub.reasons ?? []).map((i) => `<li><strong>${esc(i.code)}</strong>: ${esc(i.reason)}</li>`).join('')}</ul>${decisionForm('subrogation', decisionState(view.notes, 'subrogation'))}`
-    : `<p class="muted">${esc(t('adj.triage.subrogation.none'))}</p>`;
-  return panel('triage', t('adj.panel.triage'),
-    `${dl([[t('adj.triage.severity'), `${r.severityScore} (${tEnum('adj.severity', r.severityBand)})`], [t('adj.triage.complexity'), r.complexity]])}
-<div class="item" id="item-fraud"><h4>${esc(t('adj.triage.fraud'))}</h4>${fraudBody}</div>
-<div class="item" id="item-subrogation"><h4>${esc(t('adj.triage.subrogation'))}</h4>${subBody}</div>
-${aiExplainHtml(r.ai, r.explanation, t('adj.triage.why'))}`);
+    ? `${reasons(sub.reasons)}${decisionForm('subrogation', decisionState(view.notes, 'subrogation'))}`
+    : `<p class="adj-none">${esc(t('adj.triage.subrogation.none'))}</p>`;
+  const ai = hasProvenance(r.ai)
+    ? `<div class="adj-ai adj-ai-inline" id="triage-ai"><h3>${esc(t('adj.triage.why'))}</h3><p>${esc(r.explanation || t('adj.ai.noExplanation'))}</p>${provenanceHtml(r.ai)}</div>`
+    : '';
+  return card('triage', t('adj.panel.triage'), `<div class="fx-stack-sm">
+${kv([[t('adj.triage.severity'), raw(severityChip(r.severityScore, r.severityBand))], [t('adj.triage.complexity'), r.complexity ? formatEnum(r.complexity) : '']])}
+<div class="adj-item" id="item-fraud" tabindex="-1"><h3>${esc(t('adj.triage.fraud'))}</h3>${fraudBody}</div>
+<div class="adj-item" id="item-subrogation" tabindex="-1"><h3>${esc(t('adj.triage.subrogation'))}</h3>${subBody}</div>
+${ai}</div>`);
 }
 
 export function routingPanel(view) {
   const r = view.routing;
-  if (!r) return panel('routing', t('adj.panel.routing'), empty('adj.routing.none'));
-  const rules = (r.ruleIds ?? []).length ? `<ul>${r.ruleIds.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
-  const reasons = (r.reasons ?? []).length ? `<ul>${r.reasons.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
-  return panel('routing', t('adj.panel.routing'),
-    `${dl([[t('adj.routing.outcome'), tEnum('adj.routing.outcome', r.outcome)], [t('adj.routing.queue'), r.queue], [t('adj.routing.adjuster'), r.adjusterId],
-      [t('adj.routing.fastTrack'), r.fastTrack ? t('adj.yes') : t('adj.no')]])}
-${rules ? `<h4>${esc(t('adj.routing.rules'))}</h4>${rules}` : ''}${reasons ? `<h4>${esc(t('adj.routing.reasons'))}</h4>${reasons}` : ''}
-${r.override ? `<p class="warn-text">${esc(t('adj.routing.override', { reason: r.override.reason }))}</p>` : ''}`);
+  if (!r) return card('routing', t('adj.panel.routing'), none('adj.routing.none'));
+  const list = (items) => `<ul class="adj-list">${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  return card('routing', t('adj.panel.routing'), `<div class="fx-stack-sm">${kv([
+    [t('adj.routing.outcome'), tEnum('adj.routing.outcome', r.outcome)], [t('adj.routing.queue'), r.queue ? formatEnum(r.queue) : ''],
+    [t('adj.routing.adjuster'), r.adjusterId], [t('adj.routing.fastTrack'), r.fastTrack ? t('adj.yes') : t('adj.no')],
+    [t('adj.routing.rules'), (r.ruleIds ?? []).length ? raw(list(r.ruleIds)) : ''], [t('adj.routing.reasons'), (r.reasons ?? []).length ? raw(list(r.reasons)) : ''],
+  ])}${r.override ? `<p class="adj-warn">${esc(t('adj.routing.override', { reason: r.override.reason }))}</p>` : ''}</div>`);
 }
 
 export function timersPanel(view, now = Date.now()) {
   const list = view.timers ?? [];
-  if (!list.length) return panel('timers', t('adj.panel.timers'), empty('adj.timers.none'));
-  const items = list.map((x) => `<li>${timerChip(x, now)} <span class="muted">${esc(tEnum('adj.timer.status', x.status))}, ${esc(t('adj.timers.due', { at: fmtWhen(x.dueAt) }))}${x.citation ? `, ${esc(x.citation)}` : ''}</span></li>`).join('');
-  return panel('timers', t('adj.panel.timers'), `<ul class="plain">${items}</ul>`);
+  if (!list.length) return card('timers', t('adj.panel.timers'), none('adj.timers.none'));
+  const items = list.map((x) => `<li>${timerChip(x, now)}<span class="adj-muted">${esc(t('adj.timers.due', { at: fmtWhen(x.dueAt) }))}${x.citation ? ` · ${esc(x.citation)}` : ''}</span></li>`).join('');
+  return card('timers', t('adj.panel.timers'), `<ul class="adj-list adj-timers">${items}</ul>`);
 }
 
-/** NBA checklist. `done` is a Set/array of action codes the adjuster ticked locally. */
+/** Normalise rule priorities (high|medium|low) and AI priorities (higher number is more urgent). */
+export function priorityOf(p) {
+  if (typeof p === 'number') return p >= 70 ? 'high' : p >= 40 ? 'medium' : 'low';
+  return ['high', 'medium', 'low'].includes(p) ? p : 'low';
+}
+
+/** Where "Go to" scrolls for a next-best-action code. */
+export function actionTarget(code) {
+  const c = String(code ?? '');
+  if (/siu|fraud/.test(c)) return 'item-fraud';
+  if (/subro|recover/.test(c)) return 'item-subrogation';
+  if (/coverage|policy|deductible/.test(c)) return 'panel-coverage';
+  if (/document|photo|police|report|estimate|evidence/.test(c)) return 'panel-documents';
+  if (/timer|deadline|acknowledge/.test(c)) return 'panel-timers';
+  return 'panel-notes';
+}
+
+/**
+ * Next-best-actions as actionable rows: tick when done, jump to the place to do it. AI-sourced rows show only
+ * with provenance (standards: never AI output without provider, model and confidence); otherwise they are counted, not shown.
+ */
 export function nbaPanel(view, done = []) {
-  const acts = view.nextActions ?? [];
-  if (!acts.length) return panel('nba', t('adj.panel.nba'), empty('adj.nba.none'));
+  const all = view.nextActions ?? [];
+  const shown = all.filter((a) => a.source !== 'ai' || hasProvenance(a.ai));
+  const hidden = all.length - shown.length;
+  const note = hidden ? `<p class="adj-muted" id="nba-hidden">${esc(t('adj.nba.aiHidden', { count: hidden }))}</p>` : '';
+  if (!shown.length) return card('nba', t('adj.panel.nba'), none('adj.nba.none') + note);
   const doneSet = new Set(done);
-  const n = acts.filter((a) => doneSet.has(a.code)).length;
-  const items = acts.map((a, i) => `<li><input type="checkbox" id="nba-${i}" data-code="${esc(a.code)}"${doneSet.has(a.code) ? ' checked' : ''}>
-<label for="nba-${i}">${esc(a.label)}</label> ${chip(tEnum('adj.nba.priority', a.priority ?? 'low'), a.priority === 'high' ? 'warn' : 'neutral')} ${a.source ? chip(tEnum('adj.nba.source', a.source), 'neutral') : ''}
-${a.reason ? `<div class="muted">${esc(a.reason)}</div>` : ''}</li>`).join('');
-  return panel('nba', t('adj.panel.nba'), `<p class="muted" role="status" id="nba-progress">${esc(t('adj.nba.progress', { done: n, total: acts.length }))}</p><ul class="plain checklist">${items}</ul>`);
+  const n = shown.filter((a) => doneSet.has(a.code)).length;
+  const items = shown.map((a, i) => {
+    const pr = priorityOf(a.priority);
+    const ai = a.source === 'ai' ? `${badge(t('adj.ai.suggestion'), 'brand')} <span class="adj-muted">${esc(a.ai.provider)} / ${esc(a.ai.model)} · ${pctOf(a.ai)}%</span>` : '';
+    return `<li class="adj-action" data-code="${esc(a.code)}" data-priority="${pr}">
+<input type="checkbox" id="nba-${i}" data-code="${esc(a.code)}"${doneSet.has(a.code) ? ' checked' : ''}>
+<div class="adj-action-main"><label for="nba-${i}">${esc(a.label)}</label>
+<div class="fx-cluster">${badge(tEnum('adj.nba.priority', pr), pr === 'high' ? 'danger' : pr === 'medium' ? 'warning' : 'neutral')} ${ai}</div>
+${a.reason ? `<p class="adj-muted">${esc(a.reason)}</p>` : ''}</div>
+<button class="fx-btn ghost small" type="button" data-goto="${actionTarget(a.code)}" aria-label="${esc(`${t('adj.nba.go')}: ${a.label}`)}">${esc(t('adj.nba.go'))}${icon('arrow-right', { size: 16 })}</button></li>`;
+  }).join('');
+  return card('nba', t('adj.panel.nba'), `<p class="adj-muted" role="status" id="nba-progress">${esc(t('adj.nba.progress', { done: n, total: shown.length }))}</p><ul class="adj-actions">${items}</ul>${note}`);
+}
+
+/** Parties card: name, roles, flags. */
+export function partiesPanel(view) {
+  const list = view.claim?.parties ?? [];
+  if (!list.length) return card('parties', t('adj.panel.parties'), none('adj.parties.none'));
+  const items = list.map((p) => {
+    const roles = (p.roles ?? []).map((r) => formatEnum(r)).join(', ');
+    const flags = [p.injured ? badge(t('adj.party.injured'), 'warning') : '', p.atFault ? badge(t('adj.party.atFault'), 'danger') : ''].filter(Boolean).join(' ');
+    const contact = [p.phone, p.email].filter(Boolean).join(' · ');
+    return `<li><div class="adj-line"><strong>${esc(partyName(p) || formatEnum(p.kind))}</strong>${flags ? ` ${flags}` : ''}</div><div class="adj-muted">${esc(roles)}${contact ? ` · ${esc(contact)}` : ''}</div></li>`;
+  }).join('');
+  return card('parties', t('adj.panel.parties'), `<ul class="adj-list">${items}</ul>`);
+}
+
+/** Vehicles card. */
+export function vehiclesPanel(view) {
+  const list = view.claim?.vehicles ?? [];
+  if (!list.length) return card('vehicles', t('adj.panel.vehicles'), none('adj.vehicles.none'));
+  const items = list.map((v) => {
+    const name = [v.year, v.make, v.model].filter(Boolean).join(' ') || t('adj.vehicle.unknown');
+    const flags = [v.drivable === false ? badge(t('adj.vehicle.notDrivable'), 'danger') : v.drivable === true ? badge(t('adj.vehicle.drivable'), 'success') : '', v.towed ? badge(t('adj.vehicle.towed'), 'warning') : ''].filter(Boolean).join(' ');
+    const meta = [v.role ? formatEnum(v.role) : '', v.licensePlate ? `${v.licensePlate}${v.plateState ? ` (${v.plateState})` : ''}` : '', v.damageDescription].filter(Boolean).join(' · ');
+    return `<li><div class="adj-line"><strong>${esc(name)}</strong>${flags ? ` ${flags}` : ''}</div><div class="adj-muted">${esc(meta)}</div></li>`;
+  }).join('');
+  return card('vehicles', t('adj.panel.vehicles'), `<ul class="adj-list">${items}</ul>`);
 }
 
 export function documentsPanel(view) {
   const list = view.documents ?? [];
-  if (!list.length) return panel('documents', t('adj.panel.documents'), empty('adj.docs.none'));
-  return panel('documents', t('adj.panel.documents'), `<ul>${list.map((d) => `<li>${esc(d.filename ?? d.id)} <span class="muted">${esc(d.kind ?? '')}</span>${d.extraction?.needsReview ? ` ${chip(t('adj.docs.needsReview'), 'warn')}` : ''}</li>`).join('')}</ul>`);
+  if (!list.length) return card('documents', t('adj.panel.documents'), none('adj.docs.none'));
+  return card('documents', t('adj.panel.documents'), `<ul class="adj-list">${list.map((d) => `<li><div class="adj-line">${icon('file', { size: 16 })}<strong>${esc(d.filename ?? d.id)}</strong>${d.extraction?.needsReview ? ` ${badge(t('adj.docs.needsReview'), 'warning')}` : ''}</div><div class="adj-muted">${esc(d.kind ? formatEnum(d.kind) : '')}${d.uploadedAt ? ` · ${esc(fmtWhen(d.uploadedAt))}` : ''}</div></li>`).join('')}</ul>`);
 }
 
 export function tasksPanel(view) {
   const list = view.tasks ?? [];
-  if (!list.length) return panel('tasks', t('adj.panel.tasks'), empty('adj.tasks.none'));
-  return panel('tasks', t('adj.panel.tasks'), `<ul>${list.map((x) => `<li>${esc(x.title)} ${chip(x.status, x.status === 'done' ? 'ok' : 'neutral')}${x.dueAt ? ` <span class="muted">${esc(fmtWhen(x.dueAt))}</span>` : ''}</li>`).join('')}</ul>`);
+  if (!list.length) return card('tasks', t('adj.panel.tasks'), none('adj.tasks.none'));
+  return card('tasks', t('adj.panel.tasks'), `<ul class="adj-list">${list.map((x) => `<li><div class="adj-line"><strong>${esc(x.title)}</strong> <fx-badge status="${esc(x.status)}" kind="task"></fx-badge></div>${x.dueAt ? `<div class="adj-muted">${esc(t('adj.tasks.due', { at: fmtWhen(x.dueAt) }))}</div>` : ''}</li>`).join('')}</ul>`);
 }
 
 export function notesPanel(view) {
   const list = view.notes ?? [];
   const items = list.length
-    ? `<ul>${list.map((n) => `<li>${n.category && n.category !== 'general' ? chip(n.category, 'neutral') + ' ' : ''}${esc(n.body)} <span class="muted">${esc(n.author?.id ?? n.author?.name ?? '')} ${esc(fmtWhen(n.createdAt))}</span></li>`).join('')}</ul>`
-    : empty('adj.notes.none');
-  const form = `<form class="note-form" novalidate><label for="note-new">${esc(t('adj.notes.body'))}</label><textarea id="note-new" name="body" rows="2"></textarea>
-<button class="fx-btn secondary" type="submit">${esc(t('adj.notes.add'))}</button></form>`;
-  return panel('notes', t('adj.panel.notes'), items + form);
+    ? `<ul class="adj-list">${list.map((n) => `<li>${n.category && n.category !== 'general' ? `${badge(formatEnum(n.category), 'neutral')} ` : ''}${esc(n.body)}<div class="adj-muted">${esc(n.author?.id ?? n.author?.name ?? '')} · ${esc(fmtWhen(n.createdAt))}</div></li>`).join('')}</ul>`
+    : none('adj.notes.none');
+  const form = `<form class="note-form fx-stack-sm" novalidate><label for="note-new">${esc(t('adj.notes.body'))}</label><textarea class="fx-textarea" id="note-new" name="body" rows="2"></textarea>
+<div><button class="fx-btn secondary small" type="submit">${esc(t('adj.notes.add'))}</button></div></form>`;
+  return card('notes', t('adj.panel.notes'), `<div class="fx-stack-sm">${items}${form}</div>`);
 }
 
+/** Audit timeline events for fx-timeline. AI events carry provider, model and confidence in `actor`. Pure. */
+export function timelineEvents(view) {
+  return (view.timeline ?? []).filter((e) => e.at).map((e) => {
+    const type = String(e.type ?? '');
+    const tone = /breach|overdue/.test(type + e.label) ? 'danger' : /triage/.test(type) ? 'info' : /routed|status/.test(type) ? 'brand' : /met|ack/.test(type) ? 'success' : 'neutral';
+    const ai = /triage/.test(type) && hasProvenance(view.triage?.ai) ? t('adj.timeline.ai', { provider: view.triage.ai.provider, model: view.triage.ai.model, pct: pctOf(view.triage.ai) }) : undefined;
+    const label = e.label && e.label !== type ? e.label.replace(/^Audit: (.+)$/, (_, a) => `Audit: ${formatEnum(a)}`) : formatEnum(type.replace(/^audit\./, 'audit '));
+    return { at: e.at, title: label, tone, ...(ai ? { actor: ai } : {}) };
+  });
+}
+
+const TIMELINE_RECENT = 12;
 export function timelinePanel(view) {
-  const list = view.timeline ?? [];
-  if (!list.length) return panel('timeline', t('adj.panel.timeline'), empty());
-  return panel('timeline', t('adj.panel.timeline'), `<ol class="plain">${list.map((e) => `<li><time datetime="${esc(e.at)}">${esc(fmtWhen(e.at))}</time> ${esc(e.label ?? e.type)}</li>`).join('')}</ol>`);
+  const events = timelineEvents(view);
+  if (!events.length) return card('timeline', t('adj.panel.timeline'), none('adj.timeline.empty'));
+  const sorted = [...events].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  const recent = sorted.slice(0, TIMELINE_RECENT);
+  const older = sorted.slice(TIMELINE_RECENT);
+  const tl = (list) => `<fx-timeline data-events="${esc(JSON.stringify(list))}"></fx-timeline>`;
+  const more = older.length ? `<details class="adj-older"><summary>${esc(t('adj.timeline.older', { count: older.length }))}</summary>${tl(older)}</details>` : '';
+  return card('timeline', t('adj.panel.timeline'), tl(recent) + more);
 }
 
-/** Every panel in display order. */
+/** Header, subrogation banner and the two-column panel grid in display order. */
 export function claimViewHtml(view, { now = Date.now(), done = [] } = {}) {
-  return `<div class="claim-head">${headerHtml(view, now)}</div>
-<div class="grid">
-${summaryPanel(view)}${nbaPanel(view, done)}${triagePanel(view)}${coveragePanel(view)}${routingPanel(view)}${timersPanel(view, now)}
-${documentsPanel(view)}${tasksPanel(view)}${notesPanel(view)}${timelinePanel(view)}
+  return `${headerHtml(view, now)}${subrogationBanner(view)}
+<div class="fx-grid-main adj-grid">
+<div class="fx-stack">${summaryPanel(view)}${nbaPanel(view, done)}${triagePanel(view)}${timelinePanel(view)}${notesPanel(view)}</div>
+<div class="fx-stack">${timersPanel(view, now)}${partiesPanel(view)}${vehiclesPanel(view)}${coveragePanel(view)}${documentsPanel(view)}${routingPanel(view)}${tasksPanel(view)}</div>
 </div>`;
+}
+
+/** Page heading text for a claim. */
+export function claimHeading(view) {
+  const c = view.claim ?? {};
+  return t('adj.claim.heading.short', { number: c.claimNumber ? formatClaimNumber(c.claimNumber) : c.id });
+}
+
+/** Page subheading: line and loss date. */
+export function claimSubheading(view) {
+  const c = view.claim ?? {};
+  return t('adj.claim.subheading', { line: c.lob ? formatEnum(c.lob) : '', date: c.lossEvent?.lossDate ? fmtDay(c.lossEvent.lossDate) : '' });
 }

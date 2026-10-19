@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:28:28.987Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T12:48:10.048Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T12:56:05.060Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:04:24.853Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-EXP-06",
@@ -34,5 +44,45 @@
   "valueDrivers": [
     "VD-3"
   ],
-  "startedAt": "2026-10-19T12:48:10.048Z"
+  "startedAt": "2026-10-19T12:48:10.048Z",
+  "doneAt": "2026-10-19T13:04:24.853Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T13:04:24.852Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 4 criteria met; admin UI 9/9 + unit 34/34 pass, screenshots reviewed; full suite failures are claimant/CSR/adjuster/demo-bar (other tickets) plus baseline SEC2 todos"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.7879,
+    "inputTokens": 98,
+    "cacheWriteTokens": 222490,
+    "cacheReadTokens": 6037857,
+    "outputTokens": 2396,
+    "agents": {
+      "a20ea19fea0c54b25": {
+        "label": "S6-EXP-06 ic-experience-admin-ui-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 82,
+        "cacheWriteTokens": 151351,
+        "cacheReadTokens": 5571498,
+        "outputTokens": 2247,
+        "usd": 1.5153
+      },
+      "abcf1b2a197d6ee97": {
+        "label": "S6-EXP-06 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 16,
+        "cacheWriteTokens": 71139,
+        "cacheReadTokens": 466359,
+        "outputTokens": 149,
+        "usd": 0.2726
+      }
+    }
+  }
 }

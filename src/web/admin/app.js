@@ -1,10 +1,13 @@
 // Carrier admin console wiring. Pure logic lives in config-model.js, edit.js, client.js and render.js.
 import '/shared/components/index.js';
+import '/shared/components/demo-bar.js';
 import { isDevMode } from '/shared/devlogin.js';
+import { applyBranding } from '/shared/theme.js';
+import { clearSession, readSession } from '/shared/personas.js';
 import { createAdminClient } from './client.js';
-import { clone, isDirty, parsePointer, parseCsv } from './config-model.js';
+import { changedSections, clone, diffConfig, isDirty, parsePointer, parseCsv } from './config-model.js';
 import { applyFieldEdit, applyListAction } from './edit.js';
-import { TABS, panelHtml, summaryHtml, tabsHtml } from './render.js';
+import { SECTION_LABEL, TABS, diffHtml, markHtml, panelHtml, summaryHtml, tabsHtml } from './render.js';
 
 const $ = (id) => document.getElementById(id);
 const toast = (m, kind = 'info') => $('toast').show(m, { kind });
@@ -20,21 +23,47 @@ const state = {
 
 function ctx() { return { ...state }; }
 
+/** True when the persona switcher is mounted (dev servers); the old dev form is then never shown. */
+const demoBarPresent = () => globalThis.__FNOL_DEV__ === true;
+
 function renderPanel() {
   $('panel').innerHTML = panelHtml(state.tab, ctx());
-  $('tabs').innerHTML = tabsHtml(state.tab, state.report);
   $('summary').innerHTML = summaryHtml(state.report);
   paintStatus();
+}
+
+/** Section id -> number of changed fields, from the diff against the saved config. */
+function changeCounts() {
+  const out = {};
+  for (const c of diffConfig(state.saved, state.cfg)) out[c.section] = (out[c.section] ?? 0) + 1;
+  return out;
 }
 
 function paintStatus() {
   $('version-label').textContent = `Version ${state.version}`;
   const dirty = isDirty(state.saved, state.cfg);
-  $('dirty-label').textContent = dirty ? 'Unsaved changes' : 'No unsaved changes';
+  const counts = changeCounts();
+  const names = [...new Set(Object.keys(counts).map((k) => SECTION_LABEL[k] ?? 'Other'))];
+  $('dirty-label').textContent = dirty ? `Unsaved changes${names.length ? `: ${names.join(', ')}` : ''}` : 'No unsaved changes';
+  $('savebar').dataset.dirty = String(dirty);
   $('revert').disabled = !dirty;
+  paintNav(counts);
+  const shell = $('shell');
+  if (state.cfg) shell.setAttribute('tenant-name', state.cfg.displayName ?? state.cfg.tenantId ?? '');
 }
 
-function showOnly(...ids) { for (const s of ['dev-panel', 'no-login', 'unavailable', 'console', 'conflict']) $(s).hidden = !ids.includes(s); }
+/** Update the nav in place so a link is never replaced between mouse-down and click. */
+function paintNav(counts) {
+  const nav = $('tabs');
+  if (nav.dataset.active !== state.tab || !nav.children.length) { nav.innerHTML = tabsHtml(state.tab, state.report, counts); nav.dataset.active = state.tab; return; }
+  for (const [id] of TABS) {
+    const mark = nav.querySelector(`#tab-${id} .adm-mark`);
+    const html = markHtml(state.report?.bySection?.[id] ?? 0, counts[id] ?? 0);
+    if (mark && mark.innerHTML !== html) mark.innerHTML = html;
+  }
+}
+
+function showOnly(...ids) { for (const s of ['dev-panel', 'no-login', 'pick-persona', 'unavailable', 'console', 'conflict']) $(s).hidden = !ids.includes(s); }
 
 let retryFn = null;
 async function guarded(fn, retry) {
@@ -49,10 +78,10 @@ $('un-retry').addEventListener('click', () => { const f = retryFn; retryFn = nul
 // ---- sign in / out
 function signOut() {
   token = null; state.cfg = null;
-  try { sessionStorage.removeItem('admin.token'); } catch { /* ignore */ }
+  try { sessionStorage.removeItem('admin.token'); sessionStorage.removeItem('admin.who'); clearSession(sessionStorage); } catch { /* ignore */ }
   boot();
 }
-$('signout').addEventListener('click', signOut);
+$('shell').addEventListener('fx-signout', signOut);
 $('dev-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const tenant = $('dev-tenant').value;
@@ -71,8 +100,9 @@ async function loadAll() {
   state.report = null; state.localErrors = {}; state.rawText = {};
   state.webhooks = null; state.history = null; state.kpis = null;
   $('conflict').hidden = true;
+  try { applyBranding(res.config); } catch { /* branding is cosmetic */ }
   showOnly('console');
-  $('whoami').textContent = `${res.config.displayName} (${res.config.tenantId})`;
+  setUser();
   renderPanel();
   loadTabData();
 }
@@ -92,19 +122,27 @@ async function loadTabData() {
   }
 }
 
-function selectTab(id, focus = false) {
-  state.tab = id; renderPanel();
-  if (focus) $(`tab-${id}`)?.focus();
+const TAB_IDS = TABS.map((t) => t[0]);
+function selectTab(id) {
+  state.tab = id;
+  try { history.replaceState(null, '', `#/${id}`); } catch { /* ignore */ }
+  renderPanel();
   loadTabData();
 }
-$('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) selectTab(b.dataset.tab); });
-$('tabs').addEventListener('keydown', (e) => {
-  const ids = TABS.map((t) => t[0]);
-  let i = ids.indexOf(state.tab);
-  if (e.key === 'ArrowRight') i = (i + 1) % ids.length; else if (e.key === 'ArrowLeft') i = (i - 1 + ids.length) % ids.length;
-  else if (e.key === 'Home') i = 0; else if (e.key === 'End') i = ids.length - 1; else return;
-  e.preventDefault(); selectTab(ids[i], true);
+$('tabs').addEventListener('click', (e) => {
+  const a = e.target.closest('[data-tab]');
+  if (!a) return;
+  e.preventDefault();
+  selectTab(a.dataset.tab);
 });
+function setUser() {
+  const shell = $('shell');
+  const who = state.who || (state.cfg ? `${state.cfg.tenantId} admin` : '');
+  shell.setAttribute('user-name', who.replace(/\s*\(.*\)\s*$/, ''));
+  let role = 'tenant_admin';
+  try { role = readSession(sessionStorage)?.persona?.role ?? role; } catch { /* ignore */ }
+  shell.setAttribute('user-role', role);
+}
 
 // ---- field edits
 function showFieldError(el, message) {
@@ -188,19 +226,37 @@ function reportLocal() {
   document.querySelector(`[data-path="${CSS.escape(first)}"]`)?.focus();
 }
 $('validate').addEventListener('click', async () => { const r = await runValidate(); if (r?.valid) toast('Configuration is valid.', 'success'); });
+// Save is two steps: validate, then a diff preview the admin confirms.
 $('save').addEventListener('click', async () => {
   if (Object.keys(state.localErrors).length) { reportLocal(); return; }
-  const res = await guarded(() => client.save(state.cfg, state.version));
+  const changes = diffConfig(state.saved, state.cfg);
+  if (!changes.length) { toast('There are no changes to save.'); return; }
+  const rep = await runValidate();
+  if (!rep?.valid) return;
+  $('diff-sub').textContent = `${changes.length} change${changes.length === 1 ? '' : 's'} across ${new Set(changes.map((c) => c.section)).size} section(s). Saving creates version ${state.version + 1}.`;
+  $('diff-body').innerHTML = diffHtml(changes);
+  $('diff').showModal();
+  $('diff-confirm').focus();
+});
+$('diff-cancel').addEventListener('click', () => $('diff').close());
+$('diff-confirm').addEventListener('click', async () => {
+  const btn = $('diff-confirm');
+  btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
+  let res;
+  try { res = await guarded(() => client.save(state.cfg, state.version)); } finally { btn.removeAttribute('aria-busy'); btn.disabled = false; }
+  $('diff').close();
   if (!res) return;
   if (res.outcome === 'invalid') { state.report = res.report; renderPanel(); firstProblemFocus(); return; }
-  if (res.outcome === 'conflict') { $('conflict-body').textContent = `${res.message} Reload to see the latest version, then re-apply your edits.`; $('conflict').hidden = false; $('conflict-reload').focus(); return; }
+  if (res.outcome === 'conflict') { $('conflict-body').textContent = `${res.message} Reload to see the latest version, then re-apply your edits.`; showConflict(); return; }
   state.cfg = clone(res.config); state.saved = clone(res.config); state.version = res.version;
   state.report = { valid: true, errors: [], warnings: [], bySection: {} };
   state.history = null;
+  try { applyBranding(res.config); } catch { /* cosmetic */ }
   renderPanel();
   toast(`Saved as version ${res.version}.`, 'success');
   if (state.tab === 'history') loadTabData();
 });
+function showConflict() { $('conflict').hidden = false; $('conflict').scrollIntoView?.({ block: 'nearest' }); $('conflict-reload').focus(); }
 $('revert').addEventListener('click', () => { state.cfg = clone(state.saved); state.report = null; state.localErrors = {}; state.rawText = {}; renderPanel(); });
 $('conflict-reload').addEventListener('click', loadAll);
 
@@ -211,7 +267,7 @@ $('summary').addEventListener('click', (e) => {
   e.preventDefault();
   const segs = parsePointer(a.dataset.goto);
   if (segs[0] === 'questionSets' && /^\d+$/.test(segs[1] ?? '')) state.qSet = Number(segs[1]);
-  state.tab = a.dataset.section === 'other' ? 'branding' : a.dataset.section;
+  state.tab = TAB_IDS.includes(a.dataset.section) ? a.dataset.section : 'branding';
   renderPanel();
   for (let n = segs.length; n > 0; n--) {
     const ptr = `/${segs.slice(0, n).join('/')}`;
@@ -221,10 +277,13 @@ $('summary').addEventListener('click', (e) => {
 });
 
 function boot() {
-  $('signout').hidden = !token;
+  const fromHash = location.hash.replace(/^#\//, '');
+  if (TAB_IDS.includes(fromHash)) state.tab = fromHash;
+  $('shell').toggleAttribute('no-signout', !token);
+  if (!token) { $('shell').removeAttribute('user-name'); $('shell').removeAttribute('user-role'); }
   if (token) { try { state.who = sessionStorage.getItem('admin.who') ?? ''; } catch { /* ignore */ } loadAll(); return; }
-  showOnly(isDevMode() ? 'dev-panel' : 'no-login');
-  $('whoami').textContent = '';
+  // With the demo bar present the old developer form is gone; the bar signs the persona in.
+  showOnly(demoBarPresent() ? 'pick-persona' : isDevMode() ? 'dev-panel' : 'no-login');
 }
 window.addEventListener('beforeunload', (e) => { if (state.cfg && isDirty(state.saved, state.cfg)) { e.preventDefault(); } });
 boot();
