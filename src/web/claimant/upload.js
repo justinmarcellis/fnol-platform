@@ -1,7 +1,8 @@
 // Evidence upload: validation and an uploader that posts to /claims/{id}/documents.
 // Pure logic; inject { api }. FormData/File/Blob are Node 22 globals, so tests need no DOM.
 
-export const MAX_BYTES = 15 * 1024 * 1024;
+// Matches the evidence service limit (src/modules/evidence/parse.mjs MAX_BYTES, 10 MB): a larger file would be refused after upload.
+export const MAX_BYTES = 10 * 1024 * 1024;
 export const KINDS = ['photo', 'police_report', 'estimate', 'invoice', 'other'];
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
 export const ACCEPT_ATTR = ACCEPTED_TYPES.join(',');

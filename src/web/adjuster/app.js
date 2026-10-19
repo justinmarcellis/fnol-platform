@@ -9,9 +9,9 @@ import { applyBranding } from '/shared/theme.js';
 import { consumePersonaToken, readSession, clearSession } from '/shared/personas.js';
 import { registerAdjusterStrings } from './strings.js';
 import { claimViewHtml, claimHeading, claimSubheading, formatDuration } from './render.js';
-import { inboxRows, inboxKpis, filterRows, statusOptions, timerUrgency, SEVERITY_BANDS } from './model.js';
+import { inboxRows, inboxKpis, filterRows, statusOptions, timerUrgency, defaultScope, SEVERITY_BANDS } from './model.js';
 import { inboxColumns, renderKpis } from './inbox.js';
-import { loadInbox, loadView, loadInsureds, submitDecision, addNote, loadChecklist, saveChecklist } from './actions.js';
+import { loadInbox, loadView, loadDirectory, submitDecision, addNote, changeStatus, updateTask, requestInfo, overrideRouting, loadChecklist, saveChecklist } from './actions.js';
 import { formatEnum } from '/shared/format.js';
 
 registerAdjusterStrings(registerStrings);
@@ -31,7 +31,25 @@ const toast = (m, kind = 'info') => $('toast').show(m, { kind });
 
 let view = null;
 let retryFn = null;
-const inbox = { items: [], insureds: {}, filters: { scope: 'mine', status: 'all', severity: 'all' }, table: null, loaded: false };
+const inbox = { items: [], insureds: {}, filters: { scope: 'mine', status: 'all', severity: 'all' }, table: null, loaded: false, scopeFor: null };
+/** Signed-in user: role drives the landing scope and the supervisor controls; dir resolves ids to names. */
+const me = { role: 'adjuster', sub: '', tenant: null, dir: { people: {}, queues: [], rules: {} }, dirLoaded: false };
+
+// ---- inbox scope: supervisors land on the team queue, adjusters on their own claims. The choice is kept
+// per signed-in user for the tab, so Refresh, Back and reload keep it.
+const scopeKey = () => `adjuster.scope:${me.tenant ?? ''}:${me.sub}`;
+function initScope() {
+  const who = scopeKey();
+  if (inbox.scopeFor === who) return;
+  inbox.scopeFor = who;
+  let saved = null;
+  try { saved = sessionStorage.getItem(who); } catch { /* storage may be blocked */ }
+  inbox.filters.scope = saved === 'mine' || saved === 'all' ? saved : defaultScope(me.role);
+}
+function setScope(scope) {
+  inbox.filters.scope = scope;
+  try { sessionStorage.setItem(scopeKey(), scope); } catch { /* ignore */ }
+}
 
 // ---- identity and chrome
 function claimsOfToken(tok) {
@@ -42,10 +60,14 @@ function identify() {
   const who = s?.persona?.app === '/adjuster' ? { name: s.persona.displayName, role: s.persona.role, tenant: s.tenantId } : null;
   const c = claimsOfToken(token);
   const name = who?.name ?? c.name ?? c.displayName ?? c.sub ?? '';
-  const role = who?.role ?? (c.roles ?? [])[0] ?? 'adjuster';
+  const roles = c.roles ?? [];
+  const role = who?.role ?? (roles.includes('supervisor') ? 'supervisor' : roles[0]) ?? 'adjuster';
   shell.setAttribute('user-name', token ? String(name) : '');
   shell.setAttribute('user-role', role);
-  return who?.tenant ?? c.tenantId ?? c.tid ?? null;
+  me.role = role === 'supervisor' ? 'supervisor' : 'adjuster';
+  me.sub = String(c.sub ?? '');
+  me.tenant = who?.tenant ?? c.tenantId ?? c.tid ?? null;
+  return me.tenant;
 }
 async function brand() {
   try {
@@ -121,12 +143,15 @@ function paintInbox() {
     const action = document.createElement('button');
     action.type = 'button'; action.className = 'fx-btn secondary';
     if (rows.length) { action.textContent = t('adj.filter.clear'); action.addEventListener('click', clearFilters); es.appendChild(action); }
-    else if (inbox.filters.scope === 'mine') { action.textContent = t('adj.inbox.empty.all'); action.addEventListener('click', () => { $('inbox-scope').value = 'all'; inbox.filters.scope = 'all'; showInbox(); }); es.appendChild(action); }
+    else if (inbox.filters.scope === 'mine') { action.textContent = t('adj.inbox.empty.all'); action.addEventListener('click', () => { $('inbox-scope').value = 'all'; setScope('all'); showInbox(); }); es.appendChild(action); }
     body.appendChild(es);
     return;
   }
   if (!inbox.table?.isConnected) {
     body.textContent = '';
+    const hint = document.createElement('p');
+    hint.className = 'adj-scroll-hint'; hint.id = 'inbox-scroll-hint'; hint.textContent = t('adj.inbox.scroll');
+    body.appendChild(hint);
     inbox.table = document.createElement('fx-table');
     inbox.table.id = 'inbox-table';
     inbox.table.setAttribute('caption', t('adj.inbox.table'));
@@ -151,27 +176,22 @@ function clearFilters() {
   paintInbox();
 }
 
-let insuredFrame = 0;
 async function showInbox() {
   $('claim-sec').hidden = true; $('signin').hidden = true; $('inbox-sec').hidden = false; view = null;
   $('inbox-refresh').hidden = false; $('claim-back').hidden = true;
   setNav(true); setPage(t('adj.inbox.heading'), t('adj.inbox.subheading'));
+  initScope();
+  $('inbox-scope').value = inbox.filters.scope;
   if (!inbox.loaded) { $('inbox-body').textContent = ''; const sk = document.createElement('fx-skeleton'); sk.setAttribute('variant', 'table'); sk.setAttribute('rows', '6'); sk.setAttribute('label', t('adj.inbox.loading')); $('inbox-body').appendChild(sk); }
   const res = await guarded(() => loadInbox(api, { mine: inbox.filters.scope === 'mine' }), showInbox);
   if (!res) return;
+  // The feed carries insuredName, assignedAt and fastTrack, so the table paints complete in one request.
   inbox.items = res.items; inbox.loaded = true;
   paintInbox();
-  loadInsureds(api, res.items.map((r) => r.claimId).filter((id) => !inbox.insureds[id]), {
-    onName: (id, name) => {
-      inbox.insureds[id] = name;
-      cancelAnimationFrame(insuredFrame);
-      insuredFrame = requestAnimationFrame(() => { if (!$('inbox-sec').hidden) paintInbox(); });
-    },
-  });
   $('inbox-h').focus();
 }
 $('inbox-refresh').addEventListener('click', showInbox);
-$('inbox-scope').addEventListener('change', (e) => { inbox.filters.scope = e.target.value; showInbox(); });
+$('inbox-scope').addEventListener('change', (e) => { setScope(e.target.value); showInbox(); });
 $('inbox-status').addEventListener('change', (e) => { inbox.filters.status = e.target.value; paintInbox(); });
 $('inbox-severity').addEventListener('change', (e) => { inbox.filters.severity = e.target.value; paintInbox(); });
 $('filters-clear').addEventListener('click', clearFilters);
@@ -181,7 +201,7 @@ $('filters').addEventListener('submit', (e) => e.preventDefault());
 function paint() {
   if (!view) return;
   const id = view.claim.id;
-  $('claim-body').innerHTML = claimViewHtml(view, { done: loadChecklist(id) });
+  $('claim-body').innerHTML = claimViewHtml(view, { done: loadChecklist(id), dir: me.dir, role: me.role });
   for (const tl of $('claim-body').querySelectorAll('fx-timeline[data-events]')) {
     try { tl.events = JSON.parse(tl.dataset.events); } catch { tl.events = []; }
   }
@@ -195,6 +215,7 @@ async function showClaim(id) {
   const sk = document.createElement('fx-skeleton'); sk.setAttribute('variant', 'card'); sk.setAttribute('lines', '4'); sk.setAttribute('label', t('adj.claim.loading'));
   $('claim-body').appendChild(sk);
   try {
+    await ensureDirectory();
     const v = await guarded(() => loadView(api, id), () => showClaim(id));
     if (!v) return;
     view = v; paint(); $('claim-h').textContent = claimHeading(v); $('claim-h').focus();
@@ -216,6 +237,42 @@ $('claim-body').addEventListener('change', (e) => {
   $('nba-progress').textContent = t('adj.nba.progress', { done: codes.length, total });
 });
 
+/** Status moves and task buttons. */
+$('claim-body').addEventListener('click', async (e) => {
+  if (!view) return;
+  const claimId = view.claim.id;
+  const move = e.target.closest?.('[data-status-to]');
+  if (move) {
+    const to = move.dataset.statusTo;
+    move.disabled = true;
+    const ok = await guarded(() => changeStatus(api, claimId, { to }), () => {});
+    move.disabled = false;
+    if (ok) { toast(t('adj.actions.saved', { status: formatEnum(to) }), 'success'); await refreshView(); }
+    return;
+  }
+  const task = e.target.closest?.('[data-task-id][data-task-status]');
+  if (task) {
+    task.disabled = true;
+    const ok = await guarded(() => updateTask(api, claimId, task.dataset.taskId, task.dataset.taskStatus), () => {});
+    task.disabled = false;
+    if (ok) { toast(t('adj.tasks.saved'), 'success'); await refreshView(); }
+  }
+});
+
+/** Override form: picking an adjuster selects their queue. */
+$('claim-body').addEventListener('change', (e) => {
+  if (e.target.id !== 'override-adjuster') return;
+  const q = e.target.selectedOptions[0]?.dataset.queue;
+  if (q) $('override-queue').value = q;
+});
+
+/** Load the name directory once per sign-in (never blocks the view; ids show if it fails). */
+async function ensureDirectory() {
+  if (me.dirLoaded) return;
+  me.dir = await loadDirectory(api);
+  me.dirLoaded = true;
+}
+
 /** "Go to" buttons: scroll to the panel or item where the action is done. */
 $('claim-body').addEventListener('click', (e) => {
   const btn = e.target.closest?.('[data-goto]');
@@ -233,19 +290,45 @@ $('claim-body').addEventListener('submit', async (e) => {
   const form = e.target;
   if (!view) return;
   const claimId = view.claim.id;
+  const err = form.querySelector('.err');
+  const fail = (key, field) => { if (err) { err.textContent = t(key); err.hidden = false; } field?.focus(); };
+  if (err) err.hidden = true;
   if (form.classList.contains('note-form')) {
     const body = form.elements.body.value.trim();
-    if (!body) return;
+    if (!body) { fail('adj.notes.empty', form.elements.body); return; }
     const ok = await guarded(() => addNote(api, claimId, body), () => {});
     if (ok) { toast(t('adj.notes.saved'), 'success'); await refreshView(); }
     return;
   }
+  if (form.classList.contains('close-form')) {
+    const closeReason = form.elements.closeReason.value;
+    if (!closeReason) { fail('adj.actions.closeReasonRequired', form.elements.closeReason); return; }
+    const ok = await guarded(() => changeStatus(api, claimId, { to: 'closed', closeReason }), () => {});
+    if (ok) { toast(t('adj.actions.saved', { status: formatEnum('closed') }), 'success'); await refreshView(); }
+    return;
+  }
+  if (form.classList.contains('request-form')) {
+    const kind = form.elements.kind.value;
+    const message = form.elements.message.value.trim();
+    const body = [t('adj.request.body', { kind: t(`adj.request.kind.${kind}`) }), message].filter(Boolean).join(' ');
+    const ok = await guarded(() => requestInfo(api, claimId, { body, status: view.claim.status }), () => {});
+    if (ok) { toast(t('adj.request.saved'), 'success'); await refreshView(); }
+    return;
+  }
+  if (form.classList.contains('override-form')) {
+    const reason = form.elements.reason.value.trim();
+    if (!reason) { fail('adj.override.reasonRequired', form.elements.reason); return; }
+    const adjSel = form.elements.adjusterId;
+    const adjusterId = adjSel.value;
+    const queue = adjusterId ? adjSel.selectedOptions[0]?.dataset.queue ?? form.elements.queue.value : form.elements.queue.value;
+    const ok = await guarded(() => overrideRouting(api, claimId, { queue, adjusterId, reason }), () => {});
+    if (ok) { toast(t('adj.override.saved'), 'success'); await refreshView(); }
+    return;
+  }
   if (!form.classList.contains('decision')) return;
   const action = e.submitter?.dataset.action;
-  const err = form.querySelector('.err');
   const note = form.elements.note.value;
-  if (!note.trim()) { err.textContent = t('adj.decision.noteRequired'); err.hidden = false; form.elements.note.focus(); return; }
-  err.hidden = true;
+  if (!note.trim()) { fail('adj.decision.noteRequired', form.elements.note); return; }
   const res = await guarded(() => submitDecision(api, claimId, { kind: form.dataset.kind, action, note, tasks: view.tasks }), () => {});
   if (res?.ok) { toast(t('adj.decision.saved'), 'success'); await refreshView(); }
 });
@@ -272,7 +355,8 @@ setInterval(tick, 30000);
 function signOut(clear = true) {
   token = null;
   try { sessionStorage.removeItem('adjuster.token'); if (clear) clearSession(); } catch { /* ignore */ }
-  inbox.loaded = false; inbox.items = []; inbox.insureds = {};
+  inbox.loaded = false; inbox.items = []; inbox.insureds = {}; inbox.scopeFor = null;
+  me.dirLoaded = false; me.dir = { people: {}, queues: [], rules: {} };
   route();
 }
 shell.addEventListener('fx-signout', () => signOut(true));

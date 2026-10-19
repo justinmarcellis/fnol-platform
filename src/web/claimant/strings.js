@@ -196,6 +196,62 @@ export const claimantStrings = {
     'claimant.evidence.empty': 'No files added yet.',
     'claimant.status.live': 'Updates automatically',
     'claimant.demo.signedOut': 'Demo session ended.',
+
+    // ---- S6-BUG-01 bug bash (round 1)
+    'claimant.role': 'Claimant',
+    'claimant.guided.answered.one': '{n} answered',
+    'claimant.guided.answered.other': '{n} answered',
+    'claimant.guided.remaining.one': '{n} to go',
+    'claimant.guided.remaining.other': '{n} to go',
+    'claimant.guided.back': 'Back',
+    'claimant.guided.editing': 'Change your answer',
+    'claimant.guided.tooSmall': 'This number is too small.',
+    'claimant.guided.tooLarge': 'This number is too large.',
+    'claimant.guided.invalidDate': 'Enter a valid date.',
+    'claimant.guided.futureDate': 'The date cannot be in the future.',
+    'claimant.review.edit': 'Edit',
+    'claimant.review.editLabel': 'Edit: {label}',
+    'claimant.welcome.ledeOneLang': 'We will guide you one step at a time. It works well on your phone.',
+    'claimant.start.policyHelpGeneral': 'Enter it so we can link your claim to your policy.',
+    'claimant.start.policyInvalid': 'This does not look like a policy number. Check it, or leave the field blank.',
+    'claimant.start.notOnline': 'Online reporting is not available for {company} yet. Call us at {phone} and we will take your claim.',
+    'claimant.error.notOnline': 'Online reporting is not available for this policy type. Call us at {phone} and we will take your claim.',
+    'claimant.error.expired': 'Your session has ended. Please start again.',
+    'claimant.error.incomplete': 'Some required answers are missing. Please check your answers and try again.',
+    'claimant.error.blocked': 'We cannot accept this claim online. Call us at {phone} and we will help you.',
+    'claimant.error.tooLarge': 'That answer is too long. Please shorten it.',
+    'claimant.error.notFound': 'We could not find what you asked for. Please start again, or call us at {phone}.',
+    'claimant.error.retry': 'Something went wrong on our side. Please try again, or call us at {phone}.',
+    'claimant.error.phoneFallback': 'our claims line',
+    'claimant.holder.heading': 'Confirm your policy',
+    'claimant.holder.lastName': 'Last name on the policy',
+    'claimant.holder.zip': 'ZIP code where the vehicle is kept or mail is sent',
+    'claimant.holder.submit': 'Find my vehicles',
+    'claimant.holder.failed': 'We could not match policy {policy} with that last name and ZIP code. Check all three, change the policy number, or continue without choosing a vehicle.',
+    'claimant.holder.unavailable': 'We could not check your policy right now. Try again, or continue without choosing a vehicle.',
+    'claimant.holder.zipInvalid': 'Enter a 5-digit ZIP code.',
+    'claimant.holder.changePolicy': 'Change policy number',
+    'claimant.holder.noVehicles': 'Policy confirmed. No vehicles are listed on it, so the next questions ask about the vehicle.',
+    'claimant.media.choose': 'Choose photos or files',
+    'claimant.media.help': 'They are added to your claim as soon as you submit it. You can also add files later.',
+    'claimant.media.count.one': '{n} file selected',
+    'claimant.media.count.other': '{n} files selected',
+    'claimant.media.rejected': '{name} cannot be added (supported: photos and PDF, up to {max} MB).',
+    'claimant.chat.badDate': 'Please enter a date, for example 10/18/2026, October 18 or yesterday.',
+    'claimant.chat.useForm': 'Please use the form below to answer this one.',
+    'claimant.chat.skip': 'Skip',
+    'claimant.chat.skipped': 'Skipped',
+    'claimant.chat.skipHint': 'This one is optional. Type skip or use the Skip button.',
+    'claimant.chat.extracted': 'Thanks. I picked out some answers from what you wrote. Please confirm or edit each one.',
+    'claimant.chat.notExtracted': 'Thanks, I have noted that. {question}',
+    'claimant.track.heading': 'Track a claim',
+    'claimant.track.help': 'Claims reported on this device:',
+    'claimant.track.open': 'Open {number}',
+    'claimant.track.notFound': 'We could not open that claim on this device. Use your claim number when you contact us.',
+    'claimant.status.docs.one': '{n} document received',
+    'claimant.status.docs.other': '{n} documents received',
+    'claimant.activity.document': 'Document received: {name}',
+    'claimant.evidence.received': 'Received {date}',
   },
   es: {
     'claimant.title': 'Reportar un reclamo',
@@ -390,6 +446,62 @@ export const claimantStrings = {
     'claimant.evidence.empty': 'Aún no hay archivos.',
     'claimant.status.live': 'Se actualiza automáticamente',
     'claimant.demo.signedOut': 'La sesión de demostración terminó.',
+
+    // ---- S6-BUG-01 bug bash (round 1)
+    'claimant.role': 'Reclamante',
+    'claimant.guided.answered.one': '{n} respondida',
+    'claimant.guided.answered.other': '{n} respondidas',
+    'claimant.guided.remaining.one': 'falta {n}',
+    'claimant.guided.remaining.other': 'faltan {n}',
+    'claimant.guided.back': 'Atrás',
+    'claimant.guided.editing': 'Cambie su respuesta',
+    'claimant.guided.tooSmall': 'Este número es demasiado bajo.',
+    'claimant.guided.tooLarge': 'Este número es demasiado alto.',
+    'claimant.guided.invalidDate': 'Ingrese una fecha válida.',
+    'claimant.guided.futureDate': 'La fecha no puede ser futura.',
+    'claimant.review.edit': 'Editar',
+    'claimant.review.editLabel': 'Editar: {label}',
+    'claimant.welcome.ledeOneLang': 'Le guiaremos paso a paso. Funciona muy bien en su teléfono.',
+    'claimant.start.policyHelpGeneral': 'Ingréselo para vincular su reclamo con su póliza.',
+    'claimant.start.policyInvalid': 'Esto no parece un número de póliza. Revíselo o deje el campo vacío.',
+    'claimant.start.notOnline': 'El reporte en línea todavía no está disponible para {company}. Llámenos al {phone} y tomaremos su reclamo.',
+    'claimant.error.notOnline': 'El reporte en línea no está disponible para este tipo de póliza. Llámenos al {phone} y tomaremos su reclamo.',
+    'claimant.error.expired': 'Su sesión terminó. Comience de nuevo.',
+    'claimant.error.incomplete': 'Faltan algunas respuestas obligatorias. Revise sus respuestas e inténtelo de nuevo.',
+    'claimant.error.blocked': 'No podemos aceptar este reclamo en línea. Llámenos al {phone} y le ayudaremos.',
+    'claimant.error.tooLarge': 'Esa respuesta es demasiado larga. Acórtela.',
+    'claimant.error.notFound': 'No encontramos lo que buscaba. Comience de nuevo o llámenos al {phone}.',
+    'claimant.error.retry': 'Algo salió mal de nuestro lado. Inténtelo de nuevo o llámenos al {phone}.',
+    'claimant.error.phoneFallback': 'nuestra línea de reclamos',
+    'claimant.holder.heading': 'Confirme su póliza',
+    'claimant.holder.lastName': 'Apellido en la póliza',
+    'claimant.holder.zip': 'Código postal donde se guarda el vehículo o se envía el correo',
+    'claimant.holder.submit': 'Buscar mis vehículos',
+    'claimant.holder.failed': 'No pudimos relacionar la póliza {policy} con ese apellido y código postal. Revise los tres datos, cambie el número de póliza o continúe sin elegir un vehículo.',
+    'claimant.holder.unavailable': 'No pudimos revisar su póliza en este momento. Inténtelo de nuevo o continúe sin elegir un vehículo.',
+    'claimant.holder.zipInvalid': 'Ingrese un código postal de 5 dígitos.',
+    'claimant.holder.changePolicy': 'Cambiar el número de póliza',
+    'claimant.holder.noVehicles': 'Póliza confirmada. No tiene vehículos registrados, así que las siguientes preguntas son sobre el vehículo.',
+    'claimant.media.choose': 'Elegir fotos o archivos',
+    'claimant.media.help': 'Se agregan a su reclamo en cuanto lo envíe. También puede agregar archivos después.',
+    'claimant.media.count.one': '{n} archivo seleccionado',
+    'claimant.media.count.other': '{n} archivos seleccionados',
+    'claimant.media.rejected': 'No se puede agregar {name} (se admiten fotos y PDF, hasta {max} MB).',
+    'claimant.chat.badDate': 'Ingrese una fecha, por ejemplo 10/18/2026, 18 de octubre o ayer.',
+    'claimant.chat.useForm': 'Use el formulario de abajo para responder esta pregunta.',
+    'claimant.chat.skip': 'Omitir',
+    'claimant.chat.skipped': 'Omitido',
+    'claimant.chat.skipHint': 'Esta pregunta es opcional. Escriba omitir o use el botón Omitir.',
+    'claimant.chat.extracted': 'Gracias. Tomé algunas respuestas de lo que escribió. Confirme o edite cada una.',
+    'claimant.chat.notExtracted': 'Gracias, lo anoté. {question}',
+    'claimant.track.heading': 'Siga un reclamo',
+    'claimant.track.help': 'Reclamos reportados en este dispositivo:',
+    'claimant.track.open': 'Abrir {number}',
+    'claimant.track.notFound': 'No pudimos abrir ese reclamo en este dispositivo. Use su número de reclamo cuando nos contacte.',
+    'claimant.status.docs.one': '{n} documento recibido',
+    'claimant.status.docs.other': '{n} documentos recibidos',
+    'claimant.activity.document': 'Documento recibido: {name}',
+    'claimant.evidence.received': 'Recibido el {date}',
   }
 };
 
@@ -411,6 +523,25 @@ export function makeTranslator(locale = 'en') {
     const raw = claimantStrings[locale]?.[key] ?? claimantStrings.en[key] ?? key;
     return raw.replace(/\{(\w+)\}/g, (_, k) => (params[k] === undefined ? `{${k}}` : String(params[k])));
   };
+}
+
+/**
+ * Plural-aware key: `${base}.one` for 1, `${base}.other` otherwise (English and Spanish need only these two forms).
+ * @param {string} base
+ * @param {number} n
+ */
+export function pluralKey(base, n) {
+  return `${base}.${Number(n) === 1 ? 'one' : 'other'}`;
+}
+
+/**
+ * Guided progress line, e.g. "1 answered, 5 to go" / "1 respondida, faltan 5".
+ * @param {Function} t translator
+ * @param {number} answered
+ * @param {number} remaining
+ */
+export function progressText(t, answered, remaining) {
+  return `${t(pluralKey('claimant.guided.answered', answered), { n: answered })}, ${t(pluralKey('claimant.guided.remaining', remaining), { n: remaining })}`;
 }
 
 /**

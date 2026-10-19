@@ -139,7 +139,8 @@ test('invalid values show inline errors from /config/validate and nothing is sav
     await page.waitForSelector('#summary [role="alert"]');
     const inline = page.locator('[data-error-for="/branding/primaryColor"]');
     await inline.waitFor();
-    assert.match(await inline.textContent(), /must match/);
+    assert.match(await inline.textContent(), /six-digit hex colour/, 'plain-language message (ADMIN-6)');
+    assert.doesNotMatch(await page.textContent('#summary'), /\^#|\/branding\/primaryColor/, 'no regex or pointer in the summary');
     assert.equal(await page.getAttribute('[data-path="/branding/primaryColor"]', 'aria-invalid'), 'true');
     assert.match(await page.textContent('#tab-branding'), /1/, 'tab shows error count');
     const after = await readConfig(server.app, 'aurelia-mutual');
@@ -268,5 +269,141 @@ test('AI settings save and webhook management still work', async (t) => {
     await page.waitForSelector('tr[data-webhook] fx-badge[label="Paused"]');
     await page.click('tr[data-webhook] [data-act="wh-delete"]');
     await page.waitForSelector('tr[data-webhook]', { state: 'detached' });
+  } finally { await page.close(); }
+});
+
+// ---- S6-BUG-04 bug bash regressions (browser level)
+
+/** Collect console errors and failed API responses for a page. */
+function watch(page) {
+  const problems = [];
+  page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
+  page.on('response', (r) => { if (r.url().includes('/api/') && r.status() >= 400) problems.push(`${r.status()} ${r.request().method()} ${r.url()}`); });
+  return problems;
+}
+
+test('ADMIN-1/DATA-8: version history loads from /config/versions with version 1 and no console errors', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await newPage();
+  const problems = watch(page);
+  try {
+    await signIn(page, 'kestrel-point');
+    await page.click('#tab-history');
+    await page.waitForSelector('#panel tr[data-version="1"]');
+    assert.equal(await page.locator('#history-fallback').count(), 0);
+    assert.match(await page.textContent('#panel tr[data-version="1"]'), /System \(tenant file\)/);
+    assert.deepEqual(problems, []);
+  } finally { await page.close(); }
+});
+
+test('ADMIN-2/ADMIN-19: a save is listed under the persona name, and read-only sections hide the save buttons', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await newPage();
+  try {
+    await signIn(page, 'kestrel-point');
+    const before = await readConfig(server.app, 'kestrel-point');
+    await page.fill('[data-path="/displayName"]', `${before.displayName} Demo`);
+    await page.click('#save');
+    await page.waitForSelector('#diff[open]');
+    assert.match(await page.textContent('#diff-body'), /Identity > Display name/);
+    await page.click('#diff-confirm');
+    await page.waitForFunction((v) => document.getElementById('version-label').textContent === `Version ${v}`, before.version + 1);
+    assert.equal(await page.locator('#summary [data-tone="success"]').count(), 0, 'no valid banner after a save');
+    await page.click('#tab-history');
+    const row = page.locator(`#panel tr[data-version="${before.version + 1}"]`);
+    await row.waitFor();
+    assert.match(await row.textContent(), /Taylor Brandt/);
+    assert.match(await row.textContent(), /Identity/);
+    assert.doesNotMatch(await page.textContent('#panel'), /dev-kestrel-point-carrier-admin|, other/);
+    assert.equal(await page.isVisible('#save'), false, 'no Review and save on history');
+    await page.click('#tab-kpis');
+    assert.equal(await page.isVisible('#validate'), false, 'no Validate on KPIs');
+    await page.click('#tab-branding');
+    assert.equal(await page.isVisible('#save'), true);
+  } finally { await page.close(); }
+});
+
+test('ADMIN-5: Revert edits discards JSON that does not parse and clears the error', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await newPage();
+  try {
+    await signIn(page);
+    await page.click('#tab-rules');
+    const field = page.locator('[data-path="/rules/0/when"]');
+    const original = await field.inputValue();
+    await field.fill('{ not json');
+    await field.blur();
+    await page.waitForSelector('[data-error-for="/rules/0/when"]');
+    assert.equal(await page.isEnabled('#revert'), true, 'revert is available');
+    assert.match(await page.textContent('#dirty-label'), /needs fixing/);
+    await page.click('#revert');
+    assert.equal(await page.locator('[data-error-for="/rules/0/when"]').count(), 0);
+    assert.equal(await page.locator('[data-path="/rules/0/when"]').inputValue(), original);
+    assert.match(await page.textContent('#dirty-label'), /^No unsaved/);
+  } finally { await page.close(); }
+});
+
+test('ADMIN-3: moving a question down shows one readable diff row', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await newPage();
+  try {
+    await signIn(page, 'kestrel-point');
+    await page.click('#tab-questions');
+    const cfg = await readConfig(server.app, 'kestrel-point');
+    const si = cfg.questionSets.findIndex((s) => s.id === 'commauto-general');
+    await page.selectOption('#qset-pick', String(si));
+    await page.click(`[data-act="down"][data-path="/questionSets/${si}/questions"][data-index="0"]`);
+    await page.click('#save');
+    await page.waitForSelector('#diff[open]');
+    assert.equal(await page.locator('#diff-body tr[data-diff]').count(), 1);
+    assert.match(await page.textContent('#diff-body'), /loss_date moved after loss_time/);
+    await page.click('#diff-cancel');
+    await page.click('#revert');
+  } finally { await page.close(); }
+});
+
+test('ADMIN-13/14/17: one toast at a time inside the viewport, a persistent secret panel, sections open at the top', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await newPage(1440, 900);
+  try {
+    await signIn(page);
+    await page.click('#tab-questions');
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.click('#tab-webhooks');
+    await page.waitForSelector('#h-webhooks');
+    assert.ok(await page.evaluate(() => window.scrollY) < 50, 'new section opens at the top');
+    await page.fill('#wh-url', 'https://hooks.aurelia-mutual.example/fnol');
+    await page.click('#wh-add');
+    await page.waitForSelector('#wh-secret');
+    assert.match(await page.textContent('#wh-secret-value'), /\S{8,}/);
+    assert.equal(await page.locator('#toast .fx-toast-item').count(), 1);
+    assert.doesNotMatch(await page.textContent('#toast'), /secret/i, 'secret is not in a toast');
+    const box = await page.locator('#toast .fx-toast-item').boundingBox();
+    assert.ok(box.x + box.width <= 1440, 'toast inside the viewport');
+    const save = await page.locator('#save').boundingBox();
+    assert.ok(box.y + box.height <= save.y || box.x + box.width <= save.x, 'toast does not cover Review and save');
+    await page.click('#wh-secret-done');
+    assert.equal(await page.locator('#wh-secret').count(), 0);
+    await page.click('tr[data-webhook] [data-act="wh-delete"]');
+  } finally { await page.close(); }
+});
+
+test('ADMIN-16: at 390px the webhooks section does not scroll sideways and the save bar shows all buttons', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await newPage(1440, 900);
+  try {
+    await signIn(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await api('POST', '/integrations/webhooks', { role: 'tenant_admin', body: { url: 'https://hooks.aurelia-mutual.example/mobile-check', eventTypes: ['claim.created'], active: true } });
+    await page.click('#tab-webhooks');
+    await page.waitForSelector('tr[data-webhook]');
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth) <= 390, 'no horizontal page scroll');
+    await page.click('#tab-branding');
+    const bar = await page.locator('#savebar').boundingBox();
+    assert.ok(bar.height < 120, `save bar is compact (${bar.height}px)`);
+    for (const id of ['#revert', '#validate', '#save']) {
+      const b = await page.locator(id).boundingBox();
+      assert.ok(b && b.y + b.height <= 844 && b.x + b.width <= 390, `${id} visible`);
+    }
   } finally { await page.close(); }
 });

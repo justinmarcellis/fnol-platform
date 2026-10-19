@@ -10,6 +10,18 @@ export function normalizeQuery(input) {
   return v && v.length <= 100 ? v : null;
 }
 
+/**
+ * How to send a query to GET /policies?q=. The server only classifies single-segment prefixes (letters, dash, digits),
+ * so a tenant policy number or a two-segment prefix (HO-IL-1030185, PA-WI) would be read as a last name or refused.
+ * Those are sent as their leading segment ('HO-') and the rows are filtered by the typed prefix on the client.
+ * @returns {{ q: string, prefix: string|null }}
+ */
+export function planQuery(q) {
+  const m = /^([A-Za-z]{2,5})-([A-Za-z]{2})(-\d*)?$/.exec(q);
+  if (!m) return { q, prefix: null };
+  return { q: `${m[1].toUpperCase()}-`, prefix: q.toUpperCase() };
+}
+
 /** Flatten a PolicySummary into a table row. Pure. */
 export function summaryToRow(sum) {
   // GET /policies returns insuredName (PolicySummary); namedInsureds[] is accepted too.
@@ -59,10 +71,17 @@ export function createPolicySearch({ api, t }) {
         state.phase = 'invalid'; state.results = []; state.message = t('csr.search.required'); emit();
         return [];
       }
+      if (q.length < 2) { // the server needs at least two characters for any kind of search
+        state.phase = 'invalid'; state.results = []; state.message = t('csr.search.tooShort'); emit();
+        return [];
+      }
+      const plan = planQuery(q);
       state.phase = 'searching'; state.message = ''; emit();
       try {
-        const { rows, matchedOn } = mapSearchResponse(await api.get('/policies', { q }));
+        const res = mapSearchResponse(await api.get('/policies', { q: plan.q }));
         if (mine !== seq) return self.state.results;
+        const rows = plan.prefix ? res.rows.filter((r) => String(r.policyNumber).toUpperCase().startsWith(plan.prefix)) : res.rows;
+        const matchedOn = res.matchedOn;
         state.results = rows; state.matchedOn = matchedOn;
         state.phase = 'done';
         state.message = rows.length ? t('csr.search.found', { count: rows.length }) : t('csr.search.empty');

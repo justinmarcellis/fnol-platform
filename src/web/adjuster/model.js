@@ -5,6 +5,11 @@ export const CLOSED_STATUSES = ['closed', 'withdrawn'];
 export const SEVERITY_BANDS = ['minor', 'moderate', 'major', 'severe'];
 const HOUR = 3600000;
 
+/** Inbox scope a role lands on: a supervisor sees the team queue (all claims), an adjuster their own claims. */
+export function defaultScope(role) {
+  return role === 'supervisor' ? 'all' : 'mine';
+}
+
 /** Severity band from a 0-100 score (0-24 minor, 25-49 moderate, 50-74 major, 75+ severe), or null. */
 export function severityBand(score) {
   if (!Number.isFinite(score)) return null;
@@ -32,11 +37,8 @@ export function nextOpenTimer(timers = []) {
   return [...timers].filter((x) => !['met', 'cancelled'].includes(x.status)).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0];
 }
 
-/** Local calendar day key, so "due today" follows the adjuster's clock. */
-function dayKey(ms) {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-}
+/** The "due soon" KPI window: open timers that end within this many hours. */
+export const DUE_SOON_HOURS = 48;
 
 /** Display name for a party object (person or organisation), or ''. */
 export function partyName(p) {
@@ -53,8 +55,9 @@ export function insuredName(claim) {
 }
 
 /**
- * Row view-model for one inbox item. `insureds` maps claimId -> name once it has loaded.
- * assignedAt falls back to reportedAt until the inbox feed carries an assignment time.
+ * Row view-model for one inbox item. The inbox feed carries insuredName, assignedAt and fastTrack;
+ * `insureds` (claimId -> name) is only a fallback for older feeds. assignedAt falls back to reportedAt
+ * for claims that are not assigned yet.
  */
 export function inboxRow(item, { insureds = {}, now = Date.now() } = {}) {
   const timer = item.nextTimer;
@@ -78,6 +81,7 @@ export function inboxRow(item, { insureds = {}, now = Date.now() } = {}) {
     assignedAt,
     assignedTs: Number.isNaN(ts) ? 0 : ts,
     assignedApprox: !item.assignedAt,
+    fastTrack: item.fastTrack === true || item.routingOutcome === 'fast_tracked' || item.status === 'fast_tracked',
   };
 }
 
@@ -87,19 +91,20 @@ export function inboxRows(items = [], opts = {}) {
 }
 
 /**
- * KPI tiles over a set of rows: open, due today (open timer due later today), overdue, fast-tracked.
- * @returns {{open:number, dueToday:number, overdue:number, fastTracked:number}}
+ * KPI tiles over a set of rows: open, due soon (open timer ends within DUE_SOON_HOURS), overdue, fast-tracked.
+ * Fast-tracked counts routing outcomes, not the status: a fast-tracked claim moves on to in_review at once.
+ * @returns {{open:number, dueSoon:number, overdue:number, fastTracked:number}}
  */
 export function inboxKpis(rows = [], now = Date.now()) {
-  const today = dayKey(now);
-  let open = 0; let dueToday = 0; let overdue = 0; let fastTracked = 0;
+  let open = 0; let dueSoon = 0; let overdue = 0; let fastTracked = 0;
   for (const r of rows) {
-    if (!CLOSED_STATUSES.includes(r.status)) open++;
+    const isOpen = !CLOSED_STATUSES.includes(r.status);
+    if (isOpen) open++;
     if (r.timerState === 'overdue') overdue++;
-    else if (['due_soon', 'running'].includes(r.timerState) && dayKey(Date.parse(r.timer.dueAt)) === today) dueToday++;
-    if (r.status === 'fast_tracked') fastTracked++;
+    else if (isOpen && ['due_soon', 'running'].includes(r.timerState) && Date.parse(r.timer.dueAt) - now <= DUE_SOON_HOURS * HOUR) dueSoon++;
+    if (r.fastTrack || r.status === 'fast_tracked') fastTracked++;
   }
-  return { open, dueToday, overdue, fastTracked };
+  return { open, dueSoon, overdue, fastTracked };
 }
 
 /** Apply the status and severity filters ('all' keeps everything). */

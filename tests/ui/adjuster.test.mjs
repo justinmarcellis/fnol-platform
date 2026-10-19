@@ -39,16 +39,62 @@ test('signed out with the demo bar: persona prompt, no legacy dev form', async (
   } finally { await page.close(); }
 });
 
-test('inbox empty state offers the whole queue', async (t) => {
+test('supervisor lands on the team queue; the scope choice survives Refresh and reload (ADJUSTER-1)', async (t) => {
   if (skip) return t.skip(skip);
   const page = await browser.newPage();
   try {
     await signIn(page, 'aurelia-mutual:supervisor'); // owns no claims
+    await page.waitForSelector('fx-table');
+    assert.equal(await page.inputValue('#inbox-scope'), 'all');
+    assert.ok(Number(await page.getAttribute('#kpis fx-stat[data-kpi="open"]', 'value')) >= 1, 'KPI tiles are filled');
+    // My claims is empty for a supervisor: the empty state offers the whole queue again.
+    await page.selectOption('#inbox-scope', 'mine');
     await page.waitForSelector('#inbox-empty');
     assert.match(await page.textContent('#inbox-empty'), /inbox is clear/);
+    await page.click('#inbox-refresh');
+    await page.waitForSelector('#inbox-empty');
+    assert.equal(await page.inputValue('#inbox-scope'), 'mine', 'Refresh keeps the scope');
     await page.click('#inbox-empty button');
     await page.waitForSelector('fx-table');
+    await page.reload();
+    await page.waitForSelector('fx-table');
+    assert.equal(await page.inputValue('#inbox-scope'), 'all', 'reload keeps the scope');
   } finally { await page.close(); }
+});
+
+test('inbox renders complete from one request: no per-row party calls (ADJUSTER-13)', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await browser.newPage();
+  const perRow = [];
+  page.on('request', (r) => { if (/\/api\/v1\/claims\/[^/?]+\?include=parties/.test(r.url())) perRow.push(r.url()); });
+  try {
+    await signIn(page, 'aurelia-mutual:supervisor');
+    await page.waitForSelector(`a[data-claim-id="${claim.id}"]`);
+    await page.click('#inbox-refresh');
+    await page.waitForSelector(`a[data-claim-id="${claim.id}"]`);
+    assert.equal(perRow.length, 0, perRow.join(', '));
+  } finally { await page.close(); }
+});
+
+test('mobile inbox: claim numbers stay on one line and the table scrolls sideways (ADJUSTER-20)', async (t) => {
+  if (skip) return t.skip(skip);
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+  try {
+    await signIn(page, 'aurelia-mutual:supervisor'); // the demo bar collapses on phones, so pick the persona first
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    const link = page.locator(`a[data-claim-id="${claim.id}"]`);
+    await link.waitFor();
+    const box = await link.boundingBox();
+    const lineHeight = await link.evaluate((n) => parseFloat(getComputedStyle(n).lineHeight) || 24);
+    assert.ok(box.height <= lineHeight * 1.5, `claim number wraps (${box.height}px)`);
+    assert.ok(await page.isVisible('#inbox-scroll-hint'));
+    const { sw, cw } = await page.$eval('#inbox-body fx-table', (n) => ({ sw: n.scrollWidth, cw: n.clientWidth }));
+    assert.ok(sw > cw, 'the table scrolls inside its card');
+    const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.ok(pageOverflow <= 1, `page scrolls sideways by ${pageOverflow}px`);
+  } finally { await ctx.close(); }
 });
 
 test('inbox: KPI tiles, filters, sorting; then the claim first view', async (t) => {
@@ -150,6 +196,51 @@ test('fraud item: note is required, accept records a decision', async (t) => {
     const notes = await api('GET', `/claims/${claim.id}/notes`, { role: 'adjuster' });
     assert.ok(notes.json.items.some((n) => n.category === 'fraud' && n.body.startsWith('[decision:accepted]')));
     assert.ok(notes.json.items.some((n) => n.category === 'subrogation' && n.body.startsWith('[decision:dismissed]')));
+  } finally { await page.close(); }
+});
+
+test('claim actions: empty note feedback, task done, status move, info request, supervisor override (ADJUSTER-14/17)', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await browser.newPage();
+  try {
+    const c = await createSeededClaim(api);
+    await signIn(page);
+    await page.goto(`${server.app.url}/adjuster#/claim/${c.id}`);
+    await page.waitForSelector('#panel-actions');
+    // Empty note: inline message and focus.
+    await page.click('.note-form button[type="submit"]');
+    await page.waitForSelector('#note-err:not([hidden])');
+    assert.match(await page.textContent('#note-err'), /Write a note/);
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'note-new');
+    // Status: assigned -> in_review.
+    await page.click('[data-status-to="in_review"]');
+    await page.waitForSelector('#panel-actions fx-badge[status="in_review"]');
+    // Request information: shared note, claim moves to pending_info.
+    await page.selectOption('#request-kind', 'police_report');
+    await page.click('#request-form button[type="submit"]');
+    await page.waitForSelector('#panel-actions fx-badge[status="pending_info"]');
+    await page.waitForSelector('#panel-notes li:has-text("Information requested: Police report")');
+    // Tasks become actionable when the claim has open ones.
+    const tasks = await api('GET', `/claims/${c.id}/tasks`, { role: 'adjuster' });
+    const open = tasks.json.items.find((x) => ['open', 'in_progress'].includes(x.status));
+    if (open) {
+      await page.click(`[data-task-id="${open.id}"][data-task-status="done"]`);
+      await page.waitForSelector(`#panel-tasks li[data-task="${open.id}"] fx-badge[status="done"]`);
+    }
+    // Activity carries no audit noise.
+    const tl = await page.$eval('#panel-timeline fx-timeline', (n) => JSON.stringify(n.events));
+    assert.ok(!/Audit:|Claim updated/.test(tl), tl);
+
+    // Supervisor override on a freshly assigned claim.
+    const c2 = await createSeededClaim(api);
+    await signIn(page, 'aurelia-mutual:supervisor');
+    await page.goto(`${server.app.url}/adjuster#/claim/${c2.id}`);
+    await page.waitForSelector('#override-form');
+    await page.click('#override-form button[type="submit"]');
+    await page.waitForSelector('#override-form .err:not([hidden])');
+    await page.fill('#override-reason', 'Workload balancing (synthetic).');
+    await page.click('#override-form button[type="submit"]');
+    await page.waitForSelector('#panel-routing .adj-warn:has-text("Workload balancing")');
   } finally { await page.close(); }
 });
 

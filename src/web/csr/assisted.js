@@ -40,33 +40,60 @@ export function deriveMissing(step, seen, answered, locale = 'en') {
 }
 
 /**
+ * The question to put on screen: the server's next required question or an optional one (IntakeStep.optional[]) the
+ * caller has not answered or skipped, whichever comes first in the question set order. Optional questions handled by
+ * another control (the insured-vehicle picker) are left out. Pure.
+ * @param {{ question?: any, optional?: any[] }} step
+ * @param {{ answered?: Set<string>, skipped?: Set<string>, external?: Set<string> }} sets
+ */
+export function nextQuestion(step, { answered = new Set(), skipped = new Set(), external = new Set() } = {}) {
+  const req = step?.question ?? null;
+  const opts = (Array.isArray(step?.optional) ? step.optional : [])
+    .filter((q) => q?.id && !answered.has(q.id) && !skipped.has(q.id) && !external.has(q.id) && q.id !== req?.id)
+    .map((q) => ({ ...q, required: false }));
+  const ord = (q) => (Number.isFinite(Number(q?.order)) ? Number(q.order) : Number.MAX_SAFE_INTEGER);
+  let best = req;
+  for (const q of opts) if (!best || ord(q) < ord(best)) best = q;
+  return best;
+}
+
+/**
  * @param {{ api: any, t: (k:string,p?:object)=>string, clock?: {now():number}, random?: ()=>number, channel?: string }} deps
  */
 export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }, random = Math.random, channel = CSR_CHANNEL }) {
   const listeners = new Set();
   const seen = new Map();
   const answered = new Set();
+  const skipped = new Set();
+  const external = new Set();
+  let lastStep = null;
   let pending = null;
   let submitKey = null;
   const state = {
     phase: 'idle', // idle | starting | asking | ready | submitting | submitted | unavailable | failed
     sessionId: null, policyNumber: null, lob: null, locale: 'en',
-    question: null, progress: { answered: 0, requiredRemaining: 0, percent: 0 },
+    question: null, optional: [], vehicleQuestionId: null, progress: { answered: 0, requiredRemaining: 0, percent: 0 },
     missing: [], unlisted: 0, script: { ask: '', help: '', text: '' },
     disclosures: [], errors: [], done: false, claim: null, error: null, busy: false,
     insuredVehicle: null, insuredVehicleSent: false, insuredVehicleError: null,
   };
-  const snap = () => ({ ...state, progress: { ...state.progress }, missing: [...state.missing], errors: [...state.errors], disclosures: [...state.disclosures] });
+  const snap = () => ({ ...state, progress: { ...state.progress }, missing: [...state.missing], errors: [...state.errors], disclosures: [...state.disclosures], optional: [...state.optional] });
   const emit = () => { const s = snap(); for (const l of listeners) l(s); };
 
   function apply(step) {
+    lastStep = step;
     state.sessionId = step.sessionId ?? state.sessionId;
-    state.question = step.question ?? null;
+    for (const q of [step.question, ...(Array.isArray(step.optional) ? step.optional : [])]) {
+      if (q?.type === 'vehicle' && !state.vehicleQuestionId) state.vehicleQuestionId = q.id;
+    }
+    state.optional = (Array.isArray(step.optional) ? step.optional : []).filter((q) => q?.id && !answered.has(q.id));
+    state.question = nextQuestion(step, { answered, skipped, external });
     state.done = !!step.done;
     state.progress = step.progress ?? state.progress;
     state.errors = Array.isArray(step.errors) ? step.errors : [];
     if (Array.isArray(step.disclosures) && step.disclosures.length) state.disclosures = step.disclosures;
     if (state.question) seen.set(state.question.id, { id: state.question.id, type: state.question.type, text: state.question.text, required: state.question.required !== false });
+    for (const q of state.optional) if (!seen.has(q.id)) seen.set(q.id, { id: q.id, type: q.type, text: q.text, required: false });
     const m = deriveMissing(step, seen, answered, state.locale);
     state.missing = m.items; state.unlisted = m.unlisted;
     state.script = scriptedPrompt(state.question, { t, locale: state.locale });
@@ -99,20 +126,26 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
     subscribe(fn) { listeners.add(fn); fn(snap()); return () => listeners.delete(fn); },
 
     /** Start a CSR session for a policy: POST /intake/sessions {lob, channel, policyNumber}. */
-    async start({ lob, policyNumber, locale = 'en', lossType } = {}) {
-      seen.clear(); answered.clear(); submitKey = null;
-      Object.assign(state, { lob, policyNumber, locale, claim: null, sessionId: null });
-      const body = { lob, channel, locale, policyNumber };
+    async start({ lob, policyNumber, locale = 'en', lossType, channel: ch } = {}) {
+      seen.clear(); answered.clear(); skipped.clear(); external.clear(); lastStep = null; submitKey = null;
+      Object.assign(state, { lob, policyNumber, locale, claim: null, sessionId: null, optional: [], vehicleQuestionId: null });
+      const body = { lob, channel: ch ?? channel, locale, policyNumber };
       if (lossType) body.lossType = lossType;
-      const step = await run('start', { lob, policyNumber, locale, lossType }, () => api.post('/intake/sessions', body), 'starting');
+      const step = await run('start', { lob, policyNumber, locale, lossType, channel: ch }, () => api.post('/intake/sessions', body), 'starting');
       if (step) apply(step);
       emit();
       return step;
     },
 
-    /** Answer the current (or a named) question. */
+    /**
+     * Answer the current (or a named) question. An empty answer to an optional question skips it (nothing is sent:
+     * the server would refuse a blank value).
+     */
     async answer(questionId, value) {
       if (!state.sessionId) return null;
+      const q = state.question?.id === questionId ? state.question : null;
+      const blank = value === '' || value == null || (Array.isArray(value) && !value.length);
+      if (q && q.required === false && blank) return self.skip(questionId);
       const step = await run('answer', { questionId, value }, () => api.post(`/intake/sessions/${state.sessionId}/answers`, { questionId, value }));
       if (step) { answered.add(questionId); apply(step); }
       emit();
@@ -127,7 +160,7 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
     async setInsuredVehicle(answer, questionId = INSURED_VEHICLE_QUESTION) {
       state.insuredVehicle = answer ?? null; state.insuredVehicleSent = false; state.insuredVehicleError = null;
       if (!answer || !state.sessionId) { emit(); return null; }
-      const qid = [...seen.values()].find((x) => x.type === 'vehicle')?.id ?? questionId;
+      const qid = state.vehicleQuestionId ?? [...seen.values()].find((x) => x.type === 'vehicle')?.id ?? questionId;
       try {
         const step = await api.post(`/intake/sessions/${state.sessionId}/answers`, { questionId: qid, value: answer });
         answered.add(qid); apply(step); state.insuredVehicleSent = true; state.insuredVehicleError = null;
@@ -138,6 +171,27 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
         emit();
         return null;
       }
+    },
+
+    /** Pass over an optional question (no server call). Required questions cannot be skipped. */
+    skip(questionId) {
+      const q = state.question;
+      if (!q || q.id !== questionId || q.required !== false || !lastStep) return null;
+      skipped.add(questionId);
+      apply(lastStep);
+      emit();
+      return lastStep;
+    },
+
+    /**
+     * Mark optional questions as handled by another control (the insured-vehicle picker), so they are not asked in
+     * the script as well. Pass [] to clear.
+     */
+    setExternal(ids = []) {
+      external.clear();
+      for (const id of ids) if (id) external.add(id);
+      if (lastStep) apply(lastStep);
+      emit();
     },
 
     /** Re-fetch the current step. */
@@ -173,8 +227,8 @@ export function createAssistedIntake({ api, t, clock = { now: () => Date.now() }
     },
 
     reset() {
-      seen.clear(); answered.clear(); submitKey = null; pending = null;
-      Object.assign(state, { phase: 'idle', sessionId: null, policyNumber: null, lob: null, question: null, missing: [], unlisted: 0, script: { ask: '', help: '', text: '' }, disclosures: [], errors: [], done: false, claim: null, error: null, busy: false, insuredVehicle: null, insuredVehicleSent: false, insuredVehicleError: null, progress: { answered: 0, requiredRemaining: 0, percent: 0 } });
+      seen.clear(); answered.clear(); skipped.clear(); external.clear(); lastStep = null; submitKey = null; pending = null;
+      Object.assign(state, { phase: 'idle', sessionId: null, policyNumber: null, lob: null, question: null, optional: [], vehicleQuestionId: null, missing: [], unlisted: 0, script: { ask: '', help: '', text: '' }, disclosures: [], errors: [], done: false, claim: null, error: null, busy: false, insuredVehicle: null, insuredVehicleSent: false, insuredVehicleError: null, progress: { answered: 0, requiredRemaining: 0, percent: 0 } });
       emit();
     },
   };

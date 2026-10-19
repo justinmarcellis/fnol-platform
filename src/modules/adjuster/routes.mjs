@@ -6,6 +6,11 @@ export function registerRoutes(router) {
     res.json(200, await req.ctx.modules.adjuster.getFirstView(req.params.claimId, { actor: req.user.sub }));
   }, { roles: ROLES });
 
+  // Additive (S6-BUG-03): names for adjuster ids, queue labels and rule names, so the UI never shows raw ids.
+  router.get('/api/v1/adjuster/directory', async (req, res) => {
+    res.json(200, req.ctx.modules.adjuster.getDirectory());
+  }, { roles: ROLES });
+
   router.get('/api/v1/adjuster/inbox', async (req, res) => {
     const q = req.query ?? {};
     const mine = String(q.mine ?? 'true') !== 'false';

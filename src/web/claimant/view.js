@@ -2,6 +2,8 @@
 import { localText } from './strings.js';
 import { isStructured, structuredFields, buildStructured, missingStructured } from './structured.js';
 import { validateScalar } from './present.js';
+import { validateFile, ACCEPT_ATTR, MAX_BYTES } from './upload.js';
+import { pluralKey } from './strings.js';
 import { createIcon } from '/shared/icons.js';
 
 /** Tiny element builder: attrs with `on*` become listeners, `text` sets textContent. */
@@ -34,8 +36,9 @@ function errorLine(id) {
  * Build the input for one question. Returns { el, get(), focus(), setError(text), check() }.
  * Value types follow the Question schema; the server validates.
  */
-export function buildInput(question, { locale, t, errorId, initial }) {
+export function buildInput(question, { locale, t, errorId, initial, today }) {
   if (isStructured(question)) return buildStructuredInput(question, { locale, t, errorId, initial });
+  if (question.type === 'media') return buildMediaInput(question, { locale, t, errorId, initial });
   const id = `q-${++uid}`;
   const label = localText(question.text, locale);
   const help = localText(question.help, locale);
@@ -57,8 +60,9 @@ export function buildInput(question, { locale, t, errorId, initial }) {
     fs.append(h('legend', { class: 'cl-qlabel', text: label + (req ? ` ${req}` : '') }));
     if (help) fs.append(h('p', { class: 'help', id: helpId, text: help }));
     const group = h('div', { class: `cl-opts${items.length === 2 ? ' two' : ''}` });
+    const pre = new Set([].concat(initial ?? []).map(String));
     items.forEach((o, i) => {
-      const inp = h('input', { type: kind === 'check' ? 'checkbox' : 'radio', name: id, value: o.value, id: `${id}-${i}` });
+      const inp = h('input', { type: kind === 'check' ? 'checkbox' : 'radio', name: id, value: o.value, id: `${id}-${i}`, checked: pre.has(o.value) || (type === 'disclosure' && initial === true) || null });
       group.append(h('label', { class: 'cl-opt', for: `${id}-${i}` }, inp, h('span', { class: 'cl-opt-text', text: o.label })));
     });
     fs.append(group, err.el);
@@ -70,7 +74,8 @@ export function buildInput(question, { locale, t, errorId, initial }) {
       return checked[0];
     };
     return {
-      el: fs, get, focus: () => fs.querySelector('input')?.focus(),
+      el: fs, get, raw: () => { const v = get(); return v === undefined ? undefined : typeof v === 'boolean' && type !== 'disclosure' ? String(v) : v; },
+      focus: () => fs.querySelector('input')?.focus(),
       setError(text) { err.set(text); fs.querySelectorAll('input').forEach((i) => (text ? i.setAttribute('aria-invalid', 'true') : i.removeAttribute('aria-invalid'))); },
       check: () => true,
     };
@@ -92,6 +97,7 @@ export function buildInput(question, { locale, t, errorId, initial }) {
       return htmlType === 'number' ? Number(v) : v;
     };
   }
+  if (initial !== undefined && initial !== null && typeof initial !== 'object') control.value = String(initial);
   const setError = (text) => { err.set(text); if (text) control.setAttribute('aria-invalid', 'true'); else control.removeAttribute('aria-invalid'); };
   control.addEventListener('input', () => { if (!err.el.hidden) setError(''); });
   const el = h('div', { class: 'cl-qfield' },
@@ -99,12 +105,56 @@ export function buildInput(question, { locale, t, errorId, initial }) {
     help ? h('p', { class: 'help', id: helpId, text: help }) : null,
     control, err.el);
   return {
-    el, get, focus: () => control.focus(), setError,
+    el, get, raw: () => control.value, focus: () => control.focus(), setError,
     check() {
-      const key = validateScalar(type, control.value);
+      const key = validateScalar(type, control.value, question, { today });
       if (key) { setError(t(key)); control.focus(); return false; }
       return true;
     },
+  };
+}
+
+/**
+ * Media question (photos): a file picker inside the question form. Files cannot be uploaded before the claim exists, so
+ * get() returns their descriptions ({ fileName, contentType, size }) as the answer and files() the File objects, which the
+ * app uploads to /claims/{id}/documents right after submit. Unsupported or oversized files are listed and left out.
+ */
+export function buildMediaInput(question, { locale, t, errorId, initial }) {
+  const id = `md-${++uid}`;
+  const label = localText(question.text, locale);
+  const help = localText(question.help, locale) || t('claimant.media.help');
+  const msgId = `${id}-msg`;
+  const err = errorLine(msgId);
+  let files = Array.isArray(initial?.files) ? [...initial.files] : [];
+  const rejected = [];
+  const list = h('ul', { class: 'cl-files', 'aria-live': 'polite' });
+  const count = h('p', { class: 'help', id: `${id}-count` });
+  const paint = () => {
+    list.replaceChildren(...files.map((f) => h('li', { class: 'ok' }, h('span', { class: 'cl-fileicon', 'aria-hidden': 'true' }, createIcon('file', { size: 18 })), h('span', { text: f.name }))),
+      ...rejected.map((name) => h('li', { class: 'bad' }, h('span', { class: 'cl-fileicon', 'aria-hidden': 'true' }, createIcon('alert-circle', { size: 18 })), h('span', { text: t('claimant.media.rejected', { name, max: MAX_BYTES / 1048576 }) }))));
+    count.textContent = files.length ? t(pluralKey('claimant.media.count', files.length), { n: files.length }) : '';
+  };
+  const picker = h('input', { type: 'file', id, class: 'sr-only', multiple: true, accept: ACCEPT_ATTR, 'aria-describedby': [`${id}-help`, `${id}-count`, errorId, msgId].filter(Boolean).join(' '), onchange: () => {
+    rejected.length = 0;
+    for (const f of [...(picker.files ?? [])]) { if (validateFile(f).ok) files.push(f); else rejected.push(f.name); }
+    try { picker.value = ''; } catch { /* some browsers keep the selection */ }
+    err.set(''); paint();
+  } });
+  const req = question.required ? '' : ` ${t('claimant.guided.optional')}`;
+  const fs = h('fieldset', { class: 'cl-qfield', 'data-qtype': 'media' },
+    h('legend', { class: 'cl-qlabel', text: label + req }),
+    h('p', { class: 'help', id: `${id}-help`, text: help }),
+    h('label', { class: 'cl-drop', for: id }, picker, createIcon('upload', { size: 24 }), h('span', { text: t('claimant.media.choose') })),
+    count, list, err.el);
+  paint();
+  return {
+    el: fs,
+    get: () => (files.length ? files.map((f) => ({ fileName: f.name, contentType: f.type, size: f.size })) : undefined),
+    files: () => [...files],
+    raw: () => ({ files: [...files] }),
+    setError: (text) => err.set(text),
+    check: () => true,
+    focus: () => picker.focus(),
   };
 }
 

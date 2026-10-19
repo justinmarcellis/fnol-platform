@@ -10,6 +10,24 @@ export function fieldType(type) {
   return { number: 'number', currency: 'number', date: 'date', time: 'time', phone: 'tel', email: 'email', datetime: 'datetime-local', longtext: 'textarea', select: 'select', boolean: 'select' }[type] ?? 'text';
 }
 
+/** Question types rendered as a group of checkboxes (value is an array of option values). */
+export function isMultiSelect(q) {
+  return q?.type === 'multiselect';
+}
+
+const NOT_LENGTH_CHECKED = new Set(['number', 'currency', 'date', 'time', 'datetime', 'select', 'boolean', 'multiselect', 'disclosure', 'phone', 'email', 'vin', 'party', 'vehicle', 'address', 'location']);
+
+/**
+ * Client-side limits for a free-text answer, mirroring the server's validation (validation.maxLength, else 500 for
+ * text and 8000 for longtext). Returns {} for types the server does not length-check.
+ * @returns {{ maxLength?: number }}
+ */
+export function fieldRules(q) {
+  if (NOT_LENGTH_CHECKED.has(q?.type)) return {};
+  const max = Number(q?.validation?.maxLength);
+  return { maxLength: Number.isFinite(max) && max > 0 ? max : (q?.type === 'longtext' ? 8000 : 500) };
+}
+
 /**
  * Coerce the raw control value to the type the API expects.
  * Disclosure: the boolean true when acknowledged (checked, true or 'true'), otherwise false (never a string).
@@ -20,6 +38,7 @@ export function coerceAnswer(q, v) {
   if (isDisclosure(q)) return v === true || v === 'true' || v === 'on';
   if (q?.type === 'boolean') return v === true || v === 'true';
   if (q?.type === 'number' || q?.type === 'currency') return v === '' ? v : Number(v);
+  if (isMultiSelect(q)) return Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x) : [];
   return v;
 }
 

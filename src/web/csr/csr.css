@@ -44,7 +44,9 @@ main#main { display: block; outline: none; }
 #disclosures h3 { margin: 0 0 var(--fx-space-1); font-size: var(--fx-fs-md); }
 #disclosures p { margin: 0 0 var(--fx-space-1); }
 #answer-form { display: grid; gap: var(--fx-space-3); max-width: 40rem; }
-#answer-form .fx-btn { justify-self: start; }
+#answer-form .fx-btn-group { margin: 0; display: flex; gap: var(--fx-space-2); flex-wrap: wrap; }
+#answer-optional { margin: 0; }
+fieldset.sf.csr-multi .fx-check { margin-block: var(--fx-space-1); }
 #submit-go { margin-top: var(--fx-space-3); }
 .csr-missing { margin-top: var(--fx-space-5); padding-top: var(--fx-space-4); border-top: 1px solid var(--fx-divider); }
 .csr-missing h3 { margin: 0 0 var(--fx-space-2); }
@@ -65,7 +67,20 @@ fieldset.sf fx-field { display: block; margin-block: var(--fx-space-2); }
 .sf-error { color: var(--fx-danger); font-weight: var(--fx-fw-semibold); margin: 0; }
 .sf-error[hidden], #vehicle-pick[hidden] { display: none; }
 
+/* fleet units folded below the policy-level coverages (CSR-21) */
+.csr-units { border: 1px solid var(--fx-divider); border-radius: var(--fx-radius); padding: var(--fx-space-2) var(--fx-space-3); background: var(--fx-bg); }
+.csr-units > summary { cursor: pointer; font-weight: var(--fx-fw-semibold); font-size: var(--fx-fs-md); }
+.csr-units[open] > summary { margin-bottom: var(--fx-space-2); }
+.csr-units .csr-tile { margin-top: var(--fx-space-2); }
+
+/* claim numbers are links; policy numbers in the recent list are plain reference text */
+a.csr-mono { text-decoration: underline; text-underline-offset: 2px; }
+a.csr-mono:hover { text-decoration-thickness: 2px; }
+.csr-ref { font-family: var(--fx-font-mono); font-size: var(--fx-fs-sm); color: var(--fx-text); white-space: nowrap; }
+.csr-recent-msg { margin: var(--fx-space-3) var(--fx-space-4); }
+
 /* claim summary view */
+#claim-msg { margin-bottom: var(--fx-space-4); }
 #claim-dl { margin: 0 0 var(--fx-space-4); }
 #done-h { margin: 0; }
 @media (max-width: 719px) { .csr-searchbar { grid-template-columns: minmax(0, 1fr); } .csr-searchbar .fx-btn { margin-top: 0; justify-self: start; } }

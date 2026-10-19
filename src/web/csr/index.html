@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CSR claims desk</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/shared/tokens.css">
   <link rel="stylesheet" href="/shared/components.css">
   <link rel="stylesheet" href="/csr/csr.css">
@@ -57,7 +58,11 @@
             <div class="fx-alert csr-script" data-tone="info">
               <div><strong id="script-h"></strong><p id="script" aria-live="polite"></p></div>
             </div>
-            <form id="answer-form" novalidate><div id="answer-slot"></div><button class="fx-btn" type="submit" id="answer-go"></button></form>
+            <form id="answer-form" novalidate>
+              <div id="answer-slot"></div>
+              <p id="answer-optional" class="muted" hidden></p>
+              <p class="fx-btn-group"><button class="fx-btn" type="submit" id="answer-go"></button> <button class="fx-btn secondary" type="button" id="answer-skip" hidden></button></p>
+            </form>
             <button class="fx-btn" type="button" id="submit-go" hidden></button>
             <div class="csr-missing" aria-labelledby="panel-h">
               <h3 id="panel-h" class="fx-section-title"></h3>
@@ -71,18 +76,22 @@
           <div class="fx-stack-sm">
             <h3 id="done-h" tabindex="-1"></h3>
             <p id="done-number" class="fx-mono"></p>
+            <p id="done-status"></p>
+            <p id="done-note" class="muted" hidden></p>
             <p class="fx-btn-group"><a class="fx-btn" id="done-link" href="#"></a> <button class="fx-btn secondary" type="button" id="done-again"></button></p>
           </div>
         </fx-card>
 
         <fx-card id="recent-sec" heading="Recent claims" padding="none">
           <button slot="actions" class="fx-btn secondary small" type="button" id="recent-refresh"></button>
+          <p id="recent-msg" class="csr-msg csr-recent-msg" role="status"></p>
           <fx-table id="recent-table" caption="Recent claims"></fx-table>
           <div slot="footer" id="recent-hint"></div>
         </fx-card>
       </div>
 
       <fx-card id="claim-sec" heading="Claim" padding="md" hidden>
+        <div id="claim-msg" class="fx-alert" data-tone="warning" role="alert" hidden></div>
         <dl id="claim-dl" class="fx-kv"></dl>
         <p><a class="fx-btn secondary" id="claim-back" href="/csr"></a></p>
       </fx-card>
