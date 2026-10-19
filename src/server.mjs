@@ -57,6 +57,17 @@ function resolveStatic(webDir, pathname) {
  *   devMode?: boolean, logLevel?: string, clock?: object, host?: string }} [opts]
  * @returns {Promise<{ server: import('node:http').Server, ctx: object, port: number, url: string, close: () => Promise<void> }>}
  */
+/**
+ * Dev mode (token minting, demo personas) is an explicit opt-in and fails closed: true only when
+ * opts.devMode === true or FNOL_DEV_MODE is exactly "1". NODE_ENV is deliberately ignored.
+ * @param {boolean} [optValue]
+ */
+export function resolveDevMode(optValue, env = process.env) {
+  if (optValue === true) return true;
+  if (optValue === false) return false;
+  return env.FNOL_DEV_MODE === '1';
+}
+
 export async function createApp(opts = {}) {
   const dbPath = opts.dbPath ?? process.env.FNOL_DB_PATH ?? path.join(ROOT, 'data', 'fnol.db');
   const secretsDir = opts.secretsDir ?? path.join(ROOT, '.secrets');
@@ -67,9 +78,10 @@ export async function createApp(opts = {}) {
   const clock = opts.clock ?? createClock();
   const log = createLogger({ level: opts.logLevel, clock });
   const ctx = {
-    config: { devMode: opts.devMode ?? process.env.NODE_ENV !== 'production', dbPath, secretsDir, tenantsDir },
+    config: { devMode: resolveDevMode(opts.devMode), dbPath, secretsDir, tenantsDir },
     clock, log, modules: {}, moduleNames: [], ai: null, HttpError, AppError,
   };
+  if (ctx.config.devMode) log.warn('DEV MODE ON: dev token minting and demo personas are enabled. Do not expose this instance to untrusted users.');
   ctx.db = createStore(dbPath);
   ctx.crypto = createCrypto({ secretsDir });
   ctx.scheduler = createScheduler({ log });

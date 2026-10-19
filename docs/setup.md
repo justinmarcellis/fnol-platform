@@ -67,7 +67,7 @@ The token endpoint returns 404 unless dev mode is on. Only `platform_admin` may 
 | `PORT` | 8080 | Platform port (`npm start`) |
 | `FNOL_DB_PATH` | `data/fnol.db` | SQLite file |
 | `FNOL_DEV_USERS_PATH` | `data/dev-users.json` | Where the seed writes dev users |
-| `NODE_ENV` | unset | `production` turns dev mode (and the token endpoint) off |
+| `FNOL_DEV_MODE` | unset | `1` turns dev mode (token endpoint, demo personas) on; anything else is off. `npm start` enables it for local use unless this is set. `NODE_ENV` does not affect it |
 
 ## Tests
 ```

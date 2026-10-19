@@ -34,7 +34,7 @@ export async function runSmoke(opts = {}) {
   let output = '';
   const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', serverPath], {
     cwd: root,
-    env: { ...process.env, NODE_ENV: 'development', PORT: String(port), FNOL_DB_PATH: path.join(tmp, 'smoke.db') },
+    env: { ...process.env, FNOL_DEV_MODE: '1', PORT: String(port), FNOL_DB_PATH: path.join(tmp, 'smoke.db') },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let exited = null;

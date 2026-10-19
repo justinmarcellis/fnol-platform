@@ -49,7 +49,7 @@ gcloud iam service-accounts create fnol-run --display-name="FNOL PoC runtime"
 gcloud run deploy fnol-platform --image $REGION-docker.pkg.dev/$PROJECT/fnol/platform:poc \
   --region $REGION --service-account fnol-run@$PROJECT.iam.gserviceaccount.com \
   --no-allow-unauthenticated --max-instances 1 --min-instances 0 --memory 1Gi --port 8080 \
-  --set-env-vars NODE_ENV=development --iap
+  --set-env-vars FNOL_DEV_MODE=1 --iap
 gcloud iap web add-iam-policy-binding --member=user:<sponsor-email> \
   --role=roles/iap.httpsResourceAccessor --region $REGION --resource-type=cloud-run --service fnol-platform
 
@@ -71,7 +71,7 @@ rm iap.yaml; unset CSEC
 #   - run docs/demo-script.md
 ```
 
-The image starts via `scripts/dev.mjs`, which seeds policies and demo claims on a new database and binds `HOST=0.0.0.0`. `NODE_ENV=development` turns on devMode. The startup log prints dev tokens; they only work against this ephemeral instance, behind IAP.
+The image starts via `scripts/dev.mjs`, which seeds policies and demo claims on a new database and binds `HOST=0.0.0.0`. `FNOL_DEV_MODE=1` (set explicitly on the deploy command; the image defaults it to 0) turns on devMode. `NODE_ENV` has no effect on it. This is the accepted R2 risk for an IAP-only PoC. The startup log prints dev tokens; they only work against this ephemeral instance, behind IAP.
 
 If `gcloud` says it is using `CLOUDSDK_AUTH_ACCESS_TOKEN`, run it as `env -u CLOUDSDK_AUTH_ACCESS_TOKEN gcloud ...` so the activated service account is used.
 

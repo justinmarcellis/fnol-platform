@@ -28,6 +28,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
 # PoC start: seed + demo data on a new (ephemeral) database, then serve on 0.0.0.0.
-# devMode follows NODE_ENV; the fnol-poc deploy sets NODE_ENV=development.
-ENV HOST=0.0.0.0
+# Dev mode is fail-closed: the image defaults FNOL_DEV_MODE=0 and a deploy must opt in with
+# FNOL_DEV_MODE=1 (the fnol-poc deploy does, IAP-only PoC). NODE_ENV does not control it.
+ENV HOST=0.0.0.0 \
+    FNOL_DEV_MODE=0
 CMD ["node", "--disable-warning=ExperimentalWarning", "scripts/dev.mjs"]

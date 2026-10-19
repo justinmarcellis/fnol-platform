@@ -34,6 +34,9 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            # Explicit dev-mode opt-in (token minting, demo personas). IAP-only PoC, accepted R2 risk.
+            - name: FNOL_DEV_MODE
+              value: "1"
             - name: LOG_LEVEL
               value: info
             - name: FNOL_DB_PATH

@@ -27,7 +27,9 @@ if (fs.existsSync(seed) && dbEmpty) {
 }
 
 const { createApp } = await import('../src/server.mjs');
-const app = await createApp({ port, dbPath, host: process.env.HOST });
+// npm start is local use: dev mode on unless FNOL_DEV_MODE is set explicitly (the image sets FNOL_DEV_MODE=0; a deploy opts in with =1).
+const devMode = process.env.FNOL_DEV_MODE === undefined ? true : process.env.FNOL_DEV_MODE === '1';
+const app = await createApp({ port, dbPath, devMode, host: process.env.HOST });
 const children = [];
 
 const dash = path.join(root, 'dashboard', 'server.mjs');
@@ -40,7 +42,7 @@ if (fs.existsSync(dash)) {
 console.log(`Platform:  http://localhost:${app.port}/   (health: /healthz)`);
 const base = `http://localhost:${app.port}`;
 console.log(`Apps:      ${base}/  ${base}/csr  ${base}/adjuster  ${base}/admin`);
-try {
+if (devMode) try {
   console.log('Dev users and tokens (fictional, valid for the default token lifetime):');
   for (const tenantId of [...app.ctx.tenants.list()].sort()) {
     for (const role of ['claimant', 'csr', 'adjuster', 'supervisor', 'carrier_admin', 'platform_admin']) {

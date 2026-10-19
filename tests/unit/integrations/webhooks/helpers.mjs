@@ -25,7 +25,7 @@ export async function bootIntegrations({ adaptersSource, ...extra } = {}) {
   }
   let app;
   try {
-    app = await bootApp({ modulesDir, ...extra });
+    app = await bootApp({ devMode: true, modulesDir, ...extra }); // devMode is opt-in; webhook tests default to it
   } catch (e) {
     fs.rmSync(modulesDir, { recursive: true, force: true });
     throw e;

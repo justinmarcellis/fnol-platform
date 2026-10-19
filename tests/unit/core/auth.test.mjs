@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { bootApp, call } from './helpers.mjs';
 
 test('auth: dev token endpoint issues usable token with claims', async () => {
-  const app = await bootApp();
+  const app = await bootApp({ devMode: true });
   try {
     const r = await call(app, 'POST', '/api/v1/auth/token', { body: { tenantId: 'alpha', sub: 'sup1', roles: ['supervisor'], name: 'Sam Super' } });
     assert.equal(r.status, 201);

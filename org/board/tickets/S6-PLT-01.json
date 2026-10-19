@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:47:39.640Z",
   "history": [
@@ -7,6 +7,26 @@
       "at": "2026-10-19T13:17:53.252Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T13:19:28.960Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:20:39.253Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T13:20:54.699Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:22:13.157Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-PLT-01",
@@ -41,5 +61,69 @@
     "Full npm test no new failures"
   ],
   "brief": "src/server.mjs:69-70 computes devMode. Grep tests for devMode/NODE_ENV usages (IMP-14) and include any test that must change in your result; post to the platform hub if a test outside your paths must change. Sequenced after the Wave B redesigns (they edit tests/ui). Test harnesses that rely on the old default are in your paths; set devMode explicitly there.",
-  "startedAt": "2026-10-19T13:17:53.252Z"
+  "startedAt": "2026-10-19T13:17:53.252Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-19T13:20:39.253Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Criteria 1-4 met, but full npm test has 3 new failures caused by this change (auth.test.mjs 'dev token endpoint issues usable token'; adapters 'HTTP target' x2 via tests/integration/integrations/adapters/helpers.mjs createApp lacking devMode:true); add devMode:true to those two test files and re-submit"
+      },
+      {
+        "at": "2026-10-19T13:22:13.157Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; round-2 devMode:true fixes resolve the 3 regressions; full npm test 1532/1536 with only baseline todos plus one unrelated coverage/mock-pas flake that passes in isolation"
+      }
+    ],
+    "firstPass": false
+  },
+  "doneAt": "2026-10-19T13:22:13.157Z",
+  "spend": {
+    "usd": 0.6569,
+    "inputTokens": 54,
+    "cacheWriteTokens": 116798,
+    "cacheReadTokens": 1762928,
+    "outputTokens": 1227,
+    "agents": {
+      "a5653d28255ed1419": {
+        "label": "S6-PLT-01 ic-platform-runtime-dev rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19339,
+        "cacheReadTokens": 217816,
+        "outputTokens": 68,
+        "usd": 0.0926
+      },
+      "a5be19d844cf165ce": {
+        "label": "S6-PLT-01 ic-platform-runtime-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 46999,
+        "cacheReadTokens": 892568,
+        "outputTokens": 124,
+        "usd": 0.2973
+      },
+      "ab8101eb9a6cae71d": {
+        "label": "S6-PLT-01 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 22250,
+        "cacheReadTokens": 351731,
+        "outputTokens": 175,
+        "usd": 0.1277
+      },
+      "aeccb435a2ea71d01": {
+        "label": "S6-PLT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 28210,
+        "cacheReadTokens": 300813,
+        "outputTokens": 860,
+        "usd": 0.1393
+      }
+    }
+  }
 }

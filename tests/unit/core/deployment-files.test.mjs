@@ -60,3 +60,14 @@ test('deployment guide covers stages, production changes and not-run marking', (
   }
   assert.match(g, /NOT RUN/);
 });
+
+test('fnol-poc deploy: Dockerfile, service.yaml and runbook agree on explicit FNOL_DEV_MODE=1', () => {
+  const d = read('Dockerfile');
+  assert.match(d, /FNOL_DEV_MODE=0/, 'image defaults dev mode off');
+  const y = read('infra/cloudrun/service.yaml');
+  assert.match(y, /- name: FNOL_DEV_MODE\n\s+value: "1"/, 'manifest opts in explicitly');
+  const g = read('docs/deploy-fnol-poc.md');
+  assert.match(g, /--set-env-vars FNOL_DEV_MODE=1\b/, 'runbook deploy command opts in');
+  assert.doesNotMatch(g, /NODE_ENV=development/);
+  assert.doesNotMatch(y + d, /NODE_ENV=?\s*development/);
+});

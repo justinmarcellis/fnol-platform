@@ -40,7 +40,7 @@ export async function bootAdapters() {
     beta: { id: 'beta', displayName: 'Beta Casualty' },
   };
   for (const [id, cfg] of Object.entries(tenants)) fs.writeFileSync(path.join(tenantsDir, `${id}.json`), JSON.stringify(cfg));
-  const app = await createApp({ dbPath: ':memory:', port: 0, secretsDir: path.join(dir, 'secrets'), tenantsDir, modulesDir, logLevel: 'silent' });
+  const app = await createApp({ dbPath: ':memory:', port: 0, secretsDir: path.join(dir, 'secrets'), tenantsDir, modulesDir, logLevel: 'silent', devMode: true });
   const close = app.close;
   app.close = async () => {
     app.ctx.modules.integrations?.worker?.stop?.();
