@@ -2545,5 +2545,257 @@
   "phase": "Review",
   "startedAt": "2026-10-19T16:11:10.156Z",
   "endedAt": "2026-10-19T16:12:02.548Z"
+ },
+ {
+  "id": "abdb6bf3704c728c1",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-01 audit claimant",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T16:39:28.703Z",
+  "endedAt": "2026-10-19T16:50:02.859Z"
+ },
+ {
+  "id": "a34f57de9c391ef55",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-02 audit csr",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T16:39:30.436Z",
+  "endedAt": "2026-10-19T16:53:20.897Z"
+ },
+ {
+  "id": "ad880b80a0ab745b0",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-03 audit adjuster",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T16:50:04.225Z",
+  "endedAt": "2026-10-19T16:53:21.557Z"
+ },
+ {
+  "id": "a12d441235cc591f3",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-04 audit admin",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T16:53:20.924Z",
+  "endedAt": "2026-10-19T16:53:21.140Z"
+ },
+ {
+  "id": "aa67c663d10bab7aa",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-05 audit data",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T16:53:21.147Z",
+  "endedAt": "2026-10-19T16:53:21.370Z"
+ },
+ {
+  "id": "a04fd13391c4deddd",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-01 ic-experience-claimant-web-dev",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T16:53:21.598Z",
+  "endedAt": "2026-10-19T16:53:21.785Z"
+ },
+ {
+  "id": "a72f0a991d4716ff8",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-04 ic-experience-admin-ui-dev",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T16:53:21.790Z",
+  "endedAt": "2026-10-19T16:53:21.989Z"
+ },
+ {
+  "id": "a7665893c30a9200f",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-05 ic-integration-integration-lead",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T16:53:21.794Z",
+  "endedAt": "2026-10-19T16:53:21.996Z"
+ },
+ {
+  "id": "afc89564dfcd427e0",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-05 re-audit",
+  "model": null,
+  "phase": "Re-audit",
+  "startedAt": "2026-10-19T16:53:22.001Z",
+  "endedAt": "2026-10-19T16:53:22.166Z"
+ },
+ {
+  "id": "a82857d7292c53f73",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-02 audit csr",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T18:30:57.609Z",
+  "endedAt": "2026-10-19T18:44:49.587Z"
+ },
+ {
+  "id": "a2386a74a168fd6ec",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-03 audit adjuster",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T18:31:02.613Z",
+  "endedAt": "2026-10-19T18:39:45.817Z"
+ },
+ {
+  "id": "a97ee918c18c0375b",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-04 audit admin",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T18:39:47.134Z",
+  "endedAt": "2026-10-19T18:51:30.872Z"
+ },
+ {
+  "id": "a5ef8b363c20d6c0f",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-05 audit data",
+  "model": null,
+  "phase": "Audit",
+  "startedAt": "2026-10-19T18:44:50.542Z",
+  "endedAt": "2026-10-19T19:00:00.564Z"
+ },
+ {
+  "id": "afc4cfd0fd285680c",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-01 ic-experience-claimant-web-dev",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T19:00:01.724Z",
+  "endedAt": "2026-10-19T19:27:53.690Z"
+ },
+ {
+  "id": "adb1b405fc168dcdf",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-02 ic-experience-csr-portal-dev",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T19:00:06.721Z",
+  "endedAt": "2026-10-19T19:35:20.362Z"
+ },
+ {
+  "id": "a5f159e95e5949cf3",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-03 ic-experience-adjuster-view-dev",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T19:27:54.893Z",
+  "endedAt": "2026-10-19T19:57:43.339Z"
+ },
+ {
+  "id": "a41afed59053f2bed",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-04 ic-experience-admin-ui-dev",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T19:35:21.568Z",
+  "endedAt": "2026-10-19T20:00:09.732Z"
+ },
+ {
+  "id": "aabdc96254388a0fa",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-05 ic-integration-integration-lead",
+  "model": null,
+  "phase": "Fix",
+  "startedAt": "2026-10-19T19:57:44.727Z",
+  "endedAt": "2026-10-19T20:37:50.872Z"
+ },
+ {
+  "id": "a6eabe2dac87c7a5c",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-01 review",
+  "model": null,
+  "phase": "Review",
+  "startedAt": "2026-10-19T20:00:11.017Z",
+  "endedAt": "2026-10-19T20:10:58.207Z"
+ },
+ {
+  "id": "a197e13fcbfd6c5bc",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-02 review",
+  "model": null,
+  "phase": "Review",
+  "startedAt": "2026-10-19T20:10:59.222Z",
+  "endedAt": "2026-10-19T20:17:13.010Z"
+ },
+ {
+  "id": "a4e43b42a6c9467c7",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-03 review",
+  "model": null,
+  "phase": "Review",
+  "startedAt": "2026-10-19T20:17:13.928Z",
+  "endedAt": "2026-10-19T20:25:00.690Z"
+ },
+ {
+  "id": "add2376cd18dbbd81",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-04 review",
+  "model": null,
+  "phase": "Review",
+  "startedAt": "2026-10-19T20:25:01.761Z",
+  "endedAt": "2026-10-19T20:37:38.811Z"
+ },
+ {
+  "id": "a23e3774cec67a99c",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-05 review",
+  "model": null,
+  "phase": "Review",
+  "startedAt": "2026-10-19T20:37:51.929Z",
+  "endedAt": "2026-10-19T20:42:36.353Z"
+ },
+ {
+  "id": "a2bc71845379bf58b",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-05 re-audit",
+  "model": null,
+  "phase": "Re-audit",
+  "startedAt": "2026-10-19T20:42:37.260Z",
+  "endedAt": "2026-10-19T21:02:13.607Z"
+ },
+ {
+  "id": "aef57fad92831034c",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-01 ic-experience-claimant-web-dev rework",
+  "model": null,
+  "phase": "Fix 2",
+  "startedAt": "2026-10-19T21:02:14.697Z",
+  "endedAt": "2026-10-19T21:04:40.730Z"
+ },
+ {
+  "id": "aa47b8ada6e89a685",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-02 ic-experience-csr-portal-dev rework",
+  "model": null,
+  "phase": "Fix 2",
+  "startedAt": "2026-10-19T21:02:17.948Z",
+  "endedAt": "2026-10-19T21:04:41.751Z"
+ },
+ {
+  "id": "a9f0a2cb654dc98c1",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-01 ic-experience-claimant-web-dev rework",
+  "model": null,
+  "phase": "Fix 2",
+  "startedAt": "2026-10-19T21:05:23.925Z",
+  "endedAt": "2026-10-19T21:16:46.544Z"
+ },
+ {
+  "id": "aa898a56aa1d59b02",
+  "workflow": "wf_a7841e77-5b1",
+  "label": "S6-BUG-02 ic-experience-csr-portal-dev rework",
+  "model": null,
+  "phase": "Fix 2",
+  "startedAt": "2026-10-19T21:05:28.926Z",
+  "endedAt": "2026-10-19T21:16:46.567Z"
  }
 ]
