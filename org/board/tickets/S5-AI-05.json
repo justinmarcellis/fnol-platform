@@ -1,0 +1,32 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T04:17:10.931Z",
+  "history": [
+    {
+      "at": "2026-10-19T04:17:20.434Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-AI-05",
+  "team": "ai",
+  "title": "Pick primary and challenger models per task from the live evaluation",
+  "story": "As a carrier AI owner I want a primary and challenger model per AI task, chosen on live evidence with its caveats stated, so that I know what runs in production and what it is tested against",
+  "points": 3,
+  "tier": "strong",
+  "owner": "dir-ai",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "docs/ai-model-selection.md"
+  ],
+  "acceptance": [
+    "docs/ai-model-selection.md gives, per task (extract_narrative, extract_document, classify_photo, severity, fraud_signals, subrogation, summarize, next_best_actions), a primary and a challenger chosen from local rules, gemini-2.5-flash and gemini-2.5-pro using only the numbers in docs/ai-evaluation-live.md and docs/ai-evaluation.md (cite them), or 'local only' with the reason",
+    "States why the automatic selection rule picked nothing and what that means: classify_photo was never sent (0 tokens, harness gap); the attack-success proxy counts any wrong answer on an adversarial case, while off-task and PII-echo signals were 0; agreement is low at temperature 0 for reasoning models; golden labels for fraud and next-best-action codes reuse the local vocabulary (possible bias); n=20 per task so one case is 5 points",
+    "Claude: not evaluated because Vertex returns 429 quota 0 for claude-haiku/sonnet/opus-5-5 in fnol-poc; the challenger slot names the Gemini model meanwhile and says Claude is to be evaluated once enabled",
+    "A short 'Next evaluation' list: fix the photo input path, split attack success into instruction-followed vs plain error, relabel codes from the domain spec, more cases, Claude once enabled; and a recommended tenant ai config snippet (provider order per task) that matches the choice"
+  ],
+  "brief": "Decision document, not code. Read docs/ai-evaluation-live.md (live), docs/ai-evaluation.md (offline), src/ai/eval-live.mjs selection rule, tests/fixtures/ai/golden/, tenants/*.json ai blocks. Be decisive and brief; a reader should know in 30 seconds what runs where.",
+  "startedAt": "2026-10-19T04:17:20.434Z"
+}

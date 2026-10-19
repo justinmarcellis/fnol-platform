@@ -1,0 +1,34 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T04:17:10.933Z",
+  "history": [
+    {
+      "at": "2026-10-19T04:17:20.200Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-PRD-01",
+  "team": "product",
+  "title": "Refresh COTS readiness and the demo script for Sprint 5",
+  "story": "As the sponsor I want the readiness assessment and demo script to match what is true after Sprint 5 so that I can show and judge the product from the documents",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-product-requirements-analyst",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "docs/cots-readiness.md",
+    "docs/demo-script.md"
+  ],
+  "acceptance": [
+    "docs/cots-readiness.md: every row re-checked against the tree at HEAD; Sprint 5 changes marked 'S5' with file citations: deployed to Cloud Run in fnol-poc behind IAP (Operability: deployed, not from CI); policy-vehicles oracle closed (last name + ZIP, per-policy lockout); safe-pattern checker; AI output validation, tenant attribution, untrusted framing, labelled-name redaction; first live Gemini evaluation (docs/ai-evaluation-live.md) with its caveats; four production spikes (architecture/spikes/*.md) as design + proof only",
+    "The open security findings section uses the true tally from architecture/security-review-s2.md section 13.5 (0 high, 1 medium SEC2-011 residual, 7 low) and lists R2 (devMode on in the IAP-only deployment) as an accepted PoC risk deferred to Sprint 6",
+    "The recommended path to pilot is updated: what moved, what is next (OIDC wiring + devMode off, Cloud SQL migration, Pub/Sub, KMS with tenant-bound envelope, Claude evaluation once enabled)",
+    "docs/demo-script.md: the claimant beats mention the last name + ZIP step for the insured-vehicle picker and the deployed URL behind IAP (no secrets); 'Run against the deployed service' section from S5-QE-01 kept",
+    "Synthetic data only; no real carrier names; every claim in both docs is backed by a file you read (no estimates)"
+  ],
+  "brief": "Read the Sprint 5 tickets (org/board/tickets/S5-*.json), git log since 8fb908a, architecture/security-review-s2.md section 13, docs/ai-evaluation-live.md, architecture/spikes/, docs/deploy-fnol-poc.md. Do not edit docs/ai-model-selection.md (S5-AI-05 runs in parallel); you may reference it by path.",
+  "startedAt": "2026-10-19T04:17:20.200Z"
+}
