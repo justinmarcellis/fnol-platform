@@ -92,13 +92,13 @@ test('app renders every tab, escaped, with and without scorecards', () => {
     return { snapshot, graph, metrics: computeMetrics({ ...snapshot, sprints, scorecards: sc }, { valueDrivers: [{ id: 'VD-1', title: evil }] }) };
   };
   for (const sc of [undefined, fixture]) {
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 13; i++) {
       const handlers = [];
       const els = {};
       const el = (id) => (els[id] ??= { id, innerHTML: '', textContent: '', className: '', addEventListener: (_, h) => handlers.push(h) });
       const ctx = vm.createContext({ window: { __SNAPSHOT__: data(sc), innerWidth: 1200, addEventListener() {} }, document: { getElementById: el, querySelectorAll: () => [] }, setTimeout, clearTimeout, setInterval() {} });
       vm.runInContext(src, ctx);
-      if (i === 0) assert.equal((els.tabs.innerHTML.match(/<button/g) || []).length, 12);
+      if (i === 0) assert.equal((els.tabs.innerHTML.match(/<button/g) || []).length, 13);
       handlers[0]({ target: { closest: () => ({ dataset: { i: String(i) } }) } });
       assert.ok(!els.view.innerHTML.includes('Render error'), `tab ${i}: ${els.view.innerHTML.slice(0, 160)}`);
       assert.ok(!els.view.innerHTML.includes('<b>x</b>'), `tab ${i} unescaped`);

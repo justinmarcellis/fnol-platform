@@ -43,7 +43,7 @@ test('every tab renders offline without errors', async (t) => {
   if (skip) return t.skip(skip);
   const { page, context } = await open();
   const n = await page.locator('#tabs button').count();
-  assert.ok(n >= 12);
+  assert.ok(n >= 13);
   for (let i = 0; i < n; i++) {
     await page.locator('#tabs button').nth(i).click();
     const text = await page.locator('#view').innerText();
@@ -56,33 +56,118 @@ test('every tab renders offline without errors', async (t) => {
   await context.close();
 });
 
-test('decision network tab: graph, filters, keyboard, themes, 390 px', async (t) => {
+const pulses = (page) => page.locator('#netcanvas').evaluate((c) => Number(c.dataset.pulses));
+
+test('decision network tab: canvas, replay, scrubber, filters, keyboard, themes, 390 px', async (t) => {
   if (skip) return t.skip(skip);
   const { page, context } = await open();
   await page.getByRole('tab', { name: 'Decision network' }).click();
-  assert.ok(await page.locator('svg.netsvg circle').count() > 10);
-  assert.ok(await page.locator('.netsvg line').count() > 10);
+  const cv = page.locator('#netcanvas');
+  assert.ok(Number(await cv.getAttribute('data-nodes')) > 10);
+  await page.waitForFunction(() => Number(document.getElementById('netcanvas').dataset.edges) > 10);
   assert.ok(await page.locator('.netleg').innerText().then((x) => /message/.test(x) && /agent run/.test(x)));
-  const before = await page.locator('.netsvg line').count();
-  await page.locator('[data-nk=msg]').uncheck();
-  assert.ok(await page.locator('.netsvg line').count() < before);
-  await page.locator('[data-nk=msg]').check();
+  // Replay from the start: the cursor moves, edges grow and pulses travel along recorded edges.
+  const end = Number(await cv.getAttribute('data-cursor'));
+  await page.selectOption('#speed', '10');
+  await page.locator('#play').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#play').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('#follow').isChecked(), false);
+  // Wait until the replay is roughly halfway and a pulse is in flight, so the screenshot is mid-replay.
+  await page.waitForFunction(() => { const d = document.getElementById('netcanvas').dataset; return Number(d.pulses) > 0 && (d.cursor - d.tmin) / (d.tmax - d.tmin) > 0.45; }, null, { timeout: 15000 });
+  const mid = Number(await cv.getAttribute('data-cursor'));
+  assert.ok(mid < end, 'replay restarted before the live end');
+  await shot(page, 'dashboard-network.png');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#play').getAttribute('aria-pressed'), 'false');
+  // Scrubber: keyboard moves the timeline back to the start with no edges lit.
+  await page.locator('#scrub').focus();
+  await page.keyboard.press('Home');
+  await page.waitForFunction(() => { const d = document.getElementById('netcanvas').dataset; return d.cursor === d.tmin; });
+  const startCursor = Number(await cv.getAttribute('data-cursor'));
+  assert.ok(startCursor < mid);
+  assert.equal(startCursor, Number(await cv.getAttribute('data-tmin')));
+  // Canvas keyboard stepping.
+  await cv.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction((c) => Number(document.getElementById('netcanvas').dataset.cursor) > c, startCursor);
+  // Filters and follow live.
+  await page.locator('#follow').check();
+  await page.waitForFunction((e) => Number(document.getElementById('netcanvas').dataset.cursor) >= e, end);
+  const edges = Number(await cv.getAttribute('data-edges'));
+  for (const k of ['msg', 'ticket', 'review']) await page.locator(`[data-nk=${k}]`).uncheck();
+  await page.waitForFunction((n) => Number(document.getElementById('netcanvas').dataset.edges) < n, edges);
+  for (const k of ['msg', 'ticket', 'review']) await page.locator(`[data-nk=${k}]`).check();
   await page.selectOption('#netteam', 'pmo');
-  assert.ok(await page.locator('.nn.dim').count() > 0);
   await page.selectOption('#netteam', '');
+  assert.ok(await page.locator('.feed div').count() > 5);
   await page.getByRole('tab', { name: 'Decision network' }).focus();
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('#tabs [aria-selected=true]').innerText(), 'Sprint board');
   await page.keyboard.press('ArrowLeft');
   assert.equal(await page.locator('#tabs [aria-selected=true]').innerText(), 'Decision network');
-  await shot(page, 'dashboard-network.png');
+  assert.deepEqual(page.errors, []);
   await context.close();
   for (const [w, h, cs] of [[1440, 900, 'dark'], [390, 844, 'light']]) {
     const c = await open({ width: w, height: h, colorScheme: cs });
     await c.page.getByRole('tab', { name: 'Decision network' }).click();
-    assert.ok(await c.page.locator('.netsvg circle').count() > 10);
+    assert.ok(Number(await c.page.locator('#netcanvas').getAttribute('data-nodes')) > 10);
     assert.ok(await c.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `no horizontal scroll at ${w}`);
     assert.deepEqual(c.page.errors, []);
     await c.context.close();
   }
+});
+
+test('header pill shows the source and the age of the data', async (t) => {
+  if (skip) return t.skip(skip);
+  const { page, context } = await open();
+  const text = await page.locator('#live').innerText();
+  assert.match(text, /^snapshot · updated .+/);
+  assert.match(await page.locator('#live').getAttribute('class'), /src-snapshot/);
+  await context.close();
+});
+
+test('sprint board and agent rank tabs render the live documents', async (t) => {
+  if (skip) return t.skip(skip);
+  const { page, context } = await open();
+  await page.getByRole('tab', { name: 'Sprint board' }).click();
+  assert.ok(await page.locator('.livecols .tk').count() > 3);
+  await page.selectOption('#bsprint', 'all');
+  assert.ok(await page.locator('.livecols .tk').count() > 20);
+  await page.getByRole('tab', { name: 'Agent rank' }).click();
+  assert.ok(await page.locator('#view tbody tr').count() > 5);
+  await context.close();
+});
+
+test('served locally: the page updates itself within 10 s when org/live data changes', async (t) => {
+  if (skip) return t.skip(skip);
+  const os = await import('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fnol-live-'));
+  const { start, metricsDoc } = await import('../../dashboard/server.mjs');
+  const { computeFeed } = await import('../../org/live-export.mjs');
+  const docs = { ...computeFeed().docs, metrics: metricsDoc() };
+  const write = () => { for (const [n, d] of Object.entries(docs)) fs.writeFileSync(path.join(dir, n + '.json'), JSON.stringify(d)); };
+  write();
+  const server = await start({ port: 0, liveDir: dir });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  page.errors = [];
+  page.on('pageerror', (e) => page.errors.push(e.message));
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    await page.waitForSelector('#tabs button');
+    await page.waitForFunction(() => /^local/.test(document.getElementById('live').textContent), null, { timeout: 10000 });
+    await page.getByRole('tab', { name: 'Sprint board' }).click();
+    await page.selectOption('#bsprint', 'all');
+    const before = await page.locator('.livecols .tk').count();
+    // A new story and a fresher metrics document arrive.
+    docs.board.tickets.push({ ...docs.board.tickets[0], id: 'S9-LIVE-01', title: 'Story that appeared while watching', status: 'in_progress', sprint: docs.board.tickets[0].sprint });
+    docs.board.generatedAt = new Date().toISOString();
+    docs.metrics.generatedAt = docs.board.generatedAt;
+    write();
+    await page.waitForFunction(() => document.body.innerText.includes('Story that appeared while watching'), null, { timeout: 10000 });
+    assert.equal(await page.locator('.livecols .tk').count(), before + 1);
+    assert.match(await page.locator('#live').innerText(), /^local · updated/);
+    assert.deepEqual(page.errors, []);
+  } finally { await context.close(); await new Promise((r) => server.close(r)); fs.rmSync(dir, { recursive: true, force: true }); }
 });

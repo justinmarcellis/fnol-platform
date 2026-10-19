@@ -8,7 +8,9 @@
 // Agent runs are merged into org/runs.json (committed), because harness
 // transcripts disappear with the container. Output files in --out (default
 // org/live/) are the documents pushed to the dashboard artifact's database:
-//   board.json  rank.json  graph.json  events.json
+//   board.json  rank.json  graph.json  events.json  metrics.json
+// metrics.json is the dashboard computeMetrics output plus generatedAt, so the
+// Velocity, Quality, Cost, Flow and Performance tabs update live too.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -172,13 +174,22 @@ export function computeFeed({ transcripts = null, persistRuns = false } = {}) {
   return { docs, runs };
 }
 
-function main() {
+/** Size cap per live document (artifact database documents must stay small). */
+export const MAX_DOC_BYTES = 600 * 1024;
+
+async function main() {
   const out = arg('out', path.join(ORG, 'live'));
   fs.mkdirSync(out, { recursive: true });
   const { docs, runs } = computeFeed({ transcripts: arg('transcripts', null), persistRuns: true });
-  for (const [name, body] of Object.entries(docs)) fs.writeFileSync(path.join(out, `${name}.json`), JSON.stringify(body));
+  // Imported lazily: dashboard/server.mjs itself imports computeFeed from this file.
+  docs.metrics = (await import('../dashboard/server.mjs')).metricsDoc();
+  for (const [name, body] of Object.entries(docs)) {
+    const text = JSON.stringify(body);
+    if (Buffer.byteLength(text) > MAX_DOC_BYTES) throw new Error(`live document ${name} is ${Buffer.byteLength(text)} bytes, over the ${MAX_DOC_BYTES} byte limit`);
+    fs.writeFileSync(path.join(out, `${name}.json`), text);
+  }
   const kb = (n) => Math.round(fs.statSync(path.join(out, `${n}.json`)).size / 1024);
-  console.log(`live feed: ${docs.board.tickets.length} stories, ${docs.rank.items.length} ranked agents, ${docs.graph.nodes.length} nodes / ${docs.graph.edges.length} edges, ${docs.events.items.length} events, ${runs.length} runs; sizes KB board ${kb('board')} rank ${kb('rank')} graph ${kb('graph')} events ${kb('events')}`);
+  console.log(`live feed: ${docs.board.tickets.length} stories, ${docs.rank.items.length} ranked agents, ${docs.graph.nodes.length} nodes / ${docs.graph.edges.length} edges, ${docs.events.items.length} events, ${runs.length} runs; sizes KB board ${kb('board')} rank ${kb('rank')} graph ${kb('graph')} events ${kb('events')} metrics ${kb('metrics')}`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (import.meta.url === `file://${process.argv[1]}`) main().catch((e) => { console.error(e.message); process.exit(1); });

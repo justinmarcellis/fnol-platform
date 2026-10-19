@@ -1,6 +1,6 @@
 // PMO dashboard server: static files plus /api/snapshot and /api/metrics.
 import { createServer } from 'node:http';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { snapshot, ORG } from '../org/fabric.mjs';
@@ -10,8 +10,20 @@ import { computeFeed } from '../org/live-export.mjs';
 // Live feed is rebuilt from the fabric at most every 3 s while agents work.
 let feedCache = { at: 0, docs: null };
 function liveFeed() {
-  if (!feedCache.docs || Date.now() - feedCache.at > 3000) feedCache = { at: Date.now(), docs: computeFeed().docs };
+  if (!feedCache.docs || Date.now() - feedCache.at > 3000) feedCache = { at: Date.now(), docs: { ...computeFeed().docs, metrics: metricsDoc() } };
   return feedCache.docs;
+}
+
+/** The fifth live document: computeMetrics output plus generatedAt (also written to org/live/metrics.json). */
+export function metricsDoc(snap = snapshot()) {
+  return { ...computeMetrics(snap, { quality: readQuality(), valueDrivers: readValueDrivers() }), generatedAt: new Date().toISOString() };
+}
+
+/** Documents in a directory of <name>.json files (e.g. org/live), read fresh on every call. */
+function readLiveDir(dir) {
+  const docs = {};
+  for (const f of readdirSync(dir)) if (f.endsWith('.json')) { try { docs[f.slice(0, -5)] = JSON.parse(readFileSync(join(dir, f), 'utf8')); } catch { /* skip unreadable file */ } }
+  return docs;
 }
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -37,12 +49,16 @@ export function readValueDrivers() {
 /** Snapshot plus computed metrics, as one object. */
 export function build() {
   const snap = snapshot();
-  const graph = liveFeed().graph;
-  return { snapshot: { ...snap, graph }, metrics: computeMetrics(snap, { quality: readQuality(), valueDrivers: readValueDrivers() }), graph };
+  const feed = liveFeed();
+  const graph = feed.graph;
+  const metrics = computeMetrics(snap, { quality: readQuality(), valueDrivers: readValueDrivers() });
+  // `live` is the same five documents the artifact database holds, so the exported file renders them with no network.
+  const live = { board: feed.board, rank: feed.rank, events: feed.events, metrics: { ...metrics, generatedAt: feed.metrics.generatedAt } };
+  return { snapshot: { ...snap, graph }, metrics, graph, live };
 }
 
 /** Start the dashboard server. Resolves to the listening http.Server. */
-export function start({ port = Number(process.env.PORT) || 8090 } = {}) {
+export function start({ port = Number(process.env.PORT) || 8090, liveDir = process.env.DASHBOARD_LIVE_DIR || null } = {}) {
   const server = createServer((req, res) => {
     const path = new URL(req.url, 'http://x').pathname;
     const send = (code, type, body) => { res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' }); res.end(body); };
@@ -50,7 +66,8 @@ export function start({ port = Number(process.env.PORT) || 8090 } = {}) {
       if (req.method !== 'GET') return send(405, 'application/json', '{"error":{"code":"method_not_allowed","message":"GET only"}}');
       if (path === '/api/snapshot') return send(200, 'application/json', JSON.stringify({ ...snapshot(), graph: liveFeed().graph }));
       if (path.startsWith('/api/live/')) {
-        const doc = liveFeed()[path.slice('/api/live/'.length)];
+        // liveDir (e.g. org/live) serves the published documents as files; otherwise they are computed from the fabric.
+        const doc = (liveDir ? { ...liveFeed(), ...readLiveDir(liveDir) } : liveFeed())[path.slice('/api/live/'.length)];
         return doc ? send(200, 'application/json', JSON.stringify(doc)) : send(404, 'application/json', '{"error":{"code":"not_found","message":"Unknown feed document"}}');
       }
       if (path === '/live') {

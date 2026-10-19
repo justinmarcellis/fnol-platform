@@ -1,8 +1,8 @@
 // PMO dashboard UI. Data comes from /api/snapshot + /api/metrics, or window.__SNAPSHOT__ in the exported file.
 (function () {
-  const TABS = ['Overview', 'Org chart', 'Decision network', 'Sprint board', 'Velocity & forecast', 'Quality', 'Flow', 'Cost', 'Performance', 'Sprint review', 'Value drivers', 'Improvement log'];
+  const TABS = ['Overview', 'Org chart', 'Decision network', 'Sprint board', 'Velocity & forecast', 'Quality', 'Flow', 'Cost', 'Performance', 'Agent rank', 'Sprint review', 'Value drivers', 'Improvement log'];
   const STATUSES = ['backlog', 'ready', 'in_progress', 'review', 'done', 'blocked'];
-  const state = { tab: 0, team: '', data: null, error: null, net: { kinds: ['msg', 'ticket', 'review', 'run'], team: '' } };
+  const state = { tab: 0, team: '', data: null, error: null, net: { kinds: ['msg', 'ticket', 'review', 'run'], team: '' }, source: 'snapshot', at: null, sig: '', board: { sprint: '', team: '' } };
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v) ? 'n/a' : typeof v === 'number' ? String(Math.round(v * 10 ** d) / 10 ** d) : esc(v));
@@ -62,86 +62,256 @@
   const list = (a) => (Array.isArray(a) && a.length ? `<ul>${a.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="muted">None recorded.</p>');
 
 
-  // ---- decision network (inline SVG, deterministic layout, no dependencies) ----
+  // ---- decision network (canvas: force layout, event pulses, replay; no dependencies) ----
   const NET_KINDS = { msg: 'message', ticket: 'ticket move', review: 'review verdict', run: 'agent run' };
-  const netCache = { key: null, pos: null };
+  const KIND_COLOR = { msg: '#7fd3e3', ticket: '#b8c7d2', review: '#7ee0a0', run: '#f0c46b' };
   const hash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967295; };
   const teamHue = (t) => Math.round(hash('team:' + (t || 'none')) * 360);
-  function layoutNet(g, W, H) {
-    const key = g.nodes.length + ':' + g.edges.length + ':' + W + ':' + (g.nodes[0] && g.nodes[0].activity);
-    if (netCache.key === key) return netCache.pos;
-    const teams = [...new Set(g.nodes.map((n) => n.team).filter(Boolean))].sort();
+  const teamColor = (t) => `hsl(${teamHue(t)} 62% 62%)`;
+  const LW = 900, LH = 620, RECENT = 6 * 60 * 1000, PULSE_MS = 1400;
+  // Persisted across live updates and tab switches so a refresh never resets the replay.
+  const net = { cursor: 0, playing: false, follow: true, speed: 3, pos: new Map(), key: '', events: [], nodes: [], links: [], byId: new Map(), pulses: [], tMin: 0, tMax: 0, hover: null, raf: 0, last: 0, canvas: null, w: 0, h: 0, started: false };
+
+  const nodeR = (n) => 3 + Math.sqrt(n.activity || 0) * (n.kind === 'hub' ? 1.6 : 1.1);
+  /** Small deterministic force layout in a fixed LW x LH space: repulsion, link springs, team anchors, collision. */
+  function layoutNet(nodes, links) {
+    const teams = [...new Set(nodes.map((n) => n.team).filter(Boolean))].sort();
     const ang = (t) => (Math.max(0, teams.indexOf(t)) / Math.max(teams.length, 1)) * Math.PI * 2;
-    const N = g.nodes.map((n) => {
-      const a = ang(n.team) + (hash(n.id) - .5) * .6, rad = n.kind === 'orchestrator' ? 0 : (n.kind === 'hub' ? .2 : .36) * Math.min(W, H);
-      return { id: n.id, kind: n.kind, team: n.team, x: W / 2 + Math.cos(a) * rad, y: H / 2 + Math.sin(a) * rad, vx: 0, vy: 0, r: nodeR(n) };
-    });
-    const idx = new Map(N.map((n, i) => [n.id, i]));
-    const L = g.edges.filter((e) => idx.has(e.source) && idx.has(e.target)).map((e) => [idx.get(e.source), idx.get(e.target), e.count]);
-    for (let it = 0; it < 320; it++) {
-      const cool = 1 - it / 320;
-      for (let i = 0; i < N.length; i++) for (let j = i + 1; j < N.length; j++) {
-        let dx = N[j].x - N[i].x, dy = N[j].y - N[i].y, d2 = dx * dx + dy * dy || 1; const d = Math.sqrt(d2);
-        const f = ((N[i].kind === 'hub' || N[j].kind === 'hub' ? 14000 : 7000) / d2) * cool; const min = N[i].r + N[j].r + 4;
-        const push = f + (d < min ? (min - d) * .4 : 0);
-        dx /= d; dy /= d; N[i].vx -= dx * push; N[i].vy -= dy * push; N[j].vx += dx * push; N[j].vy += dy * push;
+    const anchor = (n) => (n.kind === 'orchestrator' ? [LW / 2, LH / 2] : [LW / 2 + Math.cos(ang(n.team)) * LW * 0.28, LH / 2 + Math.sin(ang(n.team)) * LH * 0.3]);
+    for (const n of nodes) {
+      const old = net.pos.get(n.id);
+      if (old) { n.x = old.x; n.y = old.y; } else {
+        const a = ang(n.team) + (hash(n.id) - 0.5) * 0.9, rad = n.kind === 'orchestrator' ? 0 : n.kind === 'hub' ? LH * 0.2 : LH * 0.34;
+        n.x = LW / 2 + Math.cos(a) * rad + (hash('x' + n.id) - 0.5) * 30; n.y = LH / 2 + Math.sin(a) * rad + (hash('y' + n.id) - 0.5) * 30;
       }
-      for (const [a, b, c] of L) {
-        const dx = N[b].x - N[a].x, dy = N[b].y - N[a].y, d = Math.sqrt(dx * dx + dy * dy) || 1, want = 70 + 90 / Math.sqrt(c);
-        const f = (d - want) * Math.min(.05, .004 + c / 800);
-        N[a].vx += (dx / d) * f; N[a].vy += (dy / d) * f; N[b].vx -= (dx / d) * f; N[b].vy -= (dy / d) * f;
+      n.vx = 0; n.vy = 0; n.r = nodeR(n);
+    }
+    const warm = nodes.some((n) => net.pos.has(n.id));
+    const iters = warm ? 60 : 280;
+    for (let it = 0; it < iters; it++) {
+      const alpha = (warm ? 0.3 : 1) * (1 - it / iters);
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j];
+          let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
+          if (d2 < 0.01) { dx = hash(a.id + b.id) - 0.5; dy = 0.5 - hash(b.id + a.id); d2 = 0.5; }
+          const d = Math.sqrt(d2);
+          const q = (a.kind === 'hub' || b.kind === 'hub' ? 260 : 90) * alpha / d2;
+          const min = a.r + b.r + 3, push = d < min ? (min - d) * 0.5 : 0;
+          const fx = (dx / d) * (q + push), fy = (dy / d) * (q + push);
+          a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+        }
       }
-      for (const n of N) {
-        const tx = n.kind === 'orchestrator' ? W / 2 : W / 2 + Math.cos(ang(n.team)) * W * .28, ty = n.kind === 'orchestrator' ? H / 2 : H / 2 + Math.sin(ang(n.team)) * H * .3;
-        n.vx += (tx - n.x) * .008; n.vy += (ty - n.y) * .008;
-        n.x += Math.max(-12, Math.min(12, n.vx)); n.y += Math.max(-12, Math.min(12, n.vy)); n.vx *= .6; n.vy *= .6;
-        n.x = Math.max(n.r + 6, Math.min(W - n.r - 6, n.x)); n.y = Math.max(n.r + 14, Math.min(H - n.r - 14, n.y));
+      for (const l of links) {
+        const a = l.s, b = l.t; const dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+        const k = (d - (40 + 60 / Math.sqrt(l.count))) * Math.min(1, 0.05 + l.count / 40) * 0.1 * alpha;
+        a.vx += (dx / d) * k; a.vy += (dy / d) * k; b.vx -= (dx / d) * k; b.vy -= (dy / d) * k;
+      }
+      for (const n of nodes) {
+        const [ax, ay] = anchor(n); n.vx += (ax - n.x) * 0.06 * alpha; n.vy += (ay - n.y) * 0.06 * alpha;
+        n.x = Math.max(n.r + 6, Math.min(LW - n.r - 6, n.x + n.vx * 0.6)); n.y = Math.max(n.r + 30, Math.min(LH - n.r - 6, n.y + n.vy * 0.6));
+        n.vx *= 0.5; n.vy *= 0.5;
       }
     }
-    netCache.key = key; netCache.pos = new Map(N.map((n) => [n.id, n]));
-    return netCache.pos;
+    for (const n of nodes) net.pos.set(n.id, { x: n.x, y: n.y });
   }
-  function nodeR(n) { return 3 + Math.sqrt(n.activity || 0) * (n.kind === 'hub' ? 1.6 : 1.1); }
-  function netChart(g) {
-    const narrow = window.innerWidth < 640, W = narrow ? 390 : 1000, H = narrow ? 600 : 520;
-    const pos = layoutNet(g, W, H), kinds = new Set(state.net.kinds), team = state.net.team;
-    const inTeam = (n) => !team || n.team === team;
-    const nodeById = new Map(g.nodes.map((n) => [n.id, n]));
-    const edges = g.edges.map((e) => {
-      const ks = Object.entries(e.kinds || {}).filter(([k]) => kinds.has(k));
-      return { e, ks, n: ks.reduce((a, [, v]) => a + v, 0) };
-    }).filter((x) => x.n > 0 && pos.has(x.e.source) && pos.has(x.e.target) && (inTeam(nodeById.get(x.e.source)) || inTeam(nodeById.get(x.e.target))));
-    const shown = new Set(); edges.forEach((x) => { shown.add(x.e.source); shown.add(x.e.target); });
-    const lines = edges.map(({ e, ks, n }) => {
-      const a = pos.get(e.source), b = pos.get(e.target), dom = ks.sort((p, q) => q[1] - p[1])[0][0];
-      return `<line class="ne k-${esc(dom)}" x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke-width="${Math.min(4, .6 + Math.log2(1 + n) * .5).toFixed(2)}"><title>${esc(e.source)} to ${esc(e.target)}: ${ks.map(([k, v]) => v + ' ' + (NET_KINDS[k] || k)).join(', ')}</title></line>`;
-    }).join('');
-    const nodes = g.nodes.filter((n) => shown.has(n.id) && pos.has(n.id)).map((n) => {
-      const p = pos.get(n.id), dim = !inTeam(n);
-      const lab = n.kind === 'hub' || n.kind === 'orchestrator' || n.activity > 70
-        ? `<text class="nl" x="${p.x.toFixed(1)}" y="${(p.y - p.r - 4).toFixed(1)}" text-anchor="middle">${esc(n.id.replace('hub:', '#'))}</text>` : '';
-      return `<g class="nn ${n.kind === 'hub' ? 'hubn' : ''}${dim ? ' dim' : ''}" style="--h:${teamHue(n.team)}"><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.r.toFixed(1)}"><title>${esc(n.id)} (${esc(n.kind)}${n.team ? ', ' + esc(n.team) : ''}): ${n.activity} events</title></circle>${lab}</g>`;
-    }).join('');
-    return `<svg class="netsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Decision network: ${shown.size} agents and hubs connected by ${edges.length} recorded message, ticket, review and agent-run links">${lines}${nodes}</svg>`;
+
+  function netData(d) {
+    const g = d.graph || (d.snapshot && d.snapshot.graph);
+    const items = (d.events && d.events.items) || (Array.isArray(d.events) ? d.events : []);
+    return { g, items };
   }
+  /** (Re)build nodes, links and the timeline from the current documents. Keeps cursor, play state and node positions. */
+  function setNetData(d) {
+    const { g, items } = netData(d);
+    const prevMax = net.tMax;
+    net.nodes = g.nodes.map((n) => ({ ...n }));
+    net.byId = new Map(net.nodes.map((n) => [n.id, n]));
+    net.links = g.edges.filter((e) => net.byId.has(e.source) && net.byId.has(e.target)).map((e) => ({ ...e, s: net.byId.get(e.source), t: net.byId.get(e.target) }));
+    net.events = items.map((e) => ({ ...e, ts: Date.parse(e.t), k: String(e.kind).split(':')[0] })).filter((e) => !Number.isNaN(e.ts)).sort((a, b) => a.ts - b.ts);
+    net.tMin = net.events.length ? net.events[0].ts : 0; net.tMax = net.events.length ? net.events[net.events.length - 1].ts : 0;
+    const key = net.nodes.map((n) => n.id).sort().join('|');
+    if (key !== net.key || !net.nodes.every((n) => net.pos.has(n.id))) layoutNet(net.nodes, net.links);
+    else for (const n of net.nodes) { const p = net.pos.get(n.id); n.x = p.x; n.y = p.y; n.r = nodeR(n); }
+    net.key = key;
+    if (!net.cursor || net.follow) net.cursor = net.tMax;
+    if (prevMax && net.follow && net.started) for (const e of net.events) if (e.ts > prevMax) spawnPulse(e);
+    net.started = true;
+  }
+  function spawnPulse(e) {
+    if (!state.net.kinds.includes(e.k)) return;
+    const a = net.byId.get(e.from), b = net.byId.get(e.to);
+    if (!a || !b) return;
+    net.pulses.push({ a, b, k: e.k, born: performance.now() });
+    if (net.pulses.length > 300) net.pulses.splice(0, net.pulses.length - 300);
+  }
+
+  const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmtT = (ms) => new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  function netSize() {
+    const cv = net.canvas, r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    net.w = r.width || 900; net.h = r.height || 560;
+    cv.width = Math.round(net.w * dpr); cv.height = Math.round(net.h * dpr);
+    cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  // Fit the laid-out nodes to the canvas (padding for labels), whatever the canvas shape.
+  const fit = () => { const xs = net.nodes.map((n) => n.x), ys = net.nodes.map((n) => n.y); return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }; };
+  let bb = null;
+  const px = (n) => 30 + (n.x - bb.x0) / Math.max(1, bb.x1 - bb.x0) * (net.w - 60);
+  const py = (n) => 40 + (n.y - bb.y0) / Math.max(1, bb.y1 - bb.y0) * (net.h - 70);
+  function drawNet(now) {
+    const cv = net.canvas, ctx = cv.getContext('2d'), cur = net.cursor, kinds = state.net.kinds, team = state.net.team;
+    ctx.clearRect(0, 0, net.w, net.h);
+    if (!net.nodes.length) return;
+    bb = fit();
+    const lastByEdge = new Map();
+    for (const e of net.events) { if (e.ts > cur) break; if (kinds.includes(e.k)) lastByEdge.set(e.from + '|' + e.to, e.ts); }
+    const dimmed = (n) => team && n.team !== team;
+    let lit = 0, visibleEdges = 0;
+    for (const l of net.links) {
+      const last = lastByEdge.get(l.source + '|' + l.target);
+      if (!last) continue;
+      visibleEdges++;
+      const fresh = Math.max(0, 1 - (cur - last) / RECENT);
+      ctx.globalAlpha = dimmed(l.s) && dimmed(l.t) ? 0.15 : 1;
+      ctx.strokeStyle = fresh > 0 ? `rgba(127,211,227,${0.3 + 0.6 * fresh})` : 'rgba(130,150,165,.28)';
+      ctx.lineWidth = Math.min(4, 0.5 + Math.log2(1 + l.count) * 0.5) + fresh * 1.5;
+      ctx.beginPath(); ctx.moveTo(px(l.s), py(l.s)); ctx.lineTo(px(l.t), py(l.t)); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    net.pulses = net.pulses.filter((p) => now - p.born < PULSE_MS);
+    for (const p of net.pulses) {
+      const k = (now - p.born) / PULSE_MS, x = px(p.a) + (px(p.b) - px(p.a)) * k, y = py(p.a) + (py(p.b) - py(p.a)) * k;
+      ctx.fillStyle = KIND_COLOR[p.k] || '#fff'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(x, y, 3.4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    }
+    const act = new Set(((netData(state.data).g || {}).active || []).map((a) => a.owner));
+    const ink = cssVar('--net-ink') || '#dfe8ee';
+    for (const n of net.nodes) {
+      const lastTs = n.lastAt ? Date.parse(n.lastAt) : 0, on = (lastTs && lastTs <= cur && cur - lastTs < RECENT) || act.has(n.id);
+      if (on) lit++;
+      const x = px(n), y = py(n), c = n.kind === 'orchestrator' ? '#e3b341' : teamColor(n.team);
+      ctx.globalAlpha = dimmed(n) ? 0.2 : 1;
+      ctx.fillStyle = n.kind === 'hub' ? 'rgba(223,232,238,.1)' : c; ctx.strokeStyle = n.kind === 'hub' ? c : 'rgba(13,20,27,.9)'; ctx.lineWidth = n.kind === 'hub' ? 2.5 : 1;
+      if (on) { ctx.shadowColor = c; ctx.shadowBlur = 18; }
+      ctx.beginPath(); ctx.arc(x, y, n.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+      if (n.kind === 'hub' || n.kind === 'orchestrator' || n === net.hover || (n.activity > 40 && !dimmed(n))) {
+        ctx.fillStyle = ink; ctx.font = (n.kind === 'hub' ? '600 ' : '') + '11px ui-monospace, Menlo, monospace'; ctx.textAlign = 'center';
+        const label = n.id.replace('hub:', '#'), half = ctx.measureText(label).width / 2;
+        ctx.fillText(label, Math.max(half + 4, Math.min(net.w - half - 4, x)), y - n.r - 5);
+      }
+    }
+    ctx.globalAlpha = 1;
+    const clock = document.getElementById('netclock');
+    if (clock) clock.textContent = 'Timeline: ' + (cur ? fmtT(cur) : 'n/a') + (net.playing ? ' (replaying)' : net.follow ? ' (live)' : '');
+    cv.dataset.cursor = String(Math.round(cur)); cv.dataset.tmin = String(net.tMin); cv.dataset.tmax = String(net.tMax); cv.dataset.pulses = String(net.pulses.length); cv.dataset.playing = String(net.playing);
+    cv.dataset.nodes = String(net.nodes.length); cv.dataset.edges = String(visibleEdges); cv.dataset.lit = String(lit);
+  }
+  function setScrub() {
+    const s = document.getElementById('scrub'); if (!s) return;
+    const span = Math.max(1, net.tMax - net.tMin); s.value = String(Math.round(1000 * (net.cursor - net.tMin) / span));
+  }
+  function setPlayButton() {
+    const b = document.getElementById('play'); if (!b) return;
+    b.textContent = net.playing ? 'Pause' : 'Replay'; b.setAttribute('aria-pressed', String(net.playing));
+  }
+  function netFrame(now) {
+    if (!net.canvas || !net.canvas.isConnected) { net.raf = 0; return; }
+    const dt = Math.min(100, now - (net.last || now)); net.last = now;
+    if (net.playing) {
+      const span = Math.max(1, net.tMax - net.tMin), prev = net.cursor;
+      net.cursor = Math.min(net.tMax, net.cursor + dt * (span / 90000) * net.speed);
+      for (const e of net.events) { if (e.ts > net.cursor) break; if (e.ts > prev) spawnPulse(e); }
+      if (net.cursor >= net.tMax) { net.playing = false; setPlayButton(); }
+      setScrub();
+    }
+    drawNet(now);
+    net.raf = requestAnimationFrame(netFrame);
+  }
+  function stopFollow() { net.follow = false; const f = document.getElementById('follow'); if (f) f.checked = false; }
+  function stepEvent(dir) {
+    let e = null;
+    if (dir > 0) e = net.events.find((x) => x.ts > net.cursor);
+    else for (let i = net.events.length - 1; i >= 0; i--) if (net.events[i].ts < net.cursor) { e = net.events[i]; break; }
+    if (!e) return;
+    net.cursor = e.ts; net.playing = false; stopFollow(); setPlayButton(); setScrub(); spawnPulse(e);
+  }
+  function tooltip(x, y) {
+    if (!bb) return;
+    const tip = document.getElementById('nettip'); if (!tip) return;
+    const n = net.nodes.find((m) => (px(m) - x) ** 2 + (py(m) - y) ** 2 < (m.r + 5) ** 2);
+    net.hover = n || null;
+    if (!n) { tip.hidden = true; return; }
+    const out = net.links.filter((l) => l.s === n).sort((a, b) => b.count - a.count).slice(0, 3).map((l) => '→ ' + l.t.id + ' (' + l.count + ')');
+    const inn = net.links.filter((l) => l.t === n).sort((a, b) => b.count - a.count).slice(0, 3).map((l) => '← ' + l.s.id + ' (' + l.count + ')');
+    tip.innerHTML = `<b>${esc(n.id)}</b><div>${esc(n.kind)}${n.team ? ' · ' + esc(n.team) : ''} · ${n.activity} events${n.lastAt ? ' · last ' + esc(fmtT(Date.parse(n.lastAt))) : ''}</div>${[...out, ...inn].map((t) => `<div>${esc(t)}</div>`).join('')}`;
+    tip.hidden = false; tip.style.left = Math.max(4, Math.min(x + 14, net.w - 280)) + 'px'; tip.style.top = Math.max(4, Math.min(y + 14, net.h - 130)) + 'px';
+  }
+  /** Wire the freshly rendered Decision network tab to the persistent net state. */
+  function mountNet(d) {
+    const cv = document.getElementById('netcanvas'); if (!cv || typeof cv.getContext !== 'function') return; // no canvas (non-browser host)
+    net.canvas = cv; setNetData(d); netSize(); setScrub(); setPlayButton();
+    const $q = (id) => document.getElementById(id);
+    $q('play').onclick = () => {
+      net.playing = !net.playing;
+      if (net.playing) { if (net.cursor >= net.tMax) net.cursor = net.tMin; stopFollow(); }
+      setPlayButton(); setScrub();
+    };
+    $q('scrub').oninput = (e) => { net.cursor = net.tMin + (net.tMax - net.tMin) * Number(e.target.value) / 1000; net.playing = false; stopFollow(); setPlayButton(); };
+    $q('speed').onchange = (e) => { net.speed = Number(e.target.value); };
+    $q('follow').onchange = (e) => { net.follow = e.target.checked; if (net.follow) { net.playing = false; net.cursor = net.tMax; setPlayButton(); setScrub(); } };
+    cv.addEventListener('pointermove', (e) => { const r = cv.getBoundingClientRect(); tooltip(e.clientX - r.left, e.clientY - r.top); });
+    cv.addEventListener('pointerleave', () => { net.hover = null; $q('nettip').hidden = true; });
+    cv.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') stepEvent(1); else if (e.key === 'ArrowLeft') stepEvent(-1);
+      else if (e.key === ' ' || e.key === 'Enter') $q('play').click(); else return;
+      e.preventDefault();
+    });
+    if (!net.raf) { net.last = 0; net.raf = requestAnimationFrame(netFrame); }
+  }
+  let netRz; window.addEventListener('resize', () => { clearTimeout(netRz); netRz = setTimeout(() => { if (net.canvas && net.canvas.isConnected) netSize(); }, 100); });
+
   function netLegend(g) {
     const teams = [...new Set(g.nodes.map((n) => n.team).filter(Boolean))].sort();
-    return `<div class="legend netleg">${teams.map((t) => `<span><i class="tdot" style="--h:${teamHue(t)}"></i>${esc(t)}</span>`).join('')}
-      ${Object.entries(NET_KINDS).map(([k, v]) => `<span><i class="kdot k-${k}"></i>${esc(v)}</span>`).join('')}<span>hub = hollow ring; size = recorded activity</span></div>`;
+    return `<div class="legend netleg">${teams.map((t) => `<span><i class="tdot" style="background:${teamColor(t)}"></i>${esc(t)}</span>`).join('')}
+      ${Object.entries(NET_KINDS).map(([k, v]) => `<span><i class="kdot" style="background:${KIND_COLOR[k]}"></i>${esc(v)} pulse</span>`).join('')}<span>hub = hollow ring; size = recorded activity; lit = active in the last 6 min of timeline</span></div>`;
   }
   function networkView(d) {
-    const g = d.graph || (d.snapshot && d.snapshot.graph);
+    const { g, items } = netData(d);
     if (!g || !Array.isArray(g.nodes) || !g.nodes.length) return empty('No decision network recorded yet.');
     const teams = [...new Set(g.nodes.map((n) => n.team).filter(Boolean))].sort();
     const top = [...g.nodes].sort((a, b) => b.activity - a.activity).slice(0, 12);
     const act = g.active || [];
+    const feed = items.slice(-60).reverse().map((e) => `<div><span class="k">${esc(fmtT(Date.parse(e.t)))}</span><span class="k">${esc(e.kind)}</span><span>${esc(e.from)} → ${esc(e.to)}${e.ticket ? ' · ' + esc(e.ticket) : ''}: ${esc(e.text || '')}</span></div>`).join('');
     return `<div class="card"><h2>Decision network</h2>
-      <p class="muted">${g.nodes.length} agents and hubs, ${g.edges.length} links. Each link is recorded hub messages, ticket moves (assignments), review verdicts or agent runs. ${act.length ? 'Active now: ' + esc(act.map((a) => a.owner + ' (' + a.id + ')').slice(0, 4).join(', ')) : 'No agents running right now.'}</p>
+      <p class="muted">${g.nodes.length} agents and hubs, ${g.edges.length} links, ${items.length} recorded events. ${act.length ? 'Active now: ' + esc(act.map((a) => a.owner + ' (' + a.id + ')').slice(0, 4).join(', ')) : 'No agents running right now.'}</p>
       <fieldset class="netfilters"><legend class="muted">Filters</legend>
         ${Object.entries(NET_KINDS).map(([k, v]) => `<label><input type="checkbox" data-nk="${k}" ${state.net.kinds.includes(k) ? 'checked' : ''}> ${esc(v)}</label>`).join('')}
         <label>Team <select id="netteam" aria-label="Filter network by team"><option value="">All teams</option>${teams.map((t) => `<option ${t === state.net.team ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label></fieldset>
-      <div class="netwrap" id="netwrap">${netChart(g)}</div>${netLegend(g)}</div>
-      <div class="card"><h2>Most active centers</h2>${table(['Node', 'Kind', 'Team', 'Events'], top.map((n) => [esc(n.id), esc(n.kind), esc(n.team || ''), n.activity]))}</div>`;
+      <div class="netwrap" id="netwrap"><canvas id="netcanvas" tabindex="0" role="img" aria-label="Decision network: ${g.nodes.length} agents and hubs. Focus the canvas, then Left and Right arrows step through recorded events and Space plays or pauses the replay."></canvas>
+        <div class="nethud"><span id="netclock" class="clock"></span></div><div class="nettip" id="nettip" hidden></div></div>
+      <div class="netcontrols">
+        <button class="btn" id="play" type="button" aria-pressed="false">Replay</button>
+        <input type="range" id="scrub" min="0" max="1000" value="1000" aria-label="Timeline position">
+        <label>Speed <select id="speed" aria-label="Replay speed">${[1, 3, 10].map((s) => `<option value="${s}" ${s === net.speed ? 'selected' : ''}>${s}x</option>`).join('')}</select></label>
+        <label><input type="checkbox" id="follow" ${net.follow ? 'checked' : ''}> Follow live</label></div>
+      ${netLegend(g)}
+      <p class="muted">Each pulse is one recorded event travelling along the link it happened on: a hub message, a ticket move, a review verdict or an agent run starting. Replay plays the real event order, time-compressed (the whole history in about 90 s at 1x).</p></div>
+      <div class="grid wide"><div class="card"><h2>Event stream</h2><div class="feed">${feed || '<p class="muted">No events.</p>'}</div></div>
+      <div class="card"><h2>Most active centers</h2>${table(['Node', 'Kind', 'Team', 'Events'], top.map((n) => [esc(n.id), esc(n.kind), esc(n.team || ''), n.activity]))}</div></div>`;
+  }
+
+  function legacyBoard({ snapshot: s }) {
+    const all = s.tickets || [];
+    if (!all.length) return empty('No tickets yet.');
+    const teams = [...new Set(all.map((t) => t.team))];
+    const list = all.filter((t) => !state.team || t.team === state.team);
+    return `<div class="filters"><label>Team <select id="teamsel"><option value="">All</option>${teams.map((t) => `<option ${t === state.team ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label></div>
+      <div class="board">${STATUSES.map((st) => {
+        const cards = list.filter((t) => t.status === st);
+        return `<div class="col"><h3>${esc(st.replace('_', ' '))} (${cards.length})</h3>${cards.map((t) => `<div class="tk ${st === 'blocked' ? 'blocked' : ''}"><b>${esc(t.id)}</b>${esc(t.title)}<div class="m">${esc(t.owner)} · ${esc(t.points)} pt · ${esc(t.team)}${(t.dependsOn || []).length && st !== 'done' ? ' · deps: ' + esc(t.dependsOn.join(', ')) : ''}</div></div>`).join('') || '<p class="muted">-</p>'}</div>`;
+      }).join('')}</div>`;
   }
 
   // ---- views ----
@@ -168,15 +338,22 @@
       }).join('')}</div>`;
     },
     networkView,
-    function board({ snapshot: s }) {
-      const all = s.tickets || [];
-      if (!all.length) return empty('No tickets yet.');
-      const teams = [...new Set(all.map((t) => t.team))];
-      const list = all.filter((t) => !state.team || t.team === state.team);
-      return `<div class="filters"><label>Team <select id="teamsel"><option value="">All</option>${teams.map((t) => `<option ${t === state.team ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label></div>
-        <div class="board">${STATUSES.map((st) => {
-          const cards = list.filter((t) => t.status === st);
-          return `<div class="col"><h3>${esc(st.replace('_', ' '))} (${cards.length})</h3>${cards.map((t) => `<div class="tk ${st === 'blocked' ? 'blocked' : ''}"><b>${esc(t.id)}</b>${esc(t.title)}<div class="m">${esc(t.owner)} · ${esc(t.points)} pt · ${esc(t.team)}${(t.dependsOn || []).length && st !== 'done' ? ' · deps: ' + esc(t.dependsOn.join(', ')) : ''}</div></div>`).join('') || '<p class="muted">-</p>'}</div>`;
+    function board(d) {
+      const L = d.board;
+      if (!L || !Array.isArray(L.tickets)) return legacyBoard(d);
+      const sprints = L.sprints || [], teams = [...new Set(L.tickets.map((t) => t.team))].sort();
+      if (state.board.sprint === '') state.board.sprint = String(Math.max(0, ...sprints.map((x) => x.number)));
+      const f = state.board;
+      const rows = L.tickets.filter((t) => (f.sprint === 'all' || String(t.sprint) === f.sprint) && (!f.team || t.team === f.team));
+      const COLS = [['backlog|ready', 'Ready'], ['in_progress', 'In progress'], ['review', 'Review'], ['done', 'Done'], ['blocked', 'Blocked']];
+      const chips = (t) => [`<span class="chip">${esc(t.points)} pt</span>`, `<span class="chip">${esc(t.tier)}</span>`, t.firstPass === true ? '<span class="chip good">first pass</span>' : '',
+        t.rework ? `<span class="chip warn">rework x${esc(t.rework)}</span>` : '', t.defects ? `<span class="chip bad">${esc(t.defects)} escaped defect${t.defects > 1 ? 's' : ''}</span>` : '', t.usd ? `<span class="chip">${usd(t.usd)}</span>` : ''].join('');
+      return `<div class="filters"><label>Sprint <select id="bsprint"><option value="all" ${f.sprint === 'all' ? 'selected' : ''}>All sprints</option>${sprints.map((x) => `<option value="${esc(x.number)}" ${String(x.number) === f.sprint ? 'selected' : ''}>${esc(x.name || 'Sprint ' + x.number)}</option>`).join('')}</select></label>
+        <label>Team <select id="teamsel"><option value="">All</option>${teams.map((t) => `<option ${t === f.team ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+        <span class="muted">${rows.length} stories, ${rows.reduce((a, t) => a + (t.points || 0), 0)} points</span></div>
+        <div class="board livecols">${COLS.map(([keys, label]) => {
+          const cards = rows.filter((t) => keys.split('|').includes(t.status));
+          return `<div class="col"><h3>${esc(label)} (${cards.length} · ${cards.reduce((a, t) => a + (t.points || 0), 0)} pt)</h3>${cards.map((t) => `<div class="tk ${t.status === 'blocked' ? 'blocked' : ''}" style="border-left-color:${teamColor(t.team)}"><b>${esc(t.id)}</b>${esc(t.title)}<div class="m">${esc(t.owner || '')} · ${esc(t.team)}</div><div class="chips">${chips(t)}</div></div>`).join('') || '<p class="muted">-</p>'}</div>`;
         }).join('')}</div>`;
     },
     function velocity({ metrics: m }) {
@@ -213,6 +390,16 @@
         <div class="card"><h2>Teams</h2>${table(['Team', 'Composite', 'Tickets', 'Flags', 'Diagnosis'], (sc.teams || []).map(row))}</div></div>
         <p class="muted">Fewer than 3 tickets means low confidence; no action is taken on those rows.</p>`;
     },
+    function agentRank(d) {
+      const items = d.rank && d.rank.items;
+      if (!items || !items.length) return empty('No agent rank yet (org/live/rank.json).');
+      const p = (v) => (v == null ? '-' : Math.round(v * 100) + '%');
+      const cls = { deprecated: 'off-track', 'on watch': 'at-risk', active: 'on-track' };
+      return `<div class="card"><h2>Agent stack rank</h2><p class="muted">Agent configurations ranked by composite score (first-pass acceptance 35%, no rework 20%, estimate accuracy 20%, cost efficiency 15%, no escaped defects 10%). Policy (ADR-004): fewer than 3 tickets is low confidence and never acted on.</p>
+        ${table(['#', 'Agent', 'Team', 'Tickets', 'Points', 'First pass', 'Rework', 'Defects', '$ / point', 'Composite', 'Status', 'Diagnosis / action'], items.map((a) => [a.rank, esc(a.key), esc(a.team || ''), a.tickets, a.points, p(a.firstPassAcceptance), p(a.reworkRate), fmt(Number(a.defects || 0), 1), a.costPerPoint == null ? '-' : usd(a.costPerPoint), fmt(a.composite),
+          `<span class="badge ${cls[a.status] || ''}">${esc(a.status)}${a.lowConfidence ? ' · low conf.' : ''}</span>`,
+          esc(a.deprecation ? 'Deprecated: ' + (a.deprecation.reason || '') : a.intervention ? a.intervention : a.lowConfidence ? 'Low confidence (<3 tickets): no action' : (a.diagnosis || []).join('; '))]))}</div>`;
+    },
     function sprintReview({ metrics: m }) {
       const rs = m.sprintReviews || [];
       if (!rs.length) return empty('No sprints yet.');
@@ -239,27 +426,99 @@
     },
   ];
 
+  // ---- header: where the data came from and how old it is ----
+  const SOURCE_LABEL = { db: 'live', local: 'local', snapshot: 'snapshot' };
+  function ageText(ms) {
+    const m = Math.floor(ms / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + ' min ago';
+    const h = Math.floor(m / 60);
+    return h < 48 ? h + ' h ago' : Math.floor(h / 24) + ' d ago';
+  }
+  function renderPill() {
+    const el = $('live'); if (!el) return;
+    const age = state.at ? Date.now() - state.at : null;
+    const amber = age !== null && age > 30 * 60000;
+    el.textContent = state.error && !state.data ? 'stale' : SOURCE_LABEL[state.source] + (age === null ? '' : ' · updated ' + ageText(age));
+    el.className = 'pill src-' + state.source + (amber ? ' amber' : '') + (state.error && state.source === 'local' ? ' stale' : '');
+    el.title = state.at ? 'Data generated ' + new Date(state.at).toLocaleString() : '';
+  }
+
   function render() {
     $('tabs').innerHTML = TABS.map((t, i) => `<button role="tab" aria-selected="${i === state.tab}" tabindex="${i === state.tab ? 0 : -1}" data-i="${i}">${esc(t)}</button>`).join('');
     const d = state.data;
-    if (!d) { $('view').innerHTML = empty(state.error ? 'Cannot load data: ' + state.error : 'Loading…'); return; }
+    if (!d) { $('view').innerHTML = empty(state.error ? 'Cannot load data: ' + state.error : 'Loading…'); renderPill(); return; }
     $('program').textContent = (d.snapshot.config && d.snapshot.config.program) || 'Program Dashboard';
     $('meta').textContent = 'Generated ' + (d.snapshot.generatedAt || 'n/a');
-    $('live').textContent = state.error ? 'stale' : window.__SNAPSHOT__ ? 'snapshot' : 'live';
-    $('live').className = 'pill' + (state.error ? ' stale' : '');
+    renderPill();
     try { $('view').innerHTML = views[state.tab](d); } catch (e) { $('view').innerHTML = empty('Render error: ' + e.message); }
-    document.querySelectorAll('[data-nk]').forEach((c) => { c.onchange = () => { state.net.kinds = [...document.querySelectorAll('[data-nk]')].filter((x) => x.checked).map((x) => x.dataset.nk); const g = d.graph || d.snapshot.graph; $('netwrap').innerHTML = netChart(g); }; });
-    const nt = $('netteam'); if (nt) nt.onchange = () => { state.net.team = nt.value; $('netwrap').innerHTML = netChart(d.graph || d.snapshot.graph); };
-    const sel = $('teamsel'); if (sel) sel.onchange = () => { state.team = sel.value; render(); };
+    document.querySelectorAll('[data-nk]').forEach((c) => { c.onchange = () => { state.net.kinds = [...document.querySelectorAll('[data-nk]')].filter((x) => x.checked).map((x) => x.dataset.nk); }; });
+    const nt = $('netteam'); if (nt) nt.onchange = () => { state.net.team = nt.value; };
+    const sel = $('teamsel'); if (sel) sel.onchange = () => { if ($('bsprint')) state.board.team = sel.value; else state.team = sel.value; render(); };
+    const bs = $('bsprint'); if (bs) bs.onchange = () => { state.board.sprint = bs.value; render(); };
+    if (TABS[state.tab] === 'Decision network' && $('netcanvas')) mountNet(d);
   }
 
-  async function load() {
-    if (window.__SNAPSHOT__) { state.data = window.__SNAPSHOT__; render(); return; }
-    try {
-      const [snapshot, metrics] = await Promise.all(['/api/snapshot', '/api/metrics'].map((u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); })));
-      state.data = { snapshot, metrics, graph: snapshot.graph }; state.error = null;
-    } catch (e) { state.error = e.message; }
+  // ---- data layer: embedded snapshot, then the artifact database, else the local server, else stay on the snapshot ----
+  const LIVE_NAMES = ['board', 'rank', 'graph', 'events', 'metrics'];
+  const docTime = (doc) => (doc && doc.generatedAt ? Date.parse(doc.generatedAt) : NaN);
+  /** Re-render from the five live documents (board, rank, graph, events and, when present, metrics). */
+  function applyLive(parts, source) {
+    if (!(parts.board && parts.rank && parts.graph && parts.events) || !state.data) return;
+    const sig = JSON.stringify(parts, (k, v) => (k === 'generatedAt' ? undefined : v));
+    const times = LIVE_NAMES.map((n) => docTime(parts[n])).filter((t) => !Number.isNaN(t));
+    state.at = times.length ? Math.max(...times) : state.at;
+    state.source = source; state.error = null;
+    if (sig === state.sig) { renderPill(); return; }
+    state.sig = sig;
+    const snap = state.base.snapshot;
+    state.data = {
+      snapshot: { ...snap, tickets: parts.board.tickets.map((t) => ({ ...(snap.tickets || []).find((x) => x.id === t.id), ...t })), graph: parts.graph },
+      metrics: parts.metrics || state.base.metrics, graph: parts.graph, board: parts.board, rank: parts.rank, events: parts.events,
+    };
+    const ae = document.activeElement;
+    const editing = TABS[state.tab] !== 'Decision network' && ae && $('view').contains(ae) && /^(SELECT|INPUT)$/.test(ae.tagName);
+    if (!editing) render();
+  }
+  function useEmbedded(snap) {
+    state.base = snap; state.data = snap; state.source = 'snapshot'; state.at = Date.parse(snap.snapshot.generatedAt) || null;
+    if (snap.live && snap.live.board) {
+      const L = snap.live, times = ['board', 'metrics'].map((n) => docTime(L[n])).filter((t) => !Number.isNaN(t));
+      state.data = { ...snap, board: L.board, rank: L.rank, events: L.events, metrics: L.metrics || snap.metrics };
+      if (times.length) state.at = Math.max(...times);
+    }
     render();
+  }
+  async function fetchJson(u) { const r = await fetch(u); if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }
+  async function startLive() {
+    // Never subscribe inside render: this runs once, after the first paint.
+    let db = null;
+    try { db = (window.claude && window.claude.use) ? await window.claude.use('db') : null; } catch { db = null; }
+    if (db) {
+      const parts = {};
+      db.collection('live').onSnapshot((qs) => {
+        for (const d of qs.docs) if (d.exists) parts[d.id] = typeof d.data === 'function' ? d.data() : d.data;
+        applyLive(parts, 'db');
+      }, () => {});
+      return;
+    }
+    if (typeof location === 'undefined' || !/^https?:$/.test(location.protocol)) return; // opened as a file: stay on the snapshot, make no requests
+    const poll = async () => {
+      try {
+        const got = await Promise.all(LIVE_NAMES.map((n) => fetchJson('/api/live/' + n)));
+        applyLive(Object.fromEntries(LIVE_NAMES.map((n, i) => [n, got[i]])), 'local');
+      } catch (e) { state.error = e.message; renderPill(); }
+      setTimeout(poll, 5000);
+    };
+    poll();
+  }
+  async function load() {
+    if (window.__SNAPSHOT__) { useEmbedded(window.__SNAPSHOT__); startLive(); return; }
+    try {
+      const [snapshot, metrics] = await Promise.all(['/api/snapshot', '/api/metrics'].map(fetchJson));
+      useEmbedded({ snapshot, metrics, graph: snapshot.graph });
+    } catch (e) { state.error = e.message; render(); return; }
+    startLive();
   }
 
   $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.tab = Number(b.dataset.i); render(); } });
@@ -267,8 +526,7 @@
     const k = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!k) return;
     state.tab = (state.tab + k + TABS.length) % TABS.length; render(); const b = $('tabs').querySelector('[aria-selected=true]'); if (b) b.focus(); e.preventDefault();
   });
-  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (TABS[state.tab] === 'Decision network' && state.data) render(); }, 150); });
+  setInterval(renderPill, 30000); // keeps "updated 2 min ago" honest between data updates
   render();
   load();
-  if (!window.__SNAPSHOT__) setInterval(load, 10000);
 })();
