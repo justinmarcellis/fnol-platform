@@ -1,8 +1,24 @@
 {
-  "status": "ready",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:26:39.630Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T12:27:06.037Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T12:27:20.918Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T12:27:42.897Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "id": "S6-PMO-01",
   "team": "pmo",
   "title": "Quality report counts the real suite; defect posting type",
@@ -25,5 +41,46 @@
   "brief": "Sprint 5 found the report always showed 1 test, 0 passed, because node --test with a directory argument fails on Node 22.",
   "valueDrivers": [
     "VD-7"
-  ]
+  ],
+  "startedAt": "2026-10-19T12:27:06.037Z",
+  "doneAt": "2026-10-19T12:27:42.897Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T12:27:42.897Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Criteria 1 and 2 met (testArgs mirrors package.json globs, STRATEGY uses blocker); 27/27 dashboard tests pass by glob; criterion 3 directory form fails on Node 22 by design (the bug being fixed), no src/ changes"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.4031,
+    "inputTokens": 16,
+    "cacheWriteTokens": 131226,
+    "cacheReadTokens": 369606,
+    "outputTokens": 105,
+    "agents": {
+      "a2dbab50665bffa22": {
+        "label": "S6-PMO-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 64516,
+        "cacheReadTokens": 120283,
+        "outputTokens": 33,
+        "usd": 0.1857
+      },
+      "a9c921f754b31f839": {
+        "label": "S6-PMO-01 ic-pmo-metrics-analyst",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 66710,
+        "cacheReadTokens": 249323,
+        "outputTokens": 72,
+        "usd": 0.2174
+      }
+    }
+  }
 }

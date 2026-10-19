@@ -83,7 +83,7 @@ Every defect has a severity, a type and a found-in phase.
 Types: `functional`, `contract` (differs from `architecture/contracts/`), `security`, `data`, `perf`.
 Found-in phase: `unit`, `integration`, `security`, `e2e`, `review` (acceptance review), `post-accept` (found after the ticket was accepted).
 
-An escape is a defect found after its originating ticket was accepted (`done`). It is recorded as an entry in the `review.escapedDefects` array on the originating ticket file in `org/board/tickets/`, and also posted: `AGENT_ID=<id> node org/cli.mjs post quality defect "<text>" --ticket <ID>`.
+An escape is a defect found after its originating ticket was accepted (`done`). It is recorded as an entry in the `review.escapedDefects` array on the originating ticket file in `org/board/tickets/`, and also posted (as type `blocker`; the fabric has no `defect` type, see standards.md v3): `AGENT_ID=<id> node org/cli.mjs post quality blocker "<text>" --ticket <ID>`.
 
 Entry shape and worked example, appended to `org/board/tickets/S1-EXAMPLE-01.json` (a fictional ticket "claim lookup by plate"):
 

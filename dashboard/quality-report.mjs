@@ -1,5 +1,5 @@
 // Writes org/quality.json from TAP / node --test output.
-// Usage: node dashboard/quality-report.mjs [output-file]   (no argument: runs tests/ with the TAP reporter)
+// Usage: node dashboard/quality-report.mjs [output-file]   (no argument: runs the same globs as `npm test` with the TAP reporter)
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
@@ -22,6 +22,16 @@ export function parseTap(text) {
   return { testsTotal: total, testsPassed: passed, testsFailed: failed, buildGreen: failed === 0 && total > 0 };
 }
 
+/** Argument vector for the spawned run: package.json scripts.test (minus the leading `node`) plus the TAP reporter. */
+export function testArgs(root = ROOT) {
+  const script = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts.test;
+  const tokens = [...script.matchAll(/"([^"]*)"|(\S+)/g)].map((m) => m[1] ?? m[2]);
+  if (tokens[0] === 'node') tokens.shift();
+  const i = tokens.indexOf('--test');
+  tokens.splice(i + 1, 0, '--test-reporter=tap');
+  return tokens;
+}
+
 /** Write org/quality.json (or `out`). */
 export function writeReport(text, out = join(ROOT, 'org', 'quality.json'), at = new Date().toISOString()) {
   const r = { ...parseTap(text), at };
@@ -36,7 +46,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     if (!existsSync(file)) { console.error(`no such file: ${file}`); process.exit(1); }
     text = readFileSync(file, 'utf8');
   } else {
-    const r = spawnSync(process.execPath, ['--disable-warning=ExperimentalWarning', '--test', '--test-reporter=tap', 'tests/'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    const r = spawnSync(process.execPath, testArgs(), { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     text = r.stdout ?? '';
   }
   console.log(JSON.stringify(writeReport(text)));
