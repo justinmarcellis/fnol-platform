@@ -1,8 +1,24 @@
 {
-  "status": "ready",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:51:20.342Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T01:53:24.728Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:55:53.299Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:56:55.014Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "id": "S5-AI-01",
   "team": "ai",
   "title": "AI output validation, tenant attribution and untrusted-input framing (SEC2-009, 010, 011)",
@@ -38,5 +54,55 @@
   "valueDrivers": [
     "VD-4",
     "VD-7"
-  ]
+  ],
+  "startedAt": "2026-10-19T01:53:24.728Z",
+  "doneAt": "2026-10-19T01:56:55.014Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:56:55.014Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: unit/ai 57 pass, e2e+security 372 pass/0 fail/7 todo matches baseline, SEC2-009/010 pass with todo removed, tenant required, framing and cloud redaction tested"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.0353,
+    "inputTokens": 66,
+    "cacheWriteTokens": 159903,
+    "cacheReadTokens": 2970123,
+    "outputTokens": 4130,
+    "agents": {
+      "a1f1a7ac322b33002": {
+        "label": "S5-AI-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 26431,
+        "cacheReadTokens": 360896,
+        "outputTokens": 107,
+        "usd": 0.1394
+      },
+      "a270679d481931df1": {
+        "label": "S5-AI-01 ic-ai-provider-integrator",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 44,
+        "cacheWriteTokens": 87567,
+        "cacheReadTokens": 2264510,
+        "outputTokens": 2590,
+        "usd": 0.6978
+      },
+      "ad8598b6cc699b3a6": {
+        "label": "S5-AI-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 45905,
+        "cacheReadTokens": 344717,
+        "outputTokens": 1433,
+        "usd": 0.1981
+      }
+    }
+  }
 }

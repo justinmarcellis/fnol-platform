@@ -1,0 +1,107 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:53:02.522Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:53:33.652Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:56:12.066Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:57:52.001Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "platform",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "id": "S5-PLT-01",
+  "title": "Cloud SQL Postgres store adapter spike",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-platform-runtime-dev",
+  "story": "As the platform team I want a store port with a conformance suite the current SQLite store passes, plus a Postgres dialect proof, so that a Cloud SQL migration is a known quantity.",
+  "paths": [
+    "src/core/store-port.mjs",
+    "tests/conformance/store/",
+    "architecture/spikes/cloud-sql-store.md"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md",
+    "org/decisions/ADR-001-stack-and-layout.md"
+  ],
+  "valueDrivers": [
+    "Cloud SQL migration de-risked",
+    "Licensable on carrier-preferred databases"
+  ],
+  "requirements": [
+    "ADR-001 zero dependencies",
+    "tenant isolation preserved by any store backend"
+  ],
+  "acceptance": [
+    "src/core/store-port.mjs exports a documented async port shape (JSDoc) and a thin wrapper adapting the existing sync store to it; store.mjs, bus.mjs, crypto.mjs, auth.mjs, server.mjs, package.json are untouched (git diff clean).",
+    "tests/conformance/store/ holds a backend-agnostic suite (factory-parameterised: insert/get/list/update/delete, tenant scoping, tenant_id patch rejection, unique constraint, transaction commit and rollback) run against the SQLite store via `node --test --disable-warning=ExperimentalWarning tests/conformance/store/` with all tests passing.",
+    "A translation test converts the real migration SQL (read from store.mjs/bus.mjs migrations without editing them, or a copied fixture) to Postgres DDL and asserts: PRAGMA lines dropped or mapped, ROW_NUMBER backfill kept as valid Postgres, rowid replaced by an explicit ordering column, AUTOINCREMENT/type differences mapped. Pure string translation; no pg driver, no network.",
+    "architecture/spikes/cloud-sql-store.md covers: sync DatabaseSync to async port change, transaction(fn) sync-to-async semantics, inventory of the ~17 raw prepare/exec callers (grep-verified list with file:line) and per-caller migration approach, Cloud SQL connection (connector, pooling, Cloud Run), staged plan with rollback, risks. Includes a documented optional live-check command (not under tests/).",
+    "package.json dependencies remain {}; no test touches the network."
+  ],
+  "brief": "Build a design plus small proof; do not migrate. 1) store-port.mjs: define the async port (JSDoc typedefs): insert, get, list(filter), update, delete, count, transaction(async fn), migrate, close, mirroring the tenant-scoped API in core-runtime-api.md (read the tenant-bound ctx addendum). Export wrapSyncStore(store) returning the port by wrapping sync calls in Promise.resolve; keep tenant scoping semantics exactly as the sync store. Read src/core/store.mjs first and import its public factory only; do not edit it. 2) Conformance suite: tests/conformance/store/suite.mjs exports runStoreConformance(name, makeStore) using node:test; tests/conformance/store/sqlite.test.mjs runs it against wrapSyncStore(createStore(':memory:')) (check actual factory name and signature). Cover the cases in acceptance; every case should be portable (no SQLite-only assertions). Pitfall: transaction rollback must be tested with a thrown error inside the callback. 3) tests/conformance/store/postgres-dialect.test.mjs: write a small pure function translateToPostgres(sql) inside the test folder (helper file dialect.mjs) that handles PRAGMA, INTEGER PRIMARY KEY AUTOINCREMENT to GENERATED ... AS IDENTITY, rowid to an explicit column, datetime defaults, ROW_NUMBER() OVER backfill via UPDATE ... FROM, and placeholders ? to $n. Use the real migration SQL from bus.mjs (outbox seq backfill) and store.mjs. 4) Spike doc: grep src for prepare( and exec( to list callers with file:line; describe async ripple (every caller becomes await, transaction callers rewritten, bus publish inside txn), a strangler plan (port first, dual-run conformance, then adapter), and ADR-001 conflict note: pg driver is a dependency decision for the director, not made here. Synthetic data only.",
+  "startedAt": "2026-10-19T01:53:33.652Z",
+  "doneAt": "2026-10-19T01:57:52.001Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:57:52.001Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: 23/23 tests pass, protected files untouched, deps {}, doc complete with grep-verified inventory, e2e/security 0 fail matches baseline"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6002,
+    "inputTokens": 38,
+    "cacheWriteTokens": 120481,
+    "cacheReadTokens": 1381547,
+    "outputTokens": 2266,
+    "agents": {
+      "a1f7b6042a3bae4ce": {
+        "label": "S5-PLT-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 27834,
+        "cacheReadTokens": 164785,
+        "outputTokens": 34,
+        "usd": 0.1029
+      },
+      "a9d72963945c52d69": {
+        "label": "S5-PLT-01 ic-platform-runtime-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 68999,
+        "cacheReadTokens": 991927,
+        "outputTokens": 1221,
+        "usd": 0.3831
+      },
+      "af6aa1d8c77027fde": {
+        "label": "S5-PLT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 23648,
+        "cacheReadTokens": 224835,
+        "outputTokens": 1011,
+        "usd": 0.1142
+      }
+    }
+  }
+}

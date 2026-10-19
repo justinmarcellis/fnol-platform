@@ -1,0 +1,40 @@
+{
+  "status": "review",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:58:57.859Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:59:13.152Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:59:33.349Z",
+      "from": "in_progress",
+      "to": "review"
+    }
+  ],
+  "id": "S5-AI-06",
+  "team": "ai",
+  "title": "Allow-list provenance for non-PII roles (S5 gate medium on SEC2-017)",
+  "story": "As a carrier privacy officer I want auditor and integration roles to receive no free-text provenance at all so that PII the extractor never labelled cannot leak through spans or snippets",
+  "points": 2,
+  "tier": "mid",
+  "owner": "ic-ai-extraction-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/modules/evidence/routes.mjs",
+    "tests/unit/evidence/span-redaction.test.mjs"
+  ],
+  "acceptance": [
+    "For auditor and integration, extraction responses carry no provenance.span, snippet or other free-text excerpt for any field (allow-list: field name, masked value or non-pii value, confidence, page/offset numbers only); test includes PII that was never extracted as a field (e.g. a third name only in the span)",
+    "Adjuster and supervisor views unchanged",
+    "node --test tests/unit/evidence/ passes; SEC2-017 todo test still passes locally; tests/e2e and tests/security show no new failures; do not edit tests/security"
+  ],
+  "brief": "The S5-AI-02 fix is a deny-list (drops a span only when it contains a pii:true value). Replace it with an allow-list for non-PII roles.",
+  "valueDrivers": [
+    "VD-7"
+  ],
+  "startedAt": "2026-10-19T01:59:13.152Z"
+}

@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:51:20.341Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T01:52:10.205Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:53:08.090Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:54:09.923Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-ARC-01",
@@ -35,5 +45,45 @@
   "valueDrivers": [
     "VD-7"
   ],
-  "startedAt": "2026-10-19T01:52:10.205Z"
+  "startedAt": "2026-10-19T01:52:10.205Z",
+  "doneAt": "2026-10-19T01:54:09.923Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:54:09.923Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 4 criteria met: triage with citations, openapi 404/422/oidcBearer(proposed), x-roles unchanged, hub posts present; related tests 79 pass 0 fail"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5667,
+    "inputTokens": 36,
+    "cacheWriteTokens": 121845,
+    "cacheReadTokens": 1261094,
+    "outputTokens": 976,
+    "agents": {
+      "a9269c93b518c43f3": {
+        "label": "S5-ARC-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 69827,
+        "cacheReadTokens": 186971,
+        "outputTokens": 799,
+        "usd": 0.22
+      },
+      "af7f17994ed4e9fd6": {
+        "label": "S5-ARC-01 ic-integrations-api-designer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 52018,
+        "cacheReadTokens": 1074123,
+        "outputTokens": 177,
+        "usd": 0.3467
+      }
+    }
+  }
 }

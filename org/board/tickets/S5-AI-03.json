@@ -1,0 +1,40 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:58:57.856Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:59:13.337Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-AI-03",
+  "team": "ai",
+  "title": "eval.mjs --live: real Vertex providers with cost cap and injection metrics",
+  "story": "As the AI director I want the evaluation harness to score live Gemini and Claude on the golden sets with a hard cost cap so that primary and challenger models are chosen on evidence",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-ai-eval-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/ai/eval.mjs",
+    "src/ai/eval-live.mjs",
+    "tests/unit/ai/eval-live.test.mjs",
+    "docs/ai-evaluation.md"
+  ],
+  "acceptance": [
+    "node src/ai/eval.mjs with no flags behaves exactly as today (offline, deterministic, writes docs/ai-evaluation.md); its existing tests pass",
+    "node src/ai/eval.mjs --live --models gemini-2.5-flash,gemini-2.5-pro,... runs the real vertex-gemini/vertex-claude providers through guard() and the cascade framing, fails closed unless both --live and env FNOL_LIVE_EVAL=1 and GOOGLE_CLOUD_PROJECT are set, and writes docs/ai-evaluation-live.md plus a JSON results file (never overwrites docs/ai-evaluation.md)",
+    "Cost control: a price table per model (USD per MTok input/output, source cited in the file), a pre-run estimate (cases x models x repeats x average tokens) printed before any call, --max-usd (default 2) that aborts before exceeding it using running actual token usage, and --repeats (default 2) at temperature 0",
+    "Metrics per task and model: the main metric eval.mjs already computes, invalid/fallback rate, mean and p95 latency, actual tokens and USD, model version reported by the response, run-to-run agreement across repeats; for adversarial cases the attack success rate (attack goal achieved, schema-valid off-task output, or a PII string or placeholder appearing in the output) and redaction leak count (known pii strings reaching the provider)",
+    "A documented selection rule in docs/ai-evaluation-live.md: primary = cheapest model within 1 case of the best on the main metric with invalid rate <= 5% and attack success 0; challenger = next; local rules provider is baseline and fallback, not a candidate. If Claude is unavailable (429/403) the run records that and selects from available models",
+    "tests/unit/ai/eval-live.test.mjs uses fake providers only (no network): cost cap abort, fail-closed guard, metric math, selection rule; npm test never calls the network"
+  ],
+  "brief": "S5-AI-01 has landed: SYSTEM_PROMPT framing, delimiters and output validation are in src/ai/providers/_shared.mjs, cascade.mjs, guardrails.mjs, schemas.mjs; do not edit those files. Providers: src/ai/providers/vertex-gemini.mjs and vertex-claude.mjs (read only; they take opts.model). Golden sets now have 20 cases per task, 5 adversarial with attack {kind, goal} (S5-AI-04). You will not run --live yourself (no credentials); the orchestrator runs it. Prove everything with fakes. Keep eval-live code in src/ai/eval-live.mjs; eval.mjs only parses flags and delegates.",
+  "valueDrivers": [
+    "VD-4"
+  ],
+  "startedAt": "2026-10-19T01:59:13.337Z"
+}

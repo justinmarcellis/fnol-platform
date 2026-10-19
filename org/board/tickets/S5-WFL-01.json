@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:51:20.342Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T01:52:09.180Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:53:10.894Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:56:11.816Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-WFL-01",
@@ -41,5 +51,54 @@
   "requirements": [
     "REQ-01"
   ],
-  "startedAt": "2026-10-19T01:52:09.180Z"
+  "startedAt": "2026-10-19T01:52:09.180Z",
+  "doneAt": "2026-10-19T01:56:11.816Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:56:11.816Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met: claimant name-match via coverage snapshot, uniform 404 with deep-equal test, no early return, holder tests pass, demo e2e + regression gate green (0 fail vs baseline)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.8477,
+    "inputTokens": 54,
+    "cacheWriteTokens": 189853,
+    "cacheReadTokens": 1724924,
+    "outputTokens": 2801,
+    "agents": {
+      "a4e20973ed12c6761": {
+        "label": "S5-WFL-01 ic-workflow-intake-flow-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 96167,
+        "cacheReadTokens": 861585,
+        "outputTokens": 1754,
+        "usd": 0.4303
+      },
+      "a904d8fbb07ccbd66": {
+        "label": "S5-WFL-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 27318,
+        "cacheReadTokens": 365308,
+        "outputTokens": 935,
+        "usd": 0.1507
+      },
+      "aaa08de0687208311": {
+        "label": "S5-WFL-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 18,
+        "cacheWriteTokens": 66368,
+        "cacheReadTokens": 498031,
+        "outputTokens": 112,
+        "usd": 0.2667
+      }
+    }
+  }
 }

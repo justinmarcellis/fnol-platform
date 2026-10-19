@@ -1,0 +1,57 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:58:57.859Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:59:55.091Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T02:00:22.617Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T02:01:54.669Z",
+      "from": "review",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-WFL-03",
+  "team": "workflow",
+  "title": "Agents read policy vehicles only for policies they produce (S5 gate medium)",
+  "story": "As a carrier I want an agent to see policy vehicles only for policies that agent produces so that staff accounts cannot enumerate policy numbers",
+  "points": 2,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "src/modules/intake/service.js",
+    "tests/unit/intake/policy-vehicles-agent.test.js"
+  ],
+  "acceptance": [
+    "For the agent role, GET /intake/sessions/{id}/policy-vehicles returns vehicles only when the policy is produced by that agent (reuse the existing producer/ownership rule, e.g. producesPolicy), otherwise the same uniform 404 as for claimants",
+    "CSR behaviour unchanged; claimant holder rule from S5-WFL-01 unchanged; tests cover agent-producer, agent-non-producer, unknown policy",
+    "node --test tests/unit/intake/ passes; tests/e2e and tests/security show no new failures; do not edit tests/security"
+  ],
+  "brief": "Finding from the S5-WFL-01 security gate: assertAccess lets an agent read any session it started without a holder or producer check, so a non-empty array confirms a policy exists. Find the agent-producer rule already used in intake (grep producesPolicy / agent ownership in src/modules/intake and src/modules/coverage).",
+  "valueDrivers": [
+    "VD-7"
+  ],
+  "startedAt": "2026-10-19T01:59:55.091Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-19T02:01:54.668Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Code is correct and e2e/security clean, but criterion 3 (tests/unit/intake passes) fails: policy-vehicles.test.js 'agent who owns the session...' and policy-vehicles-holder.test.js 'csr and agent keep current behaviour' encode superseded behavior and must be updated (ticket paths need widening)"
+      }
+    ],
+    "firstPass": false
+  }
+}

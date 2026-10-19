@@ -1,0 +1,109 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:53:02.524Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:56:23.514Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:57:21.428Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:58:24.918Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "platform",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "id": "S5-PLT-02",
+  "title": "Pub/Sub outbox publisher and shared GCP auth helper",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-platform-iac-engineer",
+  "story": "As the platform team I want undelivered outbox rows published to Pub/Sub in (tenant_id, seq) order with orderingKey=tenant, idempotent on retry, so that the bus can leave the process.",
+  "paths": [
+    "src/core/outbox-publisher.mjs",
+    "src/core/gcp-auth.mjs",
+    "tests/unit/core/spikes/outbox-publisher.test.mjs",
+    "tests/unit/core/spikes/gcp-auth.test.mjs",
+    "architecture/spikes/pubsub-outbox.md"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md",
+    "org/decisions/ADR-001-stack-and-layout.md"
+  ],
+  "valueDrivers": [
+    "Event bus can scale beyond one process",
+    "Reliable delivery"
+  ],
+  "requirements": [
+    "ADR-001 zero dependencies; global fetch only",
+    "No network in npm test"
+  ],
+  "acceptance": [
+    "src/core/gcp-auth.mjs exports createTokenProvider({fetch, env, now}) returning async getToken() using ADC via the metadata server (Cloud Run) with a documented GOOGLE_OAUTH_ACCESS_TOKEN override for local use, caching until shortly before expiry; plus gcpFetch(tokenProvider, fetchImpl) helper adding Authorization. Uses only global fetch; no google libraries. Tested in gcp-auth.test.mjs with fake fetch (cache hit, expiry refresh, error path without leaking token in messages).",
+    "src/core/outbox-publisher.mjs exports createOutboxPublisher({port, readUndelivered, markPublished, now}) with a Publisher port {publish({topic, data, attributes, orderingKey})}; publishPending() orders rows by (tenant_id, seq), sets orderingKey=tenant_id, attributes include outboxId (the outbox row id) and tenant_id, marks rows published only after ack, stops a tenant at first failure to preserve order, and is safe to re-run (idempotent via outboxId attribute). Also exports createPubSubRestPublisher({tokenProvider, project, fetch}) building the Pub/Sub REST publish request (base64 data, orderingKey, attributes) tested against a fake fetch.",
+    "outbox-publisher.test.mjs passes: ordering across tenants and seq gaps, retry after failure publishes no duplicate outboxId for acked rows, per-tenant halt on failure while other tenants proceed, empty batch, request shape of the REST publisher.",
+    "bus.mjs and store.mjs untouched; in-process dispatch unchanged; rows are read through an injected function (shape documented from bus.outbox), not by editing core.",
+    "architecture/spikes/pubsub-outbox.md covers: ordering and orderingKey semantics, at-least-once with consumer dedupe via consumed_events, enable-message-ordering on topic, failure and resume-key behaviour, outbox retention, and a documented live-check command for the orchestrator (not under tests/). npm test never touches the network."
+  ],
+  "brief": "Spike, small proof. First read src/core/bus.mjs and the outbox table (columns id, tenant_id, seq, type, payload, created_at, and any delivered marker; verify actual names, document them) but do NOT edit it; take rows via readUndelivered() injected function and markPublished(ids) so tests use plain arrays. gcp-auth.mjs is the ONE shared helper for real cloud calls: other spikes (S5-PLT-03) import createTokenProvider or accept a token-provider parameter, so keep its export names stable: createTokenProvider, gcpFetch. Metadata endpoint: http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token with header Metadata-Flavor: Google; response {access_token, expires_in}. Pub/Sub REST: POST https://pubsub.googleapis.com/v1/projects/{project}/topics/{topic}:publish body {messages:[{data:base64, attributes:{...}, orderingKey}]}; response messageIds. Pub/Sub attribute values must be strings. Ordering pitfall: after a publish failure with an orderingKey, Pub/Sub requires resuming the key; document it and in the port expose optional resumePublish(orderingKey). Group per-tenant batches sequentially; do not parallelise within a tenant. Idempotency: attribute outboxId lets subscribers dedupe; publisher never relies on server dedupe. Synthetic project ids only (e.g. example-project). The live check is a documented command in the spike doc, not a script under tests/.",
+  "startedAt": "2026-10-19T01:56:23.514Z",
+  "doneAt": "2026-10-19T01:58:24.918Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:58:24.917Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 10 ticket tests pass, bus/store untouched, e2e+security 0 fail matches baseline, doc complete, no token leaks"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.3522,
+    "inputTokens": 22,
+    "cacheWriteTokens": 85888,
+    "cacheReadTokens": 642446,
+    "outputTokens": 895,
+    "agents": {
+      "a1c51fb74e73a9ae1": {
+        "label": "S5-PLT-02 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 4,
+        "cacheWriteTokens": 20188,
+        "cacheReadTokens": 97874,
+        "outputTokens": 24,
+        "usd": 0.0703
+      },
+      "a99ef4dd82946679b": {
+        "label": "S5-PLT-02 ic-platform-iac-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 36745,
+        "cacheReadTokens": 308444,
+        "outputTokens": 87,
+        "usd": 0.1544
+      },
+      "a9ece387c4ee86a05": {
+        "label": "S5-PLT-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 28955,
+        "cacheReadTokens": 236128,
+        "outputTokens": 784,
+        "usd": 0.1275
+      }
+    }
+  }
+}

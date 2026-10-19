@@ -1,8 +1,24 @@
 {
-  "status": "ready",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:51:20.342Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T01:54:48.965Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:55:41.914Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:56:36.836Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "id": "S5-AI-02",
   "team": "ai",
   "title": "Mask PII in provenance spans and coverage for auditor and integration roles (SEC2-017)",
@@ -30,5 +46,55 @@
   "brief": "Squad ticket across ai (evidence) and integrations (coverage) per playbook v2. Reuse the PII_ROLES rule from src/modules/claims/routes.mjs:3 (read it, do not edit claims).",
   "valueDrivers": [
     "VD-7"
-  ]
+  ],
+  "startedAt": "2026-10-19T01:54:48.965Z",
+  "doneAt": "2026-10-19T01:56:36.836Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:56:36.835Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 4 criteria met; new tests pass, e2e+security 372 pass/0 fail matches baseline"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5999,
+    "inputTokens": 52,
+    "cacheWriteTokens": 96851,
+    "cacheReadTokens": 1714064,
+    "outputTokens": 1494,
+    "agents": {
+      "a1b06c068da8070e1": {
+        "label": "S5-AI-02 ic-ai-extraction-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 42086,
+        "cacheReadTokens": 986405,
+        "outputTokens": 1339,
+        "usd": 0.3159
+      },
+      "a343bbdd66291b13c": {
+        "label": "S5-AI-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 23936,
+        "cacheReadTokens": 292273,
+        "outputTokens": 71,
+        "usd": 0.119
+      },
+      "add694b294e83cbe5": {
+        "label": "S5-AI-02 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 30829,
+        "cacheReadTokens": 435386,
+        "outputTokens": 84,
+        "usd": 0.165
+      }
+    }
+  }
 }

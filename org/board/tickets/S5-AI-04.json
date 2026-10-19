@@ -1,8 +1,24 @@
 {
-  "status": "ready",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:51:20.342Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T01:53:19.166Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:57:50.316Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:58:18.908Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "id": "S5-AI-04",
   "team": "ai",
   "title": "Golden sets: 15 clean + 5 adversarial synthetic cases per task",
@@ -25,5 +41,46 @@
   "brief": "Existing format: read two current golden files and src/ai/eval.mjs scoring (factSet/expectedSet). Keep existing cases and their recorded blocks; add new cases without recorded blocks. S5-AI-01 is changing output validation in parallel; keep outputs schema-valid per src/ai/schemas.mjs.",
   "valueDrivers": [
     "VD-4"
-  ]
+  ],
+  "startedAt": "2026-10-19T01:53:19.166Z",
+  "doneAt": "2026-10-19T01:58:18.908Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:58:18.908Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 8 golden files have 15 clean + 5 adversarial cases with attack kind/goal, new cases carry labelRationale, 0/40 adversarial inputs stripped by guardrails, data synthetic, 80 AI unit tests pass and runEval runs"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5484,
+    "inputTokens": 34,
+    "cacheWriteTokens": 109239,
+    "cacheReadTokens": 1364812,
+    "outputTokens": 228,
+    "agents": {
+      "a1172a098ab437584": {
+        "label": "S5-AI-04 ic-ai-eval-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 87209,
+        "cacheReadTokens": 1078138,
+        "outputTokens": 150,
+        "usd": 0.4352
+      },
+      "acd4506807feea8f3": {
+        "label": "S5-AI-04 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 22030,
+        "cacheReadTokens": 286674,
+        "outputTokens": 78,
+        "usd": 0.1132
+      }
+    }
+  }
 }

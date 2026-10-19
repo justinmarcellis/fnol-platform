@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:51:20.342Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T01:52:10.718Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:53:47.012Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:54:23.556Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-QE-01",
@@ -35,5 +45,45 @@
   "valueDrivers": [
     "VD-1"
   ],
-  "startedAt": "2026-10-19T01:52:10.718Z"
+  "startedAt": "2026-10-19T01:52:10.718Z",
+  "doneAt": "2026-10-19T01:54:23.556Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:54:23.556Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; local run 6 pass/1 skip, FNOL_REMOTE_SELFTEST=1 run 7 pass; no secrets/bodies printed, config restored, docs section added"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5414,
+    "inputTokens": 40,
+    "cacheWriteTokens": 89748,
+    "cacheReadTokens": 1508977,
+    "outputTokens": 1513,
+    "agents": {
+      "a031bbeeae66be21d": {
+        "label": "S5-QE-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 33068,
+        "cacheReadTokens": 235544,
+        "outputTokens": 63,
+        "usd": 0.1304
+      },
+      "a09f74c5730f85799": {
+        "label": "S5-QE-01 ic-quality-e2e-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 32,
+        "cacheWriteTokens": 56680,
+        "cacheReadTokens": 1273433,
+        "outputTokens": 1450,
+        "usd": 0.411
+      }
+    }
+  }
 }

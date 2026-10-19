@@ -1,0 +1,107 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:53:02.524Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:53:34.676Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:56:32.048Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:58:06.124Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "platform",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "id": "S5-PLT-04",
+  "title": "OIDC SSO RS256/JWKS verifier spike",
+  "points": 5,
+  "tier": "strong",
+  "owner": "ic-platform-tenancy-dev",
+  "story": "As a carrier IT admin I want the platform to verify my IdP ID tokens so that dev tokens can be retired.",
+  "paths": [
+    "src/core/oidc.mjs",
+    "tests/unit/core/spikes/oidc.test.mjs",
+    "architecture/spikes/oidc-sso.md"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/threat-model.md",
+    "org/decisions/ADR-001-stack-and-layout.md"
+  ],
+  "valueDrivers": [
+    "Enterprise SSO for carrier staff",
+    "Retire dev tokens"
+  ],
+  "requirements": [
+    "Security: no alg confusion, fail closed",
+    "ADR-001 zero dependencies"
+  ],
+  "acceptance": [
+    "src/core/oidc.mjs exports createOidcVerifier({issuer, audience, jwks, clockSkewSec, now}) where jwks is a port {getKeys(){Promise<JWK[]>}, optional refresh}; verify(token) resolves claims or throws a typed error with a stable code. Uses only node:crypto (createPublicKey with format jwk, verify RSASSA-PKCS1-v1_5 SHA-256).",
+    "tests/unit/core/spikes/oidc.test.mjs (run with node --test) passes and covers: valid token; wrong iss; wrong aud (string and array aud); expired exp; future nbf; clock skew boundary; unknown kid triggers one JWKS refresh then succeeds (rotation) and fails if still unknown; tampered payload/signature; alg=none rejected; HS256 token signed with the RSA public key as HMAC secret rejected (key confusion); missing kid; malformed token segments; only RS256 accepted.",
+    "Tests use a locally generated RSA keypair and a fake JWKS port; no network, no fixtures with real keys or secrets.",
+    "auth.mjs, server.mjs, store.mjs and dev-token behaviour untouched (git diff clean); module is not imported anywhere in src/.",
+    "architecture/spikes/oidc-sso.md covers: discovery and JWKS fetch/caching/refresh rate limit design, claim-to-tenant/role mapping proposal, nonce/state out of scope notes, threat table (alg confusion, kid injection, replay, JWKS poisoning/SSRF), Sprint 6 wiring plan after security review, and a documented live-check command for the orchestrator (not under tests/)."
+  ],
+  "brief": "Design plus proof, not wiring. Implement base64url decode manually (Buffer.from(s,'base64url')), parse header/payload JSON defensively (reject non-objects, size cap ~8KB). Pipeline: split in 3 segments; header.alg must be exactly 'RS256' (reject none, HS*, anything else BEFORE touching keys); header.typ optional; require kid; find key in jwks.getKeys() where kty==='RSA', kid matches, and (use absent or 'sig'); if kid unknown call jwks.refresh() at most once per verify (and rate-limit refreshes via a minimum interval using injected now) then retry. Build the key with createPublicKey({key: jwk, format:'jwk'}) and crypto.verify('sha256', data, key, sig). Never use the token to pick a key type or secret. Then validate iss strict equality, aud (string or array includes), exp required and > now - skew, nbf <= now + skew, iat sanity optional. Errors: class OidcError with code (e.g. bad_token, bad_alg, unknown_kid, bad_signature, bad_iss, bad_aud, expired, not_yet_valid) and no token contents in messages (logs redact). Also export a fake-friendly createStaticJwks(keys) helper for tests. Tests: generate keys with generateKeyPairSync('rsa',{modulusLength:2048}), export jwk via publicKey.export({format:'jwk'}), sign with crypto.sign. HS256 confusion: craft header alg HS256 and HMAC-sign with the PEM public key and assert bad_alg. The doc needs a threat table informed by architecture/threat-model.md. Synthetic issuer such as https://idp.example.test only.",
+  "startedAt": "2026-10-19T01:53:34.676Z",
+  "doneAt": "2026-10-19T01:58:06.124Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:58:06.124Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 19/19 oidc tests pass, no src imports, auth/server/store untouched, regression gate 0 fail matches baseline"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.9059,
+    "inputTokens": 32,
+    "cacheWriteTokens": 150925,
+    "cacheReadTokens": 1046275,
+    "outputTokens": 4045,
+    "agents": {
+      "a0d8fb36e0c6b22e3": {
+        "label": "S5-PLT-04 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 4,
+        "cacheWriteTokens": 25372,
+        "cacheReadTokens": 97821,
+        "outputTokens": 1589,
+        "usd": 0.0989
+      },
+      "a7469ca7af7b4482a": {
+        "label": "S5-PLT-04 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 23602,
+        "cacheReadTokens": 227374,
+        "outputTokens": 64,
+        "usd": 0.1051
+      },
+      "adace17f683f1883e": {
+        "label": "S5-PLT-04 ic-platform-tenancy-dev",
+        "model": "claude-opus-5-5",
+        "inputTokens": 20,
+        "cacheWriteTokens": 101951,
+        "cacheReadTokens": 721080,
+        "outputTokens": 2392,
+        "usd": 0.7019
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T02:02:06.356Z",
+  "history": [],
+  "id": "S5-PLT-00",
+  "team": "platform",
+  "title": "Platform Sprint 5 planning",
+  "story": "As the platform manager I want the spike stories decomposed into parallel tickets so that the team can build without serial dependencies",
+  "points": 0,
+  "tier": "mid",
+  "owner": "mgr-platform",
+  "reviewer": "ceo",
+  "sprint": 5,
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "4 tickets with disjoint paths"
+  ],
+  "brief": "planning",
+  "spend": {
+    "usd": 0.2486,
+    "inputTokens": 12,
+    "cacheWriteTokens": 73148,
+    "cacheReadTokens": 324149,
+    "outputTokens": 91,
+    "agents": {
+      "adf1be88a8c2d9282": {
+        "label": "S5-PLT-00 mgr-platform planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 73148,
+        "cacheReadTokens": 324149,
+        "outputTokens": 91,
+        "usd": 0.2486
+      }
+    }
+  }
+}

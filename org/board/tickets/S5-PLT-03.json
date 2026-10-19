@@ -1,0 +1,108 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:53:02.524Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:56:56.833Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:58:29.049Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:59:10.799Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "platform",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "id": "S5-PLT-03",
+  "title": "Cloud KMS master-key wrap spike (enc:v2 envelope)",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-platform-ci-engineer",
+  "story": "As a carrier security officer I want the master key wrapped by Cloud KMS so that no plaintext master key sits on disk.",
+  "paths": [
+    "src/core/keywrap.mjs",
+    "tests/unit/core/spikes/keywrap.test.mjs",
+    "architecture/spikes/kms-keywrap.md"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/data-protection.md",
+    "architecture/threat-model.md",
+    "org/decisions/ADR-001-stack-and-layout.md"
+  ],
+  "valueDrivers": [
+    "No plaintext master key at rest",
+    "Key rotation and audit through KMS"
+  ],
+  "requirements": [
+    "Backward compatible with enc:v1",
+    "ADR-001 zero dependencies; global fetch only"
+  ],
+  "acceptance": [
+    "src/core/keywrap.mjs exports a Kms port contract (wrapKey(plaintextDek) and unwrapKey(wrapped, keyId) async) with createFakeKms() for tests, createCloudKmsRest({tokenProvider, keyName, fetch}) building Cloud KMS REST encrypt/decrypt calls, and encryptV2/decryptV2 (or equivalent) producing an envelope string starting with enc:v2: that carries the KMS key id, the KMS-wrapped DEK and AES-256-GCM ciphertext (iv, tag) with the key id and version bound as AAD.",
+    "keywrap.test.mjs passes: round-trip via fake KMS; fresh random DEK and IV per value; tamper of ciphertext, wrapped DEK or key id fails; wrong key id fails; enc:v1 values produced by the existing crypto.mjs still decrypt through a dispatch function decryptAny(value) that routes v1 to the existing crypto.mjs export and v2 to the KMS path; plaintext not present in envelope; REST request shape tested with fake fetch and fake token provider.",
+    "crypto.mjs untouched (git diff clean) and used only by import; no re-encryption or migration code; no key material or secrets committed.",
+    "Token comes from src/core/gcp-auth.mjs createTokenProvider (owned by S5-PLT-02) or an injected tokenProvider parameter; tests use only fakes (inject {getToken}), so this ticket does not depend on the file existing. No network in tests.",
+    "architecture/spikes/kms-keywrap.md covers: envelope format spec, DEK caching and per-tenant key id option, rotation (new key version for new writes, old still unwrap), failure modes and fail-closed behaviour, IAM roles (cloudkms.cryptoKeyEncrypterDecrypter), cost and latency notes, and a documented live-check command for the orchestrator (not under tests/)."
+  ],
+  "brief": "Spike, small proof, no migration. Read src/core/crypto.mjs and architecture/data-protection.md to learn the exact enc:v1 format and its exported functions; do not edit crypto.mjs. Envelope proposal (document it): enc:v2:<keyIdB64url>:<wrappedDekB64url>:<ivB64url>:<tagB64url>:<ctB64url>. Encrypt: random 32-byte DEK, AES-256-GCM with random 12-byte IV, AAD = 'enc:v2|' + keyId; wrap DEK via kms.wrapKey; zero the DEK buffer after use (buffer.fill(0)). Decrypt: parse strictly, unwrapKey(wrapped, keyId), verify GCM tag. Cloud KMS REST: POST https://cloudkms.googleapis.com/v1/{keyName}:encrypt body {plaintext: base64} returns {ciphertext, name}; :decrypt body {ciphertext} returns {plaintext}. keyName looks like projects/example-project/locations/global/keyRings/example/cryptoKeys/master (synthetic). The returned name on encrypt includes cryptoKeyVersions; store the base key name as key id. Fake KMS: wrap with an in-memory AES-GCM key and support multiple key ids/versions to test rotation. Import the token provider from ./gcp-auth.mjs ONLY via a parameter (do not import statically, since S5-PLT-02 may land at the same time); default usage documented in the spike. decryptAny(value, {v1Decrypt, kms}) takes v1 decrypter as a parameter to keep it testable, with a test that wires the real crypto.mjs export. Error messages must not include plaintext or key bytes.",
+  "startedAt": "2026-10-19T01:56:56.833Z",
+  "doneAt": "2026-10-19T01:59:10.799Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:59:10.798Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 13/13 keywrap tests pass, e2e/security matches baseline (372 pass, 0 fail), crypto.mjs untouched, fakes only"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.3974,
+    "inputTokens": 20,
+    "cacheWriteTokens": 95572,
+    "cacheReadTokens": 569403,
+    "outputTokens": 4460,
+    "agents": {
+      "a7a67f66711e09e7a": {
+        "label": "S5-PLT-03 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 4,
+        "cacheWriteTokens": 31697,
+        "cacheReadTokens": 97830,
+        "outputTokens": 3670,
+        "usd": 0.1355
+      },
+      "acec8d987a8c83e5c": {
+        "label": "S5-PLT-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 22992,
+        "cacheReadTokens": 162782,
+        "outputTokens": 717,
+        "usd": 0.0972
+      },
+      "ae7e9dec475f7c66c": {
+        "label": "S5-PLT-03 ic-platform-ci-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 40883,
+        "cacheReadTokens": 308791,
+        "outputTokens": 73,
+        "usd": 0.1647
+      }
+    }
+  }
+}

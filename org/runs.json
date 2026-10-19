@@ -1734,7 +1734,7 @@
   "model": "sonnet",
   "phase": "Build",
   "startedAt": "2026-10-19T01:52:06.023Z",
-  "endedAt": "2026-10-19T01:52:11.151Z"
+  "endedAt": "2026-10-19T01:53:21.343Z"
  },
  {
   "id": "adf1be88a8c2d9282",
@@ -1743,7 +1743,7 @@
   "model": "sonnet",
   "phase": "Plan",
   "startedAt": "2026-10-19T01:52:06.297Z",
-  "endedAt": "2026-10-19T01:52:11.737Z"
+  "endedAt": "2026-10-19T01:53:29.814Z"
  },
  {
   "id": "af4adf73f9ff56058",
@@ -1752,7 +1752,7 @@
   "model": "sonnet",
   "phase": "Build",
   "startedAt": "2026-10-19T01:52:07.772Z",
-  "endedAt": "2026-10-19T01:52:10.597Z"
+  "endedAt": "2026-10-19T01:54:45.568Z"
  },
  {
   "id": "af7f17994ed4e9fd6",
@@ -1761,7 +1761,7 @@
   "model": "sonnet",
   "phase": "Build",
   "startedAt": "2026-10-19T01:52:07.774Z",
-  "endedAt": "2026-10-19T01:52:11.972Z"
+  "endedAt": "2026-10-19T01:53:15.480Z"
  },
  {
   "id": "a09f74c5730f85799",
@@ -1770,6 +1770,294 @@
   "model": "sonnet",
   "phase": "Build",
   "startedAt": "2026-10-19T01:52:07.775Z",
-  "endedAt": "2026-10-19T01:52:12.157Z"
+  "endedAt": "2026-10-19T01:53:55.438Z"
+ },
+ {
+  "id": "a1172a098ab437584",
+  "workflow": "wf_3d34f147-c0e",
+  "label": "S5-AI-04 ic-ai-eval-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:53:16.321Z",
+  "endedAt": "2026-10-19T01:58:02.855Z"
+ },
+ {
+  "id": "a270679d481931df1",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-AI-01 ic-ai-provider-integrator",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:53:22.170Z",
+  "endedAt": "2026-10-19T01:56:07.502Z"
+ },
+ {
+  "id": "a9d72963945c52d69",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-01 ic-platform-runtime-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:53:30.664Z",
+  "endedAt": "2026-10-19T01:56:19.329Z"
+ },
+ {
+  "id": "adace17f683f1883e",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-04 ic-platform-tenancy-dev",
+  "model": "opus",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:53:30.665Z",
+  "endedAt": "2026-10-19T01:56:53.084Z"
+ },
+ {
+  "id": "a9269c93b518c43f3",
+  "workflow": "wf_3d34f147-c0e",
+  "label": "S5-ARC-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:53:56.308Z",
+  "endedAt": "2026-10-19T01:54:09.942Z"
+ },
+ {
+  "id": "a031bbeeae66be21d",
+  "workflow": "wf_3d34f147-c0e",
+  "label": "S5-QE-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:54:10.832Z",
+  "endedAt": "2026-10-19T01:54:30.753Z"
+ },
+ {
+  "id": "a1b06c068da8070e1",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-AI-02 ic-ai-extraction-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:54:46.420Z",
+  "endedAt": "2026-10-19T01:55:49.337Z"
+ },
+ {
+  "id": "a904d8fbb07ccbd66",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-WFL-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:55:50.222Z",
+  "endedAt": "2026-10-19T01:56:17.604Z"
+ },
+ {
+  "id": "a491803870dc7172f",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-WFL-02 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:56:08.312Z",
+  "endedAt": "2026-10-19T01:56:32.346Z"
+ },
+ {
+  "id": "a343bbdd66291b13c",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-AI-02 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:56:18.556Z",
+  "endedAt": "2026-10-19T01:56:41.331Z"
+ },
+ {
+  "id": "a99ef4dd82946679b",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-02 ic-platform-iac-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:56:20.139Z",
+  "endedAt": "2026-10-19T01:57:28.844Z"
+ },
+ {
+  "id": "a1f1a7ac322b33002",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-AI-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:56:33.097Z",
+  "endedAt": "2026-10-19T01:57:00.227Z"
+ },
+ {
+  "id": "aaa08de0687208311",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-WFL-01 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:56:42.220Z",
+  "endedAt": "2026-10-19T01:57:06.727Z"
+ },
+ {
+  "id": "ae7e9dec475f7c66c",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-03 ic-platform-ci-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:56:53.904Z",
+  "endedAt": "2026-10-19T01:58:35.453Z"
+ },
+ {
+  "id": "a291f7e1cb7a140b4",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-WFL-02 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:57:01.083Z",
+  "endedAt": "2026-10-19T01:57:22.117Z"
+ },
+ {
+  "id": "add694b294e83cbe5",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-AI-02 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:57:07.535Z",
+  "endedAt": "2026-10-19T01:57:35.658Z"
+ },
+ {
+  "id": "ad8598b6cc699b3a6",
+  "workflow": "wf_d1dfe186-9b2",
+  "label": "S5-AI-01 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:57:22.931Z",
+  "endedAt": "2026-10-19T01:58:12.348Z"
+ },
+ {
+  "id": "af6aa1d8c77027fde",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-01 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:57:29.641Z",
+  "endedAt": "2026-10-19T01:57:52.026Z"
+ },
+ {
+  "id": "a7469ca7af7b4482a",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-04 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:57:52.811Z",
+  "endedAt": "2026-10-19T01:58:09.855Z"
+ },
+ {
+  "id": "acd4506807feea8f3",
+  "workflow": "wf_3d34f147-c0e",
+  "label": "S5-AI-04 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:58:03.973Z",
+  "endedAt": "2026-10-19T01:58:23.281Z"
+ },
+ {
+  "id": "a9ece387c4ee86a05",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-02 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:58:10.643Z",
+  "endedAt": "2026-10-19T01:58:29.584Z"
+ },
+ {
+  "id": "a1f7b6042a3bae4ce",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-01 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:58:30.432Z",
+  "endedAt": "2026-10-19T01:58:45.689Z"
+ },
+ {
+  "id": "a0d8fb36e0c6b22e3",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-04 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:58:36.382Z",
+  "endedAt": "2026-10-19T01:58:52.455Z"
+ },
+ {
+  "id": "a1c51fb74e73a9ae1",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-02 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:58:46.425Z",
+  "endedAt": "2026-10-19T01:59:04.304Z"
+ },
+ {
+  "id": "acec8d987a8c83e5c",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-03 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:58:53.312Z",
+  "endedAt": "2026-10-19T01:59:10.841Z"
+ },
+ {
+  "id": "a05dd85d92311538a",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-AI-03 ic-ai-eval-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:59:10.595Z",
+  "endedAt": "2026-10-19T02:01:49.934Z"
+ },
+ {
+  "id": "ac7c295282f299a6b",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-AI-06 ic-ai-extraction-engineer",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:59:10.596Z",
+  "endedAt": "2026-10-19T01:59:51.888Z"
+ },
+ {
+  "id": "a7a67f66711e09e7a",
+  "workflow": "wf_6f27041c-e33",
+  "label": "S5-PLT-03 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T01:59:11.631Z",
+  "endedAt": "2026-10-19T01:59:43.041Z"
+ },
+ {
+  "id": "ae8309b89c457c5d8",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-WFL-03 ic-workflow-intake-flow-dev",
+  "model": "sonnet",
+  "phase": "Build",
+  "startedAt": "2026-10-19T01:59:52.678Z",
+  "endedAt": "2026-10-19T02:00:28.961Z"
+ },
+ {
+  "id": "acb7747fa849a0abb",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-AI-06 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:00:29.950Z",
+  "endedAt": "2026-10-19T02:01:34.861Z"
+ },
+ {
+  "id": "abbaee40dc2de6577",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-WFL-03 review",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:01:35.666Z",
+  "endedAt": "2026-10-19T02:01:58.876Z"
+ },
+ {
+  "id": "a75dcefc4787fab02",
+  "workflow": "wf_c0d1327d-5c0",
+  "label": "S5-AI-06 security",
+  "model": "sonnet",
+  "phase": "Review",
+  "startedAt": "2026-10-19T02:01:59.759Z",
+  "endedAt": "2026-10-19T02:02:18.208Z"
  }
 ]

@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T01:51:20.342Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T01:52:10.569Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T01:54:36.511Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T01:56:32.324Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-WFL-02",
@@ -42,5 +52,54 @@
   "valueDrivers": [
     "VD-7"
   ],
-  "startedAt": "2026-10-19T01:52:10.569Z"
+  "startedAt": "2026-10-19T01:52:10.569Z",
+  "doneAt": "2026-10-19T01:56:32.324Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T01:56:32.324Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met: shared checker rejects the 7 patterns, validator/condition/questions/security use it, SEC2-013 passes, e2e+security 372 pass/0 fail matches baseline"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.7126,
+    "inputTokens": 56,
+    "cacheWriteTokens": 117998,
+    "cacheReadTokens": 2070075,
+    "outputTokens": 346,
+    "agents": {
+      "a291f7e1cb7a140b4": {
+        "label": "S5-WFL-02 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 27504,
+        "cacheReadTokens": 297646,
+        "outputTokens": 43,
+        "usd": 0.1287
+      },
+      "a491803870dc7172f": {
+        "label": "S5-WFL-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 31820,
+        "cacheReadTokens": 235508,
+        "outputTokens": 51,
+        "usd": 0.1272
+      },
+      "af4adf73f9ff56058": {
+        "label": "S5-WFL-02 ic-workflow-rules-engine-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 38,
+        "cacheWriteTokens": 58674,
+        "cacheReadTokens": 1536921,
+        "outputTokens": 252,
+        "usd": 0.4567
+      }
+    }
+  }
 }
