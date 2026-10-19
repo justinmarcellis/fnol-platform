@@ -1,0 +1,29 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T01:47:06.142Z",
+  "history": [
+    {
+      "at": "2026-10-19T01:47:06.179Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-LDR-01",
+  "team": "pmo",
+  "title": "Sprint 5 leadership council planning",
+  "story": "As the CEO I want the Directors to challenge the Sprint 5 draft so that the plan reflects each team's risks",
+  "points": 1,
+  "tier": "strong",
+  "owner": "ceo",
+  "reviewer": "ceo",
+  "sprint": 5,
+  "paths": [
+    "org/sprints/"
+  ],
+  "acceptance": [
+    "Each director returns risks and changes"
+  ],
+  "brief": "council",
+  "startedAt": "2026-10-19T01:47:06.179Z"
+}
