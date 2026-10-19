@@ -337,6 +337,30 @@ export function createService(ctx, opts = {}) {
     return nameOk && policyZips(snap).has(z);
   };
   const MAX_HOLDER_FAILURES = 5;
+  // S5-WFL-05: per (tenant, policy) rolling window, independent of sessions.
+  const POLICY_MAX_FAILURES = 10;
+  const POLICY_WINDOW_MS = 15 * 60 * 1000;
+  /**
+   * Atomically record one verification attempt against the policy in a single UPDATE ... RETURNING statement (row pre-created) and return the
+   * running count in the current window. The window restarts when the previous one has expired.
+   */
+  const recordPolicyAttempt = (policyNumber) => {
+    const now = ctx.clock.now().getTime();
+    const key = ctx.crypto.hmacIndex(String(policyNumber));
+    // Ensure the row exists (the tenant-scoped store has no raw INSERT ... ON CONFLICT); a lost race is harmless.
+    try { ctx.db.insert('intake_holder_lockouts', { policy_key: key, failures: 0, window_start: now }); } catch { /* already present */ }
+    const row = ctx.db.get(
+      `UPDATE intake_holder_lockouts SET
+         failures = CASE WHEN window_start <= ? THEN 1 ELSE MIN(failures + 1, 1000000) END,
+         window_start = CASE WHEN window_start <= ? THEN ? ELSE window_start END
+       WHERE policy_key = ? RETURNING failures`,
+      now - POLICY_WINDOW_MS, now - POLICY_WINDOW_MS, now, key);
+    return row?.failures ?? 1;
+  };
+  /** A successful verification gives its attempt back (single statement; never below zero). */
+  const refundPolicyAttempt = (policyNumber) => {
+    ctx.db.run('UPDATE intake_holder_lockouts SET failures = MAX(failures - 1, 0) WHERE policy_key = ?', ctx.crypto.hmacIndex(String(policyNumber)));
+  };
 
   /**
    * Vehicles on the session's policy for the insured_vehicle picker. Same access rule as the rest of the session
@@ -352,6 +376,13 @@ export function createService(ctx, opts = {}) {
   async function policyVehicles(sessionId, { actor, lastName, zip } = {}) {
     const { doc } = await load(sessionId, actor);
     if (!doc.policyNumber) return [];
+    // S5-WFL-05: count the attempt before any lookup result is revealed; beyond the limit the policy is locked for the window.
+    let counted = false;
+    let policyLocked = false;
+    if (actor?.role === 'claimant' && lastName && zip) {
+      counted = true;
+      policyLocked = recordPolicyAttempt(doc.policyNumber) > POLICY_MAX_FAILURES;
+    }
     // Timing: always perform the snapshot lookup and the comparison, even for numbers that do not exist.
     let snap = null;
     try {
@@ -359,7 +390,8 @@ export function createService(ctx, opts = {}) {
     } catch { snap = null; }
     if (actor?.role === 'claimant') {
       const locked = (doc.holderFailures ?? 0) >= MAX_HOLDER_FAILURES;
-      const ok = holderMatches(snap, lastName, zip);
+      const ok = !policyLocked && holderMatches(snap, lastName, zip);
+      if (ok && counted && !locked) refundPolicyAttempt(doc.policyNumber);
       if (locked || !ok) {
         if (!locked && lastName && zip) {
           doc.holderFailures = (doc.holderFailures ?? 0) + 1;

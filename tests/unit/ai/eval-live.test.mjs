@@ -262,3 +262,16 @@ test('this test file performs no network access', async () => {
   try { await runLive({ golden, models: ['gemini-2.5-flash'], repeats: 1, makeProvider: async () => fake('vertex-gemini', byFacts), ...noLocal }); } finally { globalThis.fetch = real; }
   await access(OFFLINE_DOC_PATH);
 });
+
+test('live eval passes the task output schema to providers, as the cascade does (S5-AI-07)', async () => {
+  const seen = [];
+  const p = fake('vertex-gemini', (t, i, o) => {
+    seen.push(o);
+    return o.schema ? byFacts(t, i) : { output: { garbage: true }, confidence: 0.9, explanation: '' };
+  });
+  const r = await runLive({ golden, models: ['gemini-2.5-flash'], repeats: 1, makeProvider: async () => p, ...noLocal });
+  assert.ok(seen.length > 0 && seen.every((o) => o.schema && o.tier === 'cheap' && o.model === 'gemini-2.5-flash'), 'schema, tier, model on every call');
+  const m = r.models[0];
+  assert.equal(m.overall.invalidRate, 0);
+  assert.equal(m.tasks.severity.main, 1);
+});

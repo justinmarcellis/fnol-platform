@@ -7,7 +7,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { guard } from './guardrails.mjs';
-import { TASKS } from './schemas.mjs';
+import { TASKS, schemaFor } from './schemas.mjs';
 import { SYSTEM_PROMPT, buildPrompt, projectFrom, locationFrom } from './providers/_shared.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -333,7 +333,7 @@ export async function runLive({ golden, models, repeats = DEFAULT_REPEATS, maxUs
           }
           tap.reply = null; tap.sent.length = 0;
           const t0 = now();
-          const res = await wrapped.run(task, structuredClone(c.input), { model, tier: 'cheap', temperature: 0 });
+          const res = await wrapped.run(task, structuredClone(c.input), { model, tier: 'cheap', schema: schemaFor(task), temperature: 0 });
           const latencyMs = now() - t0;
           const refusal = !res || !!res.refusal;
           const inTok = res?.usage?.inputTokens ?? 0; const outTok = res?.usage?.outputTokens ?? 0;

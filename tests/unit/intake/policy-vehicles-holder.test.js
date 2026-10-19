@@ -12,6 +12,8 @@ before(async () => { app = await bootIntakeApp({ tenants: [sampleTenant('tn-one'
 after(async () => { setCoverageLookup(); await app.close(); });
 beforeEach(() => {
   reset(); setCoverageLookup();
+  // S5-WFL-05: the per-policy lockout is shared across sessions, so isolate each test.
+  for (const t of ['tn-one', 'tn-two']) app.ctx.db.forTenant(t).run('DELETE FROM intake_holder_lockouts');
   const veh = [{ unitId: 'V1', vin: '1FNOL00000A900001', year: 2021, make: 'Fabrikam', model: 'Roadster', garagingPostalCode: '60601' }];
   snapshots.set('AUT-1', { policyNumber: 'AUT-1', vehicles: veh, namedInsureds: [{ name: 'Zelda Quartz', relation: 'named_insured' }] });
   snapshots.set('AUT-2', { policyNumber: 'AUT-2', vehicles: veh, namedInsureds: [{ name: 'Other Person' }] });

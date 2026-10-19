@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T03:18:54.887Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T03:19:06.888Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T03:19:54.090Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T03:20:25.825Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-AI-08",
@@ -32,5 +42,54 @@
   "valueDrivers": [
     "VD-7"
   ],
-  "startedAt": "2026-10-19T03:19:06.888Z"
+  "startedAt": "2026-10-19T03:19:06.888Z",
+  "doneAt": "2026-10-19T03:20:25.825Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T03:20:25.825Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 4 criteria met; label-name redaction works incl. restore, golden pii absent, no over-redaction, 50k ReDoS under 100ms, ai unit tests 103/103; only in-scope paths touched"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.4161,
+    "inputTokens": 30,
+    "cacheWriteTokens": 92238,
+    "cacheReadTokens": 916381,
+    "outputTokens": 229,
+    "agents": {
+      "a337ce89eff864bce": {
+        "label": "S5-AI-08 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 30238,
+        "cacheReadTokens": 168980,
+        "outputTokens": 24,
+        "usd": 0.1096
+      },
+      "a5453b28109981930": {
+        "label": "S5-AI-08 ic-ai-provider-integrator",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 16,
+        "cacheWriteTokens": 41145,
+        "cacheReadTokens": 525460,
+        "outputTokens": 146,
+        "usd": 0.2094
+      },
+      "aa9072bcda37c127e": {
+        "label": "S5-AI-08 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 20855,
+        "cacheReadTokens": 221941,
+        "outputTokens": 59,
+        "usd": 0.0971
+      }
+    }
+  }
 }

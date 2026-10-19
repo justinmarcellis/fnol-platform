@@ -27,6 +27,14 @@ export const migrations = [
     answered_at TEXT NOT NULL,
     PRIMARY KEY (tenant_id, session_id, question_id)
   )`,
+  // S5-WFL-05: holder-verification failures per (tenant, keyed hash of policy number), module-owned and outside the session document.
+  `CREATE TABLE IF NOT EXISTS intake_holder_lockouts (
+    tenant_id TEXT NOT NULL,
+    policy_key TEXT NOT NULL,
+    failures INTEGER NOT NULL,
+    window_start INTEGER NOT NULL,
+    PRIMARY KEY (tenant_id, policy_key)
+  )`,
 ];
 
 export { createService };

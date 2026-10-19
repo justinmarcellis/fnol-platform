@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "review",
   "dependsOn": [],
   "createdAt": "2026-10-19T03:18:54.887Z",
   "history": [
@@ -7,6 +7,21 @@
       "at": "2026-10-19T03:19:24.252Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T03:20:42.784Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T03:21:06.050Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T03:22:53.220Z",
+      "from": "in_progress",
+      "to": "review"
     }
   ],
   "id": "S5-WFL-05",
@@ -33,5 +48,68 @@
   "valueDrivers": [
     "VD-7"
   ],
-  "startedAt": "2026-10-19T03:19:24.252Z"
+  "startedAt": "2026-10-19T03:19:24.252Z",
+  "review": {
+    "reworkCount": 2,
+    "verdicts": [
+      {
+        "at": "2026-10-19T03:21:06.049Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "tests/unit/intake/ does not pass: policy-vehicles-holder.test.js 'four failures then the right answer still succeeds' fails (77/78); acceptance requires the intake unit suite green, so the holder test file needs fixing (isolate the policy or reset the lockout table) before accept"
+      },
+      {
+        "at": "2026-10-19T03:21:40.219Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "tests/unit/intake still 77/78: policy-vehicles-holder.test.js 'four failures then the right answer still succeeds' fails because the cumulative per-policy lockout carries over; holder test needs lockout-table reset (path must be added to ticket or manager must authorize the edit)"
+      }
+    ],
+    "firstPass": false
+  },
+  "spend": {
+    "usd": 0.6346,
+    "inputTokens": 52,
+    "cacheWriteTokens": 108917,
+    "cacheReadTokens": 1715681,
+    "outputTokens": 1904,
+    "agents": {
+      "a1d6f597efe9786eb": {
+        "label": "S5-WFL-05 ic-workflow-intake-flow-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 32,
+        "cacheWriteTokens": 46684,
+        "cacheReadTokens": 1173246,
+        "outputTokens": 200,
+        "usd": 0.3534
+      },
+      "a2527085913695aea": {
+        "label": "S5-WFL-05 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 21677,
+        "cacheReadTokens": 161123,
+        "outputTokens": 46,
+        "usd": 0.0869
+      },
+      "a6f752f54b23d1dad": {
+        "label": "S5-WFL-05 ic-workflow-intake-flow-dev rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 20988,
+        "cacheReadTokens": 221091,
+        "outputTokens": 875,
+        "usd": 0.1055
+      },
+      "ab541d87fa43b7505": {
+        "label": "S5-WFL-05 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 19568,
+        "cacheReadTokens": 160221,
+        "outputTokens": 783,
+        "usd": 0.0888
+      }
+    }
+  }
 }

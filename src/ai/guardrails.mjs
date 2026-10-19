@@ -124,6 +124,18 @@ const RE_PLATE_LABELED = /\b((?:license|licence)?[ \t]{0,3}(?:plate|tag)(?:[ \t]
 const RE_PLATE_BARE = /\b(?:[A-Z]{3}[ -]?\d{3,4}|\d[A-Z]{3}\d{3})\b/g;
 const HONORIFIC = /\b(?:Mr|Mrs|Ms|Mx|Miss|Dr|Prof|Officer|Sgt|Det)\.?\s+((?:[A-Z][a-z'-]+)(?:\s+[A-Z][a-z'-]+){0,2})/g;
 const LABELED_NAME = /\b(?:name|claimant|insured|policyholder|driver|owner|witness|passenger|reported by|contact|caller|adjuster)\b(?:\s+name)?\s*[:\-]\s*([A-Za-z][\w'-]+(?:\s+[A-Za-z][\w'-]+){1,3})/gi;
+// Labelled names (S5-AI-08): label (case-insensitive, colon optional) then Capitalised words. Every quantifier is bounded; no nesting.
+const LABEL_NAME = /(?<!\b(?:shop|business|company|vendor|file|policy|plan|insurer|carrier)[ \t])\b((?:customer|claimant|insured|owner|driver|witness|contact|policyholder|name|cited|reported by|other driver)\b[ \t]{0,3}(:?)[ \t]{0,3})([A-Za-z][\w'-]*(?:[ \t]+[A-Za-z][\w'-]*){0,4})/gi;
+const LABEL_STOP = new Set(['phone', 'tel', 'telephone', 'mobile', 'cell', 'email', 'address', 'policy', 'claim', 'vehicle', 'information', 'info', 'details', 'unit', 'party', 'and', 'the', 'was', 'is', 'of']);
+/** Leading Capitalised words (max 4), stopping at labels like Phone or any non-name word. */
+function labelledName(c) {
+  const out = [];
+  for (const w of c.split(/[ \t]+/)) {
+    if (w.length > 30 || !/^[A-Z][A-Za-z'-]*$/.test(w) || LABEL_STOP.has(w.toLowerCase()) || out.length === 4) break;
+    out.push(w);
+  }
+  return out.join(' ');
+}
 const INLINE_NAME = /\b(?:my name is|this is|I am|I'm)\s+([A-Za-z][\w'-]+(?:\s+[A-Za-z][\w'-]+){1,3})/gi;
 /** Keep only the leading Capitalised words of a captured candidate (max 3). */
 function leadingName(c) {
@@ -184,6 +196,11 @@ export function redact(text, opts = {}) {
   s = s.replace(RE_PLATE_LABELED, (m, lead, plate) => (/\d/.test(plate) ? `${lead}${token(state, 'PLATE', plate)}` : m));
   s = s.replace(RE_PLATE_BARE, (m) => token(state, 'PLATE', m));
   s = s.replace(HONORIFIC, (m, nm) => (plainName(nm) ? m.replace(nm, token(state, 'NAME', nm)) : m));
+  s = s.replace(LABEL_NAME, (m, lead, colon, cand) => {
+    const nm = labelledName(cand);
+    if (!nm || !plainName(nm) || (!colon && !nm.includes(' '))) return m;
+    return `${lead}${token(state, 'NAME', nm)}${m.slice(lead.length + nm.length)}`;
+  });
   for (const re of [LABELED_NAME, INLINE_NAME]) {
     s = s.replace(re, (m, cand) => {
       const nm = leadingName(cand);

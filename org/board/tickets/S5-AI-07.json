@@ -1,5 +1,5 @@
 {
-  "status": "review",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T03:18:54.886Z",
   "history": [
@@ -12,6 +12,11 @@
       "at": "2026-10-19T03:19:16.897Z",
       "from": "in_progress",
       "to": "review"
+    },
+    {
+      "at": "2026-10-19T03:20:09.400Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-AI-07",
@@ -36,5 +41,54 @@
   "valueDrivers": [
     "VD-4"
   ],
-  "startedAt": "2026-10-19T03:19:05.812Z"
+  "startedAt": "2026-10-19T03:19:05.812Z",
+  "doneAt": "2026-10-19T03:20:09.400Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T03:20:09.399Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Schema passed with tier/model as cascade does; regression test fails on old code (16/1) and 23 tests pass with fix"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6465,
+    "inputTokens": 24,
+    "cacheWriteTokens": 211729,
+    "cacheReadTokens": 553214,
+    "outputTokens": 647,
+    "agents": {
+      "a318e0ada842be259": {
+        "label": "S5-AI-07 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 61942,
+        "cacheReadTokens": 179139,
+        "outputTokens": 66,
+        "usd": 0.1914
+      },
+      "a68256cf519bae063": {
+        "label": "S5-AI-07 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 4,
+        "cacheWriteTokens": 80810,
+        "cacheReadTokens": 55860,
+        "outputTokens": 20,
+        "usd": 0.2134
+      },
+      "aadd53cd07b8ab441": {
+        "label": "S5-AI-07 ic-ai-eval-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 68977,
+        "cacheReadTokens": 318215,
+        "outputTokens": 561,
+        "usd": 0.2417
+      }
+    }
+  }
 }
