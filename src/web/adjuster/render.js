@@ -177,6 +177,11 @@ export function provenanceHtml(ai) {
   ], 'fx-kv adj-prov');
 }
 
+/** Rewrite bare ISO dates (2026-03-30) and ISO timestamps in prose with the shared formatters. */
+export function dateify(text) {
+  return String(text ?? '').replace(/\b(\d{4}-\d{2}-\d{2})(T[\d:.]+Z?)?\b/g, (m, d, time) => (time ? formatDateTime(m) : fmtDay(d)));
+}
+
 /** Split the "Facts used:" trailer the summariser appends from the narrative. */
 export function splitSummary(text) {
   const m = /\n+Facts used:\s*([\s\S]*)$/.exec(String(text ?? ''));
@@ -189,13 +194,15 @@ export function summaryPanel(view) {
   const heading = t('adj.panel.summary');
   if (!s?.text) return card('summary', heading, none('adj.ai.noSummary'));
   if (!hasProvenance(s.ai)) return card('summary', heading, alert('warning', t('adj.panel.summary'), t('adj.ai.noProvenance')));
-  const { body, facts } = splitSummary(s.text);
+  const split = splitSummary(s.text);
+  const body = dateify(split.body);
+  const facts = dateify(split.facts);
   const explanation = s.explanation ?? view.triage?.explanation;
   const pct = pctOf(s.ai);
   const bullets = (s.bullets ?? []).length && !body.includes('- ') ? `<ul>${s.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` : '';
   const text = body.split(/\n+/).map((p) => (p.startsWith('- ') ? `<li>${esc(p.slice(2))}</li>` : `<p>${esc(p)}</p>`)).join('').replace(/(<li>.*?<\/li>)+/g, (m) => `<ul>${m}</ul>`);
   return card('summary', heading, `<div id="summary-text" class="adj-summary-text">${text}${bullets}</div>
-${facts ? `<p class="adj-muted">${esc(t('adj.ai.facts'))}: ${esc(facts)}</p>` : ''}
+${facts ? `<details class="adj-details" id="summary-details"><summary>${esc(t('adj.ai.details'))}</summary><p class="adj-muted">${esc(t('adj.ai.facts'))}: ${esc(facts)}</p></details>` : ''}
 <div class="adj-ai" id="summary-ai">${provenanceHtml(s.ai)}
 <div class="adj-explain"><h3>${esc(t('adj.ai.explanation'))}</h3><p id="summary-explanation">${esc(explanation || t('adj.ai.noExplanation'))}</p></div>
 ${pct < 60 ? `<p class="adj-warn" role="note">${esc(t('adj.ai.lowConfidence'))}</p>` : ''}${s.unconfirmed ? `<p class="adj-warn" role="note">${esc(t('adj.ai.unconfirmed'))}</p>` : ''}</div>`,

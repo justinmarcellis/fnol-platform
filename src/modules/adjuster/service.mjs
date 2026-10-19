@@ -13,6 +13,10 @@ async function safe(fn, fallback, { strict = false } = {}) {
   }
 }
 
+/** Open timers (not met or cancelled), earliest due first. Same rule as the claim view. */
+const openTimers = (timers) => timers.filter((x) => !['met', 'cancelled'].includes(x.status)).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
+const dueMs = (row) => { const d = Date.parse(row.nextTimer?.dueAt); return Number.isNaN(d) ? Infinity : d; };
+
 const enc = (n) => Buffer.from(String(n)).toString('base64url');
 const dec = (c) => {
   const n = parseInt(Buffer.from(String(c ?? ''), 'base64url').toString(), 10);
@@ -189,7 +193,7 @@ export function createService(ctx) {
      * @param {{adjusterId?: string, queue?: string, status?: string, limit?: number, cursor?: string}} [q]
      * @returns {{items: object[], nextCursor: string|null}}
      */
-    getInbox({ adjusterId, queue, status, limit = 50, cursor } = {}) {
+    async getInbox({ adjusterId, queue, status, limit = 50, cursor } = {}) {
       const lim = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 200);
       const where = [];
       const p = [];
@@ -210,6 +214,18 @@ export function createService(ctx) {
         nextTimer: ctx.db.parseJson(r.next_timer, undefined) ?? undefined,
         reportedAt: r.reported_at ?? undefined,
       }));
+      // The timer column reads the same source as the claim view (claims.listTimers), not the event-fed projection,
+      // which only learns of a timer once it is due soon or breached. The projection value is the fallback.
+      const claims = mod('claims');
+      if (claims?.listTimers) {
+        await Promise.all(page.map(async (row) => {
+          const live = await safe(() => claims.listTimers(row.claimId), null);
+          if (!Array.isArray(live)) return;
+          const next = openTimers(live)[0];
+          if (next) row.nextTimer = next; else delete row.nextTimer;
+        }));
+        page.sort((a, b) => dueMs(a) - dueMs(b));
+      }
       return { items: page, nextCursor: rows.length > lim ? enc(offset + lim) : null };
     },
   };

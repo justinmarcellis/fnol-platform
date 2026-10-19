@@ -228,3 +228,11 @@ Plain, specific, kind. Sentence case everywhere ("Recent claims", not "Recent Cl
 ## 13. Adoption (Wave B)
 
 Existing apps keep working unchanged: every v1 class (`.fx-btn`, `.secondary`, `.small`, `.skip`, `.muted`, `.fx-visually-hidden`) and element API is preserved, and base element styles use `:where()` so app CSS still wins. To adopt: wrap the page in `<fx-app-shell>`, remove the app's own header bar, move page actions to `slot="actions"`, replace raw status text with `<fx-badge>`, wrap sections in `<fx-card>`, and format every date, enum and amount with `format.js`.
+
+
+## 14. Design QA decisions (S6-EXP-07)
+
+- **Fonts.** The tenant brand font (`--fx-font`, e.g. Georgia for Aurelia Mutual) applies only to the shell brand mark and the tenant name. Page titles (`.fx-shell-title`), the demo bar and every control use the product UI font `--fx-font-ui`. Selects in the demo bar never fall back to a serif.
+- **Identity shown once.** When the demo bar sits inside `fx-app-shell`, the shell account menu shows the persona (name, role, tenant) and the demo bar hides its name/avatar block (`fx-app-shell[data-has-demo] fx-demo-bar .fxd-who`). A standalone demo bar, outside a shell, still shows it. The "Not signed in" state stays visible.
+- **AI summary card.** Dates in the narrative go through `format.js`; the `Facts used:` trailer is moved into a collapsed "Details" disclosure. Provider, model, confidence and explanation stay visible.
+- **Inbox timers.** The inbox timer column and the Due today / Overdue tiles use the next open timer from `claims.listTimers`, the same source as the claim view.

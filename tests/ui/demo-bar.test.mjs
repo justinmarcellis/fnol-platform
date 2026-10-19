@@ -84,6 +84,15 @@ test('switching claimant to adjuster lands signed in on the adjuster inbox', asy
   assert.ok(await page.locator('#inbox-body tr[data-claim-id]').count() >= 1, 'inbox has claims');
   assert.match(await page.textContent('fx-demo-bar .fxd-name'), /Jordan/);
   assert.match(await page.textContent('fx-demo-bar .fxd-role'), /Adjuster/);
+  // Identity is shown once: the shell account menu carries the persona, the demo bar block is hidden.
+  assert.equal(await page.locator('fx-demo-bar .fxd-who').first().isHidden(), true, 'demo bar does not repeat the persona');
+  assert.match(await page.textContent('fx-app-shell .fx-shell-username'), /Jordan/);
+  // Fonts: brand font only on the mark and tenant name; page title, demo bar and selects use the product UI font.
+  const ff = (sel) => page.locator(sel).first().evaluate((n) => getComputedStyle(n).fontFamily.replace(/"/g, "'").replace(/'Inter'/, 'Inter'));
+  const ui = (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--fx-font-ui').trim())).replace(/"/g, "'");
+  assert.match(await ff('fx-app-shell .fx-shell-tenant'), /Georgia/, 'tenant name keeps the brand font');
+  for (const sel of ['fx-app-shell .fx-shell-title', 'fx-demo-bar', 'fx-demo-bar select']) assert.equal(await ff(sel), ui.replace(/'Inter'/, 'Inter'), `${sel} uses the UI font`);
+  assert.doesNotMatch(await ff('fx-demo-bar select'), /Georgia/i);
   await page.screenshot({ path: SHOT });
   await page.context().close();
 });

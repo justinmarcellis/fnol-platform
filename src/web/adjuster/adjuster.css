@@ -28,6 +28,8 @@ fx-table tr[data-claim-id] { cursor: pointer; }
 .adj-check { display: flex !important; flex-wrap: wrap; gap: var(--fx-space-2); align-items: center; }
 .adj-older { margin-top: var(--fx-space-3); }
 .adj-older summary { cursor: pointer; color: var(--fx-brand); font-weight: var(--fx-fw-medium); min-height: 24px; }
+.adj-details { margin-top: var(--fx-space-3); }
+.adj-details summary { cursor: pointer; color: var(--fx-brand-text, var(--fx-brand)); font-weight: var(--fx-fw-medium); min-height: 24px; }
 .adj-summary-text p { margin: 0 0 var(--fx-space-3); line-height: var(--fx-lh); }
 .adj-summary-text ul { margin: 0 0 var(--fx-space-3); padding-left: var(--fx-space-5); }
 .adj-ai { margin-top: var(--fx-space-4); padding: var(--fx-space-4); border: 1px solid var(--fx-divider); border-radius: var(--fx-radius-md, 8px); background: var(--fx-surface); }

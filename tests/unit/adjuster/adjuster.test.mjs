@@ -144,25 +144,44 @@ test('inbox projection follows claim events; filters and cursor pagination', asy
   bus.publish('beta', 'claim.reported', 'clm_b', { claimId: 'clm_b', claimNumber: 'BET-1', lob: 'homeowners', channel: 'web', lossDate: '2026-09-15', lossCause: 'fire', reportedAt: TS });
   await bus.drain();
 
-  const all = adj().getInbox({});
+  put('timers', 'alpha', 'clm_00000000000000000002', [{ id: 'tmr_1', claimId: 'clm_00000000000000000002', kind: 'contact', state: 'WI', status: 'breached', dueAt: '2026-09-16T09:00:00.000Z' }]);
+  const all = await adj().getInbox({});
   assert.equal(all.items.length, 3);
-  const mine = adj().getInbox({ adjusterId: 'adj1' });
+  const mine = await adj().getInbox({ adjusterId: 'adj1' });
   assert.deepEqual(mine.items.map((r) => r.claimId), ['clm_00000000000000000002', 'clm_00000000000000000003']); // timer first
   assert.deepEqual(mine.items[0].flags.sort(), ['subrogation', 'timer_breached']);
   assert.equal(mine.items[0].nextTimer.status, 'breached');
   assert.ok(mine.items[1].flags.includes('siu'));
-  assert.equal(adj().getInbox({ queue: 'siu' }).items.length, 1);
-  assert.equal(adj().getInbox({ adjusterId: 'adj2' }).items[0].status, 'in_review');
+  assert.equal((await adj().getInbox({ queue: 'siu' })).items.length, 1);
+  assert.equal((await adj().getInbox({ adjusterId: 'adj2' })).items[0].status, 'in_review');
 
-  const p1 = adj().getInbox({ limit: 2 });
+  const p1 = await adj().getInbox({ limit: 2 });
   assert.equal(p1.items.length, 2);
   assert.ok(p1.nextCursor);
-  const p2 = adj().getInbox({ limit: 2, cursor: p1.nextCursor });
+  const p2 = await adj().getInbox({ limit: 2, cursor: p1.nextCursor });
   assert.equal(p2.items.length, 1);
   assert.equal(p2.nextCursor, null);
 
-  assert.equal(adj('beta').getInbox({}).items.length, 1);
-  assert.equal(adj('beta').getInbox({}).items[0].claimNumber, 'BET-1');
+  assert.equal((await adj('beta').getInbox({})).items.length, 1);
+  assert.equal((await adj('beta').getInbox({})).items[0].claimNumber, 'BET-1');
+});
+
+test('inbox timer column comes from the live claim timers, same as the claim view', async () => {
+  const id = 'clm_00000000000000000009';
+  app.ctx.bus.publish('alpha', 'claim.reported', id, { claimId: id, claimNumber: 'ALP-9', lob: 'personal_auto', channel: 'web', lossDate: '2026-09-15', lossCause: 'collision', reportedAt: TS });
+  await app.ctx.bus.drain();
+  const timers = [
+    { id: 't2', claimId: id, kind: 'contact', state: 'WI', status: 'running', dueAt: '2026-09-18T09:00:00.000Z' },
+    { id: 't1', claimId: id, kind: 'acknowledge', state: 'WI', status: 'met', dueAt: '2026-09-16T09:00:00.000Z' },
+    { id: 't3', claimId: id, kind: 'investigate', state: 'WI', status: 'running', dueAt: '2026-10-30T09:00:00.000Z' },
+  ];
+  put('timers', 'alpha', id, timers);
+  const row = (await adj().getInbox({})).items.find((r) => r.claimId === id);
+  assert.equal(row.nextTimer.kind, 'contact'); // earliest open timer; the projection alone knows of none
+  const view = await adj().getFirstView(id).catch(() => null);
+  if (view) assert.equal(view.timers.find((x) => x.id === row.nextTimer.id)?.kind, 'contact');
+  put('timers', 'alpha', id, [timers[1]]);
+  assert.equal((await adj().getInbox({})).items.find((r) => r.claimId === id).nextTimer, undefined);
 });
 
 test('routes: roles, inbox mine/queue, view, 404, tenant isolation', async () => {

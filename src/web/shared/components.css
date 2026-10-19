@@ -444,7 +444,7 @@ fx-app-shell .fx-shell-menuitem:hover, fx-app-shell .fx-shell-menuitem:focus-vis
 fx-app-shell .fx-shell-menuitem:focus-visible { box-shadow: inset 0 0 0 2px var(--fx-focus); }
 fx-app-shell .fx-shell-main { flex: 1; width: 100%; max-width: var(--fx-content-max); margin: 0 auto; padding: var(--fx-space-6) var(--fx-space-6) var(--fx-space-9); }
 fx-app-shell .fx-shell-pagehead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--fx-space-4); flex-wrap: wrap; margin-bottom: var(--fx-space-6); }
-fx-app-shell .fx-shell-title { font-family: var(--fx-font); font-size: var(--fx-fs-2xl); font-weight: var(--fx-fw-semibold); letter-spacing: -0.015em; margin: 0; }
+fx-app-shell .fx-shell-title { font-family: var(--fx-font-ui); font-size: var(--fx-fs-2xl); font-weight: var(--fx-fw-semibold); letter-spacing: -0.015em; margin: 0; }
 fx-app-shell .fx-shell-subtitle { margin: var(--fx-space-1) 0 0; color: var(--fx-text-muted); font-size: var(--fx-fs-md); }
 fx-app-shell .fx-shell-actions { display: flex; flex-wrap: wrap; gap: var(--fx-space-2); align-items: center; }
 fx-app-shell .fx-shell-actions:empty { display: none; }
@@ -484,3 +484,8 @@ fx-app-shell .fx-shell-actions:empty { display: none; }
 .fx-kv { display: grid; grid-template-columns: max-content 1fr; gap: var(--fx-space-2) var(--fx-space-5); font-size: var(--fx-fs-md); margin: 0; }
 .fx-kv dt { color: var(--fx-text-muted); font-weight: var(--fx-fw-regular); }
 .fx-kv dd { margin: 0; font-weight: var(--fx-fw-medium); }
+
+/* Brand font (--fx-font) is for the brand mark and tenant name only. The demo band is product chrome. */
+fx-demo-bar, fx-demo-bar select, fx-demo-bar button { font-family: var(--fx-font-ui); }
+/* Identity is shown once: inside the shell the account menu carries the persona, so the demo bar does not repeat it. */
+fx-app-shell[data-has-demo] fx-demo-bar .fxd-who:not(.fxd-role) { display: none; }

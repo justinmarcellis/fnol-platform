@@ -74,12 +74,15 @@ test('subrogation flag shows a banner only when present', () => {
 test('AI summary always shows provider, model, confidence and explanation', () => {
   const html = R.summaryPanel(fakeView());
   assert.match(html, /Two-car collision/);
-  assert.ok(!/<details/.test(html), 'provenance is never collapsed');
+  assert.ok(!/<details[^>]*>[\s\S]*(Provider|Confidence|Built from claim facts)[\s\S]*<\/details>/.test(html), 'provenance is never collapsed');
   assert.match(html, /local-rules-v1/);
   assert.match(html, /Provider/);
   assert.match(html, /Confidence 82%/);
   assert.match(html, /Built from claim facts/);
-  assert.match(html, /Facts used: lossCause=collision/);
+  assert.match(html, /<details[^>]*id="summary-details"[^>]*><summary>Details<\/summary>[\s\S]*Facts used: lossCause=collision/, 'debug facts live in a collapsed Details section');
+  const dated = R.summaryPanel(fakeView({ summary: { text: 'Loss on 2026-03-30 reported.\nFacts used: lossDate=2026-03-30', ai: { provider: 'local', model: 'm', confidence: 0.9 }, explanation: 'x' } }));
+  assert.ok(!dated.includes('2026-03-30'), 'dates go through format.js');
+  assert.match(dated, /Mar 30, 2026/);
   assert.match(R.summaryPanel(fakeView({ summary: { text: 'x', ai: { provider: 'local', model: 'm', confidence: 0.4 } } })), /Low confidence/);
   assert.match(R.summaryPanel(fakeView({ summary: undefined })), /No summary has been generated/);
 });

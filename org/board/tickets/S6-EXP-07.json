@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T13:17:40.124Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T13:17:53.168Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T13:20:22.600Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:23:30.508Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-EXP-07",
@@ -38,5 +48,54 @@
     "Regenerate screenshots docs/design/screens/adjuster-inbox, adjuster-claim, demo-bar and kitchen-sink-light; the reviewer opens them; full npm test no new failures"
   ],
   "brief": "Orchestrator design review of Wave B found these issues in docs/design/screens/adjuster-*.png, admin-*.png, csr-*.png, claimant-question.png. Do not edit src/web/claimant, csr or admin (they inherit the shared font fix), src/server.mjs or test harness files (S6-PLT-01 runs in parallel).",
-  "startedAt": "2026-10-19T13:17:53.168Z"
+  "startedAt": "2026-10-19T13:17:53.168Z",
+  "doneAt": "2026-10-19T13:23:30.508Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T13:23:30.508Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; 114/114 scoped tests pass; full npm test has no new failures (only baseline TODOs); screenshots verified"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.262,
+    "inputTokens": 84,
+    "cacheWriteTokens": 207526,
+    "cacheReadTokens": 3669191,
+    "outputTokens": 918,
+    "agents": {
+      "a0c0ed267444203f8": {
+        "label": "S6-EXP-07 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 31141,
+        "cacheReadTokens": 434388,
+        "outputTokens": 426,
+        "usd": 0.169
+      },
+      "a940a181de38044d0": {
+        "label": "S6-EXP-07 ic-experience-ux-designer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 56,
+        "cacheWriteTokens": 83239,
+        "cacheReadTokens": 2761870,
+        "outputTokens": 373,
+        "usd": 0.7643
+      },
+      "ad979088c19c39919": {
+        "label": "S6-EXP-07 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 93146,
+        "cacheReadTokens": 472933,
+        "outputTokens": 119,
+        "usd": 0.3287
+      }
+    }
+  }
 }

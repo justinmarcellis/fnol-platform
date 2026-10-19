@@ -13,7 +13,7 @@ export function registerRoutes(router) {
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
       throw new req.ctx.AppError('validation_error', 'limit must be an integer between 1 and 200', 400);
     }
-    res.json(200, req.ctx.modules.adjuster.getInbox({
+    res.json(200, await req.ctx.modules.adjuster.getInbox({
       adjusterId: mine ? req.user.sub : undefined, queue: q.queue, limit, cursor: q.cursor,
     }));
   }, { roles: ROLES });
