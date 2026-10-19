@@ -1,0 +1,39 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T03:23:19.591Z",
+  "history": [
+    {
+      "at": "2026-10-19T03:23:36.787Z",
+      "from": "ready",
+      "to": "in_progress"
+    }
+  ],
+  "id": "S5-SEC-01",
+  "team": "security",
+  "title": "Security re-review of Sprint 5 fixes; close findings with real tests",
+  "story": "As the sponsor I want an independent security re-review to decide which findings are closed so that the open-finding tally is true",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-security-security-reviewer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "tests/security/sec2-availability-ai.test.mjs",
+    "tests/security/sec2-rbac-pii.test.mjs",
+    "tests/security/sec2-webhooks.test.mjs",
+    "tests/security/s5-regressions.test.mjs",
+    "tests/security/routes.snapshot.json",
+    "architecture/security-review-s2.md"
+  ],
+  "acceptance": [
+    "For each of SEC2-009, 010, 011, 013, 014, 017, SEC3-002..006 and the policy-vehicles oracle: re-verify against the code at HEAD by reading and running it, then record fixed / partly fixed / open with evidence in a new section 13 'Sprint 5 re-review (S5-SEC-01)' of architecture/security-review-s2.md; only a finding verified fixed by a passing real test is closed",
+    "Flip t.todo to a real test for every finding verified fixed (SEC2-009, 010, 013, 017 at least if verified); add tests/security/s5-regressions.test.mjs covering the oracle (uniform 404 claimant/agent, last name + ZIP, per-policy lockout across sessions and parallel requests from S5-WFL-05), unsafe tenant regex rejected at save (SEC2-014/SEC3-003), labelled-name redaction before cloud calls (S5-AI-08), X-Fnol-Authorization accepted and bad tokens rejected in either header (S5-EXP-01)",
+    "Security gate for S5-WFL-05 (src/modules/intake/service.js lockout, intake/index.mjs migration): report findings in section 13; a high finding is a blocker posted to the security hub",
+    "Refresh routes.snapshot.json only if the role matrix changed this sprint, and say which operation changed",
+    "Section 13 ends with a true tally of open findings by severity (do not count a finding closed because its ticket was accepted); also list known accepted risks: R2 devMode on the IAP-only deployment (deferred to Sprint 6 by decision), KMS spike envelope not tenant-bound (spike, not wired)",
+    "npm test passes with 0 failures and fewer todos than the baseline in org/quality-baseline.txt"
+  ],
+  "brief": "Sprint 5 tickets and their files: org/board/tickets/S5-*.json and git log. The fixes landed on main; read the security hub and decisions hub first. You are the only writer of tests/security this sprint. If a fix is incomplete, leave its todo, mark it open with the exact failing scenario, and post a blocker to the security hub; do not fix product code.",
+  "startedAt": "2026-10-19T03:23:36.787Z"
+}
