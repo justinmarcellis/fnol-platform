@@ -5,6 +5,14 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { snapshot, ORG } from '../org/fabric.mjs';
 import { computeMetrics, parseValueDrivers } from './metrics.mjs';
+import { computeFeed } from '../org/live-export.mjs';
+
+// Live feed is rebuilt from the fabric at most every 3 s while agents work.
+let feedCache = { at: 0, docs: null };
+function liveFeed() {
+  if (!feedCache.docs || Date.now() - feedCache.at > 3000) feedCache = { at: Date.now(), docs: computeFeed().docs };
+  return feedCache.docs;
+}
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const FILES = {
@@ -40,6 +48,14 @@ export function start({ port = Number(process.env.PORT) || 8090 } = {}) {
     try {
       if (req.method !== 'GET') return send(405, 'application/json', '{"error":{"code":"method_not_allowed","message":"GET only"}}');
       if (path === '/api/snapshot') return send(200, 'application/json', JSON.stringify(snapshot()));
+      if (path.startsWith('/api/live/')) {
+        const doc = liveFeed()[path.slice('/api/live/'.length)];
+        return doc ? send(200, 'application/json', JSON.stringify(doc)) : send(404, 'application/json', '{"error":{"code":"not_found","message":"Unknown feed document"}}');
+      }
+      if (path === '/live') {
+        const page = readFileSync(join(DIR, 'live.html'), 'utf8').replace('__SEED__', () => JSON.stringify(liveFeed()).replace(/</g, '\\u003c'));
+        return send(200, 'text/html; charset=utf-8', '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' + page);
+      }
       if (path === '/api/metrics') return send(200, 'application/json', JSON.stringify(build().metrics));
       const f = FILES[path];
       if (f) return send(200, f[1], readFileSync(join(DIR, f[0])));

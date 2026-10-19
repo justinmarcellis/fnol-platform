@@ -1,0 +1,437 @@
+<title>FNOL Program Live Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: program control room — header with data-source badge and KPIs, tabbed views; synapse view is a full-width canvas */
+:root {
+  --bg: #f4f6f8; --surface: #ffffff; --sunken: #eaeef2; --ink: #16212b; --muted: #556472; --rule: #d5dde4;
+  --accent: #0f6c80; --accent-soft: #dcefF3; --good: #22794a; --warn: #a35d00; --bad: #b42d24;
+  --good-soft: #e1f2e8; --warn-soft: #fbefdc; --bad-soft: #f9e2e0;
+  --net-bg: #0d141b; --net-ink: #dfe8ee; --net-dim: #6f8493;
+  --t-product: #c9802b; --t-experience: #b5539a; --t-ai: #6c63d8; --t-workflow: #2f8f8a; --t-integrations: #3b7dd8;
+  --t-platform: #7c8a2e; --t-security: #c94a3f; --t-quality: #3f9d58; --t-pmo: #8a6f5a; --t-integration: #1f9fb3; --t-leadership: #e3b341;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f151b; --surface: #16202a; --sunken: #111a22; --ink: #e2e9ee; --muted: #93a3b0; --rule: #273541;
+    --accent: #56b8cc; --accent-soft: #163640; --good: #5cc488; --warn: #e8a24a; --bad: #ef7f76;
+    --good-soft: #16301f; --warn-soft: #36280f; --bad-soft: #3a1b18; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f151b; --surface: #16202a; --sunken: #111a22; --ink: #e2e9ee; --muted: #93a3b0; --rule: #273541;
+  --accent: #56b8cc; --accent-soft: #163640; --good: #5cc488; --warn: #e8a24a; --bad: #ef7f76;
+  --good-soft: #16301f; --warn-soft: #36280f; --bad-soft: #3a1b18; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--body); margin: 0; }
+.wrap { max-width: 1400px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 60px; display: grid; gap: 18px; }
+header.top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: end; justify-content: space-between; }
+h1 { font: 700 26px/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 600 18px/1.2 var(--display); margin: 0; }
+.sub { color: var(--muted); font-size: 13px; }
+.source { display: inline-flex; gap: 8px; align-items: center; font: 500 12px var(--mono); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.source.live .dot { background: var(--good); box-shadow: 0 0 0 0 var(--good); animation: ping 2s infinite; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 60%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+@media (prefers-reduced-motion: reduce) { .source.live .dot { animation: none; } }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.kpi { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; display: grid; gap: 2px; }
+.kpi .v { font: 600 22px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.kpi .l { font: 500 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--rule); }
+nav.tabs button { font: 500 14px var(--body); background: none; border: 0; color: var(--muted); padding: 8px 12px; border-bottom: 2px solid transparent; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+select, .btn { font: 500 13px var(--body); background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 5px; padding: 5px 9px; }
+.btn { cursor: pointer; }
+.board { display: grid; grid-template-columns: repeat(5, minmax(230px, 1fr)); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.col { background: var(--sunken); border-radius: 6px; padding: 8px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.col h3 { margin: 0; font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: flex; justify-content: space-between; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--tc, var(--accent)); border-radius: 4px; padding: 8px 10px; display: grid; gap: 5px; min-width: 0; }
+.card .id { font: 500 11px var(--mono); color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.card .t { font-weight: 600; font-size: 13px; line-height: 1.3; }
+.card .s { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font: 500 11px var(--mono); padding: 1px 6px; border-radius: 999px; background: var(--sunken); color: var(--muted); white-space: nowrap; }
+.chip.good { background: var(--good-soft); color: var(--good); } .chip.warn { background: var(--warn-soft); color: var(--warn); } .chip.bad { background: var(--bad-soft); color: var(--bad); }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 760px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+td.n { font-variant-numeric: tabular-nums; font-family: var(--mono); white-space: nowrap; }
+.pill { font: 600 11px var(--mono); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.active { background: var(--good-soft); color: var(--good); } .pill.watch { background: var(--warn-soft); color: var(--warn); } .pill.deprecated { background: var(--bad-soft); color: var(--bad); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+svg text { fill: var(--muted); font: 11px var(--mono); }
+.net { position: relative; background: var(--net-bg); border-radius: 8px; overflow: hidden; min-height: 520px; }
+.net canvas { display: block; width: 100%; height: 620px; touch-action: none; }
+.net .hud { position: absolute; left: 12px; top: 10px; right: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--net-ink); font: 12px var(--mono); pointer-events: none; }
+.net .hud > * { pointer-events: auto; }
+.net .clock { background: color-mix(in srgb, var(--net-bg) 70%, transparent); padding: 4px 8px; border-radius: 4px; }
+.net .tip { position: absolute; pointer-events: none; background: #f4f7f9; color: #16212b; font: 12px var(--body); padding: 8px 10px; border-radius: 5px; max-width: 280px; box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.controls input[type=range] { flex: 1 1 260px; accent-color: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.feed { max-height: 360px; overflow: auto; display: grid; gap: 4px; font-size: 12px; }
+.feed div { display: grid; grid-template-columns: 70px 120px minmax(0,1fr); gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--rule); }
+.feed .k { font-family: var(--mono); color: var(--muted); }
+.note { font-size: 12px; color: var(--muted); max-width: 90ch; }
+[hidden] { display: none !important; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>FNOL Program Live Board</h1>
+      <div class="sub">Scrum board, velocity, agent stack rank and decision network for the AI-staffed FNOL PoC program. Every figure comes from the program's own records.</div>
+    </div>
+    <div class="source" id="source" role="status"><span class="dot"></span><span id="sourceText">Loading data…</span></div>
+  </header>
+  <section class="kpis" id="kpis" aria-label="Program totals"></section>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button role="tab" aria-selected="true" data-tab="board" id="tab-board">Scrum board</button>
+    <button role="tab" aria-selected="false" data-tab="velocity" id="tab-velocity">Velocity</button>
+    <button role="tab" aria-selected="false" data-tab="rank" id="tab-rank">Agent rank</button>
+    <button role="tab" aria-selected="false" data-tab="net" id="tab-net">Decision network</button>
+  </nav>
+
+  <section id="view-board" role="tabpanel" aria-labelledby="tab-board" class="panel">
+    <div class="bar">
+      <label>Sprint <select id="fSprint"></select></label>
+      <label>Team <select id="fTeam"></select></label>
+      <span class="sub" id="boardCount"></span>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section id="view-velocity" role="tabpanel" aria-labelledby="tab-velocity" class="panel" hidden>
+    <div class="grid2">
+      <div><h2>Committed vs completed points</h2><div id="velChart"></div></div>
+      <div><h2>Points per dollar</h2><div id="ppdChart"></div></div>
+    </div>
+    <div class="tbl"><table id="velTable"></table></div>
+  </section>
+
+  <section id="view-rank" role="tabpanel" aria-labelledby="tab-rank" class="panel" hidden>
+    <p class="note">Agent configurations ranked by composite score (first-pass acceptance 35%, no rework 20%, estimate accuracy 20%, cost efficiency 15%, no escaped defects 10%). Policy (ADR-004): fewer than 3 tickets is low confidence and never acted on. A flagged configuration is diagnosed and given an intervention. One that stays in the bottom 10% for two sprints after its intervention is deprecated and gets no new tickets.</p>
+    <div class="tbl"><table id="rankTable"></table></div>
+  </section>
+
+  <section id="view-net" role="tabpanel" aria-labelledby="tab-net" class="panel" hidden>
+    <div class="net" id="net">
+      <canvas id="netCanvas" aria-label="Decision network: agents and hubs connected by recorded messages, reviews, assignments and agent runs" role="img"></canvas>
+      <div class="hud"><span class="clock" id="netClock"></span><span class="clock" id="netActive"></span></div>
+      <div class="tip" id="netTip" hidden></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="play" aria-pressed="false">Replay</button>
+      <input type="range" id="scrub" min="0" max="1000" value="1000" aria-label="Timeline position">
+      <label>Speed <select id="speed"><option value="1">1×</option><option value="3" selected>3×</option><option value="10">10×</option></select></label>
+      <label><input type="checkbox" id="followLive" checked> Follow live</label>
+    </div>
+    <div class="legend" id="legend"></div>
+    <p class="note">Each pulse is one recorded event moving along the edge it happened on: a hub message, a ticket status change, a review verdict, or an agent run starting. Replay plays the real event order, time-compressed. Node size is the node's total recorded activity; hubs are the activity centers. Brightly lit edges carried an event in the last few minutes of the timeline position.</p>
+    <div class="grid2">
+      <div><h2>Event stream</h2><div class="feed" id="feed"></div></div>
+      <div><h2>Most active centers</h2><div class="tbl"><table id="centers" style="min-width:0"></table></div></div>
+    </div>
+  </section>
+</div>
+
+<script id="seed" type="application/json">__SEED__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, attrs = {}, kids = []) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'text') e.textContent = v; else if (k === 'style') e.style.cssText = v; else e.setAttribute(k, v); } for (const c of [].concat(kids)) if (c) e.append(c); return e; };
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const teamColor = (t) => css(`--t-${t}`) || css('--accent');
+  const fmtUsd = (n) => '$' + (n ?? 0).toFixed(2);
+  const fmtT = (iso) => iso ? new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  const STATUS_COLS = [['backlog|ready', 'Ready'], ['in_progress', 'In progress'], ['review', 'Review'], ['done', 'Done'], ['blocked', 'Blocked']];
+
+  let data = null; let source = 'snapshot';
+  const seedText = $('#seed').textContent;
+  try { if (!seedText.startsWith('__')) data = JSON.parse(seedText); } catch {}
+
+  function setSource(kind, at) {
+    source = kind;
+    const s = $('#source');
+    s.classList.toggle('live', kind !== 'snapshot');
+    $('#sourceText').textContent = (kind === 'db' ? 'Live feed' : kind === 'local' ? 'Local live feed' : 'Snapshot') + ' · data as of ' + fmtT(at);
+  }
+
+  // ---------- KPIs
+  function renderKpis() {
+    const b = data.board; const t = b.tickets;
+    const done = t.filter((x) => x.status === 'done');
+    const pts = done.reduce((a, x) => a + x.points, 0);
+    const usd = t.reduce((a, x) => a + x.usd, 0);
+    const reviewed = t.filter((x) => x.firstPass !== null);
+    const fp = reviewed.filter((x) => x.firstPass).length;
+    const defects = t.reduce((a, x) => a + x.defects, 0);
+    const runs = data.events.items.filter((e) => e.kind.startsWith('run:')).length;
+    const k = [[pts, 'points delivered'], [`${done.length}/${t.length}`, 'stories done'], [b.sprints.length, 'sprints'], [`${Math.round(100 * fp / Math.max(1, reviewed.length))}%`, 'first-pass acceptance'],
+      [defects, 'escaped defects found'], [runs, 'agent runs'], [fmtUsd(usd), 'spent'], [(pts / Math.max(usd, 0.01)).toFixed(1), 'points per $']];
+    $('#kpis').replaceChildren(...k.map(([v, l]) => el('div', { class: 'kpi' }, [el('span', { class: 'v', text: String(v) }), el('span', { class: 'l', text: l })])));
+  }
+
+  // ---------- Scrum board
+  function renderBoard() {
+    const t = data.board.tickets;
+    const fs = $('#fSprint'); const ft = $('#fTeam');
+    if (!fs.options.length) {
+      fs.append(el('option', { value: 'all', text: 'All sprints' }), ...data.board.sprints.map((s) => el('option', { value: String(s.number), text: s.name })));
+      fs.value = String(Math.max(...data.board.sprints.map((s) => s.number)));
+      ft.append(el('option', { value: 'all', text: 'All teams' }), ...[...new Set(t.map((x) => x.team))].sort().map((x) => el('option', { value: x, text: x })));
+      fs.onchange = renderBoard; ft.onchange = renderBoard;
+    }
+    const rows = t.filter((x) => (fs.value === 'all' || String(x.sprint) === fs.value) && (ft.value === 'all' || x.team === ft.value));
+    $('#boardCount').textContent = `${rows.length} stories · ${rows.reduce((a, x) => a + x.points, 0)} points`;
+    $('#board').replaceChildren(...STATUS_COLS.map(([keys, label]) => {
+      const inCol = rows.filter((x) => keys.split('|').includes(x.status));
+      return el('div', { class: 'col' }, [el('h3', {}, [el('span', { text: label }), el('span', { text: `${inCol.length} · ${inCol.reduce((a, x) => a + x.points, 0)}pt` })]),
+        ...inCol.map((x) => {
+          const chips = [el('span', { class: 'chip', text: `${x.points} pt` }), el('span', { class: 'chip', text: x.tier })];
+          if (x.firstPass === true) chips.push(el('span', { class: 'chip good', text: 'first pass' }));
+          if (x.rework) chips.push(el('span', { class: 'chip warn', text: `rework ×${x.rework}` }));
+          if (x.defects) chips.push(el('span', { class: 'chip bad', text: `${x.defects} escaped defect${x.defects > 1 ? 's' : ''}` }));
+          if (x.usd) chips.push(el('span', { class: 'chip', text: fmtUsd(x.usd) }));
+          return el('article', { class: 'card', style: `--tc:${teamColor(x.team)}` }, [
+            el('div', { class: 'id' }, [el('span', { text: x.id }), el('span', { text: x.owner ?? '' })]),
+            el('div', { class: 't', text: x.title }), x.story ? el('div', { class: 's', text: x.story }) : null, el('div', { class: 'chips' }, chips)]);
+        })]);
+    }));
+  }
+
+  // ---------- Velocity
+  function barChart(host, sprints) {
+    const w = 640, h = 240, pad = { l: 40, r: 10, t: 14, b: 30 };
+    const max = Math.max(...sprints.map((s) => s.committed), 1);
+    const step = Math.ceil(max / 4 / 25) * 25;
+    const top = step * 4;
+    const x = (i) => pad.l + i * ((w - pad.l - pad.r) / sprints.length);
+    const bw = (w - pad.l - pad.r) / sprints.length;
+    const y = (v) => h - pad.b - (v / top) * (h - pad.t - pad.b);
+    let s = `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Committed and completed points by sprint">`;
+    for (let g = 0; g <= top; g += step) s += `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(g)}" y2="${y(g)}" stroke="var(--rule)"/><text x="${pad.l - 6}" y="${y(g) + 4}" text-anchor="end">${g}</text>`;
+    sprints.forEach((sp, i) => {
+      s += `<rect x="${x(i) + bw * .15}" y="${y(sp.committed)}" width="${bw * .32}" height="${y(0) - y(sp.committed)}" fill="var(--rule)"/>`;
+      s += `<rect x="${x(i) + bw * .5}" y="${y(sp.completed)}" width="${bw * .32}" height="${y(0) - y(sp.completed)}" fill="var(--accent)"/>`;
+      s += `<text x="${x(i) + bw * .5}" y="${h - 10}" text-anchor="middle">S${sp.number}</text><text x="${x(i) + bw * .66}" y="${y(sp.completed) - 4}" text-anchor="middle">${sp.completed}</text>`;
+    });
+    s += `</svg><div class="legend"><span><i style="background:var(--rule)"></i>committed</span><span><i style="background:var(--accent)"></i>completed</span></div>`;
+    host.innerHTML = s;
+  }
+  function lineChart(host, sprints) {
+    const w = 320, h = 240, pad = { l: 34, r: 12, t: 14, b: 30 };
+    const vals = sprints.map((s) => s.usd ? s.completed / s.usd : 0);
+    const top = Math.ceil(Math.max(...vals, 1) / 5) * 5;
+    const x = (i) => pad.l + (sprints.length === 1 ? 0 : i * (w - pad.l - pad.r) / (sprints.length - 1));
+    const y = (v) => h - pad.b - (v / top) * (h - pad.t - pad.b);
+    let s = `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Points per dollar by sprint">`;
+    for (let g = 0; g <= top; g += top / 5) s += `<line x1="${pad.l}" x2="${w - pad.r}" y1="${y(g)}" y2="${y(g)}" stroke="var(--rule)"/><text x="${pad.l - 6}" y="${y(g) + 4}" text-anchor="end">${g}</text>`;
+    s += `<polyline fill="none" stroke="var(--accent)" stroke-width="2" points="${vals.map((v, i) => `${x(i)},${y(v)}`).join(' ')}"/>`;
+    vals.forEach((v, i) => { s += `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="var(--accent)"/><text x="${x(i)}" y="${h - 10}" text-anchor="middle">S${sprints[i].number}</text><text x="${x(i)}" y="${y(v) - 7}" text-anchor="middle">${v.toFixed(1)}</text>`; });
+    host.innerHTML = s + '</svg>';
+  }
+  function renderVelocity() {
+    const sp = data.board.sprints;
+    barChart($('#velChart'), sp); lineChart($('#ppdChart'), sp);
+    const head = el('tr', {}, ['Sprint', 'Status', 'Committed', 'Completed', 'Stories', 'First pass', 'Spend', 'Pts/$', 'Goal'].map((h) => el('th', { text: h })));
+    $('#velTable').replaceChildren(el('thead', {}, head), el('tbody', {}, sp.map((s) => el('tr', {}, [
+      el('td', { text: s.name }), el('td', { text: s.status }), el('td', { class: 'n', text: s.committed }), el('td', { class: 'n', text: s.completed }), el('td', { class: 'n', text: s.tickets }),
+      el('td', { class: 'n', text: s.reviewed ? `${s.firstPass}/${s.reviewed}` : '—' }), el('td', { class: 'n', text: fmtUsd(s.usd) }), el('td', { class: 'n', text: s.usd ? (s.completed / s.usd).toFixed(1) : '—' }), el('td', { text: s.goal ?? '' })]))));
+  }
+
+  // ---------- Agent rank
+  function renderRank() {
+    const r = data.rank.items;
+    const head = el('tr', {}, ['#', 'Agent configuration', 'Team', 'Tickets', 'Points', 'First pass', 'Rework', 'Escaped defects', '$ / point', 'Composite', 'Status', 'Diagnosis / action'].map((h) => el('th', { text: h })));
+    const pct = (v) => v == null ? '—' : Math.round(v * 100) + '%';
+    $('#rankTable').replaceChildren(el('thead', {}, head), el('tbody', {}, r.map((a) => {
+      const st = a.status === 'deprecated' ? 'deprecated' : a.status === 'on watch' ? 'watch' : 'active';
+      const action = a.deprecation ? `Deprecated: ${a.deprecation.reason ?? ''}` : a.intervention ? a.intervention : (a.lowConfidence ? 'Low confidence (<3 tickets): no action' : (a.diagnosis ?? []).join('; '));
+      return el('tr', {}, [el('td', { class: 'n', text: a.rank }), el('td', { text: a.key }), el('td', { text: a.team ?? '' }), el('td', { class: 'n', text: a.tickets }), el('td', { class: 'n', text: a.points }),
+        el('td', { class: 'n', text: pct(a.firstPassAcceptance) }), el('td', { class: 'n', text: pct(a.reworkRate) }), el('td', { class: 'n', text: Number(a.defects || 0).toFixed(1) }),
+        el('td', { class: 'n', text: a.costPerPoint == null ? '—' : '$' + a.costPerPoint.toFixed(2) }), el('td', { class: 'n', text: (a.composite ?? 0).toFixed(2) }),
+        el('td', {}, el('span', { class: `pill ${st}`, text: a.status + (a.lowConfidence ? ' · low conf.' : '') })), el('td', { class: 's', text: action })]);
+    })));
+  }
+
+  // ---------- Decision network
+  const net = { sim: null, nodes: [], links: [], byId: new Map(), pulses: [], tMin: 0, tMax: 0, cursor: 0, playing: false, lastSeen: 0, hover: null, w: 0, h: 0 };
+  const canvas = $('#netCanvas'); const ctx = canvas.getContext('2d');
+  const KIND_COLOR = { msg: '#7fd3e3', ticket: '#9fb4c2', review: '#7ee0a0', run: '#f0c46b' };
+  function buildNet() {
+    const g = data.graph;
+    const old = new Map(net.nodes.map((n) => [n.id, n]));
+    net.nodes = g.nodes.map((n) => Object.assign(old.get(n.id) ?? {}, n, { r: 3 + Math.sqrt(n.activity) * (n.kind === 'hub' ? 1.6 : 1.1) }));
+    net.byId = new Map(net.nodes.map((n) => [n.id, n]));
+    net.links = g.edges.filter((e) => net.byId.has(e.source) && net.byId.has(e.target)).map((e) => ({ ...e, source: net.byId.get(e.source), target: net.byId.get(e.target) }));
+    const ev = data.events.items;
+    net.events = ev.map((e) => ({ ...e, ts: Date.parse(e.t) })).filter((e) => !Number.isNaN(e.ts));
+    net.tMin = net.events[0]?.ts ?? 0; net.tMax = net.events[net.events.length - 1]?.ts ?? 0;
+    if (!net.cursor || $('#followLive').checked) net.cursor = net.tMax;
+    resize();
+    const teams = [...new Set(net.nodes.map((n) => n.team).filter(Boolean))].sort();
+    const angle = (t) => (teams.indexOf(t) / Math.max(teams.length, 1)) * Math.PI * 2;
+    net.nodes.forEach((n) => { if (n.x == null) { const a = angle(n.team) + (Math.random() - .5) * .3; const rad = n.kind === 'orchestrator' ? 0 : n.kind === 'hub' ? net.h * .22 : net.h * .36; n.x = net.w / 2 + Math.cos(a) * rad; n.y = net.h / 2 + Math.sin(a) * rad; } });
+    net.sim?.stop();
+    net.sim = d3.forceSimulation(net.nodes)
+      .force('link', d3.forceLink(net.links).distance((l) => 40 + 60 / Math.sqrt(l.count)).strength((l) => Math.min(1, .05 + l.count / 40)))
+      .force('charge', d3.forceManyBody().strength((n) => n.kind === 'hub' ? -260 : -90))
+      .force('collide', d3.forceCollide((n) => n.r + 3))
+      .force('x', d3.forceX((n) => n.kind === 'orchestrator' ? net.w / 2 : net.w / 2 + Math.cos(angle(n.team)) * net.w * .28).strength(.06))
+      .force('y', d3.forceY((n) => n.kind === 'orchestrator' ? net.h / 2 : net.h / 2 + Math.sin(angle(n.team)) * net.h * .3).strength(.06))
+      .alpha(old.size ? .3 : 1).on('tick', () => { for (const n of net.nodes) { n.x = Math.max(n.r + 4, Math.min(net.w - n.r - 4, n.x)); n.y = Math.max(n.r + 34, Math.min(net.h - n.r - 4, n.y)); } });
+    $('#legend').replaceChildren(...teams.map((t) => el('span', {}, [el('i', { style: `background:${teamColor(t)}` }), document.createTextNode(t)])),
+      ...Object.entries({ msg: 'message', ticket: 'ticket move', review: 'review verdict', run: 'agent run' }).map(([k, v]) => el('span', {}, [el('i', { style: `background:${KIND_COLOR[k]}` }), document.createTextNode(v + ' pulse')])));
+    renderCenters(); renderFeed();
+  }
+  function resize() {
+    const r = canvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
+    net.w = r.width || 900; net.h = r.height || 620;
+    canvas.width = net.w * dpr; canvas.height = net.h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', () => { resize(); });
+  function spawnPulse(e) {
+    const a = net.byId.get(e.from); const b = net.byId.get(e.to);
+    if (!a || !b) return;
+    net.pulses.push({ a, b, kind: e.kind.split(':')[0], born: performance.now() });
+    if (net.pulses.length > 400) net.pulses.splice(0, net.pulses.length - 400);
+  }
+  const RECENT = 6 * 60 * 1000;
+  function draw() {
+    const now = performance.now();
+    ctx.clearRect(0, 0, net.w, net.h);
+    const cur = net.cursor;
+    const lastByEdge = new Map();
+    for (const e of net.events) { if (e.ts > cur) break; lastByEdge.set(`${e.from}|${e.to}`, e.ts); }
+    for (const l of net.links) {
+      const last = lastByEdge.get(`${l.source.id}|${l.target.id}`);
+      if (!last) continue;
+      const fresh = Math.max(0, 1 - (cur - last) / RECENT);
+      ctx.strokeStyle = fresh > 0 ? `rgba(127,211,227,${.25 + .6 * fresh})` : 'rgba(111,132,147,.18)';
+      ctx.lineWidth = Math.min(4, .5 + Math.log2(1 + l.count) * .5) + fresh * 1.5;
+      ctx.beginPath(); ctx.moveTo(l.source.x, l.source.y); ctx.lineTo(l.target.x, l.target.y); ctx.stroke();
+    }
+    net.pulses = net.pulses.filter((p) => now - p.born < 1400);
+    for (const p of net.pulses) {
+      const k = (now - p.born) / 1400; const x = p.a.x + (p.b.x - p.a.x) * k; const y = p.a.y + (p.b.y - p.a.y) * k;
+      ctx.fillStyle = KIND_COLOR[p.kind] ?? '#fff'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    }
+    const activeOwners = new Set((data.graph.active ?? []).map((a) => a.owner));
+    for (const n of net.nodes) {
+      const lastTs = n.lastAt ? Date.parse(n.lastAt) : 0;
+      const lit = lastTs && lastTs <= cur && cur - lastTs < RECENT;
+      ctx.fillStyle = n.kind === 'hub' ? 'rgba(223,232,238,.12)' : teamColor(n.team ?? 'leadership');
+      ctx.strokeStyle = n.kind === 'hub' ? teamColor(n.team) : 'rgba(13,20,27,.9)';
+      ctx.lineWidth = n.kind === 'hub' ? 2 : 1;
+      if (lit || activeOwners.has(n.id)) { ctx.shadowColor = teamColor(n.team ?? 'leadership'); ctx.shadowBlur = 18; }
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+      if (n.kind === 'hub' || n.kind === 'orchestrator' || n === net.hover || n.activity > 40) {
+        ctx.fillStyle = css('--net-ink'); ctx.font = (n.kind === 'hub' ? '600 ' : '') + '11px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
+        ctx.fillText(n.id.replace('hub:', '#'), n.x, n.y - n.r - 5);
+      }
+    }
+    $('#netClock').textContent = 'Timeline: ' + fmtT(new Date(cur).toISOString());
+    const act = data.graph.active ?? [];
+    $('#netActive').textContent = act.length ? `Active now: ${act.map((a) => `${a.owner} (${a.id})`).slice(0, 4).join(', ')}` : 'No agents running right now';
+    requestAnimationFrame(draw);
+  }
+  let lastFrame = performance.now();
+  function tick() {
+    const now = performance.now(); const dt = now - lastFrame; lastFrame = now;
+    if (net.playing) {
+      const span = Math.max(1, net.tMax - net.tMin);
+      const prev = net.cursor;
+      net.cursor = Math.min(net.tMax, net.cursor + dt * (span / 90000) * Number($('#speed').value));
+      for (const e of net.events) { if (e.ts > net.cursor) break; if (e.ts > prev) spawnPulse(e); }
+      if (net.cursor >= net.tMax) { net.playing = false; $('#play').textContent = 'Replay'; $('#play').setAttribute('aria-pressed', 'false'); }
+      $('#scrub').value = String(Math.round(1000 * (net.cursor - net.tMin) / span));
+    }
+    setTimeout(tick, 30);
+  }
+  $('#play').onclick = () => {
+    net.playing = !net.playing;
+    if (net.playing && net.cursor >= net.tMax) net.cursor = net.tMin;
+    $('#play').textContent = net.playing ? 'Pause' : 'Replay'; $('#play').setAttribute('aria-pressed', String(net.playing));
+    if (net.playing) $('#followLive').checked = false;
+  };
+  $('#scrub').oninput = (e) => { net.cursor = net.tMin + (net.tMax - net.tMin) * Number(e.target.value) / 1000; net.playing = false; $('#play').textContent = 'Replay'; $('#followLive').checked = false; };
+  canvas.addEventListener('pointermove', (e) => {
+    const r = canvas.getBoundingClientRect(); const x = e.clientX - r.left; const y = e.clientY - r.top;
+    const n = net.nodes.find((n) => (n.x - x) ** 2 + (n.y - y) ** 2 < (n.r + 4) ** 2);
+    net.hover = n ?? null; const tip = $('#netTip');
+    if (!n) { tip.hidden = true; return; }
+    const out = net.links.filter((l) => l.source === n).sort((a, b) => b.count - a.count).slice(0, 3).map((l) => `→ ${l.target.id} (${l.count})`);
+    const inn = net.links.filter((l) => l.target === n).sort((a, b) => b.count - a.count).slice(0, 3).map((l) => `← ${l.source.id} (${l.count})`);
+    tip.replaceChildren(el('strong', { text: n.id }), el('div', { text: `${n.kind}${n.team ? ' · ' + n.team : ''} · ${n.activity} events · last ${fmtT(n.lastAt)}` }), ...[...out, ...inn].map((t) => el('div', { text: t })));
+    tip.hidden = false; tip.style.left = Math.min(x + 14, net.w - 290) + 'px'; tip.style.top = Math.min(y + 14, net.h - 120) + 'px';
+  });
+  canvas.addEventListener('pointerleave', () => { net.hover = null; $('#netTip').hidden = true; });
+  function renderCenters() {
+    const top = [...net.nodes].sort((a, b) => b.activity - a.activity).slice(0, 12);
+    $('#centers').replaceChildren(el('thead', {}, el('tr', {}, ['Node', 'Kind', 'Events', 'Last active'].map((h) => el('th', { text: h })))),
+      el('tbody', {}, top.map((n) => el('tr', {}, [el('td', { text: n.id }), el('td', { text: n.kind }), el('td', { class: 'n', text: n.activity }), el('td', { class: 'n', text: fmtT(n.lastAt) })]))));
+  }
+  function renderFeed() {
+    const items = data.events.items.slice(-80).reverse();
+    $('#feed').replaceChildren(...items.map((e) => el('div', {}, [el('span', { class: 'k', text: fmtT(e.t).split(', ').pop() }), el('span', { class: 'k', text: e.kind }), el('span', { text: `${e.from} → ${e.to}${e.ticket ? ' · ' + e.ticket : ''}: ${e.text ?? ''}` })])));
+  }
+
+  // ---------- tabs
+  document.querySelectorAll('nav.tabs button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('nav.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    for (const v of ['board', 'velocity', 'rank', 'net']) $('#view-' + v).hidden = v !== b.dataset.tab;
+    if (b.dataset.tab === 'net') { resize(); net.sim?.alpha(.3).restart(); }
+    try { localStorage.setItem('fnol-live-tab', b.dataset.tab); } catch {}
+  }));
+
+  // ---------- apply data (any source)
+  function apply(next, kind) {
+    const prevMax = net.tMax;
+    data = next;
+    renderKpis(); renderBoard(); renderVelocity(); renderRank(); buildNet();
+    if (prevMax && $('#followLive').checked) for (const e of net.events) if (e.ts > prevMax) spawnPulse(e);
+    setSource(kind, data.board.generatedAt);
+  }
+  if (data) apply(data, 'snapshot');
+  requestAnimationFrame(draw); tick();
+  try { const t = localStorage.getItem('fnol-live-tab'); if (t) document.querySelector(`nav.tabs button[data-tab="${t}"]`)?.click(); } catch {}
+
+  // Live sources: the artifact database first, then the local dashboard server.
+  const parts = {};
+  const assemble = () => (parts.board && parts.rank && parts.graph && parts.events) ? { board: parts.board, rank: parts.rank, graph: parts.graph, events: parts.events } : null;
+  (async () => {
+    const db = window.claude?.use ? await window.claude.use('db').catch(() => null) : null;
+    if (db) {
+      db.collection('live').onSnapshot((qs) => {
+        for (const d of qs.docs) if (d.exists) parts[d.id] = d.data();
+        const all = assemble(); if (all) apply(all, 'db');
+      }, () => {});
+      return;
+    }
+    const poll = async () => {
+      try {
+        const got = await Promise.all(['board', 'rank', 'graph', 'events'].map((n) => fetch(`/api/live/${n}`).then((r) => r.ok ? r.json() : Promise.reject())));
+        const next = { board: got[0], rank: got[1], graph: got[2], events: got[3] };
+        if (!data || next.board.generatedAt !== data.board.generatedAt) apply(next, 'local');
+        else setSource('local', next.board.generatedAt);
+        setTimeout(poll, 5000);
+      } catch { /* not served by the local dashboard: keep the snapshot */ }
+    };
+    poll();
+  })();
+})();
+</script>
