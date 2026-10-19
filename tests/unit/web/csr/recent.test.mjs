@@ -48,16 +48,17 @@ test('string tables have en/es parity', () => {
   assert.deepEqual(Object.keys(csrStrings.es).sort(), Object.keys(csrStrings.en).sort());
 });
 
-test('pure modules do not import the kit; no innerHTML anywhere; dev panel hidden by default', () => {
-  for (const f of ['search.js', 'assisted.js', 'recent.js', 'strings.js', 'errors.js', 'answers.js', 'panel.js']) {
+test('pure modules do not import the kit; no innerHTML anywhere; page uses the shell and demo bar, no dev form', () => {
+  for (const f of ['search.js', 'assisted.js', 'recent.js', 'strings.js', 'errors.js', 'answers.js', 'panel.js', 'desk.js']) {
     assert.doesNotMatch(readFileSync(new URL(f, dir), 'utf8'), /from ['"]\/shared|import ['"]\/shared/, f);
   }
   for (const f of readdirSync(dir)) {
     if (f.endsWith('.js') || f.endsWith('.html')) assert.doesNotMatch(readFileSync(new URL(f, dir), 'utf8'), /innerHTML|outerHTML|insertAdjacentHTML|console\./, f);
   }
   const html = readFileSync(new URL('index.html', dir), 'utf8');
-  assert.match(html, /<section id="dev-panel" hidden/);
-  assert.match(html, /<option value="csr">/);
+  assert.match(html, /<fx-app-shell\b/);
+  assert.match(html, /<fx-demo-bar slot="demo">/);
+  assert.doesNotMatch(html, /dev-form|dev-panel|id="dev-/, 'the old dev sign-in form is gone');
   assert.match(html, /fx-table id="recent-table"/);
   assert.match(html, /fx-stepper/);
   assert.match(html, /fx-toast/);

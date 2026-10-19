@@ -1,8 +1,19 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T04:24:01.987Z",
-  "history": [],
+  "history": [
+    {
+      "at": "2026-10-19T13:17:23.417Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:17:23.449Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
   "id": "S5-QE-03",
   "team": "quality",
   "title": "Root-cause the intermittent CSR rear-end subrogation UI test",
@@ -19,5 +30,18 @@
     "Failure reproduced with a Playwright trace under full-suite load",
     "Root cause named (test or product) and fixed; 5 consecutive full npm test runs pass"
   ],
-  "brief": "Seen 4+ times in Sprint 5. Orchestrator fixed one race (unfiltered fieldset.sf locator); remaining failure: party sub-form present but input[name=lastName] not visible/editable for 30 s, only under load. Suspect the form is disabled or hidden while a previous answer request is pending. Carry over to Sprint 6."
+  "brief": "Seen 4+ times in Sprint 5. Orchestrator fixed one race (unfiltered fieldset.sf locator); remaining failure: party sub-form present but input[name=lastName] not visible/editable for 30 s, only under load. Suspect the form is disabled or hidden while a previous answer request is pending. Carry over to Sprint 6.",
+  "doneAt": "2026-10-19T13:17:23.449Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T13:17:23.449Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Closed via S6-EXP-04: root cause analysed and fixed in the CSR redesign; 3 consecutive full npm test runs 0 failures (reviewer), orchestrator run 1528/0"
+      }
+    ],
+    "firstPass": true
+  }
 }

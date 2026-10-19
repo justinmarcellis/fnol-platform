@@ -12,13 +12,15 @@ export function normalizeQuery(input) {
 
 /** Flatten a PolicySummary into a table row. Pure. */
 export function summaryToRow(sum) {
-  const insured = (sum?.namedInsureds ?? []).map((n) => n?.name).filter(Boolean).join(', ');
+  // GET /policies returns insuredName (PolicySummary); namedInsureds[] is accepted too.
+  const insured = (sum?.namedInsureds ?? []).map((n) => n?.name).filter(Boolean).join(', ') || (sum?.insuredName ?? '');
   const p = sum?.period ?? {};
   return {
     policyNumber: sum?.policyNumber ?? '',
     lob: sum?.lob ?? '',
     status: sum?.status ?? '',
     insured,
+    description: sum?.description ?? '',
     period: p.effectiveDate && p.expirationDate ? `${p.effectiveDate} - ${p.expirationDate}` : '',
     summary: sum,
   };
@@ -38,6 +40,8 @@ export function createPolicySearch({ api, t }) {
   const listeners = new Set();
   const snap = () => ({ ...state, results: [...state.results] });
   const emit = () => { const s = snap(); for (const l of listeners) l(s); };
+  // Type-ahead fires overlapping searches; only the newest one may write state (a slow older response must not win).
+  let seq = 0;
 
   const self = {
     get state() { return snap(); },
@@ -45,6 +49,7 @@ export function createPolicySearch({ api, t }) {
 
     /** Search policies by free text. Phases: idle | searching | done | invalid | unavailable. */
     async search(input) {
+      const mine = ++seq;
       const q = normalizeQuery(input);
       state.query = String(input ?? '').trim();
       state.selected = null;
@@ -57,10 +62,12 @@ export function createPolicySearch({ api, t }) {
       state.phase = 'searching'; state.message = ''; emit();
       try {
         const { rows, matchedOn } = mapSearchResponse(await api.get('/policies', { q }));
+        if (mine !== seq) return self.state.results;
         state.results = rows; state.matchedOn = matchedOn;
         state.phase = 'done';
         state.message = rows.length ? t('csr.search.found', { count: rows.length }) : t('csr.search.empty');
       } catch (err) {
+        if (mine !== seq) return self.state.results;
         if (isUnavailable(err)) {
           state.phase = 'unavailable'; state.results = []; state.message = t('csr.unavailable.body');
           state.error = { code: err?.code ?? 'service_unavailable', status: err?.status };
@@ -75,6 +82,13 @@ export function createPolicySearch({ api, t }) {
       }
       emit();
       return self.state.results;
+    },
+
+    /** Forget results and message (the query box was emptied). Also drops any search still in flight. */
+    clear() {
+      seq += 1;
+      Object.assign(state, { phase: 'idle', query: '', matchedOn: null, results: [], selected: null, error: null, message: '' });
+      emit();
     },
 
     /** Re-run the last search after "service unavailable". */

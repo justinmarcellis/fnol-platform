@@ -1,6 +1,8 @@
 // Browser-only DOM helpers for the claimant app. All user/server text goes through textContent.
 import { localText } from './strings.js';
 import { isStructured, structuredFields, buildStructured, missingStructured } from './structured.js';
+import { validateScalar } from './present.js';
+import { createIcon } from '/shared/icons.js';
 
 /** Tiny element builder: attrs with `on*` become listeners, `text` sets textContent. */
 export function h(tag, attrs = {}, ...kids) {
@@ -17,8 +19,19 @@ export function h(tag, attrs = {}, ...kids) {
 }
 
 let uid = 0;
+/** Inline error paragraph (alert icon + text). Hidden until setError is called. */
+function errorLine(id) {
+  const p = h('p', { class: 'field-error', id, role: 'alert', hidden: true });
+  const set = (text) => {
+    p.replaceChildren();
+    if (text) p.append(h('span', { class: 'cl-err-icon' }, createIcon('alert-circle', { size: 16 })), h('span', { text }));
+    p.hidden = !text;
+  };
+  return { el: p, set };
+}
+
 /**
- * Build the input for one question. Returns { el, get(), focus() }.
+ * Build the input for one question. Returns { el, get(), focus(), setError(text), check() }.
  * Value types follow the Question schema; the server validates.
  */
 export function buildInput(question, { locale, t, errorId, initial }) {
@@ -27,26 +40,28 @@ export function buildInput(question, { locale, t, errorId, initial }) {
   const label = localText(question.text, locale);
   const help = localText(question.help, locale);
   const helpId = help ? `${id}-help` : null;
-  const describedBy = [helpId, errorId].filter(Boolean).join(' ') || null;
+  const msgId = `${id}-msg`;
+  const describedBy = [helpId, errorId, msgId].filter(Boolean).join(' ');
   const req = question.required ? null : t('claimant.guided.optional');
   const type = question.type;
   const options = question.options ?? [];
-  let get; let focusEl;
-  let control;
+  const err = errorLine(msgId);
+  let get; let control;
 
   if (type === 'boolean' || (type === 'select' && options.length > 0 && options.length <= 4) || type === 'multiselect' || type === 'disclosure') {
     let items; let kind = 'radio';
     if (type === 'boolean') items = [{ value: 'true', label: t('claimant.guided.yes') }, { value: 'false', label: t('claimant.guided.no') }];
     else if (type === 'disclosure') { kind = 'check'; items = [{ value: 'ack', label: t('claimant.guided.acknowledge') }]; }
     else { items = options.map((o) => ({ value: o.value, label: localText(o.label, locale) })); if (type === 'multiselect') kind = 'check'; }
-    const fs = h('fieldset', { 'aria-describedby': describedBy });
-    fs.append(h('legend', { text: label + (req ? ` ${req}` : '') }));
+    const fs = h('fieldset', { class: 'cl-qfield', 'aria-describedby': describedBy });
+    fs.append(h('legend', { class: 'cl-qlabel', text: label + (req ? ` ${req}` : '') }));
     if (help) fs.append(h('p', { class: 'help', id: helpId, text: help }));
+    const group = h('div', { class: `cl-opts${items.length === 2 ? ' two' : ''}` });
     items.forEach((o, i) => {
       const inp = h('input', { type: kind === 'check' ? 'checkbox' : 'radio', name: id, value: o.value, id: `${id}-${i}` });
-      fs.append(h('label', { class: 'opt', for: `${id}-${i}` }, inp, h('span', { text: o.label })));
+      group.append(h('label', { class: 'cl-opt', for: `${id}-${i}` }, inp, h('span', { class: 'cl-opt-text', text: o.label })));
     });
-    focusEl = () => fs.querySelector('input');
+    fs.append(group, err.el);
     get = () => {
       const checked = [...fs.querySelectorAll('input:checked')].map((i) => i.value);
       if (type === 'boolean') return checked.length ? checked[0] === 'true' : undefined;
@@ -54,14 +69,18 @@ export function buildInput(question, { locale, t, errorId, initial }) {
       if (type === 'multiselect') return checked.length ? checked : undefined;
       return checked[0];
     };
-    return { el: fs, get, focus: () => focusEl()?.focus() };
+    return {
+      el: fs, get, focus: () => fs.querySelector('input')?.focus(),
+      setError(text) { err.set(text); fs.querySelectorAll('input').forEach((i) => (text ? i.setAttribute('aria-invalid', 'true') : i.removeAttribute('aria-invalid'))); },
+      check: () => true,
+    };
   }
 
   if (type === 'select') {
     control = h('select', { id, 'aria-describedby': describedBy }, h('option', { value: '', text: '' }), options.map((o) => h('option', { value: o.value, text: localText(o.label, locale) })));
     get = () => control.value || undefined;
   } else if (type === 'longtext') {
-    control = h('textarea', { id, 'aria-describedby': describedBy, rows: 4 });
+    control = h('textarea', { id, 'aria-describedby': describedBy, rows: 5 });
     get = () => control.value.trim() || undefined;
   } else {
     const htmlType = { number: 'number', currency: 'number', date: 'date', time: 'time', datetime: 'datetime-local', phone: 'tel', email: 'email' }[type] ?? 'text';
@@ -73,11 +92,20 @@ export function buildInput(question, { locale, t, errorId, initial }) {
       return htmlType === 'number' ? Number(v) : v;
     };
   }
-  const el = h('div', {},
-    h('label', { for: id, class: 'legend', text: label + (req ? ` ${req}` : '') }),
+  const setError = (text) => { err.set(text); if (text) control.setAttribute('aria-invalid', 'true'); else control.removeAttribute('aria-invalid'); };
+  control.addEventListener('input', () => { if (!err.el.hidden) setError(''); });
+  const el = h('div', { class: 'cl-qfield' },
+    h('label', { for: id, class: 'cl-qlabel legend', text: label + (req ? ` ${req}` : '') }),
     help ? h('p', { class: 'help', id: helpId, text: help }) : null,
-    control);
-  return { el, get, focus: () => control.focus() };
+    control, err.el);
+  return {
+    el, get, focus: () => control.focus(), setError,
+    check() {
+      const key = validateScalar(type, control.value);
+      if (key) { setError(t(key)); control.focus(); return false; }
+      return true;
+    },
+  };
 }
 
 /**
@@ -90,9 +118,10 @@ export function buildStructuredInput(question, { locale, t, errorId, initial = {
   const label = localText(question.text, locale) || t(`claimant.sf.legend.${question.type}`);
   const help = localText(question.help, locale);
   const msgId = `${id}-msg`;
-  const msg = h('p', { class: 'field-error', id: msgId, role: 'alert', hidden: true });
-  const fs = h('fieldset', { id, class: 'sf', 'data-qtype': question.type, 'aria-describedby': [errorId, msgId].filter(Boolean).join(' ') });
-  fs.append(h('legend', { text: label }));
+  const errBox = errorLine(msgId);
+  const msg = errBox.el;
+  const fs = h('fieldset', { id, class: 'sf cl-qfield', 'data-qtype': question.type, 'aria-describedby': [errorId, msgId].filter(Boolean).join(' ') });
+  fs.append(h('legend', { class: 'cl-qlabel', text: label }));
   if (help) fs.append(h('p', { class: 'help', text: help }));
   const ctl = {};
   for (const fd of structuredFields(question.type)) {
@@ -101,7 +130,7 @@ export function buildStructuredInput(question, { locale, t, errorId, initial = {
     if (fd.input === 'checkbox') {
       const cb = h('input', { type: 'checkbox', id: cid, name: fd.key, checked: initial[fd.key] === true || null });
       ctl[fd.key] = cb;
-      fs.append(h('label', { class: 'opt', for: cid }, cb, h('span', { text })));
+      fs.append(h('label', { class: 'cl-opt', for: cid }, cb, h('span', { class: 'cl-opt-text', text })));
       continue;
     }
     let c;
@@ -117,12 +146,13 @@ export function buildStructuredInput(question, { locale, t, errorId, initial = {
   fs.append(msg);
   const raw = () => Object.fromEntries(Object.entries(ctl).map(([k, c]) => [k, c.type === 'checkbox' ? c.checked : c.value]));
   const show = (text, first) => {
-    msg.textContent = text || ''; msg.hidden = !text;
+    errBox.set(text);
     for (const [k, c] of Object.entries(ctl)) { if (k === first) c.setAttribute('aria-invalid', 'true'); else c.removeAttribute('aria-invalid'); }
   };
   return {
     el: fs,
     raw,
+    setError: (text) => show(text, null),
     get() {
       const r = raw();
       if (!Object.entries(r).some(([k, v]) => v === true || (typeof v === 'string' && v.trim() && !(k === 'role')))) return undefined;
@@ -141,21 +171,31 @@ export function buildStructuredInput(question, { locale, t, errorId, initial = {
 }
 
 /**
- * Render the status timeline: a semantic stage list, plus the kit's fx-timeline activity log
- * (reported / latest update) when the kit registered it.
+ * Render the claim stages as a vertical stepper: a semantic ordered list with exactly one aria-current step.
+ * The current step carries a short "what happens next" sentence and the time it last changed.
+ * @param {{ id: string, label: string, state: string, stateLabel: string, at?: string, attention?: boolean }[]} items from buildTimeline
+ * @param {Function} t
+ * @param {{ icon?: (name: string, size?: number) => Node|null, time?: (iso: string) => string, next?: (id: string) => string }} [deps]
  */
-export function renderTimeline(items, claim, t) {
-  const stages = h('ol', { class: 'timeline', 'aria-label': t('claimant.status.heading') }, items.map((i) =>
-    h('li', { class: `${i.state}${i.attention ? ' attention' : ''}`, 'aria-current': i.state === 'current' ? 'step' : null },
-      h('span', { text: i.label }), h('span', { class: 'sr-only', text: `, ${i.stateLabel}` }))));
-  const wrap = h('div', {}, stages);
-  if (typeof customElements !== 'undefined' && customElements.get('fx-timeline') && claim) {
-    const events = [];
-    if (claim.reportedAt) events.push({ at: claim.reportedAt, title: t('claimant.status.reported') });
-    if (claim.updatedAt && claim.status !== 'reported') events.push({ at: claim.updatedAt, title: t(`claimant.status.${claim.status}`) });
-    const el = document.createElement('fx-timeline');
-    el.events = events;
-    wrap.append(el);
-  }
-  return wrap;
+export function renderStages(items, t, { icon = () => null, time = (v) => v, next = () => '' } = {}) {
+  return h('ol', { class: 'timeline cl-steps', 'aria-label': t('claimant.next.heading') }, items.map((i, n) => {
+    const dot = h('span', { class: 'cl-dot', 'aria-hidden': 'true' }, i.state === 'done' ? icon('check', 16) : h('span', { class: 'cl-dot-n', text: String(n + 1) }));
+    const body = h('div', { class: 'cl-step-body' },
+      h('span', { class: 'cl-step-title', text: i.label }),
+      i.state !== 'upcoming' && i.at ? h('span', { class: 'cl-step-when', text: time(i.at) }) : null,
+      i.state === 'current' ? h('span', { class: 'cl-step-desc', text: next(i.id) }) : null,
+      h('span', { class: 'sr-only', text: `, ${i.stateLabel}` }));
+    return h('li', { class: `${i.state}${i.attention ? ' attention' : ''}`, 'aria-current': i.state === 'current' ? 'step' : null }, dot, body);
+  }));
+}
+
+/** The kit's fx-timeline activity log (reported and latest update), or null when the kit is not loaded. */
+export function renderActivity(claim, t) {
+  if (typeof customElements === 'undefined' || !customElements.get('fx-timeline') || !claim) return null;
+  const events = [];
+  if (claim.reportedAt) events.push({ at: claim.reportedAt, title: t('claimant.status.reported'), tone: 'success' });
+  if (claim.updatedAt && claim.status !== 'reported') events.push({ at: claim.updatedAt, title: t(`claimant.status.${claim.status}`), tone: 'brand' });
+  const el = document.createElement('fx-timeline');
+  el.events = events;
+  return el;
 }

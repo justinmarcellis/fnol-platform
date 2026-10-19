@@ -10,80 +10,85 @@
 </head>
 <body>
   <a class="fx-btn skip" href="#main" id="skip">Skip to main content</a>
-  <header class="bar"><h1 id="title">CSR claims desk</h1><span id="whoami" class="muted" aria-live="polite"></span></header>
-  <fx-toast id="toast"></fx-toast>
-  <main id="main" tabindex="-1">
-    <!-- Dev sign-in: hidden unless dev mode (localhost or window.__FNOL_DEV__ === true). -->
-    <section id="dev-panel" hidden aria-labelledby="dev-h">
-      <h2 id="dev-h">Developer sign-in</h2>
-      <form id="dev-form">
-        <p><label for="dev-tenant" id="dev-tenant-l">Tenant</label>
-          <select id="dev-tenant" name="tenant"><option value="northwind">northwind</option></select></p>
-        <p><label for="dev-role" id="dev-role-l">Role</label>
-          <select id="dev-role" name="role"><option value="csr">csr</option></select></p>
-        <button class="fx-btn" type="submit" id="dev-go">Sign in as CSR</button>
-      </form>
-    </section>
+  <fx-app-shell id="shell" product="Claims Desk" heading="CSR desk" home-href="/csr" user-role="csr">
+    <fx-demo-bar slot="demo"></fx-demo-bar>
+    <button slot="actions" class="fx-btn secondary" type="button" id="new-call" hidden></button>
+    <main id="main" tabindex="-1">
+      <div id="signin-prompt" class="fx-alert" data-tone="info" role="note" hidden>
+        <div><strong id="signin-title"></strong><p id="signin-body"></p></div>
+      </div>
 
-    <section id="unavailable" role="alert" hidden>
-      <h2 id="un-title">Service unavailable</h2>
-      <p id="un-body"></p>
-      <button class="fx-btn" type="button" id="un-retry">Retry</button>
-    </section>
+      <div id="unavailable" class="fx-alert" data-tone="danger" role="alert" hidden>
+        <div><strong id="un-title">Service unavailable</strong><p id="un-body"></p></div>
+        <button class="fx-btn secondary small" type="button" id="un-retry">Retry</button>
+      </div>
 
-    <div id="desk" hidden>
-      <fx-stepper id="stepper" current="0"></fx-stepper>
-      <section id="search-sec" aria-labelledby="search-h">
-        <h2 id="search-h" tabindex="-1"></h2>
-        <form id="search-form" novalidate>
-          <fx-field id="search-field" name="policy" label="Policy number" hint=""></fx-field>
-          <button class="fx-btn" type="submit" id="search-go">Search</button>
-        </form>
-        <p id="search-msg" role="status"></p>
-        <fx-table id="search-table" caption="Policy results"></fx-table>
-        <p id="search-hint" class="muted"></p>
-      </section>
+      <div id="desk" class="fx-stack" hidden>
+        <fx-stepper id="stepper" current="0"></fx-stepper>
 
-      <section id="intake-sec" aria-labelledby="intake-h" hidden>
-        <h2 id="intake-h" tabindex="-1"></h2>
-        <div class="split">
-          <div>
-            <p id="progress" role="status"></p>
+        <fx-card id="search-sec" heading="Find the caller's policy" padding="md">
+          <form id="search-form" class="csr-searchbar" role="search" novalidate>
+            <fx-field id="search-field" name="policy" label="Policy number" hint="" required></fx-field>
+            <button class="fx-btn" type="submit" id="search-go">Search</button>
+          </form>
+          <p id="search-msg" class="csr-msg" role="status"></p>
+          <div id="search-results" hidden>
+            <fx-table id="search-table" caption="Policy results"></fx-table>
+          </div>
+          <p id="search-hint" class="muted"></p>
+        </fx-card>
+
+        <div id="intake-sec" class="csr-desk" hidden>
+          <aside id="context-panel" class="csr-context" aria-labelledby="ctx-h">
+            <fx-card id="ctx-card" heading="Caller's policy" padding="md">
+              <button slot="actions" class="fx-btn ghost small" type="button" id="ctx-change"></button>
+              <div id="ctx-body" class="fx-stack-sm"></div>
+            </fx-card>
+          </aside>
+
+          <fx-card id="intake-card" heading="Assisted intake" padding="md" class="csr-intake">
+            <div class="csr-progress" id="progress-wrap">
+              <div class="csr-progress-head"><span class="fx-section-title" id="progress-h"></span><span id="progress-pct" class="fx-tabular"></span></div>
+              <div class="csr-bar" id="progress-bar" role="progressbar" aria-labelledby="progress-h" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div>
+              <p id="progress" class="muted" role="status"></p>
+            </div>
             <div id="disclosures"></div>
             <div id="vehicle-pick" hidden></div>
+            <div class="fx-alert csr-script" data-tone="info">
+              <div><strong id="script-h"></strong><p id="script" aria-live="polite"></p></div>
+            </div>
             <form id="answer-form" novalidate><div id="answer-slot"></div><button class="fx-btn" type="submit" id="answer-go"></button></form>
             <button class="fx-btn" type="button" id="submit-go" hidden></button>
-          </div>
-          <aside aria-labelledby="panel-h" class="panel">
-            <h3 id="panel-h"></h3>
-            <ul id="missing"></ul>
-            <p id="unlisted" class="muted"></p>
-            <h3 id="script-h"></h3>
-            <p id="script" aria-live="polite"></p>
-          </aside>
+            <div class="csr-missing" aria-labelledby="panel-h">
+              <h3 id="panel-h" class="fx-section-title"></h3>
+              <ul id="missing"></ul>
+              <p id="unlisted" class="muted"></p>
+            </div>
+          </fx-card>
         </div>
-      </section>
 
-      <section id="done-sec" aria-labelledby="done-h" hidden>
-        <h2 id="done-h" tabindex="-1"></h2>
-        <p id="done-number"></p>
-        <p><a class="fx-btn" id="done-link" href="#"></a> <button class="fx-btn secondary" type="button" id="done-again"></button></p>
-      </section>
+        <fx-card id="done-sec" heading="Claim submitted" padding="md" hidden>
+          <div class="fx-stack-sm">
+            <h3 id="done-h" tabindex="-1"></h3>
+            <p id="done-number" class="fx-mono"></p>
+            <p class="fx-btn-group"><a class="fx-btn" id="done-link" href="#"></a> <button class="fx-btn secondary" type="button" id="done-again"></button></p>
+          </div>
+        </fx-card>
 
-      <section id="recent-sec" aria-labelledby="recent-h">
-        <h2 id="recent-h"></h2>
-        <button class="fx-btn secondary" type="button" id="recent-refresh"></button>
-        <fx-table id="recent-table" caption="Recent claims"></fx-table>
-        <p id="recent-hint" class="muted"></p>
-      </section>
-    </div>
+        <fx-card id="recent-sec" heading="Recent claims" padding="none">
+          <button slot="actions" class="fx-btn secondary small" type="button" id="recent-refresh"></button>
+          <fx-table id="recent-table" caption="Recent claims"></fx-table>
+          <div slot="footer" id="recent-hint"></div>
+        </fx-card>
+      </div>
 
-    <section id="claim-sec" aria-labelledby="claim-h" hidden>
-      <h2 id="claim-h" tabindex="-1"></h2>
-      <dl id="claim-dl"></dl>
-      <a class="fx-btn secondary" id="claim-back" href="/csr"></a>
-    </section>
-  </main>
+      <fx-card id="claim-sec" heading="Claim" padding="md" hidden>
+        <dl id="claim-dl" class="fx-kv"></dl>
+        <p><a class="fx-btn secondary" id="claim-back" href="/csr"></a></p>
+      </fx-card>
+    </main>
+  </fx-app-shell>
+  <fx-toast id="toast"></fx-toast>
   <script src="/runtime-config.js"></script>
   <script type="module" src="/csr/app.js"></script>
 </body>

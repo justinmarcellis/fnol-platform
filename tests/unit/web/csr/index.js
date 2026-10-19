@@ -4,3 +4,4 @@ import './assisted.test.mjs';
 import './recent.test.mjs';
 import './answers.test.mjs';
 import './structured.test.mjs';
+import './desk.test.mjs';

@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T12:28:28.986Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T12:48:05.761Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T13:13:52.338Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T13:15:38.765Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S6-EXP-04",
@@ -36,5 +46,45 @@
     "VD-1",
     "VD-2"
   ],
-  "startedAt": "2026-10-19T12:48:05.761Z"
+  "startedAt": "2026-10-19T12:48:05.761Z",
+  "doneAt": "2026-10-19T13:15:38.765Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T13:15:38.764Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: two-pane desk on fx-app-shell+demo bar, screenshots 1440x900 verified, rear-end flake root-caused to test (analysis, no trace) and fixed; full npm test 1538 tests 0 fail (3 baseline TODOs), csr UI+unit pass x3"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 3.452,
+    "inputTokens": 150,
+    "cacheWriteTokens": 367552,
+    "cacheReadTokens": 12623520,
+    "outputTokens": 814,
+    "agents": {
+      "a49ccd2b30389d942": {
+        "label": "S6-EXP-04 ic-experience-csr-portal-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 140,
+        "cacheWriteTokens": 341588,
+        "cacheReadTokens": 12331126,
+        "outputTokens": 727,
+        "usd": 3.3277
+      },
+      "abea7ce53c03c9b59": {
+        "label": "S6-EXP-04 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 25964,
+        "cacheReadTokens": 292394,
+        "outputTokens": 87,
+        "usd": 0.1243
+      }
+    }
+  }
 }

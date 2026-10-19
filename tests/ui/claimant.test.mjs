@@ -1,8 +1,13 @@
-// Playwright smoke for /claimant (Aurelia guided glass-style intake, Spanish, Kestrel branding).
-// Skips cleanly when Playwright or chromium is unavailable. a11y findings are warnings only.
+// Playwright smoke for /claimant (S6-EXP-03 redesign: welcome, guided steps, review, confirmation; Spanish, Kestrel branding).
+// Also writes the claimant screenshots under docs/design/screens/. Skips cleanly when Playwright or chromium is unavailable.
+// a11y findings are warnings only.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { launchBrowser, bootApp, answerClaimantQuestion, reportPageA11y, CLAIM_NUMBER } from './a11y-harness.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { launchBrowser, bootApp, answerClaimantQuestion, reportPageA11y, CLAIM_NUMBER, ROOT } from './a11y-harness.mjs';
+
+const SHOTS = path.join(ROOT, 'docs', 'design', 'screens');
 
 let server; let browser; let skip;
 
@@ -17,11 +22,20 @@ after(async () => {
   await server?.close();
 });
 
-async function open(path = '/claimant') {
-  const page = await browser.newPage();
+/** Open the claimant app on its welcome screen. */
+async function openWelcome(urlPath = '/claimant', opts) {
+  const page = opts ? await (await browser.newContext(opts)).newPage() : await browser.newPage();
   page.pageErrors = [];
   page.on('pageerror', (e) => page.pageErrors.push(e.message));
-  await page.goto(`${server.app.url}${path}`);
+  await page.goto(`${server.app.url}${urlPath}`);
+  await page.waitForSelector('#welcome-start');
+  return page;
+}
+
+/** Open the app and move past the welcome screen to the details step (line of business, loss type, mode). */
+async function open(urlPath = '/claimant') {
+  const page = await openWelcome(urlPath);
+  await page.click('#welcome-start');
   await page.waitForSelector('input[name="lob"]');
   return page;
 }
@@ -51,12 +65,12 @@ test('claimant (Aurelia) completes guided intake to a claim number and status pa
   if (skip) return t.skip(skip);
   const page = await open('/claimant?tenant=aurelia-mutual');
   try {
-    assert.equal((await page.textContent('#brand-name')).trim(), 'Aurelia Mutual (fictional)');
+    assert.equal((await page.textContent('fx-app-shell .fx-shell-tenant')).trim(), 'Aurelia Mutual (fictional)');
     const a11yStart = await reportPageA11y(page, 'claimant start', t);
 
     const asked = await completeGuided(page, t);
     assert.ok(asked.length >= 4, `answered ${asked.length} questions`);
-    await page.click('#review-title ~ button');
+    await page.click('#submit-claim');
     await page.waitForSelector('#claim-number');
 
     const number = (await page.textContent('#claim-number')).trim();
@@ -81,7 +95,7 @@ test('claimant UI raises no browser errors after submit (status poller)', async 
   const page = await open();
   try {
     await completeGuided(page, t);
-    await page.click('#review-title ~ button');
+    await page.click('#submit-claim');
     await page.waitForSelector('#claim-number');
     await page.waitForTimeout(500);
     // BUG S2-EXP-03-1: src/web/claimant/status.js calls timers.setTimeout(...) on a plain object holding the
@@ -108,15 +122,21 @@ test('claimant can reach the personal auto glass question set (loss type)', asyn
 
 test('Spanish toggle switches labels on Aurelia', async (t) => {
   if (skip) return t.skip(skip);
-  const page = await open('/claimant?tenant=aurelia-mutual');
+  const page = await openWelcome('/claimant?tenant=aurelia-mutual');
   try {
     await page.waitForSelector('#lang-wrap:not([hidden])');
-    assert.equal((await page.textContent('h1')).trim(), 'Tell us what happened');
+    assert.equal((await page.textContent('#view-title')).trim(), 'Report your claim in minutes');
     await page.selectOption('#lang-picker', 'es');
-    await page.waitForFunction(() => document.querySelector('h1')?.textContent.trim() === 'Cuéntenos qué pasó');
+    await page.waitForFunction(() => document.querySelector('#view-title')?.textContent.trim() === 'Reporte su reclamo en minutos');
     assert.equal(await page.getAttribute('html', 'lang'), 'es');
     assert.equal((await page.textContent('#lang-label')).trim(), 'Idioma');
-    assert.equal((await page.textContent('form button[type="submit"]')).trim(), 'Comenzar');
+    assert.equal((await page.textContent('#welcome-start')).trim(), 'Comenzar mi reclamo');
+    await reportPageA11y(page, 'claimant welcome (es)', t);
+    await page.click('#welcome-start');
+    await page.waitForSelector('input[name="lob"]');
+    assert.equal((await page.textContent('#view-title')).trim(), 'Cuéntenos qué pasó');
+    assert.equal((await page.textContent('form button[type="submit"]')).trim(), 'Continuar');
+    assert.match(await page.textContent('.cl-progress-label'), /Paso 1 de 4/);
     await reportPageA11y(page, 'claimant start (es)', t);
   } finally {
     await page.close();
@@ -141,11 +161,13 @@ test('Kestrel branding differs from Aurelia (name and brand colour token)', asyn
     const page = await browser.newPage();
     try {
       await page.goto(`${server.app.url}/claimant?tenant=${tenant}`);
-      await page.waitForSelector('input[name="lob"]');
+      await page.waitForSelector('#welcome-start');
       return await page.evaluate(() => ({
-        name: document.getElementById('brand-name').textContent.trim(),
+        name: document.querySelector('fx-app-shell .fx-shell-tenant').textContent.trim(),
         brand: getComputedStyle(document.documentElement).getPropertyValue('--fx-brand').trim().toLowerCase(),
-        picker: document.getElementById('tenant-picker').value,
+        heroBg: getComputedStyle(document.querySelector('.cl-hero')).backgroundColor,
+        demoBar: !!document.querySelector('fx-app-shell fx-demo-bar'),
+        tenantPickerShown: !document.getElementById('tenant-wrap').hidden,
       }));
     } finally {
       await page.close();
@@ -158,7 +180,10 @@ test('Kestrel branding differs from Aurelia (name and brand colour token)', asyn
   assert.equal(aurelia.brand, '#1f5f4a');
   assert.equal(kestrel.brand, '#243b6b');
   assert.notEqual(aurelia.brand, kestrel.brand);
-  assert.equal(kestrel.picker, 'kestrel-point');
+  assert.notEqual(aurelia.heroBg, kestrel.heroBg, 'the welcome hero follows the tenant brand');
+  // S6-EXP-02: the demo bar sits in the shell's demo slot and replaces the old tenant dropdown.
+  assert.equal(kestrel.demoBar, true, 'demo bar is in the shell');
+  assert.equal(kestrel.tenantPickerShown, false, 'the old dev tenant picker is gone when the bar is present');
 });
 
 // ---- S4-EXP-01: structured party sub-form and insured-vehicle picker
@@ -168,8 +193,8 @@ async function holderCheck(page, policy) {
   const zip = policy.vehicles[0].garagingPostalCode;
   await page.fill('#holder-last-name', lastName);
   await page.fill('#holder-zip', zip);
-  await page.click('#holder-check button');
-  await page.waitForSelector('#insured-vehicle');
+  await page.click('#holder-go');
+  await page.waitForSelector('input[name="insured_vehicle"]');
 }
 
 const PARTY_FIELDS = { lastName: 'Example', firstName: 'Pat', phone: '(555) 010-0142', insurerName: 'Fictional Mutual', otherPolicyNumber: 'OTH-000123' };
@@ -271,15 +296,18 @@ test('claimant insured-vehicle picker lists policy vehicles and sends policyVehi
       await page.check('input[name="lob"][value="personal_auto"]');
       await page.fill('#policy-number', policy.policyNumber);
       await page.click('form button[type="submit"]');
-      await page.waitForSelector('main form');
+      await page.waitForSelector('#holder-check');
       await holderCheck(page, policy);
-      assert.equal(await page.locator('label[for="insured-vehicle"]').count(), 1, 'picker is labelled');
-      assert.equal(await page.locator('#insured-vehicle option[value]:not([value=""])').count(), policy.vehicles.length);
-      await page.selectOption('#insured-vehicle', unit.unitId);
-      await page.waitForFunction(() => document.activeElement?.id === 'insured-vehicle');
+      assert.ok((await page.locator('#vehicle-pick legend').textContent()).trim().length > 0, 'picker is labelled by a legend');
+      assert.equal(await page.locator('input[name="insured_vehicle"]').count(), policy.vehicles.length);
+      assert.equal(await page.locator('#vehicle-continue').isDisabled(), true, 'continue waits for a choice');
+      await page.check(`input[name="insured_vehicle"][value="${unit.unitId}"]`);
+      await page.waitForFunction(() => document.activeElement?.name === 'insured_vehicle');
       const pick = sent.find((b) => b.value?.policyVehicleId === unit.unitId);
       assert.ok(pick, 'insured vehicle answer sent');
-      assert.equal(await page.locator('#insured-vehicle').inputValue(), unit.unitId, 'selection survives the re-render');
+      assert.equal(await page.locator(`input[name="insured_vehicle"][value="${unit.unitId}"]`).isChecked(), true, 'selection survives the re-render');
+      await page.waitForSelector('.cl-saved');
+      assert.equal(await page.locator('#vehicle-continue').isDisabled(), false);
       const a11y = await reportPageA11y(page, 'claimant vehicle picker', t);
       t.diagnostic(`a11y warnings: ${a11y.findings.length}`);
     } finally {
@@ -293,7 +321,7 @@ async function startWithPolicy(page, policy) {
   await page.check('input[name="lob"][value="personal_auto"]');
   await page.fill('#policy-number', policy.policyNumber);
   await page.click('form button[type="submit"]');
-  await page.waitForSelector('main form');
+  await page.waitForSelector('#holder-check');
 }
 
 test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insured] (shipped tenants)', async (t) => {
@@ -304,9 +332,12 @@ test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insu
   try {
     await startWithPolicy(page, pol);
     await holderCheck(page, pol);
-    await page.selectOption('#insured-vehicle', unit.unitId);
-    await page.waitForFunction(() => document.activeElement?.id === 'insured-vehicle');
+    await page.check(`input[name="insured_vehicle"][value="${unit.unitId}"]`);
+    await page.waitForFunction(() => document.activeElement?.name === 'insured_vehicle');
+    await page.waitForSelector('.cl-saved');
     assert.equal(await page.locator('#vehicle-error:not([hidden])').count(), 0, 'no failure when the server accepts the pick');
+    await page.click('#vehicle-continue');
+    await page.waitForSelector('main form, #review-title');
     for (let i = 0; i < 25 && !(await page.locator('#review-title').count()); i += 1) {
       const q = await answerClaimantQuestion(page);
       await page.waitForFunction((prev) => {
@@ -314,7 +345,7 @@ test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insu
         return document.querySelector('#review-title') || l !== prev;
       }, q, { timeout: 5000 });
     }
-    await page.click('#review-title ~ button');
+    await page.click('#submit-claim');
     await page.waitForSelector('#claim-number');
     const number = (await page.textContent('#claim-number')).trim();
     const list = await server.app.ctx.forTenant('aurelia-mutual').modules.claims.listClaims({});
@@ -329,3 +360,106 @@ test('claimant insured-vehicle pick is stored on the claim as vehicles[role=insu
   }
 });
 
+
+// ---- S6-EXP-03 screenshots: the reviewer opens these files
+const MOBILE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, reducedMotion: 'reduce' };
+
+async function shot(page, name, opts = {}) {
+  fs.mkdirSync(SHOTS, { recursive: true });
+  // A full-page capture would repeat the sticky demo bar and header mid-page; unstick them for the capture only.
+  if (opts.fullPage) await page.addStyleTag({ content: '.fx-shell-sticky { position: static !important; }' });
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: path.join(SHOTS, name), ...opts });
+}
+
+test('claimant welcome renders the tenant brand, what to expect and a start button (screenshots 390x844 and 1440x900)', async (t) => {
+  if (skip) return t.skip(skip);
+  const mobile = await openWelcome('/claimant?tenant=aurelia-mutual', MOBILE);
+  try {
+    assert.match(await mobile.textContent('.cl-hero-eyebrow'), /Aurelia Mutual/);
+    assert.equal(await mobile.locator('.cl-expect li').count(), 3, 'three things to expect');
+    assert.equal(await mobile.locator('fx-demo-bar').count(), 1, 'demo bar is placed in the shell');
+    assert.equal(await mobile.locator('fx-app-shell > .fx-shell-sticky > .fx-shell-demo fx-demo-bar').count(), 1, 'in the shell demo slot');
+    assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'no horizontal scroll at 390px');
+    await reportPageA11y(mobile, 'claimant welcome (mobile)', t);
+    await shot(mobile, 'claimant-welcome.png');
+  } finally { await mobile.context().close(); }
+
+  const desktop = await openWelcome('/claimant?tenant=aurelia-mutual', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+  try {
+    await shot(desktop, 'claimant-welcome-desktop.png');
+  } finally { await desktop.context().close(); }
+});
+
+test('claimant guided flow screenshots: question, vehicle, review, confirmation at 390x844; formatted values, no raw tokens', async (t) => {
+  if (skip) return t.skip(skip);
+  const policy = server.policies['aurelia-mutual'][0];
+  const page = await openWelcome('/claimant?tenant=aurelia-mutual', MOBILE);
+  try {
+    await page.click('#welcome-start');
+    await page.waitForSelector('input[name="lob"]');
+    await page.check('input[name="lob"][value="personal_auto"]');
+    await page.fill('#policy-number', policy.policyNumber);
+    await shot(page, 'claimant-start.png');
+    await page.click('form button[type="submit"]');
+    await page.waitForSelector('#holder-check');
+    await shot(page, 'claimant-holder.png');
+    await holderCheck(page, policy);
+    await page.check(`input[name="insured_vehicle"][value="${policy.vehicles[0].unitId}"]`);
+    await page.waitForSelector('.cl-saved');
+    await shot(page, 'claimant-vehicle.png');
+    await page.click('#vehicle-continue');
+    await page.waitForSelector('main form');
+    assert.equal(await page.locator('.cl-seg-part').count(), 4, 'progress indicator shows four steps');
+    assert.equal(await page.getAttribute('.cl-seg', 'role'), 'progressbar');
+    await shot(page, 'claimant-question.png');
+    // inline validation: a required question left empty is refused with a message beside the field
+    const required = await page.evaluate(() => !document.querySelector('main form .cl-qlabel')?.textContent.includes('(optional)'));
+    if (required && await page.locator('main form input[type="text"], main form textarea').count()) {
+      await page.click('main form button[type="submit"]');
+      await page.waitForSelector('main form .field-error:not([hidden])');
+      assert.match(await page.textContent('main form .field-error'), /./);
+    }
+    for (let i = 0; i < 25 && !(await page.locator('#review-title').count()); i += 1) {
+      const q = await answerClaimantQuestion(page);
+      await page.waitForFunction((prev) => {
+        const l = (document.querySelector('main legend, main form label') ?? {}).textContent?.trim();
+        return document.querySelector('#review-title') || l !== prev;
+      }, q, { timeout: 5000 });
+    }
+    await page.waitForSelector('#review-title');
+    assert.ok(await page.locator('.cl-row').count() >= 3, 'review lists the answers');
+    await reportPageA11y(page, 'claimant review', t);
+    await shot(page, 'claimant-review.png', { fullPage: true });
+    await page.click('#submit-claim');
+    await page.waitForSelector('#claim-number');
+    await page.waitForSelector('#status-box ol.timeline li');
+    await shot(page, 'claimant-confirmation.png', { fullPage: true });
+
+    const text = await page.evaluate(() => document.querySelector('main').innerText);
+    assert.doesNotMatch(text, /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/, 'no raw ISO timestamps on screen');
+    assert.doesNotMatch(text, /\b[a-z]+_[a-z]+\b/, 'no snake_case tokens on screen');
+    assert.match(await page.textContent('.cl-claimmeta'), /Reported [A-Z][a-z]{2} \d{1,2}, \d{4}/, 'reported date is humanized');
+    assert.match(await page.textContent('#claim-number'), CLAIM_NUMBER);
+    assert.ok(await page.locator('.cl-claimmeta fx-badge').count() === 1, 'status is a badge');
+    assert.ok((await page.textContent('.cl-steps li[aria-current="step"] .cl-step-desc')).length > 10, 'current step says what happens next');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'no horizontal scroll at 390px');
+    await reportPageA11y(page, 'claimant confirmation', t);
+  } finally { await page.context().close(); }
+});
+
+test('claimant confirmation switches to Spanish without losing the claim', async (t) => {
+  if (skip) return t.skip(skip);
+  const page = await open('/claimant?tenant=aurelia-mutual');
+  try {
+    await completeGuided(page, t);
+    await page.click('#submit-claim');
+    await page.waitForSelector('#claim-number');
+    const number = (await page.textContent('#claim-number')).trim();
+    await page.selectOption('#lang-picker', 'es');
+    await page.waitForFunction(() => document.querySelector('#view-title')?.textContent.trim() === 'Recibimos su reclamo');
+    assert.equal((await page.textContent('#claim-number')).trim(), number);
+    assert.match(await page.textContent('.cl-claimmeta'), /Reportado el \d{1,2} \w+/, 'date formatted for es');
+    assert.equal(await page.locator('#ev-files').count(), 1);
+  } finally { await page.close(); }
+});

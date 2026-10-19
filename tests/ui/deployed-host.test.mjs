@@ -52,6 +52,8 @@ test('claimant reaches the first intake question on a non-localhost host, no Aut
   track(page);
   try {
     await page.goto(`http://fnol.test:${app.port}/claimant`);
+    await page.waitForSelector('#welcome-start');
+    await page.click('#welcome-start');
     await page.waitForSelector('input[name="lob"]');
     await page.check('input[name="lob"][value="personal_auto"]');
     await page.check('input[name="mode"][value="guided"]');
@@ -59,6 +61,8 @@ test('claimant reaches the first intake question on a non-localhost host, no Aut
     await page.waitForSelector('main form fieldset, main form input, main form select, main form textarea');
     await page.waitForFunction(() => !document.querySelector('input[name="lob"]'));
     assert.ok(page.apiCalls.length > 0);
+    // The design system shell and the demo bar load from the same non-localhost origin.
+    assert.equal(await page.locator('fx-app-shell .fx-shell-top').count(), 1, 'shell rendered');
     assert.deepEqual(page.authHeaders, []);
   } finally { await page.close(); }
 });

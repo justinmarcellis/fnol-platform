@@ -11,21 +11,20 @@
 </head>
 <body>
   <a class="skip" href="#main" id="skip">Skip to main content</a>
-  <header class="top">
-    <div class="brand">
-      <img id="logo" alt="" hidden width="32" height="32">
-      <span id="brand-name" class="brand-name">Claims</span>
+  <fx-app-shell id="shell" product="Claims" home-href="/">
+    <fx-demo-bar slot="demo"></fx-demo-bar>
+    <div class="cl" id="cl" data-view="boot">
+      <div class="cl-toolbar">
+        <label class="ctl" id="tenant-wrap"><span id="tenant-label">Insurance company</span>
+          <select id="tenant-picker"></select>
+        </label>
+        <label class="ctl" id="lang-wrap" hidden><span id="lang-label">Language</span>
+          <select id="lang-picker"></select>
+        </label>
+      </div>
+      <main id="main" tabindex="-1"><p class="cl-loading">Loading…</p></main>
     </div>
-    <div class="controls">
-      <label class="ctl"><span id="tenant-label">Insurance company</span>
-        <select id="tenant-picker"></select>
-      </label>
-      <label class="ctl" id="lang-wrap" hidden><span id="lang-label">Language</span>
-        <select id="lang-picker"></select>
-      </label>
-    </div>
-  </header>
-  <main id="main" tabindex="-1"><p>Loading…</p></main>
+  </fx-app-shell>
   <p id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
   <noscript><p class="noscript">This page needs JavaScript. Please enable it to report a claim.</p></noscript>
   <script src="/runtime-config.js"></script>
