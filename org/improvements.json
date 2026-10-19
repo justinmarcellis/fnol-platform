@@ -162,7 +162,45 @@
     "metric": "first-pass acceptance of the two configurations",
     "before": 0.667,
     "target": 1,
+    "status": "revise",
+    "note": "Recorded in org/scorecards/interventions.json | S5 measurement recorded at sprint close",
+    "after": null,
+    "result": "PI-2 1/1 first pass in S5 (low confidence); PI-1 not re-measured (no ticket); new PI-3 traced to orchestrator ticket scoping, so the same context-fix approach extends to the orchestrator via IMP-14"
+  },
+  {
+    "id": "IMP-13",
+    "sprint": 5,
+    "area": "quality",
+    "hypothesis": "Running the full suite (tests/ui, tests/integration) in every review of a src/ change stops UI regressions from escaping acceptance",
+    "owner": "dir-quality",
+    "metric": "escaped defects found in tests/ui after acceptance, per sprint",
+    "before": 1,
+    "target": 0,
     "status": "active",
-    "note": "Recorded in org/scorecards/interventions.json"
+    "implementation": "org/workflows/sprint-team.js review prompt; standards v3"
+  },
+  {
+    "id": "IMP-14",
+    "sprint": 5,
+    "area": "process",
+    "hypothesis": "Listing every test that encodes the behaviour being changed in the ticket paths removes scope-caused rework",
+    "owner": "ceo",
+    "metric": "rework rounds caused by out-of-scope tests, per sprint",
+    "before": 3,
+    "target": 0,
+    "status": "active",
+    "implementation": "standards v3 ticket scoping rule; orchestrator greps tests/ before dispatch"
+  },
+  {
+    "id": "IMP-15",
+    "sprint": 5,
+    "area": "process",
+    "hypothesis": "Path-only commits, no stash/checkout during workflows, and image builds from a clean worktree remove orchestrator-caused incidents",
+    "owner": "dir-pmo",
+    "metric": "incidents caused by orchestrator git operations, per sprint",
+    "before": 1,
+    "target": 0,
+    "status": "active",
+    "implementation": "standards v3; deploy runbook deployment log; adopted for the 04:18 deploy"
   }
 ]

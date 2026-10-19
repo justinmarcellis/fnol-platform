@@ -63,7 +63,21 @@
         "reason": "All 5 criteria met: claimant name-match via coverage snapshot, uniform 404 with deep-equal test, no early return, holder tests pass, demo e2e + regression gate green (0 fail vs baseline)"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-001",
+        "severity": "S2",
+        "type": "functional",
+        "foundIn": "ui",
+        "foundAt": "2026-10-19T02:05:00.000Z",
+        "summary": "Claimant vehicle picker never shown: holder check matched the token name to the named insured, which dev and real claimant tokens never carry; claimant claims lost fast-track",
+        "rootCause": "Ticket design (orchestrator) chose token-name identity; review gate ran unit+e2e+security but not tests/ui",
+        "regressionTest": "tests/ui/claimant.test.mjs (insured-vehicle picker), tests/security/s5-regressions.test.mjs",
+        "fixedBy": "S5-WFL-04",
+        "status": "fixed"
+      }
+    ]
   },
   "spend": {
     "usd": 0.8477,

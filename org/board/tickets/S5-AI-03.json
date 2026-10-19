@@ -58,7 +58,21 @@
         "reason": "All 6 criteria met: 22 tests pass with fakes, fail-closed exit 2, price table/estimate/cap/repeats, metrics, selection rule documented, offline path unchanged; prices need verification before live run"
       }
     ],
-    "firstPass": true
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-002",
+        "severity": "S3",
+        "type": "functional",
+        "foundIn": "live-eval",
+        "foundAt": "2026-10-19T03:10:00.000Z",
+        "summary": "Live eval called providers without the task output schema, so every Gemini output was invalid_output",
+        "rootCause": "Fakes in eval-live tests ignored opts.schema, so the omission passed review",
+        "regressionTest": "tests/unit/ai/eval-live.test.mjs (schema-sensitive fake)",
+        "fixedBy": "S5-AI-07",
+        "status": "fixed"
+      }
+    ]
   },
   "spend": {
     "usd": 0.6754,

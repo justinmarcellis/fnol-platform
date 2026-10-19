@@ -1,4 +1,4 @@
-# Ticket template, coding standards and review checklist (v1)
+# Ticket template, coding standards and review checklist (v3: v1 base, v2 and v3 changes below)
 
 ## Ticket template
 ```json
@@ -38,3 +38,9 @@
 - From Sprint 2, a standing ticket rehearses the demo against the running system (IMP-11).
 - A feature that needs both UI and server changes is one squad ticket, not two cross-team tickets.
 - Cross-module calibration (scores, thresholds) has one owner: the integration squad (ADR-003).
+
+## Changes from the self-improvement loop (v3, after Sprint 5)
+- Reviewers run the full `npm test` (including `tests/ui` and `tests/integration`) for any ticket that changes `src/`, not only e2e and security (IMP-13; DEF-001 escaped through the narrower gate).
+- Ticket scoping: before dispatch, grep `tests/` for the endpoint, function or file being changed and list every test that encodes the old behaviour in the ticket's `paths` (IMP-14; S5-WFL-03 and S5-WFL-05 were reworked because those tests were out of scope).
+- The orchestrator never runs `git stash`, `checkout` or `reset` on the shared tree while a workflow runs; commits are by path, and container images are built from a clean `git worktree` of the commit (IMP-15).
+- Defects found after acceptance are posted to the quality hub as type `blocker` (the fabric has no `defect` type; `tests/STRATEGY.md` is corrected in Sprint 6).

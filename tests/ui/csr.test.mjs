@@ -176,8 +176,11 @@ const adjusterSignIn = async (page) => {
 
 /** Answer the question on screen. Rear-end path: another party is involved and is at fault. Returns a label or null. */
 async function answerRearEnd(page, sentLog) {
-  if (await page.locator('#answer-slot fieldset.sf[data-qtype="party"]').count()) {
-    const fs = page.locator('#answer-slot fieldset.sf');
+  const partyForm = page.locator('#answer-slot fieldset.sf[data-qtype="party"]');
+  if (await partyForm.count()) {
+    // S5-QE-03: act on the same locator that was checked; the unfiltered fieldset.sf can resolve to a
+    // different sub-form while the slot re-renders under load (the 30 s lastName timeout).
+    const fs = partyForm;
     await fs.locator('input[name="lastName"]').fill('Example');
     await fs.locator('input[name="firstName"]').fill('Pat');
     await fs.locator('select[name="role"]').selectOption('third_party');

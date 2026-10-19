@@ -1,0 +1,23 @@
+{
+  "status": "in_progress",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T04:24:01.987Z",
+  "history": [],
+  "id": "S5-QE-03",
+  "team": "quality",
+  "title": "Root-cause the intermittent CSR rear-end subrogation UI test",
+  "story": "As QE I want the CSR subrogation UI test to pass reliably under full-suite load so that a red build always means a real defect",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-quality-e2e-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 5,
+  "paths": [
+    "tests/ui/csr.test.mjs"
+  ],
+  "acceptance": [
+    "Failure reproduced with a Playwright trace under full-suite load",
+    "Root cause named (test or product) and fixed; 5 consecutive full npm test runs pass"
+  ],
+  "brief": "Seen 4+ times in Sprint 5. Orchestrator fixed one race (unfiltered fieldset.sf locator); remaining failure: party sub-form present but input[name=lastName] not visible/editable for 30 s, only under load. Suspect the form is disabled or hidden while a previous answer request is pending. Carry over to Sprint 6."
+}

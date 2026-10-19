@@ -1,7 +1,7 @@
 {
   "number": 5,
-  "name": "Sprint 5",
-  "status": "planned",
+  "name": "Sprint 5: production-path credibility",
+  "status": "closed",
   "startedAt": "2026-10-19T01:52:12.302Z",
   "committed": [
     "S5-AI-01",
@@ -15,6 +15,69 @@
   ],
   "committedPoints": 32,
   "targets": {
-    "committedPoints": 32
-  }
+    "firstPassAcceptance": 0.85,
+    "budgetUsd": 45,
+    "testPassRate": 1
+  },
+  "closedAt": "2026-10-19T04:24:02.095Z",
+  "review": {
+    "completedPoints": 85,
+    "committedPoints": 89,
+    "usd": 17.43,
+    "pointsPerDollar": 4.9,
+    "firstPassAcceptance": 0.875,
+    "reworkRate": 0.083,
+    "testPassRate": 0.9924,
+    "testsPassed": "1445/1456",
+    "shipped": [
+      "Deployed web apps work behind IAP (runtime dev flag, X-Fnol-Authorization); 3 redeploys logged in docs/deploy-fnol-poc.md",
+      "Policy-number oracle closed: last name + ZIP holder check, per-policy atomic lockout, agent-producer rule",
+      "One safe-pattern checker for tenant regexes at save and evaluation; AI output validation, tenant attribution, untrusted-input framing, labelled-name redaction",
+      "Security re-review closed 12 findings with real tests: 0 high, 1 medium (SEC2-011 residual), 7 low open",
+      "First live Gemini evaluation (640 calls, $0.59 GCP, 0 redaction leaks) and per-task model selection: local rules primary except subrogation on gemini-2.5-flash",
+      "Four production spikes (Cloud SQL store port, OIDC verifier, Pub/Sub outbox, KMS envelope) as design + tested proof",
+      "Demo test runs against a remote URL; golden sets at 20 cases per task (5 adversarial)"
+    ],
+    "risks": [
+      "SEC2-011 residual: lowercase, accented and unlisted-label names still reach cloud models",
+      "R2: devMode on in the IAP-only deployment (accepted PoC risk, Sprint 6)",
+      "Claude on Vertex not evaluated: quota 0 until the sponsor enables Model Garden",
+      "Intermittent CSR UI test under full-suite load (S5-QE-03 carried over); quality.json shows 1 failure",
+      "Remote demo against the deployed URL not run: needs an IAP token, blocked by session permissions"
+    ],
+    "gcpUsd": {
+      "liveEvalRuns": 0.96,
+      "note": "Vertex AI spend billed to the sponsor GCP project, outside the $250 agent budget"
+    },
+    "escapedDefects": [
+      "DEF-001 (S2) from S5-WFL-01",
+      "DEF-002 (S3) from S5-AI-03"
+    ]
+  },
+  "goal": "Verified live deployment, live-model evaluation, 0 open medium security findings, spikes for the four production gaps",
+  "budgetUsd": 45,
+  "retro": {
+    "went_well": [
+      "Council caught real plan defects before any build (file overlaps, cost cap, IAP grant scope, R2 sequencing)",
+      "19 of 22 first-pass in waves 1-2; security gate found 4 mediums that became same-sprint fixes",
+      "The live eval paid for itself on its first run: a real redaction leak and a harness bug, both fixed and re-run the same sprint",
+      "The sponsor-reported outage was root-caused from logs without guesswork and fixed within one wave"
+    ],
+    "went_badly": [
+      "The review gate ran only e2e+security, so a UI regression escaped (DEF-001) and reached the sponsor",
+      "Orchestrator ticket scoping caused 3 rework rounds and one design defect (token-name identity)",
+      "Orchestrator ran git stash during a workflow (incident, no loss)",
+      "Quality report script passes a directory to node --test and always reports 1 failing test"
+    ],
+    "manager_retros": [
+      "workflow: identity checks need a product decision before code; last name + ZIP should have been the first design",
+      "ai: tests with fakes must be as strict as the real provider contract (schema-sensitive fakes)",
+      "quality: an intermittent UI test needs a trace, not reruns"
+    ]
+  },
+  "improvements": [
+    "IMP-13",
+    "IMP-14",
+    "IMP-15"
+  ]
 }

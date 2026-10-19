@@ -1,11 +1,48 @@
 {
-  "sprint": 4,
-  "generatedAt": "2026-10-18T22:21:16.167Z",
+  "sprint": 5,
+  "generatedAt": "2026-10-19T04:24:02.172Z",
   "medians": {
-    "hoursPerPoint": 0.021,
-    "costPerPoint": 0.134
+    "hoursPerPoint": 0.017,
+    "costPerPoint": 0.139
   },
   "agents": [
+    {
+      "key": "ceo",
+      "owner": "ceo",
+      "ticketsDone": 1,
+      "points": 1,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.071,
+      "costPerPoint": 1.297,
+      "composite": 0.666,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "wrong tier: cost per point 1.297 is over 2x median 0.139; try a cheaper tier",
+        "slow vs estimate: hours per point 0.071 is over 2x median 0.017",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "dir-ai",
+      "owner": "dir-ai",
+      "ticketsDone": 1,
+      "points": 3,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.012,
+      "costPerPoint": 0.284,
+      "composite": 0.87,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "wrong tier: cost per point 0.284 is over 2x median 0.139; try a cheaper tier",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
     {
       "key": "dir-architecture",
       "owner": "dir-architecture",
@@ -16,7 +53,7 @@
       "defects": 0,
       "hoursPerPoint": 0.015,
       "costPerPoint": 0.082,
-      "composite": 0.94,
+      "composite": 0.972,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -33,7 +70,7 @@
       "defects": 0,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.084,
-      "composite": 0.891,
+      "composite": 0.913,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -43,36 +80,32 @@
     {
       "key": "ic-ai-eval-engineer",
       "owner": "ic-ai-eval-engineer",
-      "ticketsDone": 1,
-      "points": 8,
+      "ticketsDone": 4,
+      "points": 19,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
-      "hoursPerPoint": 0.017,
-      "costPerPoint": 0.077,
-      "composite": 0.958,
+      "defects": 0.25,
+      "hoursPerPoint": 0.016,
+      "costPerPoint": 0.131,
+      "composite": 0.96,
       "lowPerformer": false,
-      "lowConfidence": true,
-      "diagnosis": [
-        "low confidence: fewer than 3 tickets, no action"
-      ]
+      "lowConfidence": false,
+      "diagnosis": []
     },
     {
       "key": "ic-ai-extraction-engineer",
       "owner": "ic-ai-extraction-engineer",
-      "ticketsDone": 3,
-      "points": 19,
+      "ticketsDone": 5,
+      "points": 24,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0.667,
-      "hoursPerPoint": 0.012,
-      "costPerPoint": 0.093,
-      "composite": 0.846,
+      "defects": 0.4,
+      "hoursPerPoint": 0.021,
+      "costPerPoint": 0.12,
+      "composite": 0.915,
       "lowPerformer": false,
       "lowConfidence": false,
-      "diagnosis": [
-        "escaped defects (0.667 per ticket); add tests or review"
-      ]
+      "diagnosis": []
     },
     {
       "key": "ic-ai-fraud-signals-engineer",
@@ -84,7 +117,7 @@
       "defects": 1,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.114,
-      "composite": 0.796,
+      "composite": 0.819,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -95,14 +128,14 @@
     {
       "key": "ic-ai-provider-integrator",
       "owner": "ic-ai-provider-integrator",
-      "ticketsDone": 3,
-      "points": 18,
+      "ticketsDone": 5,
+      "points": 29,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0.333,
-      "hoursPerPoint": 0.027,
-      "costPerPoint": 0.149,
-      "composite": 0.893,
+      "defects": 0.2,
+      "hoursPerPoint": 0.02,
+      "costPerPoint": 0.143,
+      "composite": 0.945,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -117,7 +150,7 @@
       "defects": 0,
       "hoursPerPoint": 0.022,
       "costPerPoint": 0.135,
-      "composite": 0.991,
+      "composite": 0.943,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -134,11 +167,11 @@
       "defects": 0,
       "hoursPerPoint": 0.033,
       "costPerPoint": 0.699,
-      "composite": 0.765,
+      "composite": 0.692,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.699 is over 2x median 0.134; try a cheaper tier",
+        "wrong tier: cost per point 0.699 is over 2x median 0.139; try a cheaper tier",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -152,7 +185,7 @@
       "defects": 0,
       "hoursPerPoint": 0.021,
       "costPerPoint": 0.17,
-      "composite": 0.966,
+      "composite": 0.923,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -169,10 +202,11 @@
       "defects": 0,
       "hoursPerPoint": 0.039,
       "costPerPoint": 0.132,
-      "composite": 0.833,
+      "composite": 0.8,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "slow vs estimate: hours per point 0.039 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -186,7 +220,7 @@
       "defects": 0,
       "hoursPerPoint": 0.024,
       "costPerPoint": 0.107,
-      "composite": 0.967,
+      "composite": 0.913,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -196,19 +230,20 @@
     {
       "key": "ic-experience-claimant-web-dev",
       "owner": "ic-experience-claimant-web-dev",
-      "ticketsDone": 2,
-      "points": 13,
-      "firstPassAcceptance": 0.5,
-      "reworkRate": 0.5,
-      "defects": 1.5,
-      "hoursPerPoint": 0.025,
-      "costPerPoint": 0.129,
-      "composite": 0.583,
-      "lowPerformer": false,
-      "lowConfidence": true,
+      "ticketsDone": 3,
+      "points": 18,
+      "firstPassAcceptance": 0.667,
+      "reworkRate": 0.333,
+      "defects": 1,
+      "hoursPerPoint": 0.022,
+      "costPerPoint": 0.137,
+      "composite": 0.653,
+      "lowPerformer": true,
+      "lowConfidence": false,
       "diagnosis": [
-        "escaped defects (1.5 per ticket); add tests or review",
-        "low confidence: fewer than 3 tickets, no action"
+        "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
+        "escaped defects (1 per ticket); add tests or review",
+        "composite below target 0.75 two sprints running"
       ]
     },
     {
@@ -221,12 +256,13 @@
       "defects": 0.333,
       "hoursPerPoint": 0.033,
       "costPerPoint": 0.198,
-      "composite": 0.616,
+      "composite": 0.545,
       "lowPerformer": true,
       "lowConfidence": false,
       "diagnosis": [
         "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
-        "bottom 10% composite"
+        "bottom 10% composite",
+        "composite below target 0.75 two sprints running"
       ]
     },
     {
@@ -239,7 +275,7 @@
       "defects": 0,
       "hoursPerPoint": 0.017,
       "costPerPoint": 0.049,
-      "composite": 0.958,
+      "composite": 0.996,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -256,7 +292,7 @@
       "defects": 0,
       "hoursPerPoint": 0.019,
       "costPerPoint": 0.253,
-      "composite": 0.913,
+      "composite": 0.905,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -273,11 +309,29 @@
       "defects": 1,
       "hoursPerPoint": 0.023,
       "costPerPoint": 0.131,
-      "composite": 0.879,
+      "composite": 0.828,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
         "escaped defects (1 per ticket); add tests or review",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "ic-integrations-api-designer",
+      "owner": "ic-integrations-api-designer",
+      "ticketsDone": 1,
+      "points": 2,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.017,
+      "costPerPoint": 0.283,
+      "composite": 0.919,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "wrong tier: cost per point 0.283 is over 2x median 0.139; try a cheaper tier",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -291,7 +345,7 @@
       "defects": 0.333,
       "hoursPerPoint": 0.029,
       "costPerPoint": 0.112,
-      "composite": 0.895,
+      "composite": 0.831,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -306,7 +360,7 @@
       "defects": 0,
       "hoursPerPoint": 0.02,
       "costPerPoint": 0.086,
-      "composite": 0.991,
+      "composite": 0.964,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -323,25 +377,43 @@
       "defects": 0.5,
       "hoursPerPoint": 0.036,
       "costPerPoint": 0.162,
-      "composite": 0.507,
+      "composite": 0.454,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "slow vs estimate: hours per point 0.036 is over 2x median 0.017",
         "escaped defects (0.5 per ticket); add tests or review",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "ic-platform-ci-engineer",
+      "owner": "ic-platform-ci-engineer",
+      "ticketsDone": 1,
+      "points": 3,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.012,
+      "costPerPoint": 0.132,
+      "composite": 0.946,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
     {
       "key": "ic-platform-iac-engineer",
       "owner": "ic-platform-iac-engineer",
-      "ticketsDone": 1,
-      "points": 5,
+      "ticketsDone": 2,
+      "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.009,
-      "costPerPoint": 0.064,
-      "composite": 0.882,
+      "hoursPerPoint": 0.01,
+      "costPerPoint": 0.084,
+      "composite": 0.913,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -358,7 +430,7 @@
       "defects": 2,
       "hoursPerPoint": 0.007,
       "costPerPoint": 0.037,
-      "composite": 0.763,
+      "composite": 0.778,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -369,14 +441,14 @@
     {
       "key": "ic-platform-runtime-dev",
       "owner": "ic-platform-runtime-dev",
-      "ticketsDone": 3,
-      "points": 13,
+      "ticketsDone": 4,
+      "points": 18,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.013,
-      "costPerPoint": 0.123,
-      "composite": 0.926,
+      "hoursPerPoint": 0.014,
+      "costPerPoint": 0.122,
+      "composite": 0.959,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -384,19 +456,17 @@
     {
       "key": "ic-platform-tenancy-dev",
       "owner": "ic-platform-tenancy-dev",
-      "ticketsDone": 2,
-      "points": 8,
+      "ticketsDone": 3,
+      "points": 13,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
       "hoursPerPoint": 0.014,
-      "costPerPoint": 0.092,
-      "composite": 0.931,
+      "costPerPoint": 0.127,
+      "composite": 0.968,
       "lowPerformer": false,
-      "lowConfidence": true,
-      "diagnosis": [
-        "low confidence: fewer than 3 tickets, no action"
-      ]
+      "lowConfidence": false,
+      "diagnosis": []
     },
     {
       "key": "ic-pmo-dashboard",
@@ -408,7 +478,7 @@
       "defects": 0,
       "hoursPerPoint": 0.011,
       "costPerPoint": 0.045,
-      "composite": 0.902,
+      "composite": 0.926,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -425,7 +495,7 @@
       "defects": 0,
       "hoursPerPoint": 0.008,
       "costPerPoint": 0.074,
-      "composite": 0.873,
+      "composite": 0.89,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -442,7 +512,7 @@
       "defects": 0,
       "hoursPerPoint": 0.015,
       "costPerPoint": 0.056,
-      "composite": 0.941,
+      "composite": 0.974,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -459,7 +529,7 @@
       "defects": 0,
       "hoursPerPoint": 0.014,
       "costPerPoint": 0.256,
-      "composite": 0.866,
+      "composite": 0.901,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -476,7 +546,7 @@
       "defects": 0,
       "hoursPerPoint": 0.005,
       "costPerPoint": 0.051,
-      "composite": 0.849,
+      "composite": 0.861,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -486,19 +556,18 @@
     {
       "key": "ic-product-requirements-analyst",
       "owner": "ic-product-requirements-analyst",
-      "ticketsDone": 2,
-      "points": 8,
+      "ticketsDone": 3,
+      "points": 11,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.03,
-      "costPerPoint": 0.441,
-      "composite": 0.813,
+      "hoursPerPoint": 0.025,
+      "costPerPoint": 0.394,
+      "composite": 0.805,
       "lowPerformer": false,
-      "lowConfidence": true,
+      "lowConfidence": false,
       "diagnosis": [
-        "wrong tier: cost per point 0.441 is over 2x median 0.134; try a cheaper tier",
-        "low confidence: fewer than 3 tickets, no action"
+        "wrong tier: cost per point 0.394 is over 2x median 0.139; try a cheaper tier"
       ]
     },
     {
@@ -511,12 +580,12 @@
       "defects": 0,
       "hoursPerPoint": 0.046,
       "costPerPoint": 0.881,
-      "composite": 0.673,
+      "composite": 0.674,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.881 is over 2x median 0.134; try a cheaper tier",
-        "slow vs estimate: hours per point 0.046 is over 2x median 0.021",
+        "wrong tier: cost per point 0.881 is over 2x median 0.139; try a cheaper tier",
+        "slow vs estimate: hours per point 0.046 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -530,7 +599,7 @@
       "defects": 0,
       "hoursPerPoint": 0.032,
       "costPerPoint": 0.049,
-      "composite": 0.899,
+      "composite": 0.828,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -540,20 +609,17 @@
     {
       "key": "ic-quality-e2e-engineer",
       "owner": "ic-quality-e2e-engineer",
-      "ticketsDone": 3,
-      "points": 18,
-      "firstPassAcceptance": 0.667,
-      "reworkRate": 0.333,
+      "ticketsDone": 4,
+      "points": 21,
+      "firstPassAcceptance": 0.75,
+      "reworkRate": 0.25,
       "defects": 0,
-      "hoursPerPoint": 0.022,
-      "costPerPoint": 0.167,
-      "composite": 0.774,
-      "lowPerformer": true,
+      "hoursPerPoint": 0.021,
+      "costPerPoint": 0.169,
+      "composite": 0.79,
+      "lowPerformer": false,
       "lowConfidence": false,
-      "diagnosis": [
-        "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
-        "bottom 10% composite"
-      ]
+      "diagnosis": []
     },
     {
       "key": "ic-quality-synthetic-data-engineer",
@@ -565,10 +631,11 @@
       "defects": 0,
       "hoursPerPoint": 0.037,
       "costPerPoint": 0.093,
-      "composite": 0.852,
+      "composite": 0.8,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "slow vs estimate: hours per point 0.037 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -582,11 +649,11 @@
       "defects": 0,
       "hoursPerPoint": 0.088,
       "costPerPoint": 0.189,
-      "composite": 0.757,
+      "composite": 0.761,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "slow vs estimate: hours per point 0.088 is over 2x median 0.021",
+        "slow vs estimate: hours per point 0.088 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -600,29 +667,30 @@
       "defects": 0,
       "hoursPerPoint": 0.044,
       "costPerPoint": 0.143,
-      "composite": 0.515,
+      "composite": 0.52,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "slow vs estimate: hours per point 0.044 is over 2x median 0.021",
+        "slow vs estimate: hours per point 0.044 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
     {
       "key": "ic-security-security-reviewer",
       "owner": "ic-security-security-reviewer",
-      "ticketsDone": 1,
-      "points": 8,
+      "ticketsDone": 2,
+      "points": 13,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
       "hoursPerPoint": 0.041,
-      "costPerPoint": 0.689,
-      "composite": 0.691,
+      "costPerPoint": 0.575,
+      "composite": 0.686,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.689 is over 2x median 0.134; try a cheaper tier",
+        "wrong tier: cost per point 0.575 is over 2x median 0.139; try a cheaper tier",
+        "slow vs estimate: hours per point 0.041 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -636,12 +704,11 @@
       "defects": 0,
       "hoursPerPoint": 0.047,
       "costPerPoint": 0.276,
-      "composite": 0.723,
+      "composite": 0.726,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.276 is over 2x median 0.134; try a cheaper tier",
-        "slow vs estimate: hours per point 0.047 is over 2x median 0.021",
+        "slow vs estimate: hours per point 0.047 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -655,7 +722,7 @@
       "defects": 0.5,
       "hoursPerPoint": 0.032,
       "costPerPoint": 0.123,
-      "composite": 0.845,
+      "composite": 0.773,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -666,35 +733,35 @@
     {
       "key": "ic-workflow-intake-flow-dev",
       "owner": "ic-workflow-intake-flow-dev",
-      "ticketsDone": 5,
-      "points": 31,
-      "firstPassAcceptance": 0.8,
-      "reworkRate": 0.2,
-      "defects": 0.4,
-      "hoursPerPoint": 0.022,
-      "costPerPoint": 0.17,
-      "composite": 0.808,
-      "lowPerformer": false,
+      "ticketsDone": 9,
+      "points": 46,
+      "firstPassAcceptance": 0.667,
+      "reworkRate": 0.333,
+      "defects": 0.333,
+      "hoursPerPoint": 0.032,
+      "costPerPoint": 0.179,
+      "composite": 0.576,
+      "lowPerformer": true,
       "lowConfidence": false,
-      "diagnosis": []
+      "diagnosis": [
+        "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
+        "bottom 10% composite"
+      ]
     },
     {
       "key": "ic-workflow-rules-engine-dev",
       "owner": "ic-workflow-rules-engine-dev",
-      "ticketsDone": 2,
-      "points": 16,
+      "ticketsDone": 3,
+      "points": 21,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0.5,
-      "hoursPerPoint": 0.018,
-      "costPerPoint": 0.125,
-      "composite": 0.922,
+      "defects": 0.333,
+      "hoursPerPoint": 0.017,
+      "costPerPoint": 0.129,
+      "composite": 0.964,
       "lowPerformer": false,
-      "lowConfidence": true,
-      "diagnosis": [
-        "escaped defects (0.5 per ticket); add tests or review",
-        "low confidence: fewer than 3 tickets, no action"
-      ]
+      "lowConfidence": false,
+      "diagnosis": []
     },
     {
       "key": "ic-workflow-timers-dev",
@@ -706,7 +773,7 @@
       "defects": 2,
       "hoursPerPoint": 0.025,
       "costPerPoint": 0.148,
-      "composite": 0.846,
+      "composite": 0.794,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -724,7 +791,7 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.16,
-      "composite": 0.976,
+      "composite": 0.98,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -739,7 +806,7 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.141,
-      "composite": 0.993,
+      "composite": 0.998,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -762,14 +829,14 @@
     {
       "key": "mgr-platform",
       "owner": "mgr-platform",
-      "ticketsDone": 4,
+      "ticketsDone": 5,
       "points": 4,
-      "firstPassAcceptance": 1,
+      "firstPassAcceptance": 0.8,
       "reworkRate": 0,
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.128,
-      "composite": 1,
+      "composite": 0.93,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -818,7 +885,7 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.158,
-      "composite": 0.977,
+      "composite": 0.982,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -850,13 +917,52 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.222,
-      "composite": 0.94,
+      "composite": 0.944,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
     }
   ],
   "configs": [
+    {
+      "key": "ceo+strong",
+      "owner": "ceo",
+      "tier": "strong",
+      "ticketsDone": 1,
+      "points": 1,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.071,
+      "costPerPoint": 1.297,
+      "composite": 0.666,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "wrong tier: cost per point 1.297 is over 2x median 0.139; try a cheaper tier",
+        "slow vs estimate: hours per point 0.071 is over 2x median 0.017",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "dir-ai+strong",
+      "owner": "dir-ai",
+      "tier": "strong",
+      "ticketsDone": 1,
+      "points": 3,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.012,
+      "costPerPoint": 0.284,
+      "composite": 0.87,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "wrong tier: cost per point 0.284 is over 2x median 0.139; try a cheaper tier",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
     {
       "key": "dir-architecture+strong",
       "owner": "dir-architecture",
@@ -868,7 +974,7 @@
       "defects": 0,
       "hoursPerPoint": 0.015,
       "costPerPoint": 0.082,
-      "composite": 0.94,
+      "composite": 0.972,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -886,7 +992,7 @@
       "defects": 0,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.084,
-      "composite": 0.891,
+      "composite": 0.913,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -897,37 +1003,33 @@
       "key": "ic-ai-eval-engineer+mid",
       "owner": "ic-ai-eval-engineer",
       "tier": "mid",
-      "ticketsDone": 1,
-      "points": 8,
+      "ticketsDone": 4,
+      "points": 19,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0,
-      "hoursPerPoint": 0.017,
-      "costPerPoint": 0.077,
-      "composite": 0.958,
+      "defects": 0.25,
+      "hoursPerPoint": 0.016,
+      "costPerPoint": 0.131,
+      "composite": 0.96,
       "lowPerformer": false,
-      "lowConfidence": true,
-      "diagnosis": [
-        "low confidence: fewer than 3 tickets, no action"
-      ]
+      "lowConfidence": false,
+      "diagnosis": []
     },
     {
       "key": "ic-ai-extraction-engineer+mid",
       "owner": "ic-ai-extraction-engineer",
       "tier": "mid",
-      "ticketsDone": 3,
-      "points": 19,
+      "ticketsDone": 5,
+      "points": 24,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0.667,
-      "hoursPerPoint": 0.012,
-      "costPerPoint": 0.093,
-      "composite": 0.846,
+      "defects": 0.4,
+      "hoursPerPoint": 0.021,
+      "costPerPoint": 0.12,
+      "composite": 0.915,
       "lowPerformer": false,
       "lowConfidence": false,
-      "diagnosis": [
-        "escaped defects (0.667 per ticket); add tests or review"
-      ]
+      "diagnosis": []
     },
     {
       "key": "ic-ai-fraud-signals-engineer+mid",
@@ -940,7 +1042,7 @@
       "defects": 1,
       "hoursPerPoint": 0.01,
       "costPerPoint": 0.114,
-      "composite": 0.796,
+      "composite": 0.819,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -952,14 +1054,14 @@
       "key": "ic-ai-provider-integrator+mid",
       "owner": "ic-ai-provider-integrator",
       "tier": "mid",
-      "ticketsDone": 3,
-      "points": 18,
+      "ticketsDone": 5,
+      "points": 29,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0.333,
-      "hoursPerPoint": 0.027,
-      "costPerPoint": 0.149,
-      "composite": 0.893,
+      "defects": 0.2,
+      "hoursPerPoint": 0.02,
+      "costPerPoint": 0.143,
+      "composite": 0.945,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -975,7 +1077,7 @@
       "defects": 0,
       "hoursPerPoint": 0.022,
       "costPerPoint": 0.135,
-      "composite": 0.991,
+      "composite": 0.943,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -993,11 +1095,11 @@
       "defects": 0,
       "hoursPerPoint": 0.033,
       "costPerPoint": 0.699,
-      "composite": 0.765,
+      "composite": 0.692,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.699 is over 2x median 0.134; try a cheaper tier",
+        "wrong tier: cost per point 0.699 is over 2x median 0.139; try a cheaper tier",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1012,7 +1114,7 @@
       "defects": 0,
       "hoursPerPoint": 0.021,
       "costPerPoint": 0.17,
-      "composite": 0.966,
+      "composite": 0.923,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1030,10 +1132,11 @@
       "defects": 0,
       "hoursPerPoint": 0.039,
       "costPerPoint": 0.132,
-      "composite": 0.833,
+      "composite": 0.8,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "slow vs estimate: hours per point 0.039 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1048,7 +1151,7 @@
       "defects": 0,
       "hoursPerPoint": 0.024,
       "costPerPoint": 0.107,
-      "composite": 0.967,
+      "composite": 0.913,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1059,19 +1162,20 @@
       "key": "ic-experience-claimant-web-dev+mid",
       "owner": "ic-experience-claimant-web-dev",
       "tier": "mid",
-      "ticketsDone": 2,
-      "points": 13,
-      "firstPassAcceptance": 0.5,
-      "reworkRate": 0.5,
-      "defects": 1.5,
-      "hoursPerPoint": 0.025,
-      "costPerPoint": 0.129,
-      "composite": 0.583,
-      "lowPerformer": false,
-      "lowConfidence": true,
+      "ticketsDone": 3,
+      "points": 18,
+      "firstPassAcceptance": 0.667,
+      "reworkRate": 0.333,
+      "defects": 1,
+      "hoursPerPoint": 0.022,
+      "costPerPoint": 0.137,
+      "composite": 0.653,
+      "lowPerformer": true,
+      "lowConfidence": false,
       "diagnosis": [
-        "escaped defects (1.5 per ticket); add tests or review",
-        "low confidence: fewer than 3 tickets, no action"
+        "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
+        "escaped defects (1 per ticket); add tests or review",
+        "composite below target 0.75 two sprints running"
       ]
     },
     {
@@ -1085,12 +1189,13 @@
       "defects": 0.333,
       "hoursPerPoint": 0.033,
       "costPerPoint": 0.198,
-      "composite": 0.616,
+      "composite": 0.545,
       "lowPerformer": true,
       "lowConfidence": false,
       "diagnosis": [
         "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
-        "bottom 10% composite"
+        "bottom 10% composite",
+        "composite below target 0.75 two sprints running"
       ]
     },
     {
@@ -1104,7 +1209,7 @@
       "defects": 0,
       "hoursPerPoint": 0.017,
       "costPerPoint": 0.049,
-      "composite": 0.958,
+      "composite": 0.996,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1122,7 +1227,7 @@
       "defects": 0,
       "hoursPerPoint": 0.013,
       "costPerPoint": 0.151,
-      "composite": 0.907,
+      "composite": 0.941,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1140,11 +1245,10 @@
       "defects": 0,
       "hoursPerPoint": 0.021,
       "costPerPoint": 0.277,
-      "composite": 0.92,
+      "composite": 0.881,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.277 is over 2x median 0.134; try a cheaper tier",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1159,11 +1263,30 @@
       "defects": 1,
       "hoursPerPoint": 0.023,
       "costPerPoint": 0.131,
-      "composite": 0.879,
+      "composite": 0.828,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
         "escaped defects (1 per ticket); add tests or review",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "ic-integrations-api-designer+mid",
+      "owner": "ic-integrations-api-designer",
+      "tier": "mid",
+      "ticketsDone": 1,
+      "points": 2,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.017,
+      "costPerPoint": 0.283,
+      "composite": 0.919,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "wrong tier: cost per point 0.283 is over 2x median 0.139; try a cheaper tier",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1178,7 +1301,7 @@
       "defects": 0.333,
       "hoursPerPoint": 0.029,
       "costPerPoint": 0.112,
-      "composite": 0.895,
+      "composite": 0.831,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1194,7 +1317,7 @@
       "defects": 0,
       "hoursPerPoint": 0.02,
       "costPerPoint": 0.086,
-      "composite": 0.991,
+      "composite": 0.964,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1212,11 +1335,30 @@
       "defects": 0.5,
       "hoursPerPoint": 0.036,
       "costPerPoint": 0.162,
-      "composite": 0.507,
+      "composite": 0.454,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "slow vs estimate: hours per point 0.036 is over 2x median 0.017",
         "escaped defects (0.5 per ticket); add tests or review",
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "ic-platform-ci-engineer+mid",
+      "owner": "ic-platform-ci-engineer",
+      "tier": "mid",
+      "ticketsDone": 1,
+      "points": 3,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.012,
+      "costPerPoint": 0.132,
+      "composite": 0.946,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1224,14 +1366,14 @@
       "key": "ic-platform-iac-engineer+mid",
       "owner": "ic-platform-iac-engineer",
       "tier": "mid",
-      "ticketsDone": 1,
-      "points": 5,
+      "ticketsDone": 2,
+      "points": 8,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.009,
-      "costPerPoint": 0.064,
-      "composite": 0.882,
+      "hoursPerPoint": 0.01,
+      "costPerPoint": 0.084,
+      "composite": 0.913,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1249,7 +1391,7 @@
       "defects": 2,
       "hoursPerPoint": 0.007,
       "costPerPoint": 0.037,
-      "composite": 0.763,
+      "composite": 0.778,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1261,14 +1403,14 @@
       "key": "ic-platform-runtime-dev+mid",
       "owner": "ic-platform-runtime-dev",
       "tier": "mid",
-      "ticketsDone": 3,
-      "points": 13,
+      "ticketsDone": 4,
+      "points": 18,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.013,
-      "costPerPoint": 0.123,
-      "composite": 0.926,
+      "hoursPerPoint": 0.014,
+      "costPerPoint": 0.122,
+      "composite": 0.959,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1284,7 +1426,25 @@
       "defects": 0,
       "hoursPerPoint": 0.014,
       "costPerPoint": 0.092,
-      "composite": 0.931,
+      "composite": 0.962,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "ic-platform-tenancy-dev+strong",
+      "owner": "ic-platform-tenancy-dev",
+      "tier": "strong",
+      "ticketsDone": 1,
+      "points": 5,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.015,
+      "costPerPoint": 0.181,
+      "composite": 0.942,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1302,7 +1462,7 @@
       "defects": 0,
       "hoursPerPoint": 0.011,
       "costPerPoint": 0.045,
-      "composite": 0.902,
+      "composite": 0.926,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1320,7 +1480,7 @@
       "defects": 0,
       "hoursPerPoint": 0.008,
       "costPerPoint": 0.074,
-      "composite": 0.873,
+      "composite": 0.89,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1338,7 +1498,7 @@
       "defects": 0,
       "hoursPerPoint": 0.015,
       "costPerPoint": 0.056,
-      "composite": 0.941,
+      "composite": 0.974,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1356,7 +1516,7 @@
       "defects": 0,
       "hoursPerPoint": 0.014,
       "costPerPoint": 0.256,
-      "composite": 0.866,
+      "composite": 0.901,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1374,7 +1534,7 @@
       "defects": 0,
       "hoursPerPoint": 0.005,
       "costPerPoint": 0.051,
-      "composite": 0.849,
+      "composite": 0.861,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1385,19 +1545,18 @@
       "key": "ic-product-requirements-analyst+mid",
       "owner": "ic-product-requirements-analyst",
       "tier": "mid",
-      "ticketsDone": 2,
-      "points": 8,
+      "ticketsDone": 3,
+      "points": 11,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.03,
-      "costPerPoint": 0.441,
-      "composite": 0.813,
+      "hoursPerPoint": 0.025,
+      "costPerPoint": 0.394,
+      "composite": 0.805,
       "lowPerformer": false,
-      "lowConfidence": true,
+      "lowConfidence": false,
       "diagnosis": [
-        "wrong tier: cost per point 0.441 is over 2x median 0.134; try a cheaper tier",
-        "low confidence: fewer than 3 tickets, no action"
+        "wrong tier: cost per point 0.394 is over 2x median 0.139; try a cheaper tier"
       ]
     },
     {
@@ -1411,12 +1570,12 @@
       "defects": 0,
       "hoursPerPoint": 0.046,
       "costPerPoint": 0.881,
-      "composite": 0.673,
+      "composite": 0.674,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.881 is over 2x median 0.134; try a cheaper tier",
-        "slow vs estimate: hours per point 0.046 is over 2x median 0.021",
+        "wrong tier: cost per point 0.881 is over 2x median 0.139; try a cheaper tier",
+        "slow vs estimate: hours per point 0.046 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1431,7 +1590,7 @@
       "defects": 0,
       "hoursPerPoint": 0.032,
       "costPerPoint": 0.049,
-      "composite": 0.899,
+      "composite": 0.828,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1442,20 +1601,17 @@
       "key": "ic-quality-e2e-engineer+mid",
       "owner": "ic-quality-e2e-engineer",
       "tier": "mid",
-      "ticketsDone": 3,
-      "points": 18,
-      "firstPassAcceptance": 0.667,
-      "reworkRate": 0.333,
+      "ticketsDone": 4,
+      "points": 21,
+      "firstPassAcceptance": 0.75,
+      "reworkRate": 0.25,
       "defects": 0,
-      "hoursPerPoint": 0.022,
-      "costPerPoint": 0.167,
-      "composite": 0.774,
-      "lowPerformer": true,
+      "hoursPerPoint": 0.021,
+      "costPerPoint": 0.169,
+      "composite": 0.79,
+      "lowPerformer": false,
       "lowConfidence": false,
-      "diagnosis": [
-        "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
-        "bottom 10% composite"
-      ]
+      "diagnosis": []
     },
     {
       "key": "ic-quality-synthetic-data-engineer+mid",
@@ -1468,10 +1624,11 @@
       "defects": 0,
       "hoursPerPoint": 0.037,
       "costPerPoint": 0.093,
-      "composite": 0.852,
+      "composite": 0.8,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
+        "slow vs estimate: hours per point 0.037 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1486,11 +1643,11 @@
       "defects": 0,
       "hoursPerPoint": 0.088,
       "costPerPoint": 0.189,
-      "composite": 0.757,
+      "composite": 0.761,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "slow vs estimate: hours per point 0.088 is over 2x median 0.021",
+        "slow vs estimate: hours per point 0.088 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1505,11 +1662,11 @@
       "defects": 0,
       "hoursPerPoint": 0.044,
       "costPerPoint": 0.143,
-      "composite": 0.515,
+      "composite": 0.52,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "slow vs estimate: hours per point 0.044 is over 2x median 0.021",
+        "slow vs estimate: hours per point 0.044 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1517,18 +1674,19 @@
       "key": "ic-security-security-reviewer+mid",
       "owner": "ic-security-security-reviewer",
       "tier": "mid",
-      "ticketsDone": 1,
-      "points": 8,
+      "ticketsDone": 2,
+      "points": 13,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
       "hoursPerPoint": 0.041,
-      "costPerPoint": 0.689,
-      "composite": 0.691,
+      "costPerPoint": 0.575,
+      "composite": 0.686,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.689 is over 2x median 0.134; try a cheaper tier",
+        "wrong tier: cost per point 0.575 is over 2x median 0.139; try a cheaper tier",
+        "slow vs estimate: hours per point 0.041 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1543,12 +1701,11 @@
       "defects": 0,
       "hoursPerPoint": 0.047,
       "costPerPoint": 0.276,
-      "composite": 0.723,
+      "composite": 0.726,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
-        "wrong tier: cost per point 0.276 is over 2x median 0.134; try a cheaper tier",
-        "slow vs estimate: hours per point 0.047 is over 2x median 0.021",
+        "slow vs estimate: hours per point 0.047 is over 2x median 0.017",
         "low confidence: fewer than 3 tickets, no action"
       ]
     },
@@ -1563,7 +1720,7 @@
       "defects": 0.5,
       "hoursPerPoint": 0.032,
       "costPerPoint": 0.123,
-      "composite": 0.845,
+      "composite": 0.773,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1575,36 +1732,36 @@
       "key": "ic-workflow-intake-flow-dev+mid",
       "owner": "ic-workflow-intake-flow-dev",
       "tier": "mid",
-      "ticketsDone": 5,
-      "points": 31,
-      "firstPassAcceptance": 0.8,
-      "reworkRate": 0.2,
-      "defects": 0.4,
-      "hoursPerPoint": 0.022,
-      "costPerPoint": 0.17,
-      "composite": 0.808,
-      "lowPerformer": false,
+      "ticketsDone": 9,
+      "points": 46,
+      "firstPassAcceptance": 0.667,
+      "reworkRate": 0.333,
+      "defects": 0.333,
+      "hoursPerPoint": 0.032,
+      "costPerPoint": 0.179,
+      "composite": 0.576,
+      "lowPerformer": true,
       "lowConfidence": false,
-      "diagnosis": []
+      "diagnosis": [
+        "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
+        "bottom 10% composite"
+      ]
     },
     {
       "key": "ic-workflow-rules-engine-dev+mid",
       "owner": "ic-workflow-rules-engine-dev",
       "tier": "mid",
-      "ticketsDone": 2,
-      "points": 16,
+      "ticketsDone": 3,
+      "points": 21,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0.5,
-      "hoursPerPoint": 0.018,
-      "costPerPoint": 0.125,
-      "composite": 0.922,
+      "defects": 0.333,
+      "hoursPerPoint": 0.017,
+      "costPerPoint": 0.129,
+      "composite": 0.964,
       "lowPerformer": false,
-      "lowConfidence": true,
-      "diagnosis": [
-        "escaped defects (0.5 per ticket); add tests or review",
-        "low confidence: fewer than 3 tickets, no action"
-      ]
+      "lowConfidence": false,
+      "diagnosis": []
     },
     {
       "key": "ic-workflow-timers-dev+mid",
@@ -1617,7 +1774,7 @@
       "defects": 2,
       "hoursPerPoint": 0.025,
       "costPerPoint": 0.148,
-      "composite": 0.846,
+      "composite": 0.794,
       "lowPerformer": false,
       "lowConfidence": true,
       "diagnosis": [
@@ -1636,7 +1793,7 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.16,
-      "composite": 0.976,
+      "composite": 0.98,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1652,7 +1809,7 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.141,
-      "composite": 0.993,
+      "composite": 0.998,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1677,14 +1834,14 @@
       "key": "mgr-platform+mid",
       "owner": "mgr-platform",
       "tier": "mid",
-      "ticketsDone": 4,
+      "ticketsDone": 5,
       "points": 4,
-      "firstPassAcceptance": 1,
+      "firstPassAcceptance": 0.8,
       "reworkRate": 0,
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.128,
-      "composite": 1,
+      "composite": 0.93,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1736,7 +1893,7 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.158,
-      "composite": 0.977,
+      "composite": 0.982,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1770,7 +1927,7 @@
       "defects": 0,
       "hoursPerPoint": null,
       "costPerPoint": 0.222,
-      "composite": 0.94,
+      "composite": 0.944,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1780,14 +1937,14 @@
     {
       "key": "ai",
       "team": "ai",
-      "ticketsDone": 14,
-      "points": 70,
+      "ticketsDone": 22,
+      "points": 100,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
-      "defects": 0.286,
+      "defects": 0.227,
       "hoursPerPoint": 0.018,
-      "costPerPoint": 0.12,
-      "composite": 0.946,
+      "costPerPoint": 0.137,
+      "composite": 0.96,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1795,14 +1952,14 @@
     {
       "key": "experience",
       "team": "experience",
-      "ticketsDone": 13,
-      "points": 67,
-      "firstPassAcceptance": 0.846,
-      "reworkRate": 0.154,
-      "defects": 0.308,
-      "hoursPerPoint": 0.028,
-      "costPerPoint": 0.143,
-      "composite": 0.807,
+      "ticketsDone": 14,
+      "points": 72,
+      "firstPassAcceptance": 0.857,
+      "reworkRate": 0.143,
+      "defects": 0.286,
+      "hoursPerPoint": 0.027,
+      "costPerPoint": 0.144,
+      "composite": 0.768,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1817,7 +1974,7 @@
       "defects": 0,
       "hoursPerPoint": 0.019,
       "costPerPoint": 0.25,
-      "composite": 0.914,
+      "composite": 0.906,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1825,14 +1982,14 @@
     {
       "key": "integrations",
       "team": "integrations",
-      "ticketsDone": 15,
-      "points": 84,
-      "firstPassAcceptance": 0.933,
-      "reworkRate": 0.067,
-      "defects": 0.267,
+      "ticketsDone": 16,
+      "points": 86,
+      "firstPassAcceptance": 0.938,
+      "reworkRate": 0.063,
+      "defects": 0.25,
       "hoursPerPoint": 0.026,
-      "costPerPoint": 0.175,
-      "composite": 0.85,
+      "costPerPoint": 0.177,
+      "composite": 0.8,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1840,14 +1997,14 @@
     {
       "key": "platform",
       "team": "platform",
-      "ticketsDone": 11,
-      "points": 43,
-      "firstPassAcceptance": 1,
+      "ticketsDone": 16,
+      "points": 59,
+      "firstPassAcceptance": 0.938,
       "reworkRate": 0,
-      "defects": 0.182,
+      "defects": 0.125,
       "hoursPerPoint": 0.011,
-      "costPerPoint": 0.085,
-      "composite": 0.882,
+      "costPerPoint": 0.1,
+      "composite": 0.9,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1855,14 +2012,14 @@
     {
       "key": "pmo",
       "team": "pmo",
-      "ticketsDone": 4,
-      "points": 22,
+      "ticketsDone": 5,
+      "points": 23,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.011,
-      "costPerPoint": 0.062,
-      "composite": 0.9,
+      "hoursPerPoint": 0.013,
+      "costPerPoint": 0.115,
+      "composite": 0.956,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1870,31 +2027,31 @@
     {
       "key": "product",
       "team": "product",
-      "ticketsDone": 7,
-      "points": 32,
+      "ticketsDone": 8,
+      "points": 35,
       "firstPassAcceptance": 1,
       "reworkRate": 0,
       "defects": 0,
-      "hoursPerPoint": 0.021,
-      "costPerPoint": 0.319,
-      "composite": 0.91,
+      "hoursPerPoint": 0.02,
+      "costPerPoint": 0.315,
+      "composite": 0.88,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": [
-        "wrong tier: cost per point 0.319 is over 2x median 0.134; try a cheaper tier"
+        "wrong tier: cost per point 0.315 is over 2x median 0.139; try a cheaper tier"
       ]
     },
     {
       "key": "quality",
       "team": "quality",
-      "ticketsDone": 9,
-      "points": 31,
-      "firstPassAcceptance": 0.889,
-      "reworkRate": 0.111,
+      "ticketsDone": 10,
+      "points": 34,
+      "firstPassAcceptance": 0.9,
+      "reworkRate": 0.1,
       "defects": 0,
-      "hoursPerPoint": 0.03,
-      "costPerPoint": 0.143,
-      "composite": 0.839,
+      "hoursPerPoint": 0.029,
+      "costPerPoint": 0.147,
+      "composite": 0.799,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []
@@ -1902,19 +2059,19 @@
     {
       "key": "security",
       "team": "security",
-      "ticketsDone": 6,
-      "points": 28,
-      "firstPassAcceptance": 0.833,
-      "reworkRate": 0.167,
+      "ticketsDone": 7,
+      "points": 33,
+      "firstPassAcceptance": 0.857,
+      "reworkRate": 0.143,
       "defects": 0,
       "hoursPerPoint": 0.044,
-      "costPerPoint": 0.336,
-      "composite": 0.618,
+      "costPerPoint": 0.344,
+      "composite": 0.632,
       "lowPerformer": true,
       "lowConfidence": false,
       "diagnosis": [
-        "wrong tier: cost per point 0.336 is over 2x median 0.134; try a cheaper tier",
-        "slow vs estimate: hours per point 0.044 is over 2x median 0.021",
+        "wrong tier: cost per point 0.344 is over 2x median 0.139; try a cheaper tier",
+        "slow vs estimate: hours per point 0.044 is over 2x median 0.017",
         "bottom 10% composite",
         "composite below target 0.75 two sprints running"
       ]
@@ -1922,14 +2079,14 @@
     {
       "key": "workflow",
       "team": "workflow",
-      "ticketsDone": 14,
-      "points": 72,
-      "firstPassAcceptance": 0.929,
-      "reworkRate": 0.071,
-      "defects": 0.429,
-      "hoursPerPoint": 0.023,
-      "costPerPoint": 0.152,
-      "composite": 0.877,
+      "ticketsDone": 19,
+      "points": 92,
+      "firstPassAcceptance": 0.842,
+      "reworkRate": 0.158,
+      "defects": 0.368,
+      "hoursPerPoint": 0.028,
+      "costPerPoint": 0.159,
+      "composite": 0.731,
       "lowPerformer": false,
       "lowConfidence": false,
       "diagnosis": []

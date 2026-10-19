@@ -79,7 +79,7 @@ ${t.acceptance.map((a) => '- ' + a).join('\n')}
 The IC reported: ${JSON.stringify(build ?? {}).slice(0, 3000)}
 Check every criterion against the files and by RUNNING the relevant tests yourself. Also check: tenant isolation respected, no PII in logs/events, contract conformance (shapes match architecture/contracts), only in-scope paths changed (git status shows the whole repo; other teams are writing too, so judge only files plausibly from this ticket), no real-world brands or data. Do not fix the work.
 You MUST record the verdict yourself before returning (IMP-7): AGENT_ID=qe-acceptance node org/cli.mjs review ${t.id} <accept|rework> "<one-line reason>"
-Regression gate (IMP-4): if the ticket changed anything under src/modules/ or src/core/, also run node --test --disable-warning=ExperimentalWarning "tests/e2e/*.test.mjs" "tests/security/*.test.mjs" and compare with the baseline in org/quality-baseline.txt (failures listed there were already failing before this sprint). A NEW failure caused by this ticket's files is grounds for rework.
+Regression gate (IMP-4, widened by IMP-13): if the ticket changed anything under src/ (modules, core, ai, web or server.mjs), run the FULL suite (npm test, which includes tests/ui and tests/integration) and compare with the baseline in org/quality-baseline.txt (failures listed there were already failing before this sprint). A NEW failure caused by this ticket's files is grounds for rework. A failure that also occurs on the parent commit is not, but name it in your reasons.
 UI gate (IMP-6): if the ticket built UI under src/web/, its Playwright smoke test must exist and pass.
 Accept when every criterion is met and tests pass; minor style nits are not grounds for rework.`
 }

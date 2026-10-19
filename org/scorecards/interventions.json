@@ -1,18 +1,42 @@
 [
   {
-    "id": "PI-1", "sprint": 4, "config": "ic-experience-csr-portal-dev (mid tier)",
+    "id": "PI-1",
+    "sprint": 4,
+    "config": "ic-experience-csr-portal-dev (mid tier)",
     "signal": "composite 0.62, first-pass 2/3, bottom 10%",
-    "evidence": ["S1-EXP-03: CSR disclosure checkbox defect escaped (UI never run in a browser)", "S4-EXP-01: 3 rounds; rounds 1-2 blocked on server pieces owned by another team"],
+    "evidence": [
+      "S1-EXP-03: CSR disclosure checkbox defect escaped (UI never run in a browser)",
+      "S4-EXP-01: 3 rounds; rounds 1-2 blocked on server pieces owned by another team"
+    ],
     "diagnosis": "bad dependency + missing context, not a capability limit",
     "intervention": "1. fix the ticket/context: UI+server features become one squad ticket (playbook v2); Playwright gate already applied (IMP-6). No tier change, no retirement.",
-    "outcome": "Round 3 accepted first time once the dependency existed; re-measure next phase"
+    "outcome": "Round 3 accepted first time once the dependency existed; re-measure next phase | S5: no ticket assigned, not re-measured; deprecation clock not started"
   },
   {
-    "id": "PI-2", "sprint": 4, "config": "ic-quality-e2e-engineer (mid tier)",
+    "id": "PI-2",
+    "sprint": 4,
+    "config": "ic-quality-e2e-engineer (mid tier)",
     "signal": "composite 0.77, first-pass 2/3, bottom 10%",
-    "evidence": ["S3-QE-01: rework because POST /intake/.../submit returns a summary while openapi says full Claim"],
+    "evidence": [
+      "S3-QE-01: rework because POST /intake/.../submit returns a summary while openapi says full Claim"
+    ],
     "diagnosis": "unclear ticket/contract drift (contract said one thing, code another), not a capability limit",
     "intervention": "1. fix the context: architecture-hub triage each sprint (IMP-5) reconciles contract vs code before QE writes against it",
-    "outcome": "Rework fixed in one round; re-measure next phase"
+    "outcome": "Rework fixed in one round; re-measure next phase | S5: S5-QE-01 accepted first pass (1 ticket, low confidence); S5-QE-03 carried over"
+  },
+  {
+    "id": "PI-3",
+    "sprint": 5,
+    "config": "ic-workflow-intake-flow-dev (mid tier)",
+    "signal": "composite 0.576 cumulative, bottom 10%; Sprint 5 first-pass 2/4",
+    "evidence": [
+      "S5-WFL-01: accepted, then escaped DEF-001 (claimant picker) from the token-name identity rule the orchestrator specified",
+      "S5-WFL-03: 2 rework rounds, code correct, two outdated tests outside the ticket paths",
+      "S5-WFL-05: rework, one test-isolation fix outside the ticket paths",
+      "S5-WFL-04: accepted first pass"
+    ],
+    "diagnosis": "unclear ticket (orchestrator scoping: paths too narrow; design choice in the ticket), not a capability limit",
+    "intervention": "1. fix the ticket/context: IMP-14 (tests that encode the behaviour being changed are listed in the ticket paths); IMP-13 (reviewers run the full suite). No tier change.",
+    "outcome": "re-measure in Sprint 6"
   }
 ]
