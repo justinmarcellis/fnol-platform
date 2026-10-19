@@ -53,6 +53,17 @@ gcloud run deploy fnol-platform --image $REGION-docker.pkg.dev/$PROJECT/fnol/pla
 gcloud iap web add-iam-policy-binding --member=user:<sponsor-email> \
   --role=roles/iap.httpsResourceAccessor --region $REGION --resource-type=cloud-run --service fnol-platform
 
+# 5b. The Google-managed OAuth client only admits users in the project's organization,
+#     so a sponsor outside it (e.g. @gmail.com) gets "You don't have access". Console only:
+#     OAuth consent screen (Audience: External, sponsor added as a test user), then a
+#     Web application client with redirect URI
+#     https://iap.googleapis.com/v1/oauth/clientIds/<CLIENT_ID>:handleRedirect
+#     Then point IAP at it (prompts, so the secret is not echoed or committed):
+read -p "Client ID: " CID; read -s -p "Client secret: " CSEC; echo
+printf 'access_settings:\n  oauth_settings:\n    client_id: %s\n    client_secret: %s\n' "$CID" "$CSEC" > iap.yaml
+gcloud iap settings set iap.yaml --region $REGION --resource-type=cloud-run --service fnol-platform
+rm iap.yaml; unset CSEC
+
 # 6. Verify
 #   - open the service URL in a browser signed in as the sponsor
 #   - the run.app frontend reserves /healthz (Google 404), so check the revision
