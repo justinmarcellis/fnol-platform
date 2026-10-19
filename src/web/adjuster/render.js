@@ -187,6 +187,9 @@ export function headerHtml(view, now = Date.now()) {
     [t('adj.claim.cause'), c.lossEvent?.cause ? tEnum('adj.cause', c.lossEvent.cause) : ''],
     [t('adj.claim.state'), c.riskState],
     [t('adj.claim.reported'), view.timestamps?.reportedAt ? fmtWhen(view.timestamps.reportedAt) : ''],
+    // S6-RA-03: intake answers with no claim field (police report number, drivable, damaged areas...).
+    ...Object.entries(c.lossEvent?.intakeAnswers ?? {}).map(([k, v]) => [formatEnum(k), Array.isArray(v) ? v.map((x) => formatEnum(String(x))).join(', ')
+      : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : typeof v === 'string' && /^[a-z]+(_[a-z]+)*$/.test(v) ? formatEnum(v) : String(v)]),
   ]);
   const chips = [statusBadge(c.status), severityChip(view.triage?.severityScore, view.triage?.severityBand), flagChips(c.flags), timerChip(next, now)].filter(Boolean).join(' ');
   return `<fx-card id="panel-header" class="adj-hero" padding="md"><div class="fx-cluster adj-hero-chips" aria-label="${esc(t('adj.panel.header'))}" role="group">${chips}</div>${facts}</fx-card>`;

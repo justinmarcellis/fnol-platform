@@ -67,6 +67,9 @@ export function toClaimCreate(session, answers, questions, lobConfig) {
       lists.parties.push({ roles, kind: 'person', ...rest });
     } else if (q.type === 'vehicle' && a.value && typeof a.value === 'object') {
       lists.vehicles.push({ role: 'insured', ...a.value });
+    } else if (!target && !FORBIDDEN.has(q.id) && (['string', 'number', 'boolean'].includes(typeof a.value) || Array.isArray(a.value))) {
+      // S6-RA-03: unmapped answers (police report number, drivable, damaged areas...) are kept on the claim for the adjuster.
+      (input.lossEvent.intakeAnswers ??= {})[q.id] = a.value;
     }
   }
 
@@ -225,6 +228,11 @@ export async function enrichClaimCreate(input, { session, answers, questions, ge
     if (!snapshot || typeof snapshot !== 'object') return setMeta(out, meta);
 
     applyInsuredParty(out, snapshot);
+    // S6-RA-01: regulatory timers key on riskState; when the loss location gave none, use the policy's rating state.
+    if (!out.riskState) {
+      const st = snapshot.riskState ?? snapshot.ratingState;
+      if (typeof st === 'string' && /^[A-Z]{2}$/.test(st)) out.riskState = st;
+    }
     if (isAutoLob(out.lob) || (!out.lob && Array.isArray(snapshot.vehicles))) {
       const ids = vehicleIds(out, answers, questions);
       const pv = pickVehicle(snapshot, ids);
