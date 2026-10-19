@@ -80,3 +80,13 @@ If IAP for Cloud Run is unavailable in the project, fall back to `--no-allow-una
 ## Not in scope for the PoC deploy
 
 Cloud SQL, Pub/Sub, Cloud KMS and SSO are production gaps tracked in `docs/cots-readiness.md`. Vertex AI providers stay off until Claude models are enabled in Model Garden for `fnol-poc`.
+
+## Deployment log
+
+| Date (UTC) | Revision | Commit | Why | Verified |
+| --- | --- | --- | --- | --- |
+| 2026-10-19 01:15 | fnol-platform-00002-5pz | bff35bc (image `poc`) | First PoC deploy | IAP on, run.invoker only the IAP agent, sponsor only, seed + 29 demo claims in logs |
+| 2026-10-19 02:23 | fnol-platform-00003-mzt | 1702813 | Web apps work behind IAP (S5-EXP-01), claimant holder check by last name + ZIP (S5-WFL-04) | Same checks; full npm test 1406 pass, 0 fail |
+| 2026-10-19 04:18 | fnol-platform-00004-kvk | f2d6fc9 | Labelled-name redaction (S5-AI-08), per-policy holder lockout (S5-WFL-05) | Same checks; full npm test 1446 pass, 0 fail, 3 todo |
+
+Images are tagged with the short commit (`$REGION-docker.pkg.dev/$PROJECT/fnol/platform:<sha>`) as well as `poc`. Build from a clean `git worktree` of the commit so uncommitted files never reach the image.

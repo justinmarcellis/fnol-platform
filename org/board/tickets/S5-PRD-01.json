@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T04:17:10.933Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T04:17:20.200Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T04:19:18.082Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T04:19:48.583Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-PRD-01",
@@ -30,5 +40,45 @@
     "Synthetic data only; no real carrier names; every claim in both docs is backed by a file you read (no estimates)"
   ],
   "brief": "Read the Sprint 5 tickets (org/board/tickets/S5-*.json), git log since 8fb908a, architecture/security-review-s2.md section 13, docs/ai-evaluation-live.md, architecture/spikes/, docs/deploy-fnol-poc.md. Do not edit docs/ai-model-selection.md (S5-AI-05 runs in parallel); you may reference it by path.",
-  "startedAt": "2026-10-19T04:17:20.200Z"
+  "startedAt": "2026-10-19T04:17:20.200Z",
+  "doneAt": "2026-10-19T04:19:48.583Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T04:19:48.583Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met: S5 table with citations, tally 0/1/7 + R2 deferred, pilot path, demo ZIP step + IAP placeholder, deployed section kept; claims spot-checked against sources; demo-script e2e passes"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.8036,
+    "inputTokens": 46,
+    "cacheWriteTokens": 160869,
+    "cacheReadTokens": 1991217,
+    "outputTokens": 313,
+    "agents": {
+      "a1e3ecc45f138d0f7": {
+        "label": "S5-PRD-01 ic-product-requirements-analyst",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 34,
+        "cacheWriteTokens": 132534,
+        "cacheReadTokens": 1637336,
+        "outputTokens": 222,
+        "usd": 0.6611
+      },
+      "aee5e381b1cfc45f5": {
+        "label": "S5-PRD-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 28335,
+        "cacheReadTokens": 353881,
+        "outputTokens": 91,
+        "usd": 0.1425
+      }
+    }
+  }
 }

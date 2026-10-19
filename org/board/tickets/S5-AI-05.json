@@ -1,5 +1,5 @@
 {
-  "status": "in_progress",
+  "status": "done",
   "dependsOn": [],
   "createdAt": "2026-10-19T04:17:10.931Z",
   "history": [
@@ -7,6 +7,16 @@
       "at": "2026-10-19T04:17:20.434Z",
       "from": "ready",
       "to": "in_progress"
+    },
+    {
+      "at": "2026-10-19T04:19:09.161Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-19T04:19:34.810Z",
+      "from": "review",
+      "to": "done"
     }
   ],
   "id": "S5-AI-05",
@@ -28,5 +38,45 @@
     "A short 'Next evaluation' list: fix the photo input path, split attack success into instruction-followed vs plain error, relabel codes from the domain spec, more cases, Claude once enabled; and a recommended tenant ai config snippet (provider order per task) that matches the choice"
   ],
   "brief": "Decision document, not code. Read docs/ai-evaluation-live.md (live), docs/ai-evaluation.md (offline), src/ai/eval-live.mjs selection rule, tests/fixtures/ai/golden/, tenants/*.json ai blocks. Be decisive and brief; a reader should know in 30 seconds what runs where.",
-  "startedAt": "2026-10-19T04:17:20.434Z"
+  "startedAt": "2026-10-19T04:17:20.434Z",
+  "doneAt": "2026-10-19T04:19:34.810Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-19T04:19:34.810Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Decision doc meets all 4 criteria; cited numbers match live/offline reports; config resolves as stated; doc-only, no regression gate needed"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.8516,
+    "inputTokens": 36,
+    "cacheWriteTokens": 153874,
+    "cacheReadTokens": 1127420,
+    "outputTokens": 1596,
+    "agents": {
+      "a53d0526c753c20e0": {
+        "label": "S5-AI-05 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 69779,
+        "cacheReadTokens": 321916,
+        "outputTokens": 84,
+        "usd": 0.2397
+      },
+      "af9d390beb681bbcd": {
+        "label": "S5-AI-05 dir-ai",
+        "model": "claude-opus-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 84095,
+        "cacheReadTokens": 805504,
+        "outputTokens": 1512,
+        "usd": 0.6119
+      }
+    }
+  }
 }
