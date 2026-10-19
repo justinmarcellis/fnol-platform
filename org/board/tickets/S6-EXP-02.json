@@ -1,0 +1,37 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:26:39.630Z",
+  "history": [],
+  "id": "S6-EXP-02",
+  "team": "experience",
+  "title": "Demo persona switcher: tenant and persona dropdown on every app",
+  "story": "As the sponsor running a demo I want a dropdown to switch tenant and persona (claimant, CSR, agent, adjuster, supervisor, carrier admin) from any app so that I can show every role without signing in again",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-admin-ui-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/shared/components/demo-bar.js",
+    "src/web/shared/personas.js",
+    "src/web/shared/devlogin.js",
+    "src/core/dev-personas.mjs",
+    "src/server.mjs",
+    "tests/unit/web/shared/personas.test.mjs",
+    "tests/unit/web/shared/devlogin.test.js",
+    "tests/unit/core/dev-personas.test.mjs",
+    "tests/ui/demo-bar.test.mjs"
+  ],
+  "acceptance": [
+    "GET /api/v1/dev/personas (devMode only; 404 when devMode is false, test) returns per tenant a list of personas with id, display name (synthetic), role and target app: a claimant who is the named insured of a seeded policy (include the policy number and the last name and ZIP hint so the holder check works in the demo), a CSR, an agent who produces seeded policies, an adjuster who owns the most demo claims after seeding (so the inbox is not empty), a supervisor, a carrier admin; derived from the seeded data at request time, never hard-coded real people",
+    "<fx-demo-bar> custom element: compact bar with a 'Demo' pill, a tenant dropdown and a persona dropdown (grouped by app), shows the current persona name and role; choosing a persona mints a token via POST /api/v1/auth/token, stores it for the tab (sessionStorage), and navigates to that persona's app (claimant -> /?tenant=..., csr -> /csr, agent -> /csr, adjuster and supervisor -> /adjuster, carrier admin -> /admin); the app on load picks the token up and signs in without the old dev form",
+    "Renders nothing unless window.__FNOL_DEV__ is true (S5-EXP-01 runtime config); keyboard accessible (labels, focus order, Escape closes); fits the shell 'demo' slot contract posted by S6-EXP-01 on the experience hub and also works standalone at the top of a page",
+    "tests/ui/demo-bar.test.mjs: switching from claimant to adjuster lands on the adjuster app signed in as the persona with at least one inbox claim; switching tenant changes branding; the bar is absent when devMode is false; screenshot docs/design/screens/demo-bar.png",
+    "No new runtime dependency; the endpoint never returns tokens or secrets; full npm test shows no new failures"
+  ],
+  "brief": "Seed and demo data: scripts/seed.mjs, scripts/demo-data.mjs, data/dev-users.json. Assignment: read how claims get assigned (src/modules/rules routing, claims assignee) to pick the adjuster with most claims; query through the store with the tenant ctx. Register the route in src/server.mjs only behind ctx.config.devMode. Do not edit the four app folders (Wave B wires the bar into each app) or tokens.css/components.css (S6-EXP-01). Post the persona list contract (shape) to the experience hub.",
+  "valueDrivers": [
+    "VD-1"
+  ]
+}

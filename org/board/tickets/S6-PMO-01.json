@@ -1,0 +1,29 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:26:39.630Z",
+  "history": [],
+  "id": "S6-PMO-01",
+  "team": "pmo",
+  "title": "Quality report counts the real suite; defect posting type",
+  "story": "As the PMO I want org/quality.json to reflect npm test and the defect process to match the fabric so that sprint metrics are true",
+  "points": 2,
+  "tier": "mid",
+  "owner": "ic-pmo-metrics-analyst",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "dashboard/quality-report.mjs",
+    "tests/unit/dashboard/quality-report.test.mjs",
+    "tests/STRATEGY.md"
+  ],
+  "acceptance": [
+    "node dashboard/quality-report.mjs (no argument) runs the same globs as npm test (package.json scripts.test) instead of passing the tests/ directory, and its counts equal npm test's (test compares the spawned args to package.json)",
+    "tests/STRATEGY.md says escaped defects are posted as type blocker (the fabric has no defect type), matching org/playbooks/standards.md v3",
+    "node --test tests/unit/dashboard/ passes"
+  ],
+  "brief": "Sprint 5 found the report always showed 1 test, 0 passed, because node --test with a directory argument fails on Node 22.",
+  "valueDrivers": [
+    "VD-7"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "number": 6,
+  "name": "Sprint 6: production-grade experience",
+  "status": "active",
+  "startedAt": "2026-10-19T12:26:39.668Z",
+  "budgetUsd": 50,
+  "goal": "Sponsor feedback: the UI must look and feel like a production application, with a demo persona switcher. Design system and shell, persona switcher, four app redesigns reviewed on screenshots, redeploy.",
+  "targets": {
+    "firstPassAcceptance": 0.85,
+    "budgetUsd": 50,
+    "testPassRate": 1
+  },
+  "carryOver": [
+    "S5-QE-03 intermittent CSR UI test (folded into the CSR redesign ticket)"
+  ]
+}

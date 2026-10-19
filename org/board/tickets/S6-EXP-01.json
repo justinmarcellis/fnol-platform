@@ -1,0 +1,43 @@
+{
+  "status": "ready",
+  "dependsOn": [],
+  "createdAt": "2026-10-19T12:26:39.628Z",
+  "history": [],
+  "id": "S6-EXP-01",
+  "team": "experience",
+  "title": "Design system v2 and shared app shell (production look and feel)",
+  "story": "As a carrier evaluating the product I want every app to look and feel like a polished commercial product so that the demo is credible to buyers",
+  "points": 8,
+  "tier": "strong",
+  "owner": "ic-experience-ux-designer",
+  "reviewer": "qe-acceptance",
+  "sprint": 6,
+  "paths": [
+    "src/web/shared/tokens.css",
+    "src/web/shared/components.css",
+    "src/web/shared/components/",
+    "src/web/shared/format.js",
+    "src/web/shared/kitchen-sink.html",
+    "src/web/shared/icons.js",
+    "docs/design/",
+    "docs/licenses.md",
+    "tests/unit/web/shared/components.test.js",
+    "tests/unit/web/shared/format.test.mjs",
+    "tests/unit/web/shared/theme.test.js",
+    "tests/ui/design-system.test.mjs"
+  ],
+  "acceptance": [
+    "Sponsor feedback (2026-10-19): the UI is 'downright terrible ... should look and feel like a production application'. Before screenshots of today's apps are in docs/design/before/ (copied by the orchestrator). docs/design/design-system.md specifies the visual language: type scale, spacing scale, colour tokens (neutral, brand from tenant branding, semantic success/warning/danger/info) in light and dark, radius, elevation, motion, density, and when to use each component; it reads like a real product design system, not a placeholder",
+    "tokens.css and components.css implement it; the existing contrast test (text pairs >= 4.5:1, theme.test.js) still passes in light and dark; visible keyboard focus on every interactive element",
+    "New and restyled components as vanilla custom elements, zero dependencies (ADR-001): fx-app-shell (top bar with product mark, tenant brand from theme.js applyBranding, primary nav slot, page header with title/subtitle/actions, user menu showing name and role, a 'demo' slot at the top for the persona switcher, responsive collapse below 768 px), fx-badge/status chip with a mapping from claim statuses and severity bands to human labels and semantic colours, fx-card, fx-empty-state, fx-skeleton, fx-stat (KPI tile), plus restyled buttons (primary/secondary/ghost/danger, sizes), inputs, selects, tables (sticky header, zebra-free, row hover, numeric alignment), toasts, stepper and timeline; inline SVG icon set in icons.js (no icon fonts, no CDN)",
+    "src/web/shared/format.js: humanized dates ('Oct 19, 2026, 12:24 PM' and relative 'in 2 h' / '3 min ago'), enum labels ('pending_info' -> 'Pending info', 'commercial_auto' -> 'Commercial auto'), money, policy and claim number formatting; locale-aware for en and es; unit tested",
+    "Backward compatible: every existing component API and class used by the four apps keeps working, so all current tests in tests/ui and tests/unit/web pass unchanged (the apps adopt the shell in Wave B tickets)",
+    "tests/ui/design-system.test.mjs (Playwright, Chromium at /opt/pw-browsers, Playwright at /opt/node-tools/node_modules) opens src/web/shared/kitchen-sink.html served by the platform, checks no console errors, and writes screenshots docs/design/screens/kitchen-sink-light.png and -dark.png at 1440x900 and 390x844; the reviewer opens those images and judges them against design-system.md",
+    "Fonts: system UI stack, or a self-hosted OFL font committed under src/web/shared/fonts/ with an entry in docs/licenses.md; no external network requests at runtime (test asserts no non-same-origin requests)"
+  ],
+  "brief": "Target feel: a modern insurance SaaS (clean, calm, data-dense where needed, generous whitespace, 8 px grid, Inter-like sans, subtle borders over heavy shadows, one accent colour from the tenant brand, clear hierarchy). Read src/web/shared/* and two app index.html files first to keep APIs compatible. Do not edit src/web/{claimant,csr,adjuster,admin}/ (Wave B) or devlogin.js / demo-bar (S6-EXP-02 runs in parallel). The demo slot in fx-app-shell must accept an <fx-demo-bar> element built by S6-EXP-02; agree the contract by posting it to the experience hub at start (slot name 'demo', shell sets CSS var --fx-demo-height). Synthetic brands only.",
+  "valueDrivers": [
+    "VD-1",
+    "VD-3"
+  ]
+}
