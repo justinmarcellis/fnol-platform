@@ -1,0 +1,62 @@
+{
+  "id": "S1-PMO-00",
+  "team": "pmo",
+  "title": "Sprint 1 planning: decompose pmo stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-pmo",
+  "reviewer": "dir-pmo",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:10.041Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:00.817Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.1208,
+    "inputTokens": 8,
+    "cacheWriteTokens": 25282,
+    "cacheReadTokens": 222661,
+    "outputTokens": 1301,
+    "agents": {
+      "ab43406d29459672f": {
+        "label": "S1-PMO-00 mgr-pmo planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 25282,
+        "cacheReadTokens": 222661,
+        "outputTokens": 1301,
+        "usd": 0.1208
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:00.817Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:00.817Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

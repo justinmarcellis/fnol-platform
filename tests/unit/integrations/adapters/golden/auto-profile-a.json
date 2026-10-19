@@ -1,0 +1,162 @@
+{
+  "payload": {
+    "claimsNotificationAddRq": {
+      "rqUID": "evt_golden0001",
+      "transactionRequestDt": "2026-10-18T14:02:11.000Z",
+      "policy": {
+        "policyNumber": "AUT-100001",
+        "lobCd": "AUTOP",
+        "contractTerm": {
+          "effectiveDt": "2026-03-01",
+          "expirationDt": "2027-03-01"
+        },
+        "coverage": [
+          {
+            "coverageCd": "COLL",
+            "deductible": {
+              "amt": 500,
+              "curCd": "USD"
+            }
+          }
+        ]
+      },
+      "claimsOccurrence": {
+        "itemIdInfo": {
+          "agencyId": "ALP-2026-000123"
+        },
+        "lossDt": "2026-10-17",
+        "lossTime": "17:40",
+        "lossTimeZone": "America/Chicago",
+        "lossCauseCd": "COLL",
+        "incidentDesc": "Rear-ended at a stop light on Sample Street.",
+        "addr": {
+          "addr1": "100 Sample St",
+          "city": "Fictionville",
+          "stateProvCd": "WI",
+          "postalCode": "53000",
+          "locationDesc": "Sample St at 5th Ave",
+          "geoPoint": {
+            "latitude": 43.1,
+            "longitude": -89.4
+          }
+        },
+        "injuryInd": false,
+        "vehiclesInvolvedCnt": 2,
+        "weatherDesc": "clear",
+        "policeReport": {
+          "filedInd": true,
+          "agencyName": "Fictionville PD",
+          "reportNumber": "FPD-77"
+        }
+      },
+      "claimsParty": [
+        {
+          "claimsPartyInfo": {
+            "claimsPartyRoleCd": [
+              "Insured",
+              "Driver"
+            ],
+            "injuredInd": false,
+            "policyPartyInd": true
+          },
+          "generalPartyInfo": {
+            "nameInfo": {
+              "personName": {
+                "givenName": "Ada",
+                "surname": "Example"
+              },
+              "legalEntityCd": "IN"
+            },
+            "addr": {
+              "addr1": "1 Test Lane",
+              "city": "Fictionville",
+              "stateProvCd": "WI",
+              "postalCode": "53000"
+            },
+            "birthDt": "1985-04-02",
+            "communicationsInfo": {
+              "phoneNumber": "+15555550101",
+              "emailAddr": "ada@example.test",
+              "preferredContactCd": "sms"
+            },
+            "driversLicense": {
+              "licenseNumber": "EXAMPL123456",
+              "stateProvCd": "WI"
+            }
+          }
+        },
+        {
+          "claimsPartyInfo": {
+            "claimsPartyRoleCd": [
+              "Claimant"
+            ]
+          },
+          "generalPartyInfo": {
+            "nameInfo": {
+              "commlName": {
+                "commercialName": "Sample Delivery Co"
+              },
+              "legalEntityCd": "CO"
+            }
+          },
+          "otherInsurance": {
+            "insurerName": "Other Mutual",
+            "policyNumber": "OM-555"
+          }
+        }
+      ],
+      "autoLossInfo": [
+        {
+          "roleCd": "insured",
+          "vehInfo": {
+            "vehIdentificationNumber": "1SYNT00000000000X",
+            "modelYear": 2021,
+            "manufacturer": "Synthetic Motors",
+            "model": "Sedan",
+            "licensePlateNumber": "SYN-123",
+            "licensePlateStateProvCd": "WI",
+            "policyVehicleId": "V1"
+          },
+          "drivableInd": true,
+          "airbagsDeployedInd": false,
+          "damageAreaCd": [
+            "rear"
+          ],
+          "damageDesc": "rear bumper"
+        }
+      ],
+      "com.fnolplatform_Claim": {
+        "lob": "personal_auto",
+        "lossType": "auto_collision",
+        "channel": "claimant_web",
+        "reportedDt": "2026-10-17T22:15:00.000Z",
+        "riskStateCd": "WI",
+        "flags": [
+          "subrogation_candidate"
+        ],
+        "coverageCheck": "covered"
+      },
+      "com.fnolplatform_Triage": {
+        "severityScore": 32,
+        "severityBand": "low",
+        "complexity": "low",
+        "fraudScore": 8,
+        "referToSiuInd": false,
+        "subrogationInd": true,
+        "fastTrackEligibleInd": true,
+        "provider": "local",
+        "model": "local-rules-v1",
+        "confidence": 0.82
+      },
+      "com.fnolplatform_Routing": {
+        "queue": "auto_fast_track",
+        "fastTrackInd": true
+      }
+    }
+  },
+  "unmapped": [
+    "claim.documentIds",
+    "claim.status"
+  ],
+  "warnings": []
+}

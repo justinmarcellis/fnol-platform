@@ -1,0 +1,113 @@
+{
+  "task": "next_best_actions",
+  "synthetic": true,
+  "description": "Claim facts to next best action codes (synthetic). Scored on action codes.",
+  "cases": [
+    {
+      "id": "nba-injury",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "injuries": true,
+          "policeReportNumber": "SC-1",
+          "estimateTotal": 6000
+        }
+      },
+      "expected": {
+        "actionCodes": [
+          "CONTACT_CLAIMANT_INJURY"
+        ]
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "actions": [
+              {
+                "code": "CONTACT_CLAIMANT_INJURY",
+                "label": "Contact claimant",
+                "reason": "Injuries",
+                "priority": 1
+              }
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "nba-theft-no-report",
+      "input": {
+        "facts": {
+          "lossType": "theft"
+        }
+      },
+      "expected": {
+        "actionCodes": [
+          "REQUEST_POLICE_REPORT"
+        ]
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "actions": [
+              {
+                "code": "REQUEST_POLICE_REPORT",
+                "label": "Request report",
+                "priority": 1
+              },
+              {
+                "code": "REFER_SIU",
+                "label": "Refer to SIU",
+                "priority": 2
+              }
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "nba-glass",
+      "input": {
+        "facts": {
+          "lossType": "glass",
+          "glassOnly": true,
+          "drivable": true
+        }
+      },
+      "expected": {
+        "actionCodes": [
+          "REFER_GLASS_VENDOR"
+        ]
+      }
+    },
+    {
+      "id": "nba-not-drivable",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "drivable": false,
+          "policeReportNumber": "SC-3",
+          "estimateTotal": 8000
+        }
+      },
+      "expected": {
+        "actionCodes": [
+          "ARRANGE_TOWING_RENTAL"
+        ]
+      }
+    }
+  ]
+}

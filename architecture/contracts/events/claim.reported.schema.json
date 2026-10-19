@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.reported.schema.json",
+  "title": "claim.reported",
+  "description": "A new claim exists (FNOL recorded) from any channel. Published by claims.",
+  "x-publisher": "claims",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.reported"
+    },
+    "source": {
+      "pattern": "/modules/claims$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "claimNumber",
+        "lob",
+        "channel",
+        "lossDate",
+        "lossCause",
+        "reportedAt"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "claimNumber": {
+          "type": "string"
+        },
+        "lob": {
+          "$ref": "../domain/common.schema.json#/$defs/Lob"
+        },
+        "lossType": {
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "../domain/common.schema.json#/$defs/Channel"
+        },
+        "policyNumber": {
+          "type": "string"
+        },
+        "lossDate": {
+          "$ref": "../domain/common.schema.json#/$defs/Date"
+        },
+        "lossCause": {
+          "$ref": "../domain/common.schema.json#/$defs/LossCause"
+        },
+        "riskState": {
+          "$ref": "../domain/common.schema.json#/$defs/UsState"
+        },
+        "injuriesReported": {
+          "type": "boolean"
+        },
+        "vehiclesInvolved": {
+          "type": "integer"
+        },
+        "documentCount": {
+          "type": "integer"
+        },
+        "intakeSessionId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "reportedAt": {
+          "$ref": "../domain/common.schema.json#/$defs/Timestamp"
+        }
+      }
+    }
+  }
+}

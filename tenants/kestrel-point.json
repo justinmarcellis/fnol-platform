@@ -1,0 +1,1252 @@
+{
+  "$schema": "../architecture/contracts/domain/TenantConfig.schema.json",
+  "tenantId": "kestrel-point",
+  "version": 1,
+  "displayName": "Kestrel Point Insurance (fictional)",
+  "claimNumberPrefix": "KPT",
+  "timeZone": "America/Detroit",
+  "locales": [
+    "en"
+  ],
+  "branding": {
+    "primaryColor": "#243b6b",
+    "accentColor": "#c8452d",
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "supportPhone": "(555) 010-0177",
+    "supportEmail": "fnol@kestrel-point.example",
+    "legalFooter": "Kestrel Point Insurance is a fictional carrier used for demonstration only.",
+    "fraudWarning": {
+      "MI": "Illustrative notice (MI): a person who knowingly gives false information on a claim may be committing a crime."
+    }
+  },
+  "lobs": [
+    {
+      "id": "personal_auto",
+      "enabled": true,
+      "label": "Personal auto",
+      "acordLobCd": "AUTOP",
+      "states": [
+        "MI"
+      ],
+      "channels": [
+        "csr_phone",
+        "api"
+      ],
+      "lossTypes": [
+        {
+          "id": "collision",
+          "label": "Collision",
+          "causes": [
+            "collision",
+            "collision_animal",
+            "single_vehicle",
+            "hit_and_run"
+          ]
+        },
+        {
+          "id": "glass",
+          "label": "Glass damage",
+          "causes": [
+            "glass"
+          ]
+        },
+        {
+          "id": "theft_vandalism",
+          "label": "Theft or vandalism",
+          "causes": [
+            "theft",
+            "vandalism"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "commercial_auto",
+      "enabled": true,
+      "label": "Commercial auto",
+      "acordLobCd": "AUTOB",
+      "states": [
+        "MI"
+      ],
+      "channels": [
+        "csr_phone",
+        "api"
+      ],
+      "lossTypes": [
+        {
+          "id": "collision",
+          "label": "Collision",
+          "causes": [
+            "collision",
+            "single_vehicle",
+            "hit_and_run"
+          ]
+        },
+        {
+          "id": "cargo_loss",
+          "label": "Cargo loss",
+          "causes": [
+            "theft",
+            "other"
+          ]
+        },
+        {
+          "id": "liability",
+          "label": "Third-party liability",
+          "causes": [
+            "liability_bodily_injury",
+            "liability_property_damage"
+          ]
+        }
+      ]
+    }
+  ],
+  "questionSets": [
+    {
+      "id": "auto-general",
+      "lob": "personal_auto",
+      "version": 1,
+      "questions": [
+        {
+          "id": "loss_date",
+          "text": "Date of loss",
+          "type": "date",
+          "required": true,
+          "validation": {
+            "notInFuture": true
+          },
+          "mapsTo": "loss.lossDate",
+          "order": 10,
+          "section": "loss"
+        },
+        {
+          "id": "loss_time",
+          "text": "Approximate time of loss",
+          "type": "time",
+          "order": 15,
+          "section": "loss"
+        },
+        {
+          "id": "loss_description",
+          "text": "Describe what happened",
+          "type": "longtext",
+          "required": true,
+          "aiAssist": false,
+          "mapsTo": "loss.description",
+          "order": 20,
+          "section": "loss"
+        },
+        {
+          "id": "injuries",
+          "text": "Were any injuries reported?",
+          "type": "boolean",
+          "required": true,
+          "mapsTo": "loss.injuriesReported",
+          "order": 30,
+          "section": "loss"
+        },
+        {
+          "id": "police_report_number",
+          "text": "Police report number",
+          "type": "text",
+          "requiredIf": {
+            "fact": "answers.injuries",
+            "op": "eq",
+            "value": true
+          },
+          "validation": {
+            "maxLength": 40
+          },
+          "order": 35,
+          "section": "loss"
+        },
+        {
+          "id": "insured_vehicle",
+          "text": "Which vehicle on the policy was involved?",
+          "type": "vehicle",
+          "required": false,
+          "order": 35,
+          "section": "vehicle"
+        },
+        {
+          "id": "vehicle_drivable",
+          "text": "Is the vehicle drivable?",
+          "type": "boolean",
+          "required": true,
+          "order": 40,
+          "section": "vehicle"
+        },
+        {
+          "id": "prior_damage",
+          "text": "Was there prior unrepaired damage?",
+          "type": "boolean",
+          "order": 45,
+          "section": "vehicle"
+        },
+        {
+          "id": "witnesses",
+          "text": "Were there witnesses?",
+          "type": "boolean",
+          "order": 50,
+          "section": "parties"
+        },
+        {
+          "id": "witness_info",
+          "text": "Witness details",
+          "type": "party",
+          "showIf": {
+            "fact": "answers.witnesses",
+            "op": "eq",
+            "value": true
+          },
+          "pii": true,
+          "order": 55,
+          "section": "parties"
+        },
+        {
+          "id": "fraud_disclosure",
+          "text": "I understand that knowingly giving false information is a crime.",
+          "type": "disclosure",
+          "required": true,
+          "order": 99,
+          "section": "submit"
+        }
+      ]
+    },
+    {
+      "id": "auto-glass",
+      "lob": "personal_auto",
+      "lossTypes": [
+        "glass"
+      ],
+      "version": 1,
+      "questions": [
+        {
+          "id": "loss_date",
+          "text": "Date glass was damaged",
+          "type": "date",
+          "required": true,
+          "validation": {
+            "notInFuture": true
+          },
+          "mapsTo": "loss.lossDate",
+          "order": 10,
+          "section": "loss"
+        },
+        {
+          "id": "injuries",
+          "text": "Were any injuries reported?",
+          "type": "boolean",
+          "required": true,
+          "mapsTo": "loss.injuriesReported",
+          "order": 20,
+          "section": "loss"
+        },
+        {
+          "id": "insured_vehicle",
+          "text": "Which vehicle on the policy was involved?",
+          "type": "vehicle",
+          "required": false,
+          "order": 35,
+          "section": "vehicle"
+        },
+        {
+          "id": "vehicle_drivable",
+          "text": "Is the vehicle drivable?",
+          "type": "boolean",
+          "required": true,
+          "order": 30,
+          "section": "vehicle"
+        },
+        {
+          "id": "prior_damage",
+          "text": "Was there prior unrepaired glass damage?",
+          "type": "boolean",
+          "required": true,
+          "order": 40,
+          "section": "vehicle"
+        },
+        {
+          "id": "fraud_disclosure",
+          "text": "I understand that knowingly giving false information is a crime.",
+          "type": "disclosure",
+          "required": true,
+          "order": 99,
+          "section": "submit"
+        }
+      ]
+    },
+    {
+      "id": "commauto-general",
+      "lob": "commercial_auto",
+      "version": 2,
+      "questions": [
+        {
+          "id": "loss_date",
+          "text": "Date of loss",
+          "type": "date",
+          "required": true,
+          "validation": {
+            "notInFuture": true
+          },
+          "mapsTo": "loss.lossDate",
+          "order": 10,
+          "section": "loss"
+        },
+        {
+          "id": "loss_time",
+          "text": "Approximate time of loss",
+          "type": "time",
+          "order": 12,
+          "section": "loss"
+        },
+        {
+          "id": "loss_description",
+          "text": "Describe what happened",
+          "type": "longtext",
+          "required": true,
+          "mapsTo": "loss.description",
+          "order": 20,
+          "section": "loss"
+        },
+        {
+          "id": "unit_number",
+          "text": "Fleet unit number",
+          "type": "text",
+          "required": true,
+          "validation": {
+            "maxLength": 20
+          },
+          "order": 25,
+          "section": "fleet"
+        },
+        {
+          "id": "driver_is_employee",
+          "text": "Was the driver an employee?",
+          "type": "boolean",
+          "required": true,
+          "order": 30,
+          "section": "fleet"
+        },
+        {
+          "id": "driver_employee_ref",
+          "text": "Driver employee reference",
+          "type": "text",
+          "showIf": {
+            "fact": "answers.driver_is_employee",
+            "op": "eq",
+            "value": true
+          },
+          "pii": true,
+          "order": 35,
+          "section": "fleet"
+        },
+        {
+          "id": "injuries",
+          "text": "Were any injuries reported?",
+          "type": "boolean",
+          "required": true,
+          "mapsTo": "loss.injuriesReported",
+          "order": 40,
+          "section": "loss"
+        },
+        {
+          "id": "police_report_number",
+          "text": "Police report number, if a report was made",
+          "type": "text",
+          "validation": {
+            "maxLength": 40
+          },
+          "order": 42,
+          "section": "loss"
+        },
+        {
+          "id": "other_party_involved",
+          "text": "Was another vehicle or party involved?",
+          "type": "boolean",
+          "required": true,
+          "order": 43,
+          "section": "loss"
+        },
+        {
+          "id": "other_party_insurer",
+          "text": "Other party insurer, if known",
+          "type": "text",
+          "showIf": {
+            "fact": "answers.other_party_involved",
+            "op": "eq",
+            "value": true
+          },
+          "order": 44,
+          "section": "loss"
+        },
+        {
+          "id": "dot_recordable",
+          "text": "Is the event DOT-recordable?",
+          "type": "boolean",
+          "required": true,
+          "order": 45,
+          "section": "compliance"
+        },
+        {
+          "id": "cargo_involved",
+          "text": "Was cargo involved?",
+          "type": "boolean",
+          "required": true,
+          "order": 50,
+          "section": "cargo"
+        },
+        {
+          "id": "hazmat_involved",
+          "text": "Was hazardous material involved?",
+          "type": "boolean",
+          "showIf": {
+            "fact": "answers.cargo_involved",
+            "op": "eq",
+            "value": true
+          },
+          "requiredIf": {
+            "fact": "answers.cargo_involved",
+            "op": "eq",
+            "value": true
+          },
+          "order": 55,
+          "section": "cargo"
+        },
+        {
+          "id": "cargo_description",
+          "text": "Describe the cargo",
+          "type": "text",
+          "showIf": {
+            "fact": "answers.cargo_involved",
+            "op": "eq",
+            "value": true
+          },
+          "order": 60,
+          "section": "cargo"
+        },
+        {
+          "id": "vehicle_drivable",
+          "text": "Is the unit drivable?",
+          "type": "boolean",
+          "required": true,
+          "order": 65,
+          "section": "vehicle"
+        },
+        {
+          "id": "unit_towed",
+          "text": "Was the unit towed from the scene?",
+          "type": "boolean",
+          "showIf": {
+            "fact": "answers.vehicle_drivable",
+            "op": "eq",
+            "value": false
+          },
+          "order": 66,
+          "section": "vehicle"
+        },
+        {
+          "id": "fraud_disclosure",
+          "text": "I understand that knowingly giving false information is a crime.",
+          "type": "disclosure",
+          "required": true,
+          "order": 99,
+          "section": "submit"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "IN-HAZMAT-GUARD",
+      "name": "Hazmat cargo requires description",
+      "stage": "intake",
+      "priority": 10,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": {
+        "fact": "answers.hazmat_involved",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "require_question",
+          "questionId": "cargo_description"
+        }
+      ]
+    },
+    {
+      "id": "TR-INJURY-SEV",
+      "name": "Injury raises complexity (triage already scores injury severity)",
+      "stage": "triage",
+      "priority": 10,
+      "when": {
+        "fact": "loss.injuriesReported",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "set_complexity",
+          "complexity": "high"
+        }
+      ]
+    },
+    {
+      "id": "TR-PRIOR-DAMAGE",
+      "name": "Prior damage adds fraud-review severity",
+      "stage": "triage",
+      "priority": 20,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      },
+      "when": {
+        "fact": "answers.prior_damage",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "add_severity",
+          "points": 10
+        },
+        {
+          "type": "add_flag",
+          "flag": "prior_damage"
+        }
+      ]
+    },
+    {
+      "id": "TR-CA-HAZMAT",
+      "name": "Hazmat is complex",
+      "stage": "triage",
+      "priority": 30,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": {
+        "fact": "answers.hazmat_involved",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "set_complexity",
+          "complexity": "high"
+        },
+        {
+          "type": "add_severity",
+          "points": 25
+        }
+      ]
+    },
+    {
+      "id": "RT-INJURY-01",
+      "name": "Injury to injury queue",
+      "stage": "routing",
+      "priority": 10,
+      "when": {
+        "any": [
+          {
+            "fact": "loss.injuriesReported",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "loss.fatality",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "then": [
+        {
+          "type": "route_queue",
+          "queue": "injury"
+        },
+        {
+          "type": "deny_fast_track",
+          "reason": "injury"
+        },
+        {
+          "type": "add_flag",
+          "flag": "injury"
+        }
+      ]
+    },
+    {
+      "id": "RT-SIU-01",
+      "name": "Fraud score to SIU (strict threshold 40)",
+      "stage": "routing",
+      "priority": 20,
+      "when": {
+        "fact": "triage.fraud.score",
+        "op": "gte",
+        "value": 40
+      },
+      "then": [
+        {
+          "type": "refer_siu",
+          "reason": "fraud score at or above 40"
+        },
+        {
+          "type": "route_queue",
+          "queue": "siu"
+        },
+        {
+          "type": "deny_fast_track",
+          "reason": "fraud"
+        }
+      ]
+    },
+    {
+      "id": "RT-NO-STP-THEFT",
+      "name": "Theft never fast tracked",
+      "stage": "routing",
+      "priority": 25,
+      "when": {
+        "fact": "loss.cause",
+        "op": "in",
+        "value": [
+          "theft",
+          "vandalism"
+        ]
+      },
+      "then": [
+        {
+          "type": "deny_fast_track",
+          "reason": "theft needs review"
+        },
+        {
+          "type": "add_flag",
+          "flag": "theft_review"
+        }
+      ]
+    },
+    {
+      "id": "RT-PA-DEFAULT",
+      "name": "Personal auto default queue",
+      "stage": "routing",
+      "priority": 90,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      },
+      "when": true,
+      "then": [
+        {
+          "type": "route_queue",
+          "queue": "personal_auto_claims"
+        }
+      ]
+    },
+    {
+      "id": "RT-CA-NO-STP",
+      "name": "Commercial auto is never fast tracked",
+      "stage": "routing",
+      "priority": 5,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": true,
+      "then": [
+        {
+          "type": "deny_fast_track",
+          "reason": "commercial lines are never fast tracked"
+        },
+        {
+          "type": "add_flag",
+          "flag": "commercial_review"
+        }
+      ]
+    },
+    {
+      "id": "RT-CA-DEFAULT",
+      "name": "Commercial auto default queue",
+      "stage": "routing",
+      "priority": 90,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": true,
+      "then": [
+        {
+          "type": "route_queue",
+          "queue": "commercial_auto_claims"
+        }
+      ]
+    },
+    {
+      "id": "RT-CA-HAZMAT",
+      "name": "Hazmat to specialty queue",
+      "stage": "routing",
+      "priority": 30,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": {
+        "fact": "answers.hazmat_involved",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "route_queue",
+          "queue": "commercial_specialty"
+        },
+        {
+          "type": "add_flag",
+          "flag": "hazmat"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "hazmat_notice_review",
+            "title": "Review hazmat notification duties",
+            "dueInHours": 4,
+            "queue": "commercial_specialty"
+          }
+        }
+      ]
+    },
+    {
+      "id": "RT-CA-DOT",
+      "name": "DOT-recordable events flagged",
+      "stage": "routing",
+      "priority": 35,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": {
+        "fact": "answers.dot_recordable",
+        "op": "eq",
+        "value": true
+      },
+      "then": [
+        {
+          "type": "add_flag",
+          "flag": "dot_recordable"
+        },
+        {
+          "type": "notify",
+          "template": "dot_recordable_internal"
+        }
+      ]
+    },
+    {
+      "id": "RT-FT-GLASS",
+      "name": "Straight-through: glass only",
+      "stage": "routing",
+      "priority": 50,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ]
+      },
+      "when": {
+        "all": [
+          {
+            "fact": "loss.cause",
+            "op": "eq",
+            "value": "glass"
+          },
+          {
+            "fact": "triage.severityScore",
+            "op": "lt",
+            "value": 15
+          },
+          {
+            "fact": "coverage.outcome",
+            "op": "eq",
+            "value": "covered"
+          },
+          {
+            "not": {
+              "fact": "answers.prior_damage",
+              "op": "eq",
+              "value": true
+            }
+          }
+        ]
+      },
+      "then": [
+        {
+          "type": "fast_track"
+        },
+        {
+          "type": "route_queue",
+          "queue": "fast_track"
+        }
+      ]
+    },
+    {
+      "id": "PR-SUBRO-PA",
+      "name": "Subrogation check on collisions",
+      "stage": "post_routing",
+      "priority": 10,
+      "appliesTo": {
+        "lobs": [
+          "personal_auto"
+        ],
+        "lossTypes": [
+          "collision"
+        ]
+      },
+      "when": {
+        "fact": "loss.cause",
+        "op": "in",
+        "value": [
+          "collision",
+          "hit_and_run"
+        ]
+      },
+      "then": [
+        {
+          "type": "add_task",
+          "task": {
+            "type": "subrogation_review",
+            "title": "Check third-party recovery",
+            "dueInHours": 96,
+            "queue": "personal_auto_claims"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PR-SUBRO-CA",
+      "name": "Fleet collision: third-party recovery review",
+      "stage": "post_routing",
+      "priority": 10,
+      "appliesTo": {
+        "lobs": [
+          "commercial_auto"
+        ]
+      },
+      "when": {
+        "all": [
+          {
+            "fact": "loss.cause",
+            "op": "in",
+            "value": [
+              "collision",
+              "hit_and_run"
+            ]
+          },
+          {
+            "fact": "triage.subrogation.flag",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "then": [
+        {
+          "type": "add_task",
+          "task": {
+            "type": "subrogation_review",
+            "title": "Review fleet third-party recovery",
+            "dueInHours": 48,
+            "queue": "commercial_auto_claims"
+          }
+        }
+      ]
+    }
+  ],
+  "queues": [
+    {
+      "id": "fast_track",
+      "label": "Glass fast track",
+      "lobs": [
+        "personal_auto"
+      ],
+      "skills": [
+        "stp",
+        "glass"
+      ],
+      "adjusters": [
+        "adj-kpt-101",
+        "adj-kpt-102"
+      ],
+      "assignment": "round_robin",
+      "slaHours": 8,
+      "maxSeverity": 15
+    },
+    {
+      "id": "personal_auto_claims",
+      "label": "Personal auto claims",
+      "lobs": [
+        "personal_auto"
+      ],
+      "skills": [
+        "auto"
+      ],
+      "adjusters": [
+        "adj-kpt-201",
+        "adj-kpt-202",
+        "adj-kpt-203"
+      ],
+      "assignment": "least_loaded",
+      "slaHours": 24,
+      "maxSeverity": 60
+    },
+    {
+      "id": "commercial_auto_claims",
+      "label": "Commercial auto claims",
+      "lobs": [
+        "commercial_auto"
+      ],
+      "skills": [
+        "commercial",
+        "fleet"
+      ],
+      "adjusters": [
+        "adj-kpt-301",
+        "adj-kpt-302"
+      ],
+      "assignment": "round_robin",
+      "slaHours": 12
+    },
+    {
+      "id": "commercial_specialty",
+      "label": "Commercial specialty (hazmat, cargo)",
+      "lobs": [
+        "commercial_auto"
+      ],
+      "skills": [
+        "hazmat",
+        "cargo"
+      ],
+      "adjusters": [
+        "adj-kpt-311",
+        "adj-kpt-312"
+      ],
+      "assignment": "manual",
+      "slaHours": 4
+    },
+    {
+      "id": "injury",
+      "label": "Injury",
+      "lobs": [
+        "personal_auto",
+        "commercial_auto"
+      ],
+      "skills": [
+        "bodily_injury"
+      ],
+      "adjusters": [
+        "adj-kpt-401",
+        "adj-kpt-402",
+        "adj-kpt-403"
+      ],
+      "assignment": "least_loaded",
+      "slaHours": 6
+    },
+    {
+      "id": "siu",
+      "label": "Special investigations",
+      "skills": [
+        "siu"
+      ],
+      "adjusters": [
+        "adj-kpt-501",
+        "adj-kpt-502"
+      ],
+      "assignment": "manual",
+      "slaHours": 24
+    }
+  ],
+  "fastTrack": {
+    "enabled": true,
+    "maxSeverity": 15,
+    "maxFraudScore": 10,
+    "maxEstimate": {
+      "amount": 900,
+      "currency": "USD"
+    },
+    "queue": "fast_track"
+  },
+  "severityBands": {
+    "moderate": 25,
+    "major": 50,
+    "severe": 75
+  },
+  "timers": [
+    {
+      "id": "MI-ACK",
+      "state": "MI",
+      "kind": "acknowledge",
+      "duration": {
+        "value": 10,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto",
+        "commercial_auto"
+      ],
+      "stopOn": {
+        "taskType": "acknowledge_claimant"
+      },
+      "warnBefore": {
+        "value": 3,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "ack_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (ack_breach)",
+            "dueInHours": 8,
+            "queue": "personal_auto_claims"
+          }
+        }
+      ],
+      "citation": "MI acknowledgement deadline (demo value 10 days). Illustrative, not legal advice."
+    },
+    {
+      "id": "MI-CONTACT",
+      "state": "MI",
+      "kind": "contact",
+      "duration": {
+        "value": 2,
+        "unit": "business_days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto"
+      ],
+      "stopOn": {
+        "taskType": "first_contact"
+      },
+      "warnBefore": {
+        "value": 1,
+        "unit": "business_days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "contact_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (contact_breach)",
+            "dueInHours": 4,
+            "queue": "personal_auto_claims"
+          }
+        }
+      ],
+      "citation": "MI first contact target (demo value 2 business days). Illustrative, not legal advice."
+    },
+    {
+      "id": "MI-DECIDE-PA",
+      "state": "MI",
+      "kind": "decide",
+      "duration": {
+        "value": 30,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "personal_auto"
+      ],
+      "stopOn": {
+        "toStatus": [
+          "closed",
+          "withdrawn"
+        ]
+      },
+      "warnBefore": {
+        "value": 5,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "decision_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (decision_breach)",
+            "dueInHours": 24,
+            "queue": "personal_auto_claims"
+          }
+        }
+      ],
+      "citation": "MI personal auto decision deadline (demo value 30 days). Illustrative, not legal advice."
+    },
+    {
+      "id": "MI-DECIDE-CA",
+      "state": "MI",
+      "kind": "decide",
+      "duration": {
+        "value": 60,
+        "unit": "days"
+      },
+      "startOn": "claim.reported",
+      "lobs": [
+        "commercial_auto"
+      ],
+      "stopOn": {
+        "toStatus": [
+          "closed",
+          "withdrawn"
+        ]
+      },
+      "warnBefore": {
+        "value": 10,
+        "unit": "days"
+      },
+      "onBreach": [
+        {
+          "type": "add_flag",
+          "flag": "decision_breach"
+        },
+        {
+          "type": "notify",
+          "template": "timer_breach_internal"
+        },
+        {
+          "type": "add_task",
+          "task": {
+            "type": "timer_breach_followup",
+            "title": "Resolve breached deadline (decision_breach)",
+            "dueInHours": 24,
+            "queue": "commercial_auto_claims"
+          }
+        }
+      ],
+      "citation": "MI commercial auto decision target (demo value 60 days). Illustrative, not legal advice."
+    }
+  ],
+  "holidays": [
+    "2026-11-26",
+    "2026-12-25",
+    "2027-01-01"
+  ],
+  "notifications": {
+    "claimant": {
+      "channels": [
+        "email"
+      ],
+      "onEvents": [
+        "claim.reported",
+        "claim.status.changed"
+      ]
+    },
+    "internal": {
+      "onEvents": [
+        "claim.timer.breached",
+        "claim.triaged"
+      ],
+      "emails": [
+        "claims-leads@kestrel-point.example"
+      ]
+    },
+    "webhooks": {
+      "enabled": true,
+      "allowedHosts": [
+        "events.kestrel-point.example",
+        "*.example.test"
+      ],
+      "signingAlgorithm": "hmac-sha256",
+      "includePii": false
+    }
+  },
+  "integrations": {
+    "policyPort": {
+      "adapter": "mock-pas",
+      "settings": {
+        "fieldMapProfile": "mapping-b",
+        "policyNumberFormat": "KP-####-####"
+      }
+    },
+    "claimsPort": {
+      "adapter": "core-claims-suite",
+      "pushOn": "claim.reported",
+      "settings": {
+        "fieldMapProfile": "mapping-b"
+      }
+    }
+  },
+  "ai": {
+    "provider": "cascade",
+    "cascade": [
+      {
+        "provider": "local",
+        "minConfidence": 0.85
+      },
+      {
+        "provider": "vertex-gemini",
+        "model": "gemini-flash",
+        "minConfidence": 0.7,
+        "tasks": [
+          "extract_narrative",
+          "summarize"
+        ]
+      }
+    ],
+    "tasks": {
+      "next_question": {
+        "enabled": false
+      },
+      "extract_narrative": {
+        "enabled": true,
+        "threshold": 0.85
+      },
+      "fraud_signals": {
+        "enabled": true,
+        "threshold": 0.8
+      },
+      "summarize": {
+        "enabled": true
+      }
+    },
+    "region": "us-east4",
+    "redactPiiBeforeModel": true,
+    "maxTokensPerClaim": 20000,
+    "humanConfirmRequired": true
+  },
+  "security": {
+    "piiKeyRef": "kms://demo/kestrel-point",
+    "sessionTtlMinutes": 30,
+    "dataRetentionDays": 1825
+  }
+}

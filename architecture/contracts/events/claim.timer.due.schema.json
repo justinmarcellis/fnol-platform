@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.timer.due.schema.json",
+  "title": "claim.timer.due",
+  "description": "A regulatory timer reached its warning point (due soon). Published by claims.",
+  "x-publisher": "claims",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.timer.due"
+    },
+    "source": {
+      "pattern": "/modules/claims$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "timerId",
+        "state",
+        "kind",
+        "dueAt"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "timerId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "definitionId": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "../domain/common.schema.json#/$defs/UsState"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "acknowledge",
+            "contact",
+            "decide"
+          ]
+        },
+        "dueAt": {
+          "$ref": "../domain/common.schema.json#/$defs/Timestamp"
+        },
+        "warnAt": {
+          "$ref": "../domain/common.schema.json#/$defs/Timestamp"
+        }
+      }
+    }
+  }
+}

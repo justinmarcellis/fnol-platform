@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSR claims desk</title>
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/components.css">
+  <link rel="stylesheet" href="/csr/csr.css">
+</head>
+<body>
+  <a class="fx-btn skip" href="#main" id="skip">Skip to main content</a>
+  <header class="bar"><h1 id="title">CSR claims desk</h1><span id="whoami" class="muted" aria-live="polite"></span></header>
+  <fx-toast id="toast"></fx-toast>
+  <main id="main" tabindex="-1">
+    <!-- Dev sign-in: hidden unless dev mode (localhost or window.__FNOL_DEV__ === true). -->
+    <section id="dev-panel" hidden aria-labelledby="dev-h">
+      <h2 id="dev-h">Developer sign-in</h2>
+      <form id="dev-form">
+        <p><label for="dev-tenant" id="dev-tenant-l">Tenant</label>
+          <select id="dev-tenant" name="tenant"><option value="northwind">northwind</option></select></p>
+        <p><label for="dev-role" id="dev-role-l">Role</label>
+          <select id="dev-role" name="role"><option value="csr">csr</option></select></p>
+        <button class="fx-btn" type="submit" id="dev-go">Sign in as CSR</button>
+      </form>
+    </section>
+
+    <section id="unavailable" role="alert" hidden>
+      <h2 id="un-title">Service unavailable</h2>
+      <p id="un-body"></p>
+      <button class="fx-btn" type="button" id="un-retry">Retry</button>
+    </section>
+
+    <div id="desk" hidden>
+      <fx-stepper id="stepper" current="0"></fx-stepper>
+      <section id="search-sec" aria-labelledby="search-h">
+        <h2 id="search-h" tabindex="-1"></h2>
+        <form id="search-form" novalidate>
+          <fx-field id="search-field" name="policy" label="Policy number" hint=""></fx-field>
+          <button class="fx-btn" type="submit" id="search-go">Search</button>
+        </form>
+        <p id="search-msg" role="status"></p>
+        <fx-table id="search-table" caption="Policy results"></fx-table>
+        <p id="search-hint" class="muted"></p>
+      </section>
+
+      <section id="intake-sec" aria-labelledby="intake-h" hidden>
+        <h2 id="intake-h" tabindex="-1"></h2>
+        <div class="split">
+          <div>
+            <p id="progress" role="status"></p>
+            <div id="disclosures"></div>
+            <div id="vehicle-pick" hidden></div>
+            <form id="answer-form" novalidate><div id="answer-slot"></div><button class="fx-btn" type="submit" id="answer-go"></button></form>
+            <button class="fx-btn" type="button" id="submit-go" hidden></button>
+          </div>
+          <aside aria-labelledby="panel-h" class="panel">
+            <h3 id="panel-h"></h3>
+            <ul id="missing"></ul>
+            <p id="unlisted" class="muted"></p>
+            <h3 id="script-h"></h3>
+            <p id="script" aria-live="polite"></p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="done-sec" aria-labelledby="done-h" hidden>
+        <h2 id="done-h" tabindex="-1"></h2>
+        <p id="done-number"></p>
+        <p><a class="fx-btn" id="done-link" href="#"></a> <button class="fx-btn secondary" type="button" id="done-again"></button></p>
+      </section>
+
+      <section id="recent-sec" aria-labelledby="recent-h">
+        <h2 id="recent-h"></h2>
+        <button class="fx-btn secondary" type="button" id="recent-refresh"></button>
+        <fx-table id="recent-table" caption="Recent claims"></fx-table>
+        <p id="recent-hint" class="muted"></p>
+      </section>
+    </div>
+
+    <section id="claim-sec" aria-labelledby="claim-h" hidden>
+      <h2 id="claim-h" tabindex="-1"></h2>
+      <dl id="claim-dl"></dl>
+      <a class="fx-btn secondary" id="claim-back" href="/csr"></a>
+    </section>
+  </main>
+  <script type="module" src="/csr/app.js"></script>
+</body>
+</html>

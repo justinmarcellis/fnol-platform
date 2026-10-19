@@ -1,0 +1,78 @@
+{
+  "task": "classify_photo",
+  "synthetic": true,
+  "description": "Photo filename and metadata (synthetic). Scored on damage areas.",
+  "cases": [
+    {
+      "id": "photo-rear",
+      "input": {
+        "filename": "rear-bumper-damage.jpg",
+        "metadata": {
+          "make": "Maple",
+          "model": "Sedan",
+          "color": "silver"
+        }
+      },
+      "expected": {
+        "damageAreas": [
+          "rear",
+          "bumper"
+        ]
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "kind": "photo",
+            "damageAreas": [
+              "rear",
+              "bumper"
+            ],
+            "vehicle": {
+              "make": "Maple",
+              "model": "Sedan",
+              "color": "silver"
+            },
+            "fields": [],
+            "needsReview": true
+          },
+          "confidence": 0.8,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "photo-windshield",
+      "input": {
+        "filename": "windshield-crack.jpg",
+        "metadata": {
+          "description": "cracked glass"
+        }
+      },
+      "expected": {
+        "damageAreas": [
+          "windshield"
+        ]
+      }
+    },
+    {
+      "id": "photo-roof",
+      "input": {
+        "filename": "roof-hail-dents.jpg",
+        "metadata": {
+          "make": "Cedar",
+          "model": "Truck"
+        }
+      },
+      "expected": {
+        "damageAreas": [
+          "roof"
+        ]
+      }
+    }
+  ]
+}

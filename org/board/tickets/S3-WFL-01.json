@@ -1,0 +1,135 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:28.854Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:32:41.455Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:34:00.305Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:37:57.672Z",
+      "from": "review",
+      "to": "done"
+    },
+    {
+      "at": "2026-10-18T21:43:31.565Z",
+      "from": "done",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:50:35.348Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-WFL-01",
+  "team": "workflow",
+  "title": "Intake session ownership, least-privilege roles, narrative tenant attribution and pattern safety",
+  "story": "Fix SEC2-001 (high) and intake mediums SEC2-010 and SEC2-014",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "src/modules/intake/",
+    "tests/unit/intake/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/contracts/openapi.yaml (intake tag, x-roles)",
+    "architecture/security-review-s2.md (SEC2-001, SEC2-010, SEC2-014)",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "tests/unit/intake/access.test.js passes: node --test --disable-warning=ExperimentalWarning tests/unit/intake/",
+    "agent token: GET/answers/next-question/submit/narrative on a session started by another user returns 404; on its own session works; on a session whose policy it produces works",
+    "claimant sees only own sessions; csr and integration unchanged",
+    "carrier_admin and tenant_admin absent from ROLES in src/modules/intake/routes.js (no admin write access)",
+    "conversation.js passes { tenantId: ctx.tenant.id } to ctx.ai.run; test with a fake ai asserts the opts",
+    "question validation.pattern is guarded (unsafe or over-long patterns skipped, never hang); test with (a+)+$ and a 40-char input returns quickly",
+    "existing intake tests (engine, missing, session) still pass; result notes the contract-change request and that SEC2-001/010 todos can be flipped"
+  ],
+  "brief": "Files: src/modules/intake/routes.js, service.js, conversation.js, questions.js. (1) SEC2-001: in service.js assertAccess, restrict every non-staff role by ownership: claimant and agent need doc.startedBy.id === actor.id, else throw not_found 404 (never 403, do not leak existence). Agents may also access a session when they are the producer of the session's policy (doc.policyNumber). No producer concept exists in the code today (grep found none), so implement a small helper that looks up the policy via ctx.modules.coverage if it exposes a snapshot with a producer id (check src/modules/coverage/ read-only); if unavailable or throwing, fail closed (ownership only). Keep the helper injectable so tests use a local fake. Post a contract-change request to the architecture hub: intake routes admit agent with an ownership rule and policy snapshot needs producer.id. csr and integration unchanged. assertAccess may need to become async or take a precomputed flag; keep call sites consistent in load(). Add agent to the actor ROLE_ORDER only as scoped. (2) Least privilege: remove carrier_admin from ROLES in routes.js and from ROLE_ORDER; platform_admin still passes in core. Check openapi x-roles for intake so roles match. (3) SEC2-010: conversation.js ~line 54, pass { tenantId: ctx.tenant.id } to ctx.ai.run('extract_narrative', ...). (4) SEC2-014: in questions.js (~line 121) run the tenant pattern through a local linear-safe check (reject patterns over 200 chars, nested quantifiers, quantified groups containing alternation or quantifiers) before new RegExp; skip unsafe patterns. Do not import from rules internals; reimplement a small guard. Tests: tests/unit/intake/access.test.js using fakes.mjs/helpers.mjs (local fakes for coverage and ai); do not edit tests/security. After finishing, post to the security hub that SEC2-001, SEC2-010 todos can be flipped. Pitfall: no PII in logs or errors.",
+  "valueDrivers": [
+    "Security: closes high intake IDOR",
+    "Compliance: least privilege on write routes"
+  ],
+  "requirements": [
+    "SEC2-001",
+    "SEC2-010",
+    "SEC2-014"
+  ],
+  "startedAt": "2026-10-18T21:32:41.455Z",
+  "doneAt": "2026-10-18T21:50:35.348Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:37:57.671Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met, access.test.js 7/7 and intake 30/30 pass; only new regression is security roles.test carrier_admin vs openapi x-roles, a doc/contract follow-up outside this ticket's paths"
+      },
+      {
+        "at": "2026-10-18T21:50:35.348Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Accepted r2; security rework (SEC3-001 submitView) verified by orchestrator"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.1678,
+    "inputTokens": 74,
+    "cacheWriteTokens": 248387,
+    "cacheReadTokens": 2618877,
+    "outputTokens": 2290,
+    "agents": {
+      "a8968cb671be51b0f": {
+        "label": "S3-WFL-01 ic-workflow-intake-flow-dev security rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 18,
+        "cacheWriteTokens": 26379,
+        "cacheReadTokens": 551726,
+        "outputTokens": 123,
+        "usd": 0.1776
+      },
+      "a8b0d85056dac5cc3": {
+        "label": "S3-WFL-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 97053,
+        "cacheReadTokens": 470585,
+        "outputTokens": 75,
+        "usd": 0.3375
+      },
+      "ab6ca9bcde4ba6561": {
+        "label": "S3-WFL-01 ic-workflow-intake-flow-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 32,
+        "cacheWriteTokens": 60499,
+        "cacheReadTokens": 1352179,
+        "outputTokens": 1408,
+        "usd": 0.4358
+      },
+      "ae507a5ba0a19d380": {
+        "label": "S3-WFL-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 64456,
+        "cacheReadTokens": 244387,
+        "outputTokens": 684,
+        "usd": 0.2169
+      }
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:35:12.568Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:51:34.605Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:54:27.045Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:56:29.245Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "ai",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-AI-03",
+  "title": "Evidence module",
+  "story": "Evidence capture and extraction (REQ-05)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-ai-extraction-engineer",
+  "paths": [
+    "src/modules/evidence/",
+    "tests/unit/evidence/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#evidence",
+    "architecture/contracts/domain/Document.schema.json",
+    "architecture/contracts/events/claim.evidence.added.schema.json",
+    "architecture/contracts/events/claim.evidence.extracted.schema.json",
+    "architecture/contracts/openapi.yaml#evidence",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "service(ctx) exports addDocument, listDocuments, getDocument, readContent, extract, reviewExtraction, getAcceptedFacts per modules.md#evidence",
+    "routes under /claims/{claimId}/documents* match openapi including x-roles; accept base64 JSON and multipart (hand-parsed from req.rawBody); node --test tests/unit/evidence/routes.test.mjs passes",
+    "bytes stored AES-GCM encrypted with ctx.crypto per tenant at data/blobs/<tenant>/<claim>/<docId> next to dbPath; test asserts file on disk is not plaintext and readContent round-trips",
+    "claim.evidence.added triggers extraction via ctx.ai.run (fake in tests); field results carry confidence and provenance; claim.evidence.extracted published without PII; .txt and simple PDF text extraction work, unreadable PDF sets needs_review; photo sidecar metadata handled",
+    "kind auto-detect when missing; reviewExtraction updates accepted/value; getAcceptedFacts returns accepted or high-confidence facts only",
+    "node --test tests/unit/evidence/*.test.mjs passes"
+  ],
+  "brief": "Implement per modules.md#evidence; read core-runtime-api.md for store, bus (publish/subscribe, outbox), crypto (tenant-bound ctx addendum), audit and router APIs. Tables documents and extractions as listed. Upload route: Content-Type application/json {kind?,filename,contentType,contentBase64,metadata?} or multipart/form-data with file part and optional kind/metadata parts; write minimal boundary parser (split on boundary, parse part headers, binary-safe on Buffer). Validate size limit (e.g. 10 MB) and allowed content types. Subscribe to claim.evidence.added and run extract async so upload returns fast; extract is idempotent unless force. Text: .txt decode utf8; PDF: scan for uncompressed text objects (BT ... (text) Tj / TJ ... ET) best-effort, if none mark extraction needs_review. Photos: optional JSON sidecar passed as metadata (damageAreas, make, model, color); without it low confidence. Auto-detect kind from filename/content keywords (police report, estimate, invoice) else other. getAcceptedFacts maps field name to {value,confidence,provenance} for fields with status accepted or confidence >= 0.8 and not rejected. readContent must be audited as sensitive read (ctx.audit). Never log bytes or extracted PII. In tests inject a fake ctx.ai whose run returns the shapes below, fake store/bus per existing tests in tests/unit for patterns. Do not depend on S1-AI-01/02 files.\nSHARED AI TASK I/O SHAPES (all teams code against these; local provider must emit them exactly): ai.run returns {output,provider,model,confidence,explanation,usage,unconfirmed?}. Provider interface (src/ai/providers/<name>.mjs default export factory (ctx,opts)=>{name, available():Promise<boolean>, run(task,input,{tier,schema}):Promise<{output,confidence,explanation,usage,model}|{refusal:true}>}). Outputs: extract_narrative in {text} out {lossType,lossDate,location,injuries:boolean,injuryCues[],atFault:'insured'|'other'|'unknown',cues[]}; extract_document in {kind?,text,filename} out {kind,fields:[{name,value,confidence,provenance:{snippet}}],needsReview}; classify_photo in {filename,metadata?} out {kind:'photo',damageAreas[],vehicle:{make,model,color},fields:[same as above],needsReview}; severity in {facts} out {score 0-100,band,drivers[]}; fraud_signals in {facts} out {score,indicators:[{code,weight,reason}]}; subrogation in {facts} out {flag,reasons[],confidence}; summarize in {facts} out {summary,bullets[]}; next_best_actions in {facts} out {actions:[{code,label,reason,priority}]}. Field names for extracted document facts: policeReportNumber, citedParty, atFaultParty, estimateTotal, repairShop, lossDate, vin, damageAreas.",
+  "valueDrivers": [
+    "less manual data entry",
+    "document evidence audit trail"
+  ],
+  "requirements": [
+    "REQ-05"
+  ],
+  "startedAt": "2026-10-18T20:51:34.605Z",
+  "doneAt": "2026-10-18T20:56:29.245Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:56:29.245Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 16 evidence tests pass (service+routes); encrypted blobs, event without PII, routes/x-roles match openapi, tenant isolation tested"
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-005",
+        "severity": "high",
+        "summary": "PDF parse regex/inflate denial of service",
+        "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "SEC2-006",
+        "severity": "high",
+        "summary": "Base64 validation regex catastrophic backtracking",
+        "foundIn": "S2-SEC-01"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 0.5709,
+    "inputTokens": 34,
+    "cacheWriteTokens": 110286,
+    "cacheReadTokens": 1315233,
+    "outputTokens": 3209,
+    "agents": {
+      "a77bc366ed50028a2": {
+        "label": "S1-AI-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 35436,
+        "cacheReadTokens": 314171,
+        "outputTokens": 1119,
+        "usd": 0.1626
+      },
+      "a8589a1c6594b84c3": {
+        "label": "S1-AI-03 ic-ai-extraction-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 74850,
+        "cacheReadTokens": 1001062,
+        "outputTokens": 2090,
+        "usd": 0.4083
+      }
+    }
+  }
+}

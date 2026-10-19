@@ -1,0 +1,62 @@
+{
+  "id": "S4-WFL-00",
+  "team": "workflow",
+  "title": "Sprint 4 planning: WFL",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-workflow",
+  "reviewer": "ceo",
+  "status": "done",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:47:22.316Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:33.993Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:20:55.252Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ],
+  "spend": {
+    "usd": 0.2359,
+    "inputTokens": 10,
+    "cacheWriteTokens": 73928,
+    "cacheReadTokens": 252449,
+    "outputTokens": 54,
+    "agents": {
+      "a20dfad3fbfe1defa": {
+        "label": "S4-WFL-00 mgr-workflow planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 73928,
+        "cacheReadTokens": 252449,
+        "outputTokens": 54,
+        "usd": 0.2359
+      }
+    }
+  },
+  "doneAt": "2026-10-18T22:20:55.252Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:20:55.252Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
+}

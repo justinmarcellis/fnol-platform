@@ -1,0 +1,62 @@
+{
+  "id": "S1-WFL-00",
+  "team": "workflow",
+  "title": "Sprint 1 planning: decompose workflow stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-workflow",
+  "reviewer": "dir-workflow",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:34:36.785Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:01.032Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.2846,
+    "inputTokens": 14,
+    "cacheWriteTokens": 74496,
+    "cacheReadTokens": 382902,
+    "outputTokens": 2180,
+    "agents": {
+      "ad9460e067c769885": {
+        "label": "S1-WFL-00 mgr-workflow planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 74496,
+        "cacheReadTokens": 382902,
+        "outputTokens": 2180,
+        "usd": 0.2846
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:01.032Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:01.032Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

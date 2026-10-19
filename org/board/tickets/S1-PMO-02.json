@@ -1,0 +1,95 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:35:09.988Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:54:56.344Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:56:51.962Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:58:36.512Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-PMO-02",
+  "team": "pmo",
+  "title": "Sprint plan/close tooling and dashboard upgrades",
+  "story": "As leadership I run sprint plan and close commands and see review/retro, improvement log, team scorecards, tier spend mix and value drivers on one self-contained dashboard.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-pmo-dashboard-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "org/sprint.mjs",
+    "dashboard/",
+    "tests/unit/dashboard/",
+    "tests/unit/org/sprint.test.mjs"
+  ],
+  "contracts": [
+    "org/config.json targets",
+    "product/value-propositions.md VD-1..VD-6",
+    "org/scorecards output shape defined in S1-PMO-01 brief"
+  ],
+  "valueDrivers": [
+    "VD-3"
+  ],
+  "requirements": [],
+  "acceptance": [
+    "node org/sprint.mjs plan <n> sums points of tickets with sprint n and writes committed list and committedPoints into org/sprints/sprint-<n>.json, preserving existing fields",
+    "node org/sprint.mjs close <n> writes review {completedPoints, committedPoints, usd, pointsPerDollar, firstPassAcceptance, reworkRate, testPassRate/testsPassed from org/quality.json} without discarding existing retro or other fields; exported pure functions planSprint and closeSprint are tested in tests/unit/org/sprint.test.mjs with a temp dir",
+    "Dashboard shows sprint review and retro text, improvement log (before/after/result from org/improvements.json), team scorecards with low-performer flags, model-tier mix of spend, and a value drivers panel listing VD-1..VD-6 with linked tickets via ticket.valueDrivers",
+    "New pure metric functions (tierSpendMix, valueDriverView, improvementLogView, or equivalent) have unit tests in tests/unit/dashboard/ that pass; existing metrics tests still pass",
+    "node dashboard/export.mjs still produces one self-contained HTML file (no external URLs, scripts and styles inlined) that renders gracefully when org/scorecards/latest.json is absent"
+  ],
+  "brief": "Part A, org/sprint.mjs: ESM, export planSprint(n, {tickets, dir}) and closeSprint(n, {tickets, quality, dir}) as pure-ish functions taking injected tickets/dirs so tests use a temp dir; CLI: node org/sprint.mjs plan|close <n> reads tickets via listTickets from org/fabric.mjs and org/quality.json. Read-modify-write org/sprints/sprint-<n>.json (see sprint-0.json for shape: committed, targets, review, retro); merge into review/committed, never drop retro. Completed points = done tickets in sprint; usd = sum ticket.spend.usd; pointsPerDollar rounded 1 decimal; firstPassAcceptance = done tickets with review.firstPass / done; reworkRate = reworkCount>0 share; guard divide-by-zero. Part B, dashboard: extend dashboard/metrics.mjs (add exports, keep existing ones and computeMetrics shape additive), dashboard/app.js, index.html, styles.css, and export.mjs so everything remains inlined into a single HTML file. Data: sprint review/retro from org/sprints, improvements from org/improvements.json (before/after/result), scorecards from org/scorecards/latest.json with shape {agents,configs,teams:[{key,ticketsDone,points,composite,lowPerformer,lowConfidence,diagnosis}]} produced by S1-PMO-01 (build against a local fixture in tests, tolerate file missing), tier mix = spend.usd grouped by ticket.tier, value drivers parsed from product/value-propositions.md headings '### VD-n' (VD-1..VD-6, title text) joined with tickets whose valueDrivers include the id. Escape HTML in all text. Look at the existing dashboard/server.mjs to see how the snapshot is built and extend it. Tests: tests/unit/dashboard/ new file(s) e.g. metrics-sprint1.test.mjs; run node --test --disable-warning=ExperimentalWarning tests/unit/dashboard tests/unit/org/sprint.test.mjs. Do not edit package.json; do not git commit.",
+  "startedAt": "2026-10-18T20:54:56.344Z",
+  "doneAt": "2026-10-18T20:58:36.512Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:58:36.512Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 28 tests pass; export works with scorecards file absent (verified on a copy); VD-1..VD-6 with linked tickets, scorecard flags, tier mix, review/retro and improvement log present"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5937,
+    "inputTokens": 44,
+    "cacheWriteTokens": 90007,
+    "cacheReadTokens": 1758619,
+    "outputTokens": 1683,
+    "agents": {
+      "a0391448e262d4152": {
+        "label": "S1-PMO-02 ic-pmo-dashboard-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 34,
+        "cacheWriteTokens": 67629,
+        "cacheReadTokens": 1474713,
+        "outputTokens": 1618,
+        "usd": 0.4803
+      },
+      "a30780f532a10ff97": {
+        "label": "S1-PMO-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 22378,
+        "cacheReadTokens": 283906,
+        "outputTokens": 65,
+        "usd": 0.1134
+      }
+    }
+  }
+}

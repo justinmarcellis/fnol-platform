@@ -1,0 +1,105 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:35:12.568Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:48:37.052Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:51:12.329Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:55:49.770Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "ai",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-AI-02",
+  "title": "Local and Vertex AI providers",
+  "story": "AI layer (REQ-25) providers",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-ai-provider-integrator",
+  "paths": [
+    "src/ai/providers/",
+    "tests/unit/ai/providers/",
+    "tests/fixtures/ai/"
+  ],
+  "contracts": [
+    "architecture/overview.md#ai",
+    "architecture/contracts/domain/Document.schema.json",
+    "architecture/contracts/domain/common.schema.json"
+  ],
+  "acceptance": [
+    "src/ai/providers/local.mjs implements all 8 tasks deterministically; node --test tests/unit/ai/providers/local.test.mjs passes on fixtures in tests/fixtures/ai/ (police report text, repair estimate text, rear-end narrative, injury narrative, glass-only narrative, theft w/o police report) asserting extracted fields and confidence",
+    "local output shapes match the shared task I/O shapes in the brief",
+    "vertex-claude.mjs uses AnthropicVertex({projectId,region:'global'}), tier models claude-haiku-5-5/claude-sonnet-5-5/claude-opus-5-5, thinking {type:'adaptive'}, output_config json_schema, no tool_choice, no budget_tokens; checks stop_reason==='refusal' before reading content; node --test tests/unit/ai/providers/vertex.test.mjs passes with injected fake SDK clients",
+    "vertex-gemini.mjs uses GoogleGenAI({vertexai:true,project,location}) with responseSchema JSON; available() false (no throw) when SDK import fails or GOOGLE_CLOUD_PROJECT missing",
+    "grep shows no real carrier names, no secrets, no budget_tokens"
+  ],
+  "brief": "Each provider file default-exports a factory (ctx,opts)=>{name,available(),run(task,input,{tier,schema})} returning {output,confidence,explanation,usage,model} or {refusal:true}. S1-AI-01 consumes these; do not edit src/ai/index.mjs. Local (src/ai/providers/local.mjs, may split into src/ai/providers/local/*.mjs): regex/keyword/heuristics: police report number, cited party/at-fault party, loss date, VIN, estimate total, repair shop, damage areas; narrative cues: rear-end/hit-from-behind (other party at fault), injury words (whiplash, ER, ambulance, hospital), glass-only (windshield, chip, crack), theft, fire, CAT (hurricane, hail, flood); severity score from loss type, injuries, drivable, damage areas, estimate total, banded low/medium/high/severe; fraud indicators with code/weight/reason (LOSS_NEAR_INCEPTION, LATE_REPORT, NO_POLICE_REPORT_THEFT, PRIOR_CLAIMS, NARRATIVE_EVIDENCE_MISMATCH, ROUND_NUMBER_ESTIMATE) computed from facts passed in; subrogation flag from other-party-at-fault cues, citation of other driver, rear-end; summarize templated plain English; next_best_actions rule list. Confidence values: 0.9 for strong pattern hits, 0.5 weak, 0.2 none. Vertex: lazy dynamic import of @anthropic-ai/vertex-sdk and @google/genai inside available()/run, wrapped in try/catch; unavailable when import fails or process.env.GOOGLE_CLOUD_PROJECT missing; location from GOOGLE_CLOUD_LOCATION default 'global'. Accept opts.sdk injection for tests. Never crash. Use fictional fixtures only.\nSHARED AI TASK I/O SHAPES (all teams code against these; local provider must emit them exactly): ai.run returns {output,provider,model,confidence,explanation,usage,unconfirmed?}. Provider interface (src/ai/providers/<name>.mjs default export factory (ctx,opts)=>{name, available():Promise<boolean>, run(task,input,{tier,schema}):Promise<{output,confidence,explanation,usage,model}|{refusal:true}>}). Outputs: extract_narrative in {text} out {lossType,lossDate,location,injuries:boolean,injuryCues[],atFault:'insured'|'other'|'unknown',cues[]}; extract_document in {kind?,text,filename} out {kind,fields:[{name,value,confidence,provenance:{snippet}}],needsReview}; classify_photo in {filename,metadata?} out {kind:'photo',damageAreas[],vehicle:{make,model,color},fields:[same as above],needsReview}; severity in {facts} out {score 0-100,band,drivers[]}; fraud_signals in {facts} out {score,indicators:[{code,weight,reason}]}; subrogation in {facts} out {flag,reasons[],confidence}; summarize in {facts} out {summary,bullets[]}; next_best_actions in {facts} out {actions:[{code,label,reason,priority}]}. Field names for extracted document facts: policeReportNumber, citedParty, atFaultParty, estimateTotal, repairShop, lossDate, vin, damageAreas.",
+  "valueDrivers": [
+    "works with no cloud AI configured",
+    "cost-controlled model tiering"
+  ],
+  "requirements": [
+    "REQ-25"
+  ],
+  "startedAt": "2026-10-18T20:48:37.052Z",
+  "doneAt": "2026-10-18T20:55:49.770Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:55:49.769Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: 23/23 provider tests pass on rerun, Vertex request shapes/refusal check/availability fallbacks verified, no carrier names/secrets/budget_tokens in code, in-scope paths only"
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC4-001",
+        "severity": "high",
+        "summary": "Local provider extraction regexes backtrack polynomially on whitespace floods (event-loop DoS)",
+        "foundIn": "S4-AI-03 security gate"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 0.4624,
+    "inputTokens": 34,
+    "cacheWriteTokens": 77140,
+    "cacheReadTokens": 1191887,
+    "outputTokens": 3108,
+    "agents": {
+      "aa00deb6312607fd3": {
+        "label": "S1-AI-02 ic-ai-provider-integrator",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 26,
+        "cacheWriteTokens": 56186,
+        "cacheReadTokens": 968470,
+        "outputTokens": 2065,
+        "usd": 0.3549
+      },
+      "af2ca8251a236cd42": {
+        "label": "S1-AI-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 20954,
+        "cacheReadTokens": 223417,
+        "outputTokens": 1043,
+        "usd": 0.1075
+      }
+    }
+  }
+}

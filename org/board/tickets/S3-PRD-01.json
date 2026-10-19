@@ -1,0 +1,93 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:19.741Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:32:31.916Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:36:56.125Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:41:17.144Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-PRD-01",
+  "team": "product",
+  "title": "Carrier configuration guide",
+  "story": "As a carrier configurator I can set up the platform without code by following docs/configuration-guide.md.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-product-requirements-analyst",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "docs/configuration-guide.md"
+  ],
+  "contracts": [
+    "architecture/contracts/domain/TenantConfig.schema.json",
+    "architecture/contracts/modules.md"
+  ],
+  "valueDrivers": [
+    "VD-3"
+  ],
+  "requirements": [
+    "REQ-01"
+  ],
+  "acceptance": [
+    "docs/configuration-guide.md walks the tenant document section by section with snippets copied verbatim from tenants/aurelia-mutual.json and tenants/kestrel-point.json",
+    "Has how-to sections for: add line of business, add state with regulatory timers, question with showIf, STP rule, routing queue, AI provider settings (local vs Claude/Gemini on Vertex), webhooks and adapter mapping profiles",
+    "Covers POST /config/validate, If-Match versioning, admin console walkthrough and a Common mistakes section",
+    "Every field name and endpoint cited exists in the schema, src or docs/api-reference.md (reviewer spot-checks 5)",
+    "Only synthetic fictional tenants; no capability claimed that code lacks"
+  ],
+  "brief": "Write docs/configuration-guide.md only. Read tenants/*.json, architecture/contracts/domain/TenantConfig.schema.json, docs/api-reference.md, docs/setup.md, src/web admin app and the config module in src to confirm real field names, endpoints and admin console screens before documenting. Use real snippets, copied exactly from the tenant files; do not invent fields. For each how-to give a minimal JSON snippet, where it goes, and how to validate it (POST /config/validate, then save with If-Match using the current version/ETag; explain 412/conflict behaviour only if the code does it). AI settings: describe provider options exactly as the schema allows, and state plainly that no real Vertex runs have been made if that is true. Admin walkthrough: exact URLs and demo users from docs/setup.md. Common mistakes: schema violations, missing If-Match, show-if referencing unknown question ids, STP threshold units, es translations missing, etc. - verify each against the validator. Pitfall: do not claim capabilities (e.g. hot reload, SSO) without checking code. No other files.",
+  "startedAt": "2026-10-18T21:32:31.916Z",
+  "doneAt": "2026-10-18T21:41:17.144Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:41:17.144Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: 24/25 snippets verbatim from tenant files (25th is a validate response example), how-tos, validate/If-Match/console/mistakes covered, claims match src; docs-only"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.6473,
+    "inputTokens": 96,
+    "cacheWriteTokens": 202798,
+    "cacheReadTokens": 5554548,
+    "outputTokens": 2923,
+    "agents": {
+      "a8541b611baf9b437": {
+        "label": "S3-PRD-01 ic-product-requirements-analyst",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 88,
+        "cacheWriteTokens": 181458,
+        "cacheReadTokens": 5335129,
+        "outputTokens": 1893,
+        "usd": 1.5398
+      },
+      "a9beaa985a87d6eba": {
+        "label": "S3-PRD-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 21340,
+        "cacheReadTokens": 219419,
+        "outputTokens": 1030,
+        "usd": 0.1075
+      }
+    }
+  }
+}

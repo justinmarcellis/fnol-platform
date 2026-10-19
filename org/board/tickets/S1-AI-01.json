@@ -1,0 +1,106 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:35:12.566Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:46:06.044Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:53:13.636Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:56:07.715Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "ai",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-AI-01",
+  "title": "AI cascade, inference log and index",
+  "story": "AI layer (REQ-25) orchestration plus adjuster read model (REQ-15)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-ai-summarization-engineer",
+  "paths": [
+    "src/ai/index.mjs",
+    "src/ai/cascade.mjs",
+    "src/ai/inference-log.mjs",
+    "src/ai/schemas.mjs",
+    "tests/unit/ai/cascade.test.mjs",
+    "tests/unit/ai/inference-log.test.mjs",
+    "src/modules/adjuster/",
+    "tests/unit/adjuster/"
+  ],
+  "contracts": [
+    "architecture/overview.md#ai",
+    "architecture/contracts/modules.md#adjuster",
+    "architecture/contracts/domain/AdjusterView.schema.json",
+    "architecture/contracts/domain/TenantConfig.schema.json",
+    "architecture/contracts/openapi.yaml#adjuster"
+  ],
+  "acceptance": [
+    "createAi(ctx) exported from src/ai/index.mjs; run(task,input,opts) returns {output,provider,model,confidence,explanation,usage,unconfirmed?} for all 8 tasks (verified with the local provider once S1-AI-02 lands, and with an injected fake in tests/unit/ai/cascade.test.mjs)",
+    "node --test tests/unit/ai/cascade.test.mjs passes: cascade order from tenant config ai settings, per-task confidence threshold escalation, hard escalation on injury/fatality/litigation/CAT, refusal (stop_reason) and unavailable provider fall back to next, always ends on local, unknown task throws validation error",
+    "node --test tests/unit/ai/inference-log.test.mjs passes: ai_inference rows are tenant scoped, store sha256 input hash and no raw input text, table created idempotently; no /ai/inferences route since not in openapi",
+    "adjuster getFirstView returns a doc valid against AdjusterView.schema.json with header, summary, timeline, flags, documents, nextBestActions, coverage, routing; summary cached per triage attempt (second call does not call ai.run summarize)",
+    "getInbox filters by adjusterId/queue with cursor pagination; inbox projection updated by claim.* events; routes GET /adjuster/claims/{claimId}/view and /adjuster/inbox match openapi with x-roles",
+    "node --test tests/unit/adjuster/*.test.mjs passes using fakes for claims, evidence, coverage, triage, rules"
+  ],
+  "brief": "Part A (src/ai): index.mjs exports createAi(ctx). Provider modules are written by S1-AI-02 at src/ai/providers/local.mjs, vertex-claude.mjs, vertex-gemini.mjs; load them lazily via dynamic import inside try/catch so absence never crashes (tests must inject providers via opts.providers = {name: providerObj} and never depend on S1-AI-02 files). cascade.mjs: read ctx tenant config ai settings (see TenantConfig schema) for provider order, tier per task and per-task confidence threshold; try providers in order, accept result when confidence >= threshold else escalate to next; hard escalation (skip cheap tier, go to opus/gemini-pro tier) when input flags injury, fatality, litigation or CAT; a {refusal:true} result or thrown/unavailable provider falls through; final fallback is local, marked unconfirmed:true when confidence below threshold. Validate task name against the 8 tasks. inference-log.mjs: create table ai_inference (tenant_id,id,task,provider,model,tier,confidence,input_hash,usage,latency_ms,escalated,created_at) via ctx store tenant-scoped API (read architecture/core-runtime-api.md), hash input with sha256, never store raw text. schemas.mjs exports JSON schemas per task output (used by vertex providers for structured output).\nPart B (src/modules/adjuster): export service(ctx) per modules.md#adjuster; routes per openapi; call other modules through ctx.modules and tolerate absence (fakes in tests). Timeline from outbox/audit events for claim; flags from triage fraud/subrogation, coverage issues, timers due/breached; next best actions = ctx.ai.run('next_best_actions') plus rule-based (e.g. missing police report, coverage unverified, timer due). Cache summaries in adjuster_summaries keyed by triage attempt. Maintain adjuster_inbox projection from events. Pitfalls: events carry no PII; do not write claim state; tenant scoped.\nSHARED AI TASK I/O SHAPES (all teams code against these; local provider must emit them exactly): ai.run returns {output,provider,model,confidence,explanation,usage,unconfirmed?}. Provider interface (src/ai/providers/<name>.mjs default export factory (ctx,opts)=>{name, available():Promise<boolean>, run(task,input,{tier,schema}):Promise<{output,confidence,explanation,usage,model}|{refusal:true}>}). Outputs: extract_narrative in {text} out {lossType,lossDate,location,injuries:boolean,injuryCues[],atFault:'insured'|'other'|'unknown',cues[]}; extract_document in {kind?,text,filename} out {kind,fields:[{name,value,confidence,provenance:{snippet}}],needsReview}; classify_photo in {filename,metadata?} out {kind:'photo',damageAreas[],vehicle:{make,model,color},fields:[same as above],needsReview}; severity in {facts} out {score 0-100,band,drivers[]}; fraud_signals in {facts} out {score,indicators:[{code,weight,reason}]}; subrogation in {facts} out {flag,reasons[],confidence}; summarize in {facts} out {summary,bullets[]}; next_best_actions in {facts} out {actions:[{code,label,reason,priority}]}. Field names for extracted document facts: policeReportNumber, citedParty, atFaultParty, estimateTotal, repairShop, lossDate, vin, damageAreas.",
+  "valueDrivers": [
+    "AI provider flexibility and cost control",
+    "faster adjuster first touch"
+  ],
+  "requirements": [
+    "REQ-25",
+    "REQ-15"
+  ],
+  "startedAt": "2026-10-18T20:46:06.044Z",
+  "doneAt": "2026-10-18T20:56:07.715Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:56:07.715Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 20 tests pass; cascade, hashed tenant-scoped inference log, AdjusterView validation, summary cache, inbox and routes meet criteria"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.1057,
+    "inputTokens": 64,
+    "cacheWriteTokens": 138705,
+    "cacheReadTokens": 3611582,
+    "outputTokens": 3643,
+    "agents": {
+      "a7f5921f4a321fd5f": {
+        "label": "S1-AI-01 ic-ai-summarization-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 56,
+        "cacheWriteTokens": 119647,
+        "cacheReadTokens": 3392987,
+        "outputTokens": 3015,
+        "usd": 1.008
+      },
+      "a9e78e70b949771ef": {
+        "label": "S1-AI-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19058,
+        "cacheReadTokens": 218595,
+        "outputTokens": 628,
+        "usd": 0.0977
+      }
+    }
+  }
+}

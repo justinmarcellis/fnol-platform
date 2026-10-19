@@ -1,0 +1,62 @@
+{
+  "task": "summarize",
+  "synthetic": true,
+  "description": "Claim facts to adjuster summary (synthetic). Scored on required key facts appearing.",
+  "cases": [
+    {
+      "id": "sum-collision",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "lossDate": "2026-03-09",
+          "injuries": false,
+          "estimateTotal": 4190.55,
+          "policeReportNumber": "SC-2026-004417"
+        }
+      },
+      "expected": {
+        "mustInclude": [
+          "collision",
+          "2026-03-09",
+          "4,190.55",
+          "SC-2026-004417"
+        ]
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "summary": "A collision on 2026-03-09 with a repair estimate of $4,190.55. No injuries reported.",
+            "bullets": [
+              "Police report SC-2026-004417 on file"
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sum-glass",
+      "input": {
+        "facts": {
+          "lossType": "glass",
+          "lossDate": "2026-05-15",
+          "injuries": false,
+          "glassOnly": true
+        }
+      },
+      "expected": {
+        "mustInclude": [
+          "glass",
+          "2026-05-15",
+          "No injuries"
+        ]
+      }
+    }
+  ]
+}

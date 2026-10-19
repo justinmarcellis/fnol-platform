@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/RoutingDecision.schema.json",
+  "title": "Routing decision",
+  "description": "Where a triaged claim goes: an adjuster queue (and optionally an adjuster) or straight-through fast track.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "outcome",
+    "queue",
+    "fastTrack",
+    "ruleIds",
+    "decidedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "triageResultId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "assigned",
+        "fast_tracked"
+      ]
+    },
+    "queue": {
+      "type": "string"
+    },
+    "adjusterId": {
+      "type": "string"
+    },
+    "fastTrack": {
+      "type": "boolean"
+    },
+    "ruleIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Rules that fired, in evaluation order."
+    },
+    "rulesetVersion": {
+      "type": "string"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "override": {
+      "type": "object",
+      "properties": {
+        "by": {
+          "$ref": "common.schema.json#/$defs/Actor"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "description": "Present when a supervisor overrode the automatic decision."
+    },
+    "decidedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

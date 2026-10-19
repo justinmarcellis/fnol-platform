@@ -1,0 +1,106 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:48:33.942Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:49:39.251Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:51:55.524Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:53:17.270Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S4-WFL-02",
+  "team": "workflow",
+  "title": "Intake security hardening: idempotency namespace, encrypted suggestions, pattern guard, answer size caps",
+  "story": "Close SEC3 intake mediums and wire intake submit to the new enrichment hook.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-workflow-rules-engine-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 4,
+  "paths": [
+    "src/modules/intake/service.js",
+    "src/modules/intake/routes.js",
+    "src/modules/intake/questions.js",
+    "src/modules/intake/conversation.js",
+    "src/modules/intake/security.js",
+    "tests/unit/intake/security-idempotency.test.js",
+    "tests/unit/intake/security-suggestions.test.js",
+    "tests/unit/intake/security-pattern.test.js",
+    "tests/unit/intake/security-size.test.js"
+  ],
+  "contracts": [
+    "architecture/security-gate-s3.json (intake findings)",
+    "architecture/contracts/modules.md (intake, crypto)",
+    "architecture/core-runtime-api.md (ctx.crypto.encryptPii/decryptPii, ctx.db, scheduler)"
+  ],
+  "acceptance": [
+    "Client Idempotency-Key is namespaced as intake:<sessionId>:<key> before createClaim; default remains intake:<sessionId>; test shows a key equal to another session's key cannot return another claim (security-idempotency.test.js)",
+    "doc.suggestions values are encrypted with ctx.crypto.encryptPii when saved and decrypted on read; raw DB row contains no narrative text; suggestions are purged on submit and on session expiry (security-suggestions.test.js)",
+    "validation.pattern guard rejects adjacent/repeated unbounded quantifiers (e.g. a+*, (a+)+, a*a*) and counted groups with optional bodies (e.g. (a?){1,50}); pattern-question input is capped at 200 chars; evaluation is time-boxed; unsafe patterns are skipped with no hang (security-pattern.test.js)",
+    "Structured answer value over 16 KB (serialized) is rejected with 400 per-question error; total answers per session over 512 KB rejected (security-size.test.js)",
+    "submit calls mapping.enrichClaimCreate when exported (namespace import, optional call) before createClaim, passing session, answers, questions and a getSnapshot using mod('coverage').getPolicySnapshot; absence of the export must not break submit",
+    "All named tests pass plus existing tests/unit/intake/*.test.js; only listed paths changed"
+  ],
+  "brief": "Read architecture/security-gate-s3.json intake entries (service.js idempotency ~265, suggestions plaintext, questions.js isSafePattern lines 12-40 and 121-124). Build helpers in new src/modules/intake/security.js and wire them. (1) Idempotency: in service.submit use `intake:${sessionId}:${key}` when a client key is given (key capped to 128 chars, charset-limited), else `intake:${sessionId}`. (2) Suggestions: mergeSuggestions/saveDoc store doc.suggestions plaintext. Seal values via ctx.crypto.encryptPii when saving and open on read in conversation/service; delete doc.suggestions on submit and in the expiry sweep. Verify the encryptPii signature in core-runtime-api.md; follow how intake_answers already encrypts. (3) Pattern guard: strengthen isSafePattern: reject nested/adjacent/repeated unbounded quantifiers (*,+,{n,}) and groups with optional bodies under counts; cap pattern length; cap tested input to 200 chars (answers longer than that fail validation for pattern questions); time-box: run the regex in a bounded way (precheck is primary; node:vm with timeout option is acceptable for a hard bound). Keep existing valid patterns working (phone, postal code). (4) Size caps: reject any structured (object/array) answer whose JSON length exceeds 16384 bytes and any session whose summed answer size exceeds 524288 bytes, via the existing per-question errors[] 400 envelope. (5) Hook: story 1 (ticket S4-WFL-01, parallel) adds async mapping.enrichClaimCreate(input,{session,answers,questions,getSnapshot}) in mapping.js. In submit do `import * as mapping from './mapping.js'` and `const enriched = typeof mapping.enrichClaimCreate === 'function' ? await mapping.enrichClaimCreate(...) : input`. Do not edit mapping.js. Reuse tests/unit/intake/helpers.mjs and fakes.mjs (read only; add your own helpers inside your new test files). Pitfalls: never log answer or narrative content; keep ES module style; do not change response shapes.",
+  "startedAt": "2026-10-18T21:49:39.251Z",
+  "doneAt": "2026-10-18T21:53:17.270Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:53:17.269Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 58 intake tests (15 new security) pass; e2e+security gate 368 pass 0 fail"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.764,
+    "inputTokens": 52,
+    "cacheWriteTokens": 132056,
+    "cacheReadTokens": 1961405,
+    "outputTokens": 4136,
+    "agents": {
+      "a6d7e052a0e66ab79": {
+        "label": "S4-WFL-02 ic-workflow-rules-engine-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 30,
+        "cacheWriteTokens": 68537,
+        "cacheReadTokens": 1281367,
+        "outputTokens": 1970,
+        "usd": 0.4474
+      },
+      "a85f2dac2287f6ac6": {
+        "label": "S4-WFL-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19469,
+        "cacheReadTokens": 220379,
+        "outputTokens": 519,
+        "usd": 0.098
+      },
+      "aa2232cb57b54e9f2": {
+        "label": "S4-WFL-02 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 44050,
+        "cacheReadTokens": 459659,
+        "outputTokens": 1647,
+        "usd": 0.2186
+      }
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:36.733Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:38:18.115Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:43:38.057Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:57:24.255Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "workflow",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-WFL-01",
+  "title": "Config module, schema validator and two demo tenants",
+  "story": "As a carrier admin I can read, validate and update tenant configuration, and two materially different demo tenants ship ready to load.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-workflow-domain-modeler",
+  "paths": [
+    "src/modules/config/",
+    "tenants/",
+    "tests/unit/config/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#config",
+    "architecture/contracts/openapi.yaml (/config paths)",
+    "architecture/contracts/domain/TenantConfig.schema.json",
+    "architecture/contracts/events/ (tenant.config.updated)"
+  ],
+  "requirements": [
+    "REQ-13",
+    "REQ-22"
+  ],
+  "valueDrivers": [
+    "VD-3"
+  ],
+  "acceptance": [
+    "src/modules/config/validator.js exports a zero-dependency JSON Schema subset validator (type, required, properties, items, enum, const, pattern, min/max, additionalProperties, $ref to local and sibling schema files, oneOf/anyOf) and tests/unit/config/validator.test.js passes",
+    "src/modules/config/service.js exports validateTenantConfig(cfg) returning {valid,errors[]} with schema errors plus semantic errors: invalid rule conditions (via rules.validateRules, tolerated absent with a local fake in tests), duplicate question ids, timers referencing unknown states; each covered by a named test",
+    "Module exports service(ctx) and registers validateTenantConfig through ctx.tenants.addValidator; routes match openapi /config paths with x-roles enforced; updates publish tenant.config.updated and write audit",
+    "tenants/aurelia-mutual.json and tenants/kestrel-point.json both pass validateTenantConfig (tests/unit/config/tenants.test.js) and differ in branding, LOBs, states, locales, STP thresholds, SIU threshold, queues, timers",
+    "Aurelia: personal_auto + homeowners, WI+IL, en+es, aggressive STP (glass and home under 2500); Kestrel: personal_auto + commercial_auto, MI, en only, STP glass only, stricter SIU threshold; question sets with showIf per LOB/loss type; synthetic adjusters; timers labelled illustrative, not legal advice; webhooks; ai provider cascade with local first",
+    "Only synthetic data; no real carrier or person names; no secrets in files"
+  ],
+  "brief": "Read product/requirements.md lines ~120-135 first and follow them exactly. Build in src/modules/config/: validator.js (small recursive JSON Schema subset; resolve $ref relative to architecture/contracts/domain/ by loading files at runtime via fs; make it reusable, export validate(schema,data,{resolve})), service.js (validateTenantConfig, getConfig, putConfig, publishing flow per modules.md#config using ctx.tenants, ctx.audit, ctx.events), routes.js (per openapi /config), index.js exporting service(ctx) and registering the validator with ctx.tenants.addValidator. Use architecture/core-runtime-api.md for exact ctx shapes and the tenant-bound ctx addendum; do not guess method names. rules.validateRules lives in another team's parallel ticket (S1-WFL-02): call ctx.modules.rules?.validateRules if present, otherwise skip, and use a local fake in tests. Semantic checks: question ids unique per tenant, every timer's state references a lifecycle state from architecture/overview.md section 7, rule conditions valid. Demo tenants: write JSON against the schema, check required fields carefully; use the condition language in architecture/domain-model.md for showIf and STP/routing rules. Timer deadlines for WI/IL/MI should be plausible day counts with description text 'Illustrative, not legal advice'. Provide at least 4 queues per tenant with 2-3 fake adjusters each (needed by round-robin routing). Pitfall: do not edit package.json; run only node --test --disable-warning=ExperimentalWarning tests/unit/config/. Post any contract gap to the architecture hub.",
+  "startedAt": "2026-10-18T20:38:18.115Z",
+  "doneAt": "2026-10-18T20:57:24.255Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:57:24.255Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 53/53 config tests pass; routes, event/audit, tenant differentiation, synthetic data verified. Nit: validator test file is .mjs not .js."
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-2",
+        "severity": "medium",
+        "summary": "Demo tenant STP rules did not fast-track glass and home water < $2,500 as specified",
+        "foundIn": "S2-ITG-01"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 0.8828,
+    "inputTokens": 54,
+    "cacheWriteTokens": 129199,
+    "cacheReadTokens": 2663607,
+    "outputTokens": 2704,
+    "agents": {
+      "a79864008b97f12df": {
+        "label": "S1-WFL-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19740,
+        "cacheReadTokens": 216757,
+        "outputTokens": 151,
+        "usd": 0.0942
+      },
+      "ade2965ceb143c03a": {
+        "label": "S1-WFL-01 ic-workflow-domain-modeler",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 46,
+        "cacheWriteTokens": 109459,
+        "cacheReadTokens": 2446850,
+        "outputTokens": 2553,
+        "usd": 0.7886
+      }
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:26.301Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:04.501Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:45:21.249Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:57:51.192Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-SEC-01",
+  "team": "security",
+  "title": "Threat model, data-protection design, compliance mapping and security overview",
+  "story": "As a carrier security reviewer I want a STRIDE threat model, data-protection design and compliance mapping tied to concrete code controls so that I can assess the platform for licensing.",
+  "points": 8,
+  "tier": "strong",
+  "owner": "ic-security-threat-modeler",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "architecture/threat-model.md",
+    "architecture/data-protection.md",
+    "docs/security-overview.md",
+    "docs/compliance-mapping.md"
+  ],
+  "contracts": [
+    "architecture/overview.md",
+    "architecture/contracts/openapi.yaml",
+    "architecture/contracts/events/envelope.schema.json",
+    "architecture/contracts/domain/",
+    "architecture/core-runtime-api.md",
+    "org/decisions/ADR-001-stack-and-layout.md"
+  ],
+  "acceptance": [
+    "architecture/threat-model.md contains a mermaid trust-boundary diagram covering browser/client, API/router, modules, SQLite store, outbox/webhooks, AI provider, mock PAS and file storage",
+    "STRIDE table has one row set per component and per trust boundary of architecture/overview.md, each with threat, mitigation and a control citing a real src/core file (auth.mjs, store.mjs, crypto.mjs, audit.mjs, bus.mjs, log.mjs, router.mjs, tenant-context.mjs); reviewer greps cited files exist",
+    "Top-10 risks ranked by likelihood x impact with mitigation, owner team and status (implemented/planned)",
+    "Multi-tenant isolation section analyses store rewriting limits (regex SQL rewrite, CTE/string-literal gaps from core-runtime-api.md assumptions), X-Tenant-Id handling, per-tenant keys, tctx binding and cache, with residual risks",
+    "AI-specific section covers prompt injection via uploaded documents, untrusted model output (schema validation, confidence/explanation, human review), data sent to providers (minimization, redaction, no-training terms, per-tenant opt-out) and provider failure",
+    "architecture/data-protection.md has a PII inventory table generated from x-pii fields in architecture/contracts/domain/*.schema.json (field, schema, handling), encryption at rest per tenant key via ctx.crypto.encryptPii/hmacIndex, key-management and rotation path to Cloud KMS, retention schedule, log redaction rules (ctx.log key list), and the synthetic-data-only rule",
+    "docs/compliance-mapping.md has tables mapping GLBA Safeguards Rule, NAIC #668, state claim-handling timelines (WI/IL/MI marked illustrative, how claims timers implement acknowledge/decide/pay deadlines) and SOC 2 CC6, CC7, CC8 to control -> evidence location (file or test path)",
+    "docs/security-overview.md is a customer-facing summary (<=2 pages) with no internal-only detail, no real carrier names, and links to the other docs; claims not yet built are labelled planned",
+    "No secrets, real names or real carriers anywhere; only the four owned paths changed"
+  ],
+  "brief": "Read architecture/overview.md first and enumerate its components and trust boundaries; build the STRIDE tables from that list so nothing is missed. Then read src/core/*.mjs and cite real behavior only: do not claim controls that are not in code. Mark gaps as 'planned' with an owning team. Known facts to use: tokens are HMAC-SHA256 dev tokens (auth.mjs) with key derived from master key; /api/v1/auth/token is dev-mode only; X-Tenant-Id only for platform_admin; store.forTenant rewrites SELECT/UPDATE/DELETE with a tenant filter, raw INSERT into tenant tables throws, system store throws on tenant tables; crypto derives per-tenant keys (deriveKey), encryptPii/decryptPii/hmacIndex; audit_log is hash-chained and append-only via triggers, verify() available, GET /api/v1/audit needs supervisor/carrier_admin/platform_admin; events carry no PII (ids/codes/scores) and webhooks are HMAC-SHA256 signed; logger redacts keys matching name|email|phone|dob|address|ssn|license|plate; 15MB body limit. Grep x-pii in architecture/contracts/domain/ for the PII inventory (script it if many; keep output in the table). Timers: claims module owns regulatory timers per architecture/overview.md decisions; describe the mechanism generically and label WI/IL/MI day counts illustrative (not legal advice). Evidence location column should point to tests/security/*.test.mjs (written by S1-SEC-02) where applicable. Key rotation: describe versioned key ids, re-encrypt job, KMS envelope encryption (data key wrapped by Cloud KMS key per tenant) as the path; mark as planned. Include a short residual-risk/backlog list for Sprint 2. Use mermaid fenced blocks. Do not edit src/ or tests/. Post any contract gap to the architecture hub.",
+  "valueDrivers": [
+    "VD-trust",
+    "VD-compliance",
+    "VD-time-to-license"
+  ],
+  "requirements": [
+    "Threat model per component and trust boundary",
+    "Multi-tenant isolation analysis",
+    "AI-specific threats",
+    "PII inventory, encryption, retention, redaction",
+    "GLBA, NAIC 668, state timelines, SOC 2 mapping",
+    "Customer-facing security overview"
+  ],
+  "startedAt": "2026-10-18T20:35:04.501Z",
+  "doneAt": "2026-10-18T20:57:51.192Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:57:51.192Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All four docs meet criteria (mermaid + STRIDE for 13 components/9 boundaries, ranked top-10, isolation limits R1/R3/R4 reproduced by me, AI threats, PII inventory 14/7 matches x-pii, GLBA/NAIC/SOC2/state timelines illustrative, planned items labelled); nit: a few src line cites are off (e.g. bus.mjs:163 is really ~56)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 2.2075,
+    "inputTokens": 84,
+    "cacheWriteTokens": 234430,
+    "cacheReadTokens": 5368609,
+    "outputTokens": 4268,
+    "agents": {
+      "a123fedf7203d04a3": {
+        "label": "S1-SEC-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 18,
+        "cacheWriteTokens": 44656,
+        "cacheReadTokens": 638257,
+        "outputTokens": 1244,
+        "usd": 0.2518
+      },
+      "ad91bf3ace3379441": {
+        "label": "S1-SEC-01 ic-security-threat-modeler",
+        "model": "claude-opus-5-5",
+        "inputTokens": 66,
+        "cacheWriteTokens": 189774,
+        "cacheReadTokens": 4730352,
+        "outputTokens": 3024,
+        "usd": 1.9557
+      }
+    }
+  }
+}

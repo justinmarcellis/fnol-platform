@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/PolicySnapshot.schema.json",
+  "title": "Policy snapshot",
+  "description": "Point-in-time copy of the policy as of the loss date, read from the carrier policy system through the policy port. ACORD: Policy / PersAutoLineBusiness / HomeLineBusiness.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "policyNumber",
+    "lob",
+    "status",
+    "period",
+    "coverages",
+    "retrievedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "policyNumber": {
+      "type": "string"
+    },
+    "lob": {
+      "$ref": "common.schema.json#/$defs/Lob"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_force",
+        "cancelled",
+        "expired",
+        "pending_cancellation",
+        "not_found"
+      ]
+    },
+    "period": {
+      "type": "object",
+      "required": [
+        "effectiveDate",
+        "expirationDate"
+      ],
+      "properties": {
+        "effectiveDate": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "common.schema.json#/$defs/Date"
+        },
+        "cancellationDate": {
+          "$ref": "common.schema.json#/$defs/Date"
+        }
+      }
+    },
+    "asOfDate": {
+      "$ref": "common.schema.json#/$defs/Date"
+    },
+    "ratingState": {
+      "$ref": "common.schema.json#/$defs/UsState"
+    },
+    "namedInsureds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-pii": true
+          },
+          "relation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "drivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "driverId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "x-pii": true
+          },
+          "excluded": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "coverages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Platform coverage code (BI, PD, COLL, COMP, UM, UIM, MEDPAY, PIP, RENTAL, TOWING, GLASS, DWELLING, OTHER_STRUCTURES, PERSONAL_PROPERTY, LOSS_OF_USE, PERSONAL_LIABILITY, MED_PAY_OTHERS). Maps to ACORD CoverageCd."
+          },
+          "description": {
+            "type": "string"
+          },
+          "limitPerPerson": {
+            "$ref": "common.schema.json#/$defs/Money"
+          },
+          "limitPerOccurrence": {
+            "$ref": "common.schema.json#/$defs/Money"
+          },
+          "limit": {
+            "$ref": "common.schema.json#/$defs/Money"
+          },
+          "deductible": {
+            "$ref": "common.schema.json#/$defs/Money"
+          },
+          "deductibleType": {
+            "type": "string",
+            "enum": [
+              "flat",
+              "percent_of_dwelling"
+            ]
+          },
+          "appliesToUnitIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludedPerils": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/LossCause"
+            }
+          }
+        }
+      },
+      "description": "Policy-level coverages."
+    },
+    "vehicles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "unitId"
+        ],
+        "properties": {
+          "unitId": {
+            "type": "string"
+          },
+          "vin": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "garagingPostalCode": {
+            "type": "string"
+          },
+          "coverages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "code"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "description": "Platform coverage code (BI, PD, COLL, COMP, UM, UIM, MEDPAY, PIP, RENTAL, TOWING, GLASS, DWELLING, OTHER_STRUCTURES, PERSONAL_PROPERTY, LOSS_OF_USE, PERSONAL_LIABILITY, MED_PAY_OTHERS). Maps to ACORD CoverageCd."
+                },
+                "description": {
+                  "type": "string"
+                },
+                "limitPerPerson": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "limitPerOccurrence": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "limit": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "deductible": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "deductibleType": {
+                  "type": "string",
+                  "enum": [
+                    "flat",
+                    "percent_of_dwelling"
+                  ]
+                },
+                "appliesToUnitIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "excludedPerils": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "common.schema.json#/$defs/LossCause"
+                  }
+                }
+              }
+            }
+          },
+          "unitType": {
+            "type": "string",
+            "examples": [
+              "power_unit",
+              "trailer",
+              "private_passenger"
+            ],
+            "description": "Added 1.2.0 (commercial_auto fleet schedule)."
+          },
+          "addedDate": {
+            "$ref": "common.schema.json#/$defs/Date",
+            "description": "Added 1.2.0. Unit covered from this date (inclusive)."
+          },
+          "removedDate": {
+            "$ref": "common.schema.json#/$defs/Date",
+            "description": "Added 1.2.0. Unit not covered on or after this date."
+          }
+        }
+      }
+    },
+    "properties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "locationId"
+        ],
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "address": {
+            "$ref": "common.schema.json#/$defs/Address"
+          },
+          "dwellingType": {
+            "type": "string"
+          },
+          "coverages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "code"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "description": "Platform coverage code (BI, PD, COLL, COMP, UM, UIM, MEDPAY, PIP, RENTAL, TOWING, GLASS, DWELLING, OTHER_STRUCTURES, PERSONAL_PROPERTY, LOSS_OF_USE, PERSONAL_LIABILITY, MED_PAY_OTHERS). Maps to ACORD CoverageCd."
+                },
+                "description": {
+                  "type": "string"
+                },
+                "limitPerPerson": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "limitPerOccurrence": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "limit": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "deductible": {
+                  "$ref": "common.schema.json#/$defs/Money"
+                },
+                "deductibleType": {
+                  "type": "string",
+                  "enum": [
+                    "flat",
+                    "percent_of_dwelling"
+                  ]
+                },
+                "appliesToUnitIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "excludedPerils": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "common.schema.json#/$defs/LossCause"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "endorsements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sourceSystem": {
+      "type": "string",
+      "description": "Adapter id, e.g. mock-pas."
+    },
+    "retrievedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

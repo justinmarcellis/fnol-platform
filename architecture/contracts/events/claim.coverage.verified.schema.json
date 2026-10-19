@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.coverage.verified.schema.json",
+  "title": "claim.coverage.verified",
+  "description": "Coverage check against the policy snapshot completed. Published by coverage.",
+  "x-publisher": "coverage",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.coverage.verified"
+    },
+    "source": {
+      "pattern": "/modules/coverage$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "verificationId",
+        "outcome"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "verificationId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "policySnapshotId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "policyNumber": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "covered",
+            "partial",
+            "not_covered",
+            "policy_not_found",
+            "needs_review"
+          ]
+        },
+        "policyStatus": {
+          "type": "string"
+        },
+        "lossInPeriod": {
+          "type": "boolean"
+        },
+        "matchedCoverages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "failedChecks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

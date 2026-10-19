@@ -1,0 +1,94 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:35:09.986Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:53:43.737Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:54:44.740Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:58:10.404Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-PMO-01",
+  "team": "pmo",
+  "title": "Performance scorecards engine",
+  "story": "As the PMO I get per-agent, per-tier and per-team scorecards with composite score, low-performer flags and diagnoses so poor configurations are fixed.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-pmo-metrics-analyst",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "org/scorecards.mjs",
+    "org/scorecards/",
+    "tests/unit/org/scorecards.test.mjs"
+  ],
+  "contracts": [
+    "org/config.json performance.composite and targets",
+    "org/playbooks/standards.md ticket fields"
+  ],
+  "valueDrivers": [
+    "VD-3"
+  ],
+  "requirements": [],
+  "acceptance": [
+    "org/scorecards.mjs exports pure functions (agentScorecards, teamScorecards, compositeScore, diagnose, buildScorecards) plus a CLI entry: node org/scorecards.mjs [--sprint n] writes org/scorecards/latest.json and org/scorecards/sprint-<n>.json",
+    "Each scorecard row has ticketsDone, points, firstPassAcceptance, reworkRate, defects, hoursPerPoint vs company median, costPerPoint, composite, lowPerformer, lowConfidence (true when <3 tickets), diagnosis",
+    "Composite follows the config formula exactly; low performer = bottom 10% composite or below target two sprints running; lowConfidence rows are never flagged as actionable",
+    "Diagnosis heuristics: points>8 with rework => oversized task; cost per point > 2x median => wrong tier; others documented in code",
+    "Test file tests/unit/org/scorecards.test.mjs passes with node --test using in-test fixtures, including <3 tickets, zero-ticket and zero-points edge cases, no division by zero or NaN",
+    "Running the CLI on the real board produces valid JSON files in org/scorecards/"
+  ],
+  "brief": "Build org/scorecards.mjs. Input: tickets from org/board/tickets (use listTickets from org/fabric.mjs in the CLI path only; pure functions take arrays so tests use fixtures). Only status done tickets count. Ticket fields: owner, tier, team, points, sprint, startedAt/doneAt (hours = doneAt-startedAt), spend.usd, review.firstPass, review.reworkCount, review.escapedDefects. Group by owner id (key 'owner' and also by 'owner+tier' configuration) and by team. Metrics: firstPassAcceptance = share with review.firstPass; reworkRate = share with reworkCount>0; defects = sum escapedDefects / tickets, capped 0..1 for composite; estimateAccuracy = clamp(1 - |hoursPerPoint/medianHoursPerPoint - 1|, 0, 1); costEfficiency = clamp(medianCostPerPoint/costPerPoint,0,1), 1 when no data. Median is over all done tickets. Composite: 0.35*firstPass + 0.2*(1-rework) + 0.2*estimateAccuracy + 0.15*costEfficiency + 0.1*(1-defects). Low performer: bottom 10% composite among rows with >=3 tickets, or composite below the target two sprints running (read earlier org/scorecards/sprint-<n>.json if present, tolerate absence). Output shape (shared with the dashboard ticket S1-PMO-02, do not change): {sprint, generatedAt, medians:{hoursPerPoint,costPerPoint}, agents:[row], configs:[row], teams:[row]} where row = {key, owner?, tier?, team?, ticketsDone, points, firstPassAcceptance, reworkRate, defects, hoursPerPoint, costPerPoint, composite, lowPerformer, lowConfidence, diagnosis:[string]}. Round to 3 decimals. Pitfalls: missing spend or timestamps, deterministic ordering (sort by key), do not touch other files. Do not git commit; edit nothing outside your paths. Run: node --test --disable-warning=ExperimentalWarning tests/unit/org/scorecards.test.mjs.",
+  "startedAt": "2026-10-18T20:53:43.737Z",
+  "doneAt": "2026-10-18T20:58:10.404Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:58:10.403Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: 9 tests pass, CLI on real board writes valid JSON with all row fields, composite/low-performer rules match config, diagnosis heuristics present"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.2822,
+    "inputTokens": 20,
+    "cacheWriteTokens": 57863,
+    "cacheReadTokens": 586331,
+    "outputTokens": 2025,
+    "agents": {
+      "aa7ba80e0172dcdf2": {
+        "label": "S1-PMO-01 ic-pmo-metrics-analyst",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 34953,
+        "cacheReadTokens": 360358,
+        "outputTokens": 1052,
+        "usd": 0.17
+      },
+      "af7492d86aefb4f00": {
+        "label": "S1-PMO-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 22910,
+        "cacheReadTokens": 225973,
+        "outputTokens": 973,
+        "usd": 0.1122
+      }
+    }
+  }
+}

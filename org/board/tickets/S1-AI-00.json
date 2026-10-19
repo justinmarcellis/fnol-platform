@@ -1,0 +1,62 @@
+{
+  "id": "S1-AI-00",
+  "team": "ai",
+  "title": "Sprint 1 planning: decompose ai stories into tickets",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-ai",
+  "reviewer": "dir-ai",
+  "status": "done",
+  "sprint": 1,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:30:52.250Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:12.622Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:00:00.574Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Tickets have disjoint paths, no serial dependencies, testable acceptance criteria"
+  ],
+  "spend": {
+    "usd": 0.2704,
+    "inputTokens": 14,
+    "cacheWriteTokens": 45124,
+    "cacheReadTokens": 455758,
+    "outputTokens": 6646,
+    "agents": {
+      "a2ffc9be1315c0886": {
+        "label": "S1-AI-00 mgr-ai planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 14,
+        "cacheWriteTokens": 45124,
+        "cacheReadTokens": 455758,
+        "outputTokens": 6646,
+        "usd": 0.2704
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:00:00.574Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:00:00.574Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Tickets disjoint, parallel, testable"
+      }
+    ],
+    "firstPass": true
+  }
+}

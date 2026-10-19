@@ -1,0 +1,159 @@
+{
+  "task": "fraud_signals",
+  "synthetic": true,
+  "description": "Claim facts to fraud indicators (synthetic). Flag means score >= 40.",
+  "cases": [
+    {
+      "id": "fraud-theft-new-policy",
+      "input": {
+        "facts": {
+          "lossType": "theft",
+          "lossDate": "2026-02-10",
+          "inceptionDate": "2026-02-01",
+          "reportedDate": "2026-02-11"
+        }
+      },
+      "expected": {
+        "flag": true,
+        "indicators": [
+          "LOSS_NEAR_INCEPTION",
+          "NO_POLICE_REPORT_THEFT"
+        ]
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 60,
+            "indicators": [
+              {
+                "code": "LOSS_NEAR_INCEPTION",
+                "weight": 25,
+                "reason": "Nine days after inception."
+              },
+              {
+                "code": "NO_POLICE_REPORT_THEFT",
+                "weight": 30,
+                "reason": "No report."
+              }
+            ]
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "fraud-clean",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "lossDate": "2026-03-09",
+          "inceptionDate": "2024-01-01",
+          "reportedDate": "2026-03-09",
+          "policeReportNumber": "SC-2026-004417",
+          "estimateTotal": 4190.55
+        }
+      },
+      "expected": {
+        "flag": false,
+        "indicators": []
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "score": 5,
+            "indicators": []
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        },
+        "vertex-gemini": {
+          "output": {
+            "score": 10,
+            "indicators": []
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "fraud-late-round",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "lossDate": "2026-03-01",
+          "inceptionDate": "2023-01-01",
+          "reportedDate": "2026-04-01",
+          "estimateTotal": 3000,
+          "policeReportNumber": "SC-1"
+        }
+      },
+      "expected": {
+        "flag": false,
+        "indicators": [
+          "LATE_REPORT",
+          "ROUND_NUMBER_ESTIMATE"
+        ]
+      }
+    },
+    {
+      "id": "fraud-serial",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "lossDate": "2026-05-12",
+          "inceptionDate": "2026-05-01",
+          "reportedDate": "2026-06-10",
+          "priorClaims": 3,
+          "policeReportNumber": "SC-2"
+        }
+      },
+      "expected": {
+        "flag": true,
+        "indicators": [
+          "LOSS_NEAR_INCEPTION",
+          "LATE_REPORT",
+          "PRIOR_CLAIMS"
+        ]
+      }
+    },
+    {
+      "id": "fraud-glass-body-damage",
+      "input": {
+        "facts": {
+          "lossType": "glass",
+          "glassOnly": true,
+          "narrative": "A rock cracked my windshield.",
+          "damageAreas": [
+            "rear door",
+            "quarter panel"
+          ],
+          "lossDate": "2026-05-15",
+          "inceptionDate": "2024-01-01"
+        }
+      },
+      "expected": {
+        "flag": false,
+        "indicators": [
+          "NARRATIVE_EVIDENCE_MISMATCH"
+        ]
+      }
+    }
+  ]
+}

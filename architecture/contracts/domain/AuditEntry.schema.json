@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/AuditEntry.schema.json",
+  "title": "Audit entry",
+  "description": "Append-only record of every state change and sensitive read. Hash-chained per tenant.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "at",
+    "actor",
+    "action",
+    "entityType",
+    "entityId"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "at": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "actor": {
+      "$ref": "common.schema.json#/$defs/Actor"
+    },
+    "action": {
+      "type": "string",
+      "examples": [
+        "claim.create",
+        "claim.status.change",
+        "pii.read",
+        "config.update",
+        "triage.run",
+        "routing.override",
+        "webhook.create"
+      ]
+    },
+    "entityType": {
+      "type": "string",
+      "enum": [
+        "claim",
+        "intake_session",
+        "document",
+        "party",
+        "note",
+        "task",
+        "triage_result",
+        "routing_decision",
+        "timer",
+        "tenant_config",
+        "webhook_subscription",
+        "user"
+      ]
+    },
+    "entityId": {
+      "type": "string"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "changes": {
+      "type": "object",
+      "description": "Field-level before/after with PII fields replaced by \"[pii]\".",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "from": {},
+          "to": {}
+        }
+      }
+    },
+    "reason": {
+      "type": "string"
+    },
+    "requestId": {
+      "type": "string"
+    },
+    "ip": {
+      "type": "string",
+      "x-pii": true
+    },
+    "prevHash": {
+      "type": "string"
+    },
+    "hash": {
+      "type": "string"
+    }
+  }
+}

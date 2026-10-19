@@ -1,0 +1,62 @@
+{
+  "id": "S3-QE-00",
+  "team": "quality",
+  "title": "Sprint 3 planning: QE",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-quality",
+  "reviewer": "ceo",
+  "status": "done",
+  "sprint": 3,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:31:10.823Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:32:39.015Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:50:09.181Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ],
+  "spend": {
+    "usd": 0.1766,
+    "inputTokens": 12,
+    "cacheWriteTokens": 32515,
+    "cacheReadTokens": 368411,
+    "outputTokens": 2158,
+    "agents": {
+      "a47076d2ef1cccaa7": {
+        "label": "S3-QE-00 mgr-quality planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 32515,
+        "cacheReadTokens": 368411,
+        "outputTokens": 2158,
+        "usd": 0.1766
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:50:09.181Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:50:09.180Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
+}

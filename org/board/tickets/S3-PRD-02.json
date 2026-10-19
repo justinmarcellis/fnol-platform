@@ -1,0 +1,99 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:19.742Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:32:33.883Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:45:49.103Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:46:18.038Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-PRD-02",
+  "team": "product",
+  "title": "10-minute demo script, docs index and root README",
+  "story": "As a sales engineer I can run a timed 10-minute demo that tells the VD-1..VD-6 story with both tenants.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-product-value-modeler",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "docs/demo-script.md",
+    "docs/README.md",
+    "README.md"
+  ],
+  "contracts": [
+    "architecture/overview.md"
+  ],
+  "valueDrivers": [
+    "VD-1",
+    "VD-2",
+    "VD-3",
+    "VD-4",
+    "VD-5",
+    "VD-6"
+  ],
+  "requirements": [
+    "REQ-01"
+  ],
+  "acceptance": [
+    "docs/demo-script.md has timed beats 0:00-10:00 covering: Aurelia glass claim fast-tracked with Spanish toggle, same claim at Kestrel routed to a queue, CSR injury rear-end claim with subrogation flag and adjuster first view, admin STP threshold change live, KPIs panel, webhook/core adapter payload, PM dashboard",
+    "Each beat lists exact URL, demo user, clicks, talk track, and the VD it proves; includes a fallback per beat and a pre-flight checklist",
+    "docs/README.md indexes every file in docs/ with one-line descriptions (only files that exist)",
+    "Root README.md describes the COTS PoC and keeps the existing decisions table under heading 'Original jmarcellis.com design decisions'",
+    "URLs, users and ports match docs/setup.md and the actual src/web apps"
+  ],
+  "brief": "Write docs/demo-script.md, docs/README.md and README.md only. Read docs/setup.md, src/web apps (routes, demo users, language toggle), tenants/*.json, product/value-propositions.md, docs/api-reference.md and the existing README.md first. Verify the demo data actually yields the described outcomes (glass claim STP at Aurelia, queue routing at Kestrel, subrogation flag on rear-end) by reading rules in the tenant configs; if a beat cannot be supported by the code, change the beat and say so rather than claiming it. Use a table of time, beat, URL, user, actions, say, proves-VD, fallback. Keep existing README decisions table verbatim under the new heading. Other teams are adding docs concurrently: build the docs index with ls at write time and only link existing files. Use only fictional data.",
+  "startedAt": "2026-10-18T21:32:33.883Z",
+  "doneAt": "2026-10-18T21:46:18.038Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:46:18.038Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 7 beats with URL/user/clicks/talk/VD/fallback; index complete, links resolve; README keeps decisions table; URLs match setup/web"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 4.4058,
+    "inputTokens": 212,
+    "cacheWriteTokens": 260357,
+    "cacheReadTokens": 18692430,
+    "outputTokens": 1602,
+    "agents": {
+      "a794dc7c4db645941": {
+        "label": "S3-PRD-02 ic-product-value-modeler",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 202,
+        "cacheWriteTokens": 234208,
+        "cacheReadTokens": 18407091,
+        "outputTokens": 889,
+        "usd": 4.2762
+      },
+      "ae337d9ef97786b59": {
+        "label": "S3-PRD-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 26149,
+        "cacheReadTokens": 285339,
+        "outputTokens": 713,
+        "usd": 0.1296
+      }
+    }
+  }
+}

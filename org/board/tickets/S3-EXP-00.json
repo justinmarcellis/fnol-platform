@@ -1,0 +1,62 @@
+{
+  "id": "S3-EXP-00",
+  "team": "experience",
+  "title": "Sprint 3 planning: EXP",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-experience",
+  "reviewer": "ceo",
+  "status": "done",
+  "sprint": 3,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:31:10.823Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:32:19.423Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:50:08.960Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ],
+  "spend": {
+    "usd": 0.1134,
+    "inputTokens": 8,
+    "cacheWriteTokens": 21503,
+    "cacheReadTokens": 218524,
+    "outputTokens": 1588,
+    "agents": {
+      "abc0e470f875f9f89": {
+        "label": "S3-EXP-00 mgr-experience planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 21503,
+        "cacheReadTokens": 218524,
+        "outputTokens": 1588,
+        "usd": 0.1134
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:50:08.960Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:50:08.959Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
+}

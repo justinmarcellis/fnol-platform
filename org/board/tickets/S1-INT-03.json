@@ -1,0 +1,116 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:39.244Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:41:35.523Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:48:13.331Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:55:37.317Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-INT-03",
+  "team": "integrations",
+  "title": "Claims-port adapter, ACORD mapping profiles A/B, and fake core suite receiver",
+  "story": "Story 2 (REQ-17)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-integrations-adapter-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "src/modules/integrations/adapters/",
+    "tests/unit/integrations/adapters/",
+    "tests/integration/integrations/adapters/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#integrations",
+    "architecture/contracts/openapi.yaml (/integrations/adapters, preview, fake-core)",
+    "architecture/contracts/domain/TenantConfig.schema.json (integrations.claimsPort)",
+    "architecture/contracts/domain/Claim.schema.json"
+  ],
+  "acceptance": [
+    "adapters/index.mjs exports createAdapterService(ctx) returning { listAdapters, previewMapping, pushClaim, routes, init } as agreed with S1-INT-02",
+    "Claims-port interface { id, format, map(bundle, profile), send(payload, target) } with sample 'core-claims-suite' adapter registered",
+    "Two mapping profiles: A (Aurelia-style) and B (Kestrel-style), selected by tenant config integrations settings; each outputs ACORD-aligned JSON; unmapped[] and warnings[] reported; golden-file tests for both profiles",
+    "previewMapping(adapterId, claimId) returns { adapterId, format, payload, unmapped, warnings } without sending or writing core_sync",
+    "Built-in fake core receiver route POST /api/v1/integrations/fake-core/claims stores what it receives (tenant scoped) and returns a core claim number; GET to list received payloads for tests",
+    "pushClaim sends to the pluggable target (default: fake core, in-process or HTTP URL from config), records core_sync, and calls claims.setExternalRef; failure leaves core_sync status 'failed' and does not throw to the bus",
+    "claim.routed (or event named in claimsPort.pushOn) triggers pushClaim exactly once per event id; repeated with same payload hash is a no-op",
+    "Tests pass: node --test --disable-warning=ExperimentalWarning tests/unit/integrations/adapters/ tests/integration/integrations/adapters/"
+  ],
+  "brief": "Build under src/modules/integrations/adapters/: index.mjs (createAdapterService), port.mjs (interface plus registry), core-claims-suite.mjs, profiles/{a,b}.mjs, acord-map.mjs (shared helpers), fake-core.mjs (receiver routes + tables fake_core_claims and core_sync). Interface contract with S1-INT-02: S1-INT-02 owns index.mjs/routes.mjs one level up and imports ./adapters/index.mjs; you return route definitions in the same shape the core runtime uses (see architecture/core-runtime-api.md) and register your bus handler in init(). Consume ctx.modules.claims.getClaimBundle, claims.setExternalRef, triage.getLatestTriage, coverage.getLatestVerification; in tests use small local fakes for these modules (no dependency on other teams' code). Read tenant config via ctx.tenants.get(...).integrations (claimsPort: { adapter, profile, target, pushOn }); default profile A, default pushOn claim.routed. ACORD alignment: use ACORD-style object names (ClaimsOccurrence, InsurancePolicy, Claimant, Loss, Vehicle/Property, AdjusterAssignment); profile A nests by ACORD aggregates with camelCase and ISO dates, profile B flattens with UPPER_SNAKE keys and YYYYMMDD dates and different coded loss-cause values - document both in a comment table. Payload must be deterministic (sorted keys) so the hash is stable. Pitfalls: PII appears in payload (intended, it goes to the carrier core) but never in logs or bus events; fake core must be tenant scoped; core claim numbers deterministic per tenant sequence, e.g. CC-<sequence>. Tests: tests/unit/adapters/{profile-a,profile-b,preview,push,fake-core}.test.mjs under tests/unit/integrations/adapters/, and tests/integration/integrations/adapters/core-push.test.mjs driving claim.routed through a real bus. Do not commit; write only your paths.",
+  "valueDrivers": [
+    "Drop-in connection to carrier core claims system",
+    "Configurable mapping per tenant without code",
+    "Demonstrable end-to-end handoff in PoC"
+  ],
+  "requirements": [
+    "REQ-17"
+  ],
+  "startedAt": "2026-10-18T20:41:35.523Z",
+  "doneAt": "2026-10-18T20:55:37.317Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:55:37.317Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 33 unit+integration tests pass (golden A/B, preview, fake core, failure recording, once-per-event, tenant isolation)"
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-003",
+        "severity": "high",
+        "summary": "Fake-core listing bypasses integration redaction",
+        "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "DEF-S4-1",
+        "severity": "medium",
+        "summary": "Adapter read settings.profile, tenants set fieldMapProfile: both tenants pushed the same mapping",
+        "foundIn": "S3-PRD-03"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 1.1299,
+    "inputTokens": 66,
+    "cacheWriteTokens": 149918,
+    "cacheReadTokens": 3716146,
+    "outputTokens": 1171,
+    "agents": {
+      "abea5dc3afd6f476a": {
+        "label": "S1-INT-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19467,
+        "cacheReadTokens": 217083,
+        "outputTokens": 840,
+        "usd": 0.1005
+      },
+      "af9dc36b1e75b1dc7": {
+        "label": "S1-INT-03 ic-integrations-adapter-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 58,
+        "cacheWriteTokens": 130451,
+        "cacheReadTokens": 3499063,
+        "outputTokens": 331,
+        "usd": 1.0294
+      }
+    }
+  }
+}

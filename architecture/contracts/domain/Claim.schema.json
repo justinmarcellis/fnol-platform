@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Claim.schema.json",
+  "title": "Claim",
+  "description": "Aggregate root of the FNOL platform. ACORD: Claim / ClaimsOccurrence as carried in a claims notification. Child entities are stored in their own tables and embedded on read.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimNumber",
+    "status",
+    "lob",
+    "channel",
+    "lossEvent",
+    "reportedAt",
+    "version",
+    "createdAt",
+    "updatedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimNumber": {
+      "type": "string",
+      "description": "Platform FNOL reference, tenant prefix + year + sequence, e.g. HLM-2026-000123. The core system claim number is in externalRefs."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "reported",
+        "validating",
+        "triaged",
+        "assigned",
+        "fast_tracked",
+        "in_review",
+        "pending_info",
+        "closed",
+        "withdrawn"
+      ],
+      "description": "See claim lifecycle in overview.md."
+    },
+    "lob": {
+      "$ref": "common.schema.json#/$defs/Lob"
+    },
+    "lossType": {
+      "type": "string",
+      "description": "Question-set loss type, e.g. auto_collision, home_water."
+    },
+    "channel": {
+      "$ref": "common.schema.json#/$defs/Channel"
+    },
+    "policyNumber": {
+      "type": "string"
+    },
+    "policySnapshotId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "riskState": {
+      "$ref": "common.schema.json#/$defs/UsState"
+    },
+    "lossEvent": {
+      "$ref": "LossEvent.schema.json"
+    },
+    "parties": {
+      "type": "array",
+      "items": {
+        "$ref": "Party.schema.json"
+      }
+    },
+    "vehicles": {
+      "type": "array",
+      "items": {
+        "$ref": "Vehicle.schema.json"
+      }
+    },
+    "properties": {
+      "type": "array",
+      "items": {
+        "$ref": "Property.schema.json"
+      }
+    },
+    "documentIds": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/Id"
+      }
+    },
+    "intakeSessionId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "covered",
+            "partial",
+            "not_covered",
+            "policy_not_found",
+            "needs_review"
+          ]
+        },
+        "coverageVerificationId": {
+          "$ref": "common.schema.json#/$defs/Id"
+        },
+        "evidence": {
+          "type": "string",
+          "enum": [
+            "none",
+            "pending",
+            "extracted",
+            "failed"
+          ]
+        }
+      }
+    },
+    "triage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resultId": {
+          "$ref": "common.schema.json#/$defs/Id"
+        },
+        "severityScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "complexity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "fraudScore": {
+          "type": "integer"
+        },
+        "subrogation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decisionId": {
+          "$ref": "common.schema.json#/$defs/Id"
+        },
+        "queue": {
+          "type": "string"
+        },
+        "adjusterId": {
+          "type": "string"
+        },
+        "fastTrack": {
+          "type": "boolean"
+        }
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "e.g. injury, litigation, cat, siu, coverage_question, large_loss"
+    },
+    "externalRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "system",
+          "id"
+        ],
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "Adapter id, e.g. core-claims-suite"
+          },
+          "id": {
+            "type": "string"
+          },
+          "syncedAt": {
+            "$ref": "common.schema.json#/$defs/Timestamp"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "synced",
+              "failed"
+            ]
+          }
+        }
+      }
+    },
+    "reportedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "reportedBy": {
+      "$ref": "common.schema.json#/$defs/Actor"
+    },
+    "closedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "closeReason": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Optimistic concurrency; send as If-Match on status changes."
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

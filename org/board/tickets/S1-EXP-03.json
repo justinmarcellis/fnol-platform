@@ -1,0 +1,106 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:36.094Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:41:41.911Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:44:36.924Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:46:47.402Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-EXP-03",
+  "team": "experience",
+  "title": "CSR portal: policy search, assisted intake, recent claims",
+  "story": "Story 3: CSR portal",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-csr-portal-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "src/web/csr/",
+    "tests/unit/web/csr/"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml (auth/token, claims/{id}/coverage, policies/{policyNumber}/snapshot, intake/sessions*, claims list, config/public)",
+    "architecture/contracts/domain/IntakeSession.schema.json"
+  ],
+  "requirements": [
+    "REQ-01"
+  ],
+  "valueDrivers": [
+    "CSR handle time",
+    "assisted intake parity with self-service",
+    "accessibility"
+  ],
+  "acceptance": [
+    "src/web/csr/index.html (plus app.js and pure modules) loads at /csr with a dev-login panel (tenant select, role fixed to csr) that is hidden when dev mode is off",
+    "Policy search by policy number/name calls the coverage search endpoint defined in openapi.yaml (policies/{policyNumber}/snapshot or the search path present in the spec; builder documents which) and lists results with select action",
+    "Assisted intake uses the same intake session API with channel 'csr' and the selected policyNumber, shows the current question, and a side panel listing required items still missing plus a scripted prompt derived from the question help text",
+    "Submit creates the claim, shows claim number and a button/link to open the claim; recent claims list from GET /claims (tenant-scoped, newest first) with keyboard-operable table",
+    "Missing endpoints or network failure show a 'service unavailable' state with retry, no uncaught errors",
+    "Uses the shared kit components for table, stepper, toast; same accessibility bar (labels, focus management, aria-live, skip link, 320px+ layout)",
+    "Tests in tests/unit/web/csr/ with a fake api cover search, missing-items computation, scripted prompt selection, submit, and unavailable state; node --test --disable-warning=ExperimentalWarning tests/unit/web/csr/ passes"
+  ],
+  "brief": "Build the CSR portal under src/web/csr/ against openapi.yaml; backend may be mid-flight, so tolerate failures.\n\nKIT INTERFACE (agreed now so apps build in parallel; S1-EXP-01 implements exactly this, apps import it): src/web/shared/api.js exports createApiClient({baseUrl='/api/v1', getToken, fetchImpl=fetch}) returning {get,post,put,patch,del,upload(path,FormData)} that return parsed JSON and throw ApiError {status,code,message,details,requestId} from the error envelope; network failure/5xx/404-on-missing-route throws ApiError with code 'service_unavailable'. src/web/shared/i18n.js exports t(key,params), setLocale, getLocale, registerStrings(locale,table), supportedLocales (en, es). src/web/shared/theme.js exports applyBranding(publicConfig), setScheme('light'|'dark'|'auto'). src/web/shared/devlogin.js exports devLogin(api,{tenant,role}) -> {token,principal}. Components are custom elements registered on import of src/web/shared/components/index.js: fx-field, fx-chips, fx-stepper, fx-upload, fx-chat, fx-timeline, fx-toast, fx-table. Each is attribute/property driven and emits CustomEvents named 'fx-change' (detail {value}) / 'fx-submit'. Shared CSS: src/web/shared/tokens.css and components.css. Apps put pure logic (state, view-models, API orchestration) in plain modules taking an injected api and t, so node tests need no DOM or kit.\nImport the kit by absolute path (/shared/...) only in browser-side files; keep pure logic (search.js, assisted.js computing missing required items from the IntakeStep/IntakeSession answers vs required questions and scripted prompt from question.help with a fallback to the prompt text, recent.js, strings.js registering csr.* en/es) free of kit imports, taking injected {api, t}. Tests use a hand-written fake api.\n\nFlow: devLogin as csr for chosen tenant (dev only, token in memory); search; select policy; start session {lob, channel:'csr', policyNumber}; answer loop as in the intake API (server evaluates showIf); side panel updates each step using the progress/required info in IntakeStep (read the schema; if missing-required list is not provided, derive it from session answers plus the question list, and note the gap in a contract-change request to the architecture hub: node org/cli.mjs post architecture contract-change \"...\" --ticket S1-EXP-03); submit with Idempotency-Key; open claim link goes to /csr?claim=<id> showing a read-only claim summary from GET /claims/{id}. Pitfalls: textContent only for user data; mask nothing client-side but never log PII to console; write only your paths; run only your tests; no real carrier or person names.",
+  "startedAt": "2026-10-18T20:41:41.911Z",
+  "doneAt": "2026-10-18T20:46:47.402Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:46:47.402Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 20/20 tests pass; csr_phone channel (enum has no 'csr') and snapshot-lookup search documented via contract-change; no innerHTML/console, dev panel gated. Note: UI never browser-run."
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-7",
+        "severity": "high",
+        "summary": "CSR disclosure question sends string, server requires boolean: CSRs cannot finish personal_auto intakes",
+        "foundIn": "S2-EXP-03"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 0.6652,
+    "inputTokens": 44,
+    "cacheWriteTokens": 107095,
+    "cacheReadTokens": 1849729,
+    "outputTokens": 2742,
+    "agents": {
+      "a75fddfa9ddf463bb": {
+        "label": "S1-EXP-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 23241,
+        "cacheReadTokens": 288475,
+        "outputTokens": 798,
+        "usd": 0.1238
+      },
+      "a7d8a9e0f4ee4ac39": {
+        "label": "S1-EXP-03 ic-experience-csr-portal-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 34,
+        "cacheWriteTokens": 83854,
+        "cacheReadTokens": 1561254,
+        "outputTokens": 1944,
+        "usd": 0.5414
+      }
+    }
+  }
+}

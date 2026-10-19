@@ -1,0 +1,28 @@
+body { margin: 0; background: var(--fx-bg); color: var(--fx-text); font-family: var(--fx-font); }
+.bar { display: flex; gap: var(--fx-space-4); align-items: baseline; padding: var(--fx-space-3) var(--fx-space-4); border-bottom: 2px solid var(--fx-border); }
+.bar h1 { margin: 0; font-size: 1.25rem; }
+main { max-width: 72rem; margin: 0 auto; padding: var(--fx-space-4); }
+.muted { color: var(--fx-text-muted); font-size: var(--fx-font-size-sm); }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: var(--fx-space-2); top: var(--fx-space-2); }
+.split { display: grid; grid-template-columns: 1fr; gap: var(--fx-space-4); }
+@media (min-width: 52rem) { .split { grid-template-columns: 2fr 1fr; } }
+.panel { border: 2px solid var(--fx-border); border-radius: var(--fx-radius); padding: var(--fx-space-3); }
+fx-table table { width: 100%; border-collapse: collapse; }
+fx-table th, fx-table td { text-align: left; padding: var(--fx-space-2); border-bottom: 1px solid var(--fx-border); }
+fx-table tbody tr { cursor: pointer; }
+fx-table tbody tr:hover { background: var(--fx-surface, transparent); }
+#unavailable { border: 2px solid var(--fx-danger); border-radius: var(--fx-radius); padding: var(--fx-space-3); }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--fx-space-2) var(--fx-space-4); }
+dt { font-weight: 600; }
+.fx-check { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--fx-space-2, 0.5rem); margin-block: var(--fx-space-2, 0.5rem); }
+.fx-check input[type=checkbox] { inline-size: 1.5rem; block-size: 1.5rem; flex: none; }
+.fx-check label { flex: 1 1 16rem; }
+.fx-check .fx-error { flex-basis: 100%; margin: 0; color: var(--fx-danger); font-size: var(--fx-font-size-sm); }
+.fx-check .fx-error[hidden] { display: none; }
+fieldset.sf { border: 2px solid var(--fx-border); border-radius: var(--fx-radius); padding: var(--fx-space-3); margin: 0 0 var(--fx-space-3); }
+fieldset.sf legend { font-weight: 600; padding-inline: var(--fx-space-2); }
+fieldset.sf fx-field { display: block; margin-block: var(--fx-space-2); }
+.sf-error { color: var(--fx-danger); font-weight: 600; margin: 0; }
+.sf-error[hidden], #vehicle-pick[hidden] { display: none; }
+#vehicle-pick { margin-block: var(--fx-space-3); }

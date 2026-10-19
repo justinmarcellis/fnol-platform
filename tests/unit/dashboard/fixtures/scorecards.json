@@ -1,0 +1,118 @@
+{
+  "sprint": 1,
+  "generatedAt": "2026-10-18T20:54:41.312Z",
+  "medians": {
+    "hoursPerPoint": 0.013,
+    "costPerPoint": 0.051
+  },
+  "agents": [
+    {
+      "key": "dir-architecture",
+      "owner": "dir-architecture",
+      "ticketsDone": 1,
+      "points": 13,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.015,
+      "costPerPoint": 0.082,
+      "composite": 0.918,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "dir-product",
+      "owner": "dir-product",
+      "ticketsDone": 1,
+      "points": 8,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.01,
+      "costPerPoint": 0.084,
+      "composite": 0.889,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    },
+    {
+      "key": "ic-experience-claimant-web-dev",
+      "owner": "ic-experience-claimant-web-dev",
+      "ticketsDone": 1,
+      "points": 8,
+      "firstPassAcceptance": 0,
+      "reworkRate": 1,
+      "defects": 0,
+      "hoursPerPoint": 0.02,
+      "costPerPoint": null,
+      "composite": 0.339,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    }
+  ],
+  "configs": [
+    {
+      "key": "dir-architecture+strong",
+      "owner": "dir-architecture",
+      "tier": "strong",
+      "ticketsDone": 1,
+      "points": 13,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.015,
+      "costPerPoint": 0.082,
+      "composite": 0.918,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    }
+  ],
+  "teams": [
+    {
+      "key": "experience",
+      "team": "experience",
+      "ticketsDone": 3,
+      "points": 24,
+      "firstPassAcceptance": 0.667,
+      "reworkRate": 0.333,
+      "defects": 0,
+      "hoursPerPoint": 0.016,
+      "costPerPoint": null,
+      "composite": 0.773,
+      "lowPerformer": true,
+      "lowConfidence": false,
+      "diagnosis": [
+        "low first-pass acceptance (0.667); tighten acceptance criteria or prompt",
+        "bottom 10% composite"
+      ]
+    },
+    {
+      "key": "integrations",
+      "team": "integrations",
+      "ticketsDone": 1,
+      "points": 13,
+      "firstPassAcceptance": 1,
+      "reworkRate": 0,
+      "defects": 0,
+      "hoursPerPoint": 0.015,
+      "costPerPoint": 0.082,
+      "composite": 0.918,
+      "lowPerformer": false,
+      "lowConfidence": true,
+      "diagnosis": [
+        "low confidence: fewer than 3 tickets, no action"
+      ]
+    }
+  ]
+}

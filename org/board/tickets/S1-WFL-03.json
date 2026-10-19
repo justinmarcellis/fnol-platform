@@ -1,0 +1,120 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:36.736Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:45:53.018Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:53:21.004Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:57:59.276Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "workflow",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-WFL-03",
+  "title": "Claims service, lifecycle, PII, timers and checks",
+  "story": "As an adjuster and compliance officer I can rely on a claim record with a governed lifecycle, encrypted PII, full audit, notes, tasks and regulatory timers that warn and breach on time.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-workflow-timers-dev",
+  "paths": [
+    "src/modules/claims/",
+    "tests/unit/claims/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#claims",
+    "architecture/overview.md (section 7 lifecycle)",
+    "architecture/contracts/openapi.yaml (/claims paths)",
+    "architecture/contracts/domain/Claim.schema.json",
+    "architecture/contracts/domain/RegulatoryTimer.schema.json",
+    "architecture/contracts/domain/Note.schema.json",
+    "architecture/contracts/domain/Task.schema.json",
+    "architecture/contracts/domain/AuditEntry.schema.json",
+    "architecture/contracts/events/"
+  ],
+  "requirements": [
+    "REQ-12",
+    "REQ-14",
+    "REQ-21"
+  ],
+  "valueDrivers": [
+    "VD-2",
+    "VD-7",
+    "VD-4"
+  ],
+  "acceptance": [
+    "createClaim/getClaim/listClaims/transition/addNote/addTask/etc. exported per modules.md#claims; claims is sole writer of Claim.status; invalid transitions rejected with a typed error; tests/unit/claims/lifecycle.test.js covers every allowed and a sample of disallowed transitions",
+    "Fields marked x-pii in Claim.schema.json are encrypted at rest via ctx.crypto and decrypted on read for authorised roles; test asserts raw stored rows contain no plaintext PII and events contain none",
+    "Every mutation writes an audit entry and publishes the matching claim.* event in the same unit of work (outbox); tests/unit/claims/audit-events.test.js",
+    "On claim.reported timers are created from tenant timer definitions selected by loss state + LOB; sweepTimers(now) exported, publishes claim.timer.due and claim.timer.breached once each (idempotent) using ctx.clock; subscribe() runs it every 30s with setInterval().unref(); tests/unit/claims/timers.test.js uses a fake clock",
+    "claim.checks records coverage, evidence and triage results from their events (claim.coverage.verified etc. per the event list); tests/unit/claims/checks.test.js",
+    "Routes match openapi /claims paths with x-roles; tests/unit/claims/routes.test.js"
+  ],
+  "brief": "Implement service(ctx) in src/modules/claims/{index,service,lifecycle,pii,timers,routes}.js. Read architecture/overview.md section 7 for the exact states and transitions and encode them as a table in lifecycle.js. Use architecture/core-runtime-api.md for ctx.db, ctx.events, ctx.audit, ctx.crypto, ctx.clock, ctx.tenants and the tenant-bound ctx addendum; do not invent method names. Decision recorded by architecture: coverage/evidence results go in claim.checks, not sub-states; routing is owned by rules (it sets queue/assignee via a service function in modules.md#claims, not by writing status). PII: walk Claim.schema.json for x-pii, encrypt those paths on write, decrypt on read; never put PII in events or audit diffs (store field names only). Timers: timer definitions come from tenant config (see tenants/ examples being authored in parallel in S1-WFL-01; in tests use an inline fake tenant config with WI/IL style definitions). Timer lifecycle: pending -> due (warn threshold) -> breached, completing on the satisfying event or transition. sweepTimers(now) must be idempotent and handle a clock jump. Fake the policy, coverage and rules modules in tests/unit/claims/fakes.js. Run only node --test --disable-warning=ExperimentalWarning tests/unit/claims/.",
+  "startedAt": "2026-10-18T20:45:53.018Z",
+  "doneAt": "2026-10-18T20:57:59.276Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:57:59.276Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: 25/25 claims tests pass, lifecycle/PII/timers/checks/routes verified against contracts and openapi x-roles; module boots, sweepTimers exported"
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-004",
+        "severity": "high",
+        "summary": "Claimants can see fraud score and SIU flags",
+        "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "DEF-S4-4",
+        "severity": "medium",
+        "summary": "No instant acknowledgment (REQ-12): acknowledge timer never met, KPI acknowledgment time null",
+        "foundIn": "S4-QE-01"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 1.1841,
+    "inputTokens": 64,
+    "cacheWriteTokens": 169948,
+    "cacheReadTokens": 3778416,
+    "outputTokens": 338,
+    "agents": {
+      "a19230c764506f7b3": {
+        "label": "S1-WFL-03 ic-workflow-timers-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 54,
+        "cacheWriteTokens": 146221,
+        "cacheReadTokens": 3495023,
+        "outputTokens": 251,
+        "usd": 1.0672
+      },
+      "a482782bfa849e9bd": {
+        "label": "S1-WFL-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 23727,
+        "cacheReadTokens": 283393,
+        "outputTokens": 87,
+        "usd": 0.1169
+      }
+    }
+  }
+}

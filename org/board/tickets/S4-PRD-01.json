@@ -1,0 +1,80 @@
+{
+  "id": "S4-PRD-01",
+  "team": "product",
+  "title": "Refresh COTS readiness, demo script and configuration guide for Sprint 4 fixes",
+  "points": 3,
+  "tier": "mid",
+  "owner": "ic-product-requirements-analyst",
+  "reviewer": "qe-acceptance",
+  "status": "done",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T22:13:42.953Z",
+  "history": [
+    {
+      "at": "2026-10-18T22:14:01.306Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:19:01.015Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:19:29.789Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "docs/cots-readiness.md",
+    "docs/demo-script.md",
+    "docs/configuration-guide.md"
+  ],
+  "acceptance": [
+    "Every gap fixed in Sprint 4 is re-verified in code and its row updated",
+    "Demo script beats match tests/e2e/demo-script.test.mjs"
+  ],
+  "startedAt": "2026-10-18T22:14:01.306Z",
+  "doneAt": "2026-10-18T22:19:29.789Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:19:29.789Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All Sprint 4 fixes re-verified in code and rows updated; open items listed honestly; demo script matches passing e2e (6/6); config guide s.10 rewritten; related tests 16/16 pass"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 1.8817,
+    "inputTokens": 106,
+    "cacheWriteTokens": 179915,
+    "cacheReadTokens": 6989428,
+    "outputTokens": 3382,
+    "agents": {
+      "a1ad430b9b3124c6d": {
+        "label": "S4-PRD-01 ic-product-requirements-analyst",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 98,
+        "cacheWriteTokens": 142604,
+        "cacheReadTokens": 6735587,
+        "outputTokens": 2595,
+        "usd": 1.7298
+      },
+      "a8d9f4deb10988e44": {
+        "label": "S4-PRD-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 37311,
+        "cacheReadTokens": 253841,
+        "outputTokens": 787,
+        "usd": 0.1519
+      }
+    }
+  }
+}

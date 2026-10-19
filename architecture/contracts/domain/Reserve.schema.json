@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Reserve.schema.json",
+  "title": "Reserve (placeholder)",
+  "description": "Placeholder: the PoC records suggested initial reserves only; reserving stays in the core claims system. ACORD: ClaimsReserve concept.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "costType",
+    "amount"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "coverageCode": {
+      "type": "string"
+    },
+    "costType": {
+      "type": "string",
+      "enum": [
+        "indemnity",
+        "expense"
+      ]
+    },
+    "amount": {
+      "$ref": "common.schema.json#/$defs/Money"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "suggested",
+        "accepted",
+        "sent_to_core"
+      ],
+      "default": "suggested"
+    },
+    "basis": {
+      "type": "string",
+      "enum": [
+        "rule",
+        "ai",
+        "manual"
+      ]
+    },
+    "ai": {
+      "$ref": "common.schema.json#/$defs/AiProvenance"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:59.497Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:35:26.885Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:36:59.770Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:39:48.548Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-AI-01",
+  "team": "ai",
+  "title": "Evidence hardening: PDF/base64 DoS (SEC2-005/006), estimate grand total, medium findings",
+  "story": "Fix SEC2-005, SEC2-006, estimateTotal parts-subtotal bug, and evidence medium findings (SEC2-012, SEC2-017)",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-ai-extraction-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "src/modules/evidence/",
+    "tests/unit/evidence/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md (evidence section)",
+    "architecture/security-review-s2.md SEC2-005, 006, 012, 017"
+  ],
+  "acceptance": [
+    "parse.mjs has no unbounded lazy regex over content: BT/ET and stream/endstream are found by a linear indexOf scanner; caps on stream count and total scanned bytes plus a wall-clock budget (graceful partial result, no throw to the client)",
+    "zlib.inflateSync is called with maxOutputLength; an over-limit stream is skipped, not fatal",
+    "routes.mjs validates contentBase64 with a length check then a linear scan or Buffer round-trip; no regex with trailing \\s* after a greedy class",
+    "tests/unit/evidence/dos.test.mjs: adversarial inputs (300KB 'BT ' without ET, 700KB repeated 'stream\\n', 300KB flate bomb inflating to 300MB, 80,000 spaces plus '!' base64) each complete in under 200 ms; valid PDFs and base64 (with line breaks) still parse/accept; invalid base64 gets 400",
+    "estimateTotal equals the grand total (e.g. parts 2090 + labor 1798 + tax) not the parts subtotal; test with a synthetic estimate covering Grand total/Total due labels and ignoring Parts subtotal",
+    "SEC2-012: getAcceptedFacts only returns AI fields that are accepted===true (or from staff-uploaded sources), claimant-sourced values stay suggestions; SEC2-017: extraction fields with pii:true masked for auditor and integration roles; tests for both",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/evidence/ passes; the t.todo for SEC2-005/006 in tests/security/sec2-availability-ai.test.mjs would pass (run only that file read-only); result notes the security hub post"
+  ],
+  "brief": "Work inside src/modules/evidence/ and tests/unit/evidence/ only. Read parse.mjs (lines ~85 and ~102-104), routes.mjs (~41, ~77, shape() ~12), service.mjs (~82, ~181, getAcceptedFacts ~230). 1) Replace the regexes in parse.mjs with a linear scanner using Buffer/string indexOf from a moving cursor (each step must advance); a missing ET or endstream ends the scan. Add constants for MAX_STREAMS, MAX_SCAN_BYTES, MAX_INFLATE_BYTES (e.g. 5MB) and a deadline check using performance.now() (e.g. 100 ms) in the loops; return what was gathered so far. inflateSync with {maxOutputLength} throws RangeError on overflow: catch and skip that stream. 2) routes.mjs: reject if length > ceil(15MB*4/3) first; then validate by a charCode loop (A-Za-z0-9+/ and whitespace, up to two trailing '=') or Buffer.from(...,'base64') and compare re-encoded length after whitespace strip; no regex backtracking. 3) Estimate extraction: find the labelled grand total (Grand total, Total due, Amount due, Total estimate) and prefer it over Parts/Subtotal lines; if only a subtotal exists, fall back to parts+labor+tax if those are present. Triage uses estimateTotal for suggestedReserve and Aurelia STP < 2500, so under-reporting is a business risk. 4) SEC2-012 gate: check src/modules/triage/facts.mjs consumers and existing tests so you do not break them; if triage tests depend on auto-accept, keep a compatible accepted flag and document the smallest change; post a contract-change if the accept semantics need to change. 5) SEC2-017: mask pii:true fields in extraction response for roles auditor and integration, mirroring claims PII_ROLES. Pitfalls: ctx.db of the tenant-bound ctx only; no real data; do not edit tests/security (read-only); don't edit package.json; do not commit. Time-based assertions should use generous but meaningful 200 ms bounds. When done post to the security hub: node org/cli.mjs post security result \"SEC2-005/006 fixed\" --ticket S3-AI-01 and set the ticket to review.",
+  "valueDrivers": [
+    "Availability: one claimant upload can no longer stall every tenant",
+    "Accurate reserves and STP decisions from correct estimate totals",
+    "Claimant-influenced facts require review"
+  ],
+  "requirements": [
+    "SEC2-005",
+    "SEC2-006",
+    "SEC2-012",
+    "SEC2-017",
+    "ai-hub estimate subtotal request"
+  ],
+  "startedAt": "2026-10-18T21:35:26.885Z",
+  "doneAt": "2026-10-18T21:39:48.548Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:39:48.547Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 27 evidence tests pass (files glob); DoS/base64/grand-total/SEC2-012/017 verified; e2e/security failures match baseline"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6665,
+    "inputTokens": 42,
+    "cacheWriteTokens": 124089,
+    "cacheReadTokens": 1538373,
+    "outputTokens": 4851,
+    "agents": {
+      "a0ea2a6510eb0e28b": {
+        "label": "S3-AI-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 38737,
+        "cacheReadTokens": 230756,
+        "outputTokens": 2153,
+        "usd": 0.1645
+      },
+      "a1f182717348b443d": {
+        "label": "S3-AI-01 ic-ai-extraction-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 63179,
+        "cacheReadTokens": 1020956,
+        "outputTokens": 1891,
+        "usd": 0.3811
+      },
+      "a315aee2d7713646d": {
+        "label": "S3-AI-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 22173,
+        "cacheReadTokens": 286661,
+        "outputTokens": 807,
+        "usd": 0.1209
+      }
+    }
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:08:12.846Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:16:00.609Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:17:11.637Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:19:39.614Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-PLT-01",
+  "team": "platform",
+  "title": "Runtime: scheduler wiring, outbox sequence, smoke script in CI",
+  "story": "As an operator I want the app to own its scheduler, give event consumers a per-tenant ordering sequence, and prove end to end boot in CI.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-platform-runtime-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/server.mjs",
+    "src/core/bus.mjs",
+    "src/core/store.mjs",
+    "scripts/smoke.mjs",
+    ".github/workflows/ci.yml",
+    "tests/unit/core/scheduler-wiring.test.mjs",
+    "tests/unit/core/outbox-sequence.test.mjs",
+    "tests/unit/core/smoke.test.mjs"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "createApp exposes ctx.scheduler (createScheduler from src/core/scheduler.mjs) and app.close() calls scheduler.stopAll(); tests/unit/core/scheduler-wiring.test.mjs proves a registered job stops firing after close",
+    "outbox has a per-tenant monotonically increasing integer seq column added by a new migration (existing migrations untouched) that backfills existing rows in created_at,rowid order; bus.outbox(tenantId) rows include seq in ascending order; tests/unit/core/outbox-sequence.test.mjs covers two tenants interleaving, backfill on a pre-populated DB, and no seq reuse after delivery",
+    "scripts/smoke.mjs boots the app the way npm start does on a free port (PORT=0 or discovered), polls /healthz, issues tokens, creates one claim through the HTTP API end to end, asserts the response, and exits non-zero with a message on any failure; tests/unit/core/smoke.test.mjs runs it as a child process and asserts exit 0",
+    "CI runs node scripts/smoke.mjs after the Test step in .github/workflows/ci.yml",
+    "All existing tests in tests/unit/core pass unchanged: node --test --disable-warning=ExperimentalWarning tests/unit/core/*.test.mjs"
+  ],
+  "brief": "Read architecture/core-runtime-api.md and src/server.mjs, src/core/bus.mjs, scheduler.mjs, store.mjs, scripts/dev.mjs first. (1) Scheduler: in createApp, build createScheduler() and set ctx.scheduler before modules mount so modules can register jobs; in close() call stopAll() before server.close and db.close. (2) Outbox seq: add a new entry to bus.mjs migrations (do not edit prior SQL). SQLite cannot add a NOT NULL autoincrement per tenant, so ALTER TABLE outbox ADD COLUMN seq INTEGER, backfill with a window function (ROW_NUMBER() OVER (PARTITION BY tenant_id ORDER BY created_at, rowid)), create UNIQUE INDEX on (tenant_id, seq). On publish compute seq = COALESCE(MAX(seq),0)+1 for the tenant inside the same transaction as the insert (check how store.mjs does transactions and tenant scoping; the tenant-scope guard rejects unscoped SQL, so use ctx.db.forTenant(id)). Never reuse seq after rows are deleted or delivered: rows are not deleted today, keep it that way or document. Order outbox() and replay by seq. Keep the store scope guard happy; if it needs a tweak, make the smallest change and note it. Also honor pending security asks only if trivial; do not expand scope. (3) scripts/smoke.mjs: zero deps, use fetch. Look at scripts/dev.mjs and tests/unit/core/server.test.mjs for token issuance (/auth/token with devMode) and a claim create route. Prefer spawning `npm start` equivalent (node scripts/dev.mjs) with PORT set to a free port found by listening on port 0, wait up to 15s for /healthz, always kill the child in finally, and exit 1 with a clear message on failure. Use a temp DB path so no repo files are polluted. (4) Add a ci.yml step 'Smoke' running node --disable-warning=ExperimentalWarning scripts/smoke.mjs after Test. Pitfalls: unref timers, test must not leave handles open, do not edit package.json (add no npm script; call the file directly). Synthetic data only.",
+  "valueDrivers": [
+    "reliability",
+    "time-to-deploy"
+  ],
+  "requirements": [
+    "Scheduler owned by app lifecycle",
+    "Per-tenant ordered event stream for consumers",
+    "CI proves the app boots and processes a claim"
+  ],
+  "startedAt": "2026-10-18T21:16:00.609Z",
+  "doneAt": "2026-10-18T21:19:39.614Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:19:39.614Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; core unit tests 42/42, smoke PASS exit 0, no new e2e/security regressions (openapi snapshot drift is from architecture's openapi.yaml change, not this ticket)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.4912,
+    "inputTokens": 40,
+    "cacheWriteTokens": 73225,
+    "cacheReadTokens": 1442544,
+    "outputTokens": 1962,
+    "agents": {
+      "a1accdae03daddcd1": {
+        "label": "S2-PLT-01 ic-platform-runtime-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 49894,
+        "cacheReadTokens": 1087552,
+        "outputTokens": 1224,
+        "usd": 0.3545
+      },
+      "a91c3d8edb41451d4": {
+        "label": "S2-PLT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 23331,
+        "cacheReadTokens": 354992,
+        "outputTokens": 738,
+        "usd": 0.1367
+      }
+    }
+  }
+}

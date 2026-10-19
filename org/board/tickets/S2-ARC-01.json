@@ -1,0 +1,104 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:18.886Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:07:30.002Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:22:02.277Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:23:19.400Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-ARC-01",
+  "team": "integrations",
+  "title": "Architecture hub triage: reconcile contracts with built code (v1.2.0)",
+  "story": "IMP-5 Architecture-hub triage",
+  "points": 8,
+  "tier": "strong",
+  "owner": "ic-architecture-api-designer",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "architecture/contracts/",
+    "architecture/overview.md",
+    "architecture/domain-model.md",
+    "org/contracts/registry.json"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml",
+    "architecture/contracts/modules.md",
+    "architecture/contracts/domain/",
+    "architecture/contracts/events/",
+    "org/decisions/",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "Every contract-change message in org/hubs/architecture.jsonl has a decision (accept/reject/modify) and exactly one type=answer post to the architecture hub with --to the requester; the decision list is returned in the ticket result.",
+    "openapi.yaml version is 1.2.0 and parses (node script using a YAML parser or existing repo validator); all architecture/contracts/**/*.json parse with JSON.parse; org/contracts/registry.json parses and entries for changed contracts are bumped (openapi 1.2.0, coverage module 1.1.0, others as changed).",
+    "openapi: roles tenant_admin, auditor, carrier_admin documented; POST /auth/token returns 201 {token, expiresAt, principal}; channel enum includes csr_phone etc.; IntakeStep has prompt, locale, optional[], missing[] of {questionId,text}; POST /intake/sessions/{id}/narrative exists; GET /policies?q= returns PolicySummary[] with search by name/postal code/VIN/phone/policy number prefix; GET /api/v1/kpis returns {period, metrics:[{id,label,valueDriver,value,unit,numerator,denominator}]} with schemas.",
+    "Domain schemas: Document.extraction.needsReview, TriageResult.subrogation.confidence, AdjusterView derived flags and nextActions, CoverageVerification additive fields (status, deductible, limits, applicableCoverages), x-pii on Location.description and Location.geo are present and keep additionalProperties rules valid.",
+    "Events: claim.updated event schema added with envelope refs; no PII in payload.",
+    "modules.md: coverage 1.1.0 (seedPolicies, getSnapshotById, coverage_policies table), outbox sequence (per-tenant monotonic), rules routing precedence wording and examples (first route_queue by ascending priority wins; fast track conditions), severity band cut-offs per ADR-003; domain-model.md section 4 no longer says last route_queue wins.",
+    "Only files inside the ticket paths are modified; no package.json or src changes."
+  ],
+  "brief": "Read all messages in org/hubs/architecture.jsonl (node org/cli.mjs hub architecture). For each contract-change message decide accept/reject/modify; prefer making contracts describe what the code does when the change is reasonable and additive; do not re-decide ADRs. Verify against code where unsure (src/core/auth.mjs ROLES, src/modules/*/service.mjs and routes) by reading, not editing. Work through: (1) openapi.yaml: roles, /auth/token 201 shape and userId/displayName request (core accepts sub/name as aliases; document), channel enum, IntakeStep additions (prompt, locale, optional[], missing[] with {questionId,text}, blocked[]), narrative endpoint, GET /policies?q=, GET /kpis with KPI schema (valueDriver ties to product value drivers), /healthz vs /health per core, bump info.version to 1.2.0. (2) domain schemas: needsReview, subrogation.confidence (0-1), AdjusterView flags/nextActions (items carry priority, source), CoverageVerification additive fields, x-pii on Location.description and Location.geo, PolicySummary and Kpi schemas. (3) events: claim.updated {claimId, change, version, ids} plus registry entry. (4) modules.md: coverage 1.1.0, outbox sequence, rules sync/async notes and routing precedence with 2-3 worked examples, ADR-003 severity cut-offs. (5) domain-model.md section 4 and overview.md corrections (ciphertext key id wording: state what crypto.mjs actually does). Reject or defer items that need platform code changes and are security-only (e.g. enc:v2 key ids, pay timer kind) but say so in the answer, with the smallest compatible addition. Security-defect items (tenant filter) are not contract matters: reject and refer to platform. Validate: node -e parse every JSON; parse openapi with whatever YAML parser the repo already uses (check existing tests under tests/ for a contract validation test and run only that). Post one answer per request: AGENT_ID=ic-architecture-api-designer node org/cli.mjs post architecture answer \"...\" --to <requester> --ticket S2-ARC-01. Pitfalls: schemas use additionalProperties:false, so every new field must be added explicitly; keep versions and registry in sync; synthetic data only.",
+  "valueDrivers": [
+    "integration-speed",
+    "contract-clarity",
+    "claims-cycle-time"
+  ],
+  "requirements": [
+    "IMP-5"
+  ],
+  "startedAt": "2026-10-18T21:07:30.002Z",
+  "doneAt": "2026-10-18T21:23:19.400Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:23:19.400Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "25 contract-change msgs each answered once to requester; openapi 1.2.0 + all contract JSON parse; registry bumped; domain/event/modules/domain-model updates verified; only contract/architecture paths changed"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 5.5931,
+    "inputTokens": 210,
+    "cacheWriteTokens": 288527,
+    "cacheReadTokens": 20454919,
+    "outputTokens": 7139,
+    "agents": {
+      "a02ac29cce02103f9": {
+        "label": "S2-ARC-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 18,
+        "cacheWriteTokens": 28844,
+        "cacheReadTokens": 568294,
+        "outputTokens": 1201,
+        "usd": 0.1978
+      },
+      "a716f02464b0b1698": {
+        "label": "S2-ARC-01 ic-architecture-api-designer",
+        "model": "claude-opus-5-5",
+        "inputTokens": 192,
+        "cacheWriteTokens": 259683,
+        "cacheReadTokens": 19886625,
+        "outputTokens": 5938,
+        "usd": 5.3953
+      }
+    }
+  }
+}

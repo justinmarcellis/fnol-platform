@@ -1,0 +1,120 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:36.736Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:50:55.029Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:56:38.732Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:58:14.280Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "workflow",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-WFL-04",
+  "title": "Intake sessions, question engine and conversational mode",
+  "story": "As a claimant I can report a loss without logging in, by form or free text, in English or Spanish, and see only the questions relevant to my line and loss type.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "paths": [
+    "src/modules/intake/",
+    "tests/unit/intake/",
+    "tests/integration/workflow/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#intake",
+    "architecture/contracts/openapi.yaml (/intake paths and security)",
+    "architecture/contracts/domain/IntakeSession.schema.json",
+    "architecture/contracts/domain/Claim.schema.json",
+    "architecture/contracts/domain/TenantConfig.schema.json"
+  ],
+  "requirements": [
+    "REQ-01",
+    "REQ-02",
+    "REQ-03",
+    "REQ-04"
+  ],
+  "valueDrivers": [
+    "VD-1",
+    "VD-6",
+    "VD-3",
+    "VD-5"
+  ],
+  "acceptance": [
+    "Sessions created, resumed, answered and submitted per openapi /intake paths; channel recorded (web, csr, agent, api); tests/unit/intake/session.test.js",
+    "Question engine selects the tenant question set by LOB/loss type and channel, evaluates showIf via ctx.modules.rules.evaluateCondition (fake in tests), validates required/type/enum answers with field-level errors, and returns en or es labels with en fallback; tests/unit/intake/questions.test.js",
+    "Adding a question to tenant config shows up on the next session with no code change (test)",
+    "Conversational mode: free text uses ctx.ai?.run('extract_narrative') when present else a keyword fallback, prefilling answers with confidence values and never overwriting user-confirmed answers; tests/unit/intake/conversation.test.js covers both paths",
+    "submit maps answers to ClaimCreate and calls claims.createClaim (fake in tests), returns claim id and acknowledgment, session becomes submitted and is idempotent on retry; tests/unit/intake/submit.test.js",
+    "Claimant self-service works without login per openapi intake security (claimant token from POST /api/v1/auth/token acceptable in dev); no PII in events or logs",
+    "tests/integration/workflow/intake-to-claim.test.js runs intake submit against local fakes of claims and rules, using inline sample tenant config"
+  ],
+  "brief": "Build src/modules/intake/{index,service,questions,conversation,mapping,routes}.js. service(ctx) per modules.md#intake; tenant config via the tenant-bound ctx (architecture/core-runtime-api.md addendum). Check IntakeSession.schema.json for exact state names and fields. Question shape comes from TenantConfig.schema.json (id, label per locale, type, required, options, showIf, lob, lossType, channels); write a nested-answer path convention (e.g. 'loss.date') in mapping.js and map to ClaimCreate; unknown answer ids must not be dropped silently, put them in extra. Locale: accept ?locale or session.locale; labels object keyed by en/es. Conversational: build a prompt-free wrapper around ctx.ai?.run('extract_narrative',{text,lob,locale}) and tolerate rejection/timeouts by falling back to keyword rules (dates, vehicle/glass/water/fire/theft words, 'rear-ended', 'hail'); returned extractions must be validated against known question ids before prefill. Depend on rules and claims only via ctx.modules and through fakes in tests/unit/intake/fakes.js (rules fake must implement a minimal evaluateCondition for == / in / all / any). Do not rely on the real tenants/ files (authored in parallel by S1-WFL-01); use an inline sample config in tests. Be careful that PII answers are not logged and that events carry only ids. Run only node --test --disable-warning=ExperimentalWarning tests/unit/intake/ tests/integration/workflow/.",
+  "startedAt": "2026-10-18T20:50:55.029Z",
+  "doneAt": "2026-10-18T20:58:14.280Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:58:14.280Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 26/26 intake unit and workflow integration tests pass; tenant isolation, PII handling, idempotent submit and claimant access verified"
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "SEC2-001",
+        "severity": "high",
+        "summary": "Intake agent role can read/write any session",
+        "foundIn": "S2-SEC-01"
+      },
+      {
+        "id": "DEF-S4-3",
+        "severity": "high",
+        "summary": "UI intake did not carry policy number / insured vehicle: UI claims could never verify coverage or fast-track",
+        "foundIn": "S3-PRD-02"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 1.068,
+    "inputTokens": 64,
+    "cacheWriteTokens": 143185,
+    "cacheReadTokens": 3532465,
+    "outputTokens": 343,
+    "agents": {
+      "a786ba4fd76f4d855": {
+        "label": "S1-WFL-04 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 21433,
+        "cacheReadTokens": 157956,
+        "outputTokens": 31,
+        "usd": 0.0855
+      },
+      "ae94b894e3f68ecb2": {
+        "label": "S1-WFL-04 ic-workflow-intake-flow-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 58,
+        "cacheWriteTokens": 121752,
+        "cacheReadTokens": 3374509,
+        "outputTokens": 312,
+        "usd": 0.9825
+      }
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "task": "subrogation",
+  "synthetic": true,
+  "description": "Claim facts to subrogation flag (synthetic).",
+  "cases": [
+    {
+      "id": "sub-rear-end-cited",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "narrative": "The pickup behind me rear-ended my car at the light.",
+          "citedParty": "Unit 2",
+          "policeReportNumber": "SC-2026-004417"
+        }
+      },
+      "expected": {
+        "flag": true
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "flag": true,
+            "reasons": [
+              "Other driver cited",
+              "Rear-end collision"
+            ],
+            "confidence": 0.92
+          },
+          "confidence": 0.92,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sub-other-at-fault",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "atFaultParty": "other party"
+        }
+      },
+      "expected": {
+        "flag": true
+      },
+      "recorded": {
+        "vertex-gemini": {
+          "output": {
+            "flag": true,
+            "reasons": [
+              "Other party at fault"
+            ],
+            "confidence": 0.8
+          },
+          "confidence": 0.8,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sub-single-vehicle",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "narrative": "I slid on ice and hit a guardrail."
+        }
+      },
+      "expected": {
+        "flag": false
+      },
+      "recorded": {
+        "vertex-claude": {
+          "output": {
+            "flag": false,
+            "reasons": [],
+            "confidence": 0.85
+          },
+          "confidence": 0.85,
+          "explanation": "Recorded fake response.",
+          "model": "recorded-1",
+          "usage": {
+            "inputTokens": 120,
+            "outputTokens": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "sub-glass",
+      "input": {
+        "facts": {
+          "lossType": "glass",
+          "narrative": "A rock cracked my windshield on the highway."
+        }
+      },
+      "expected": {
+        "flag": false
+      }
+    },
+    {
+      "id": "sub-self-fault",
+      "input": {
+        "facts": {
+          "lossType": "collision",
+          "narrative": "I backed into a parked car; it was my fault."
+        }
+      },
+      "expected": {
+        "flag": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Party.schema.json",
+  "title": "Party",
+  "description": "A person or organization involved in the loss. ACORD: ClaimsParty with ClaimsPartyRoleCd. Fields marked x-pii are encrypted at rest with the tenant PII key.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "roles",
+    "kind"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "insured",
+          "claimant",
+          "driver",
+          "witness",
+          "third_party",
+          "passenger",
+          "owner",
+          "reporter",
+          "attorney",
+          "medical_provider"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "person",
+        "organization"
+      ]
+    },
+    "firstName": {
+      "type": "string",
+      "x-pii": true
+    },
+    "lastName": {
+      "type": "string",
+      "x-pii": true
+    },
+    "organizationName": {
+      "type": "string"
+    },
+    "dateOfBirth": {
+      "$ref": "common.schema.json#/$defs/Date",
+      "x-pii": true
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^\\+?[0-9 ()-]{7,20}$",
+      "x-pii": true
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "x-pii": true
+    },
+    "address": {
+      "$ref": "common.schema.json#/$defs/Address"
+    },
+    "driversLicense": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "common.schema.json#/$defs/UsState"
+        }
+      },
+      "x-pii": true
+    },
+    "preferredContact": {
+      "type": "string",
+      "enum": [
+        "phone",
+        "sms",
+        "email",
+        "mail"
+      ]
+    },
+    "preferredLanguage": {
+      "type": "string",
+      "default": "en"
+    },
+    "injured": {
+      "type": "boolean"
+    },
+    "atFault": {
+      "type": "boolean",
+      "description": "Added 1.3.0 (additive, optional). Whether this party was at fault for the loss as reported at intake; not a liability determination."
+    },
+    "injuryDescription": {
+      "type": "string",
+      "x-pii": true
+    },
+    "vehicleId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "insurerName": {
+      "type": "string",
+      "description": "Other party insurer (fictional in PoC); used for subrogation."
+    },
+    "otherPolicyNumber": {
+      "type": "string"
+    },
+    "isPolicyParty": {
+      "type": "boolean",
+      "description": "Matched to a named insured/driver on the policy snapshot."
+    },
+    "provenance": {
+      "$ref": "common.schema.json#/$defs/FieldProvenance"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

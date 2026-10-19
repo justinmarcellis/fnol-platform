@@ -1,0 +1,72 @@
+{
+  "status": "done",
+  "sprint": 0,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:14:21.907Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:15:43.461Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:18:22.440Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:20:50.803Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S0-PMO-01",
+  "team": "pmo",
+  "title": "Program dashboard skeleton reading the fabric",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-pmo-dashboard",
+  "reviewer": "dir-pmo",
+  "paths": [
+    "dashboard/",
+    "tests/unit/dashboard/"
+  ],
+  "acceptance": [
+    "Serves :8090 reading org/ live",
+    "Views: org chart, sprint board, velocity/burndown, targets, quality, flow, cost, scorecards, improvement log",
+    "Static snapshot export to one HTML file",
+    "Works with empty and partial data"
+  ],
+  "startedAt": "2026-10-18T20:15:43.461Z",
+  "spend": {
+    "usd": 0.3578,
+    "inputTokens": 26,
+    "cacheWriteTokens": 55120,
+    "cacheReadTokens": 1031459,
+    "outputTokens": 1368,
+    "agents": {
+      "a50052461a4e75a90": {
+        "label": "ic-pmo-dashboard",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 26,
+        "cacheWriteTokens": 55120,
+        "cacheReadTokens": 1031459,
+        "outputTokens": 1368,
+        "usd": 0.3578
+      }
+    }
+  },
+  "doneAt": "2026-10-18T20:20:50.803Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:20:50.803Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Dashboard serves live fabric data; metrics endpoint verified"
+      }
+    ],
+    "firstPass": true
+  }
+}

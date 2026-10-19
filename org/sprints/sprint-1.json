@@ -1,0 +1,56 @@
+{
+  "number": 1,
+  "name": "Sprint 1: backbone",
+  "status": "closed",
+  "startedAt": "2026-10-18T20:30:52.250Z",
+  "budgetUsd": 60,
+  "goal": "Every backend module working against contracts; claimant + CSR UI; threat model; synthetic data; e2e harness",
+  "targets": {
+    "committedPoints": null,
+    "firstPassAcceptance": 0.75,
+    "budgetUsd": 60,
+    "testPassRate": 1
+  },
+  "committed": [],
+  "closedAt": "2026-10-18T21:04:17.151Z",
+  "review": {
+    "completedPoints": 166,
+    "committedPoints": 166,
+    "usd": 20.54,
+    "pointsPerDollar": 8.1,
+    "firstPassAcceptance": 0.935,
+    "reworkRate": 0.065,
+    "testPassRate": 0.9194,
+    "testsPassed": "696/757",
+    "shipped": [
+      "All 9 backend modules (config, intake, claims, rules, coverage+mock PAS, evidence, triage, adjuster, integrations)",
+      "AI layer: local provider + Claude/Gemini on Vertex adapters + confidence cascade",
+      "Claimant web app and CSR portal; shared UI kit (en/es)",
+      "Two demo tenants (Aurelia Mutual, Kestrel Point Insurance; fictional)",
+      "Threat model, data-protection design, security regression suite (142 tests)",
+      "Synthetic data + e2e harness; scorecards and sprint tooling"
+    ],
+    "risks": [
+      "E2E scenarios: severity bands and fast-track expectations disagree between triage/rules and QE scenarios (54 failing subtests)",
+      "GCP deployment blocked on credentials"
+    ]
+  },
+  "retro": {
+    "went_well": [
+      "166/166 points, 23 build tickets, 22/23 first-pass acceptance",
+      "Contract-first parallelism held: zero serial dependencies; 58 agents across 3 workflows in ~26 min wall-clock",
+      "Security IC found a real tenant-isolation defect (INC-1) before any demo"
+    ],
+    "went_badly": [
+      "INC-1 escaped Sprint 0 review: store tests covered only bare table names",
+      "Auth/roles drift between openapi and core produced 4 duplicate contract-change requests nobody answered within the sprint (synapse latency = whole sprint)",
+      "Unit tests green per module, but cross-module calibration (severity bands, STP thresholds) only surfaced in e2e after acceptance"
+    ],
+    "manager_retros": [
+      "workflow: rules precedence ambiguity in domain-model.md cost a clarification; contract wording needs examples",
+      "ai: AdjusterView schema too strict (additionalProperties:false) for derived flags",
+      "experience: UI not exercised in a real browser; Playwright is available and should gate UI tickets",
+      "security: threat model at strong tier was the most expensive ticket ($0.23/pt) and the most valuable"
+    ]
+  }
+}

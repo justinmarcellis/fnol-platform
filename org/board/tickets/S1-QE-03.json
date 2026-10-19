@@ -1,0 +1,94 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:25.094Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:35:51.987Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:37:58.339Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:45:51.646Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-QE-03",
+  "team": "quality",
+  "title": "E2E scenario harness",
+  "story": "E2E scenario harness tests/e2e/scenarios.test.mjs",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-quality-e2e-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "tests/e2e/"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/openapi.yaml",
+    "architecture/contracts/modules.md",
+    "architecture/contracts/events"
+  ],
+  "acceptance": [
+    "node --test --disable-warning=ExperimentalWarning tests/e2e/ exits 0 even when other modules are missing",
+    "scenarios.test.mjs boots createApp on port 0 with a temp db and the real tenants dir and closes it in after()",
+    "Per scenario x tenant it runs steps: report, upload documents, bus drain, coverage, triage, routing/STP, adjuster first view, each asserting an outbox event and comparing scenario.expected",
+    "Missing module/endpoint (404 or undefined ctx.modules.x) yields t.todo with a reason, never a failure",
+    "Works with tests/synthetic/index.mjs when present and falls back to a local fake in tests/e2e/fakes/ when absent"
+  ],
+  "brief": "Create tests/e2e/scenarios.test.mjs and helpers in tests/e2e/ (harness.mjs, fakes/synthetic-fallback.mjs, steps.mjs). Read architecture/core-runtime-api.md (createApp signature, ctx.forTenant(t), bus drain, outbox access, port 0) and openapi.yaml for endpoints and auth headers. Do not depend on S1-QE-02 landing: dynamic import('../synthetic/index.mjs') in try/catch; if missing, use fakes/synthetic-fallback.mjs that implements the same contract (generatePolicies, SCENARIOS, generateScenario returning name, lob, lossType, intakeAnswers, claimCreate, documents, expected) with 2 trivial scenarios. Tenants: list tenants dir ids; if none exist yet, mark everything t.todo with reason. A scenario applies to a tenant if tenant config lists the lob (when config declares lobs), else to all. Seed policies via ctx.forTenant(t).modules.coverage?.seedPolicies when defined, else todo coverage-dependent steps. Step pattern: a helper step(t, name, fn) that catches a NotImplemented outcome (HTTP 404/501 or missing module) and calls t.todo(reason); real assertion failures fail normally. After each step await bus drain (per core API) and query the outbox for the expected event type from contracts/events (look up exact names, do not invent); assert it exists for the claim. Compare coverageStatus, severityBand, fraud, subrogation, fastTrack against scenario.expected only when the step produced data. Use node:test subtests per scenario/tenant, node:http/fetch for calls, os.tmpdir mkdtemp for db and cleanup. Add a small tests/e2e/harness.test.mjs verifying the todo-mapping logic and that createApp boots. Pitfalls: always close the server and db, no fixed ports, keep runtime under ~30s.",
+  "valueDrivers": [
+    "quality",
+    "visible progress"
+  ],
+  "requirements": [],
+  "startedAt": "2026-10-18T20:35:51.987Z",
+  "doneAt": "2026-10-18T20:45:51.646Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:45:51.646Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; e2e suite exits 0 (29 pass, 0 fail, 120 todo with reasons); boots createApp port 0 with temp db + real tenants; per-step outbox asserts and expected comparison; synthetic fallback present."
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5415,
+    "inputTokens": 36,
+    "cacheWriteTokens": 94683,
+    "cacheReadTokens": 1423155,
+    "outputTokens": 2009,
+    "agents": {
+      "a3940c1ab235ef54e": {
+        "label": "S1-QE-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 24302,
+        "cacheReadTokens": 226288,
+        "outputTokens": 53,
+        "usd": 0.1066
+      },
+      "ad7f47b0248d14aa2": {
+        "label": "S1-QE-03 ic-quality-e2e-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 70381,
+        "cacheReadTokens": 1196867,
+        "outputTokens": 1956,
+        "usd": 0.4349
+      }
+    }
+  }
+}

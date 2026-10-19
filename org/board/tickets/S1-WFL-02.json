@@ -1,0 +1,110 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:36.735Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:43:59.764Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:50:24.728Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:57:40.168Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "team": "workflow",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "id": "S1-WFL-02",
+  "title": "Rules engine, routing and STP decisions",
+  "story": "As an operations lead I can configure routing and straight-through rules that are evaluated with traces and applied automatically after triage.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-workflow-rules-engine-dev",
+  "paths": [
+    "src/modules/rules/",
+    "tests/unit/rules/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md#rules",
+    "architecture/domain-model.md (condition language)",
+    "architecture/contracts/domain/RoutingDecision.schema.json",
+    "architecture/contracts/domain/TenantConfig.schema.json",
+    "architecture/contracts/openapi.yaml (routing paths)",
+    "architecture/contracts/events/ (claim.triaged, claim.routed)"
+  ],
+  "requirements": [
+    "REQ-10",
+    "REQ-11"
+  ],
+  "valueDrivers": [
+    "VD-1",
+    "VD-2",
+    "VD-3"
+  ],
+  "acceptance": [
+    "src/modules/rules/condition.js exports pure evaluateCondition(cond,facts) returning {result,trace} covering every operator in the Condition language (all/any/not, comparison, in, exists, contains, etc.); tests/unit/rules/condition.test.js covers each operator, missing facts and nested traces",
+    "evaluate({stage,...}) and validateRules(rules) exported from the service; validateRules reports path-specific errors for unknown operators/fields; tested",
+    "buildFacts(claimId) gathers claim, triage, coverage, policy facts via ctx.modules.claims/triage fakes; route(claimId) returns a RoutingDecision valid against RoutingDecision.schema.json with queue, adjuster chosen round-robin among queue members (persisted counter, deterministic in tests), fastTrack with reasons, ruleIds fired",
+    "route publishes claim.routed and audits; subscribing to claim.triaged routes automatically; tested with fake ctx",
+    "Routes match openapi routing paths with x-roles; tests/unit/rules/routing.test.js and service.test.js pass",
+    "Tenant rule changes apply on next evaluation without restart (config read per call)"
+  ],
+  "brief": "Condition evaluator must be a pure module with no ctx access so config (S1-WFL-01) and others can import it; expose it as ctx.modules.rules.evaluateCondition too since intake (S1-WFL-04) calls rules.evaluateCondition(cond,facts) for showIf. Read the exact operator list and fact namespaces from architecture/domain-model.md; trace entries should record operator, path, actual value, expected and result. Service: export service(ctx) per modules.md#rules; read rule sets and queues from the tenant config via the tenant-bound ctx (see architecture/core-runtime-api.md addendum). Stages: 'routing' and 'stp' at least; first-match vs all-match semantics as written in domain-model.md. Round-robin: keep a per-tenant per-queue cursor in module storage (ctx.db) and sort members by id for determinism. fastTrack reasons come from fired STP rule names/ids. Do not depend on other teams' code: write small local fakes for claims, triage and tenant config in tests/unit/rules/fakes.js. Events carry no PII (ids/codes only). Subscribe in subscribe(ctx) or as modules.md prescribes. Pitfall: keep route idempotent per claim (re-route on same triage event must not advance round-robin twice; key on evt.id). Run only node --test --disable-warning=ExperimentalWarning tests/unit/rules/.",
+  "startedAt": "2026-10-18T20:43:59.764Z",
+  "doneAt": "2026-10-18T20:57:40.168Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:57:40.168Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 46/46 tests pass (condition, routing, service); routes match openapi; live config read per call; only rules paths touched"
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-3",
+        "severity": "medium",
+        "summary": "route_queue without queue resolved to undefined instead of tenant default",
+        "foundIn": "S2-ITG-01"
+      }
+    ]
+  },
+  "spend": {
+    "usd": 1.2304,
+    "inputTokens": 72,
+    "cacheWriteTokens": 147185,
+    "cacheReadTokens": 4097494,
+    "outputTokens": 4280,
+    "agents": {
+      "a62a575eef2e8d397": {
+        "label": "S1-WFL-02 ic-workflow-rules-engine-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 64,
+        "cacheWriteTokens": 128206,
+        "cacheReadTokens": 3880834,
+        "outputTokens": 4168,
+        "usd": 1.1385
+      },
+      "adbb55597596dfbc7": {
+        "label": "S1-WFL-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 18979,
+        "cacheReadTokens": 216660,
+        "outputTokens": 112,
+        "usd": 0.0919
+      }
+    }
+  }
+}

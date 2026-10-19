@@ -1,0 +1,100 @@
+{
+  "status": "done",
+  "sprint": 0,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:14:21.907Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:15:41.192Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:20:03.381Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:20:50.744Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S0-PLT-01",
+  "team": "platform",
+  "title": "Core runtime, one-command start and CI",
+  "points": 13,
+  "tier": "mid",
+  "owner": "ic-platform-runtime",
+  "reviewer": "dir-platform",
+  "paths": [
+    "src/core/",
+    "src/server.mjs",
+    "src/modules/health/",
+    "package.json",
+    "scripts/",
+    ".github/",
+    "tests/unit/core/",
+    "tenants/README.md"
+  ],
+  "acceptance": [
+    "npm start serves :8080 with /healthz",
+    "Module loader per ADR-001",
+    "Tenant-scoped store refuses unscoped queries",
+    "RBAC dev tokens with roles",
+    "AES-256-GCM PII encryption with per-tenant keys from a gitignored master key",
+    "Hash-chained append-only audit log",
+    "Event bus with persisted outbox",
+    "npm test green",
+    "CI workflow file"
+  ],
+  "startedAt": "2026-10-18T20:15:41.192Z",
+  "spend": {
+    "usd": 0.487,
+    "inputTokens": 22,
+    "cacheWriteTokens": 109077,
+    "cacheReadTokens": 861838,
+    "outputTokens": 4186,
+    "agents": {
+      "a174d693203f9b3ae": {
+        "label": "ic-platform-runtime",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 22,
+        "cacheWriteTokens": 109077,
+        "cacheReadTokens": 861838,
+        "outputTokens": 4186,
+        "usd": 0.487
+      }
+    }
+  },
+  "doneAt": "2026-10-18T20:20:50.744Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:20:50.743Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "35/35 tests green; ctx API matches ADR-001; dev boot verified by IC"
+      }
+    ],
+    "firstPass": true,
+    "escapedDefects": [
+      {
+        "id": "INC-1",
+        "foundBy": "ic-security-threat-modeler",
+        "foundIn": "S1-SEC-01",
+        "severity": "high",
+        "summary": "Tenant scope bypass via quoted/qualified table names and tenant_id updates",
+        "fixedBy": "ceo (core hotfix)",
+        "test": "tests/unit/core/store-scope-guard.test.mjs"
+      },
+      {
+        "id": "DEF-S4-2",
+        "severity": "medium",
+        "summary": "Boot re-applied tenants/*.json, overwriting admin-console edits",
+        "foundIn": "S3-PRD-03"
+      }
+    ]
+  }
+}

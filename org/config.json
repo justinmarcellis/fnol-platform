@@ -1,0 +1,32 @@
+{
+  "program": "COTS FNOL Platform (Proof of Concept)",
+  "sponsorChannel": "this chat, milestone-only",
+  "budget": {
+    "totalUsd": 250,
+    "note": "Sponsor left the budget blank. Default set by the orchestrator (ADR-002). Red flag at 80%.",
+    "bySprint": { "0": 30, "1": 60, "2": 60, "3": 50, "4": 30, "reserve": 20 },
+    "replanAtPct": 80,
+    "stopAtPct": 100
+  },
+  "concurrency": {
+    "maxAgents": 6,
+    "note": "Harness caps each workflow at 2 concurrent agents on this 4-CPU container (ADR-000). Up to 3 workflows run side by side."
+  },
+  "modelTiers": {
+    "strong": { "model": "opus", "id": "claude-opus-5-5", "inputPerMTok": 4.0, "outputPerMTok": 20.0, "cacheReadPerMTok": 0.2 },
+    "mid": { "model": "sonnet", "id": "claude-sonnet-5-5", "inputPerMTok": 2.0, "outputPerMTok": 10.0, "cacheReadPerMTok": 0.2 },
+    "fast": { "model": "haiku", "id": "claude-haiku-5-5", "inputPerMTok": 0.1, "outputPerMTok": 0.5, "cacheReadPerMTok": 0.01 }
+  },
+  "pricingSource": "Anthropic first-party list prices, cached 2026-10-06 (claude-api skill). Cache-read rate for Haiku 5.5 assumed at 10% of input.",
+  "storyPoints": "Fibonacci 1,2,3,5,8,13. Calibration: 1pt ≈ one focused file with tests; 8pt ≈ a module with API, storage and tests.",
+  "performance": {
+    "lowPerformer": "bottom 10% by composite score, or below target two sprints running; fewer than 3 tickets = low confidence, no action",
+    "composite": "0.35*firstPassAcceptance + 0.2*(1-rework) + 0.2*estimateAccuracy + 0.15*costEfficiency + 0.1*(1-defectsAttributed)"
+  },
+  "targets": {
+    "firstPassAcceptance": 0.75,
+    "testPassRate": 1.0,
+    "buildGreen": true,
+    "pointsPerDollar": 1.0
+  }
+}

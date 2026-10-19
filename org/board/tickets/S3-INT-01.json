@@ -1,0 +1,107 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:25.764Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:34:16.836Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:35:14.946Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:40:02.488Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-INT-01",
+  "team": "integrations",
+  "title": "Coverage: encrypt policy snapshot cache, redact by role, migrate rows",
+  "story": "Fix SEC2-002 (high) and coverage medium findings (SEC2-017)",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-integrations-mock-pas-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "src/modules/coverage/",
+    "tests/unit/coverage/"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/openapi.yaml",
+    "architecture/security-review-s2.md"
+  ],
+  "acceptance": [
+    "src/modules/coverage/service.mjs cacheSnapshot never writes x-pii values (insured/driver names, property addresses, garaging postcodes) in plaintext to policy_snapshots.doc: a test dumps the table via ctx.db and asserts no PII substring",
+    "getPolicySnapshot decrypts on read and returns the same object shape as before; node --test --disable-warning=ExperimentalWarning tests/unit/coverage/*.test.mjs passes",
+    "Existing plaintext policy_snapshots rows are migrated (encrypted in place by an idempotent migration or lazily on read with rewrite); a test seeds a legacy plaintext row and checks it is readable and then stored encrypted",
+    "GET coverage/policy routes mask x-pii fields for auditor and integration roles using the same PII_ROLES rule as claims/routes.mjs; test covers each role and tenant_admin sees clear text",
+    "Events and logs from coverage still carry ids and codes only; new tests in tests/unit/coverage/snapshot-crypto.test.mjs and redaction.test.mjs; t.todo for SEC2-002 and SEC2-017 in tests/security can be removed by security after this passes"
+  ],
+  "brief": "Read src/modules/coverage/service.mjs (cacheSnapshot ~lines 49-59), adapters/mock-pas.mjs (joinPii ~line 99, how it uses encryptPii for coverage_policies.pii) and routes.mjs. Preferred fix: encrypt the whole snapshot document with tctx.crypto (the tenant-bound ctx crypto described in the core-runtime-api addendum; reuse the same encryptPii/decryptPii helper mock-pas uses) before insert into policy_snapshots.doc, store the envelope string, and decrypt in the read path. Keep any columns used for lookup/expiry (policy id, fetchedAt, version) in clear since they are not PII. Handle both formats on read: if the stored value parses as a plaintext JSON object, treat it as legacy, return it, and rewrite encrypted (lazy migration), plus add an optional idempotent migration/sweep run at module init that re-encrypts all legacy rows per tenant using ctx.db only (tenant-bound ctx; no raw/system access). Redaction: find the PII fields via the schema x-pii markers in src/modules/coverage/schema.mjs and mask (e.g. '***') for roles auditor and integration; copy the role set and masking approach from src/modules/claims/routes.mjs rather than inventing one. Also review remaining medium findings for coverage in architecture/security-review-s2.md section 4/5 and fix any not listed. Do not touch tests/security (read-only); write new tests in tests/unit/coverage/ using the existing helpers.mjs and fake-claims.mjs. Pitfalls: Node 22 requires globs not directories for node --test; do not log decrypted values; do not change the snapshot shape consumed by the claim.reported subscriber and evaluateCoverage; do not edit package.json. If a contract is missing something, post a contract-change to the architecture hub and add the smallest compatible change. When done post to the security hub that SEC2-002 and SEC2-017 (coverage part) are fixed.",
+  "valueDrivers": [
+    "PII protection at rest",
+    "Carrier security review readiness"
+  ],
+  "requirements": [
+    "Field-level encryption of PII",
+    "Role-based PII redaction"
+  ],
+  "startedAt": "2026-10-18T21:34:16.836Z",
+  "doneAt": "2026-10-18T21:40:02.488Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:40:02.488Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 5 criteria met; 105 coverage tests pass; encrypted doc, lazy+sweep migration, role masking verified; no new regressions attributable to coverage in e2e/security"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5523,
+    "inputTokens": 44,
+    "cacheWriteTokens": 103577,
+    "cacheReadTokens": 1453530,
+    "outputTokens": 258,
+    "agents": {
+      "a3ff0a878080e0ee7": {
+        "label": "S3-INT-01 ic-integrations-mock-pas-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 24,
+        "cacheWriteTokens": 43106,
+        "cacheReadTokens": 855046,
+        "outputTokens": 158,
+        "usd": 0.2804
+      },
+      "a98ddd1fc37161932": {
+        "label": "S3-INT-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 25739,
+        "cacheReadTokens": 291267,
+        "outputTokens": 51,
+        "usd": 0.1231
+      },
+      "aa93b878ed457fb9a": {
+        "label": "S3-INT-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 34732,
+        "cacheReadTokens": 307217,
+        "outputTokens": 49,
+        "usd": 0.1488
+      }
+    }
+  }
+}

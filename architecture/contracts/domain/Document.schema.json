@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Document.schema.json",
+  "title": "Document / media",
+  "description": "Uploaded evidence (photo, police report, estimate, invoice, other) and its extraction results. ACORD: Attachment / FileAttachmentInfo.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "kind",
+    "contentType",
+    "sizeBytes",
+    "sha256",
+    "uploadedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "photo",
+        "police_report",
+        "estimate",
+        "invoice",
+        "other"
+      ]
+    },
+    "filename": {
+      "type": "string"
+    },
+    "contentType": {
+      "type": "string",
+      "examples": [
+        "image/jpeg",
+        "application/pdf"
+      ]
+    },
+    "sizeBytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "storageKey": {
+      "type": "string",
+      "description": "Blob key, tenant-prefixed. Never exposed to claimants."
+    },
+    "uploadedBy": {
+      "$ref": "common.schema.json#/$defs/Actor"
+    },
+    "uploadedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "claimant_upload",
+        "csr_upload",
+        "api",
+        "email",
+        "partner"
+      ]
+    },
+    "captureMetadata": {
+      "type": "object",
+      "properties": {
+        "takenAt": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "geo": {
+          "$ref": "common.schema.json#/$defs/GeoPoint"
+        },
+        "device": {
+          "type": "string"
+        }
+      },
+      "description": "EXIF-derived; feeds fraud indicators."
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/Id"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "running",
+            "completed",
+            "partial",
+            "failed",
+            "skipped"
+          ]
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "confidence",
+              "provenance"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Target field path, e.g. police_report.reportNumber, estimate.total, vehicle.damageAreas"
+              },
+              "value": {},
+              "normalizedValue": {},
+              "confidence": {
+                "$ref": "common.schema.json#/$defs/Confidence"
+              },
+              "provenance": {
+                "$ref": "common.schema.json#/$defs/FieldProvenance"
+              },
+              "pii": {
+                "type": "boolean"
+              },
+              "accepted": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "null until a person confirms or rejects."
+              }
+            }
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "confidence": {
+                "$ref": "common.schema.json#/$defs/Confidence"
+              }
+            }
+          },
+          "description": "Photo classification labels, e.g. rear_bumper_damage."
+        },
+        "summary": {
+          "type": "string"
+        },
+        "ai": {
+          "$ref": "common.schema.json#/$defs/AiProvenance"
+        },
+        "error": {
+          "type": "string"
+        },
+        "startedAt": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "completedAt": {
+          "$ref": "common.schema.json#/$defs/Timestamp"
+        },
+        "needsReview": {
+          "type": "boolean",
+          "description": "Added 1.2.0. True when a person must review: unreadable PDF, low-confidence photo, no fields found, or extraction failed. Usually paired with status partial (or skipped/failed)."
+        }
+      }
+    }
+  }
+}

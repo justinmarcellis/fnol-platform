@@ -1,0 +1,98 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:49.598Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:12:42.169Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:17:18.720Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:19:43.659Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-AI-02",
+  "team": "ai",
+  "title": "Evidence and adjuster handler hardening",
+  "story": "Evidence and adjuster hardening",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-ai-summarization-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/modules/evidence/",
+    "src/modules/adjuster/",
+    "tests/unit/evidence/",
+    "tests/unit/adjuster/"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "Evidence and adjuster event handlers, given an event for a claim that does not exist, log via ctx and return without throwing; tests for each handler",
+    "Evidence upload sniffs magic bytes (JPEG, PNG, PDF, plus any other types already allowed) and rejects when the declared content-type mismatches; tests for match, mismatch and unknown bytes",
+    "Max upload size is read from tenant config (ctx tenant-bound config) with a 10 MB default; oversize rejected, per-tenant override honoured; tested",
+    "Adjuster view includes reportedAt, acknowledgedAt, assignedAt timestamps (null when absent); tested",
+    "Adjuster summary text cites the facts it used (e.g. a facts/citations array of field paths and a sentence listing them) per REQ-25; tested",
+    "node --test --disable-warning=ExperimentalWarning tests/unit/evidence tests/unit/adjuster passes"
+  ],
+  "brief": "Read src/modules/evidence/{service,routes,parse,blobs,index}.mjs and src/modules/adjuster/{service,projection,actions,routes,index}.mjs plus existing tests in tests/unit/evidence and tests/unit/adjuster. Handlers: wrap each event subscriber body so a missing claim (lookup returns null/undefined or the NotFound error type described in core-runtime-api.md) results in ctx.log warn with claimId and an early return; never rethrow. Magic bytes: add a small sniffContentType(buffer) in evidence (e.g. sniff.mjs, inside your folder) checking JPEG FF D8 FF, PNG 89 50 4E 47 0D 0A 1A 0A, PDF '%PDF-', and the others the service currently accepts (check the allow-list; treat HEIC/ftyp, WebP RIFF....WEBP, MP4 ftyp if present); reject with the module's existing validation error type and HTTP 415/422 per the existing route conventions. Do not trust the filename extension. Upload size: read the tenant-bound ctx config addendum in core-runtime-api.md for the accessor; key suggestion evidence.maxUploadBytes, default 10*1024*1024; if the accessor or key is missing, use the default and post a contract-change request to the architecture hub documenting the key. Check size before and after decoding base64 if applicable. Adjuster: in projection.mjs add the three timestamps sourced from claim fields/events (reportedAt from claim creation or FNOL submit, acknowledgedAt from the acknowledgement event/status, assignedAt from the assignment); keep existing fields stable (additive only) and update schema.mjs/openapi-compatible shape if needed. Summary: return { text, citedFacts:[{path,value}] } where text names the facts used; no new facts beyond cited ones, and do not call AI providers (src/ai is being edited concurrently by another ticket). Use small local fakes for ctx in tests. Pitfalls: stay additive and backward compatible with existing tests; fictional data only.",
+  "valueDrivers": [
+    "VD-4",
+    "VD-7"
+  ],
+  "requirements": [
+    "REQ-25"
+  ],
+  "startedAt": "2026-10-18T21:12:42.169Z",
+  "doneAt": "2026-10-18T21:19:43.659Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:19:43.658Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 6 criteria met; 30/30 unit tests pass; e2e/security regression only baseline failures plus unrelated openapi route drift (other teams); schema additions (timestamps/citedFacts/maxUploadBytes) pending contract-change"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6499,
+    "inputTokens": 48,
+    "cacheWriteTokens": 96834,
+    "cacheReadTokens": 1989267,
+    "outputTokens": 983,
+    "agents": {
+      "a6ba787683839794a": {
+        "label": "S2-AI-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 16,
+        "cacheWriteTokens": 22036,
+        "cacheReadTokens": 469770,
+        "outputTokens": 801,
+        "usd": 0.1571
+      },
+      "a93f6a7c5007bdfec": {
+        "label": "S2-AI-02 ic-ai-summarization-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 32,
+        "cacheWriteTokens": 74798,
+        "cacheReadTokens": 1519497,
+        "outputTokens": 182,
+        "usd": 0.4928
+      }
+    }
+  }
+}

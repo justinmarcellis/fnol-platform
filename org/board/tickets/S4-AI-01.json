@@ -1,0 +1,107 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:48:18.950Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:35.842Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:49:37.515Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:52:36.010Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S4-AI-01",
+  "team": "ai",
+  "title": "Honour tenant AI settings: humanConfirmRequired, redactPiiBeforeModel, maxTokensPerClaim",
+  "story": "As a carrier admin I want my tenant AI settings to actually govern model use so that human review, PII protection and cost caps are enforced.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-ai-provider-integrator",
+  "reviewer": "qe-acceptance",
+  "sprint": 4,
+  "paths": [
+    "src/ai/",
+    "tests/unit/ai/",
+    "docs/ai-evaluation.md"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "With tenant ai.humanConfirmRequired=true, every cascade.run result (including high-confidence ones that return early) carries unconfirmed:true; with false/absent behaviour is unchanged (tests in tests/unit/ai/settings.test.mjs).",
+    "With ai.redactPiiBeforeModel=true, guardrail PII redaction is applied for every provider including local; default is true for cloud providers and unchanged for local when unset; explicit false is honoured for local only (test asserts provider receives redacted input).",
+    "ai.maxTokensPerClaim: usage tokens per claim are summed from ai_inference; once the budget is exceeded the next run skips cloud entries, falls back to the local provider and returns unconfirmed:true; budget is per tenant and per claim and does not leak across tenants (test).",
+    "Existing tests still pass: node --test --disable-warning=ExperimentalWarning tests/unit/ai/ ; docs/ai-evaluation.md documents the three settings and defaults."
+  ],
+  "brief": "Edit src/ai/cascade.mjs (read aiConfig = ctx.tenants.get(tenantId).ai at run()), src/ai/guardrails.mjs (guard(provider, opts) currently redacts only for cloud; add a forceRedact option, and make cascade wrap with it from aiConfig.redactPiiBeforeModel; default true for non-local), src/ai/inference-log.mjs (add a tenant-scoped helper tokensForClaim(tenantId, claimId) summing usage input+output tokens; usage is stored as JSON text; add an optional claim_id handling only via the existing usage JSON or a backward-compatible additive migration with CREATE/ALTER guarded, since ai_inference has no claim column today - prefer storing claimId inside usage JSON to avoid a schema change and query with json_extract or by scanning recent rows). Pass opts.claimId from callers (document it in src/ai/index.mjs header; do not edit other teams' modules). Pitfalls: the early return in run() when confidence >= threshold must also apply humanConfirmRequired; the budget fallback should reuse resolveChain filtered to provider==='local' and still log to ai_inference with usage.skipped:'budget'; cascade wraps injected test providers unguarded, so make forceRedact apply in the cascade for injected ones too only when redactPiiBeforeModel===true explicitly. Use ctx.db.forTenant(tenantId) only; never raw input in logs. Use small fake providers and a fake ctx in tests; do not touch src/modules/evidence. Document in docs/ai-evaluation.md. If core ctx lacks tenants.get shape you need, post a contract-change request to the architecture hub.",
+  "valueDrivers": [
+    "compliance",
+    "cost control",
+    "trust"
+  ],
+  "requirements": [
+    "Tenant AI settings enforced",
+    "PII never reaches cloud model unredacted",
+    "per-claim token budget"
+  ],
+  "startedAt": "2026-10-18T21:48:35.842Z",
+  "doneAt": "2026-10-18T21:52:36.010Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:52:36.010Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 3 settings implemented and tested (58/58 AI tests pass), docs updated; note callers do not yet pass opts.claimId (out of scope)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6866,
+    "inputTokens": 54,
+    "cacheWriteTokens": 116253,
+    "cacheReadTokens": 1927509,
+    "outputTokens": 1031,
+    "agents": {
+      "a2a7491c1cfc52503": {
+        "label": "S4-AI-01 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 18,
+        "cacheWriteTokens": 44944,
+        "cacheReadTokens": 636117,
+        "outputTokens": 106,
+        "usd": 0.2407
+      },
+      "a89a855b55e73fec2": {
+        "label": "S4-AI-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 23340,
+        "cacheReadTokens": 287851,
+        "outputTokens": 748,
+        "usd": 0.1234
+      },
+      "af26f41f674aa692a": {
+        "label": "S4-AI-01 ic-ai-provider-integrator",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 26,
+        "cacheWriteTokens": 47969,
+        "cacheReadTokens": 1003541,
+        "outputTokens": 177,
+        "usd": 0.3225
+      }
+    }
+  }
+}

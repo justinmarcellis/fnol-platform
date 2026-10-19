@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/TriageResult.schema.json",
+  "title": "Triage result",
+  "description": "Severity, complexity, fraud and subrogation assessment of a claim. AI-assisted; always carries provider/model/confidence and an explanation.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "severityScore",
+    "severityBand",
+    "complexity",
+    "fraud",
+    "subrogation",
+    "explanation",
+    "ai",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Increments on re-triage."
+    },
+    "severityScore": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "severityBand": {
+      "type": "string",
+      "enum": [
+        "minor",
+        "moderate",
+        "major",
+        "severe"
+      ],
+      "description": "Derived: 0-24 minor, 25-49 moderate, 50-74 major, 75-100 severe (tenant may override cut-offs)."
+    },
+    "complexity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "fraud": {
+      "type": "object",
+      "required": [
+        "score",
+        "indicators"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "indicators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "code",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "e.g. loss_soon_after_inception, photo_metadata_mismatch, prior_similar_losses, late_report, inconsistent_narrative"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/FieldProvenance"
+                }
+              }
+            }
+          }
+        },
+        "referToSiu": {
+          "type": "boolean"
+        }
+      }
+    },
+    "subrogation": {
+      "type": "object",
+      "required": [
+        "flag",
+        "reasons"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "flag": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "code",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "e.g. rear_ended_by_other, other_party_insured, product_failure, contractor_negligence"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/FieldProvenance"
+                }
+              }
+            }
+          }
+        },
+        "targetPartyIds": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/Id"
+          }
+        },
+        "confidence": {
+          "$ref": "common.schema.json#/$defs/Confidence",
+          "description": "Added 1.2.0. Confidence (0-1) in the flag decision, from the deterministic signals and the AI subrogation task."
+        }
+      }
+    },
+    "factors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "contribution": {
+            "type": "number"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Score contributions for explainability."
+    },
+    "fastTrackEligible": {
+      "type": "boolean"
+    },
+    "suggestedReserve": {
+      "$ref": "common.schema.json#/$defs/Money"
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Plain-language explanation shown to the adjuster."
+    },
+    "ai": {
+      "$ref": "common.schema.json#/$defs/AiProvenance"
+    },
+    "inputsHash": {
+      "type": "string",
+      "description": "Hash of the facts used; re-triage skips if unchanged."
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

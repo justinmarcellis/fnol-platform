@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Vehicle.schema.json",
+  "title": "Vehicle",
+  "description": "A vehicle involved in an auto loss, insured or third party. ACORD: AutoLossInfo / VehInfo concepts.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "role"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "insured",
+        "third_party",
+        "non_owned",
+        "rental",
+        "hired"
+      ]
+    },
+    "vin": {
+      "type": "string",
+      "pattern": "^[A-HJ-NPR-Z0-9]{17}$",
+      "description": "Not PII per standards.md."
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1900,
+      "maximum": 2100
+    },
+    "make": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "trim": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string"
+    },
+    "licensePlate": {
+      "type": "string",
+      "x-pii": true
+    },
+    "plateState": {
+      "$ref": "common.schema.json#/$defs/UsState"
+    },
+    "policyVehicleId": {
+      "type": "string",
+      "description": "Unit id on the policy snapshot when matched."
+    },
+    "drivable": {
+      "type": "boolean"
+    },
+    "airbagsDeployed": {
+      "type": "boolean"
+    },
+    "towed": {
+      "type": "boolean"
+    },
+    "damageAreas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "front",
+          "rear",
+          "left",
+          "right",
+          "roof",
+          "undercarriage",
+          "interior",
+          "glass",
+          "total"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "damageDescription": {
+      "type": "string"
+    },
+    "currentLocation": {
+      "$ref": "common.schema.json#/$defs/Location"
+    },
+    "driverPartyId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "ownerPartyId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "provenance": {
+      "$ref": "common.schema.json#/$defs/FieldProvenance"
+    },
+    "ownership": {
+      "type": "string",
+      "enum": [
+        "owned",
+        "leased",
+        "hired",
+        "non_owned"
+      ],
+      "description": "Added 1.2.0 (commercial_auto). hired and non_owned vehicles are matched against HNOA coverage instead of the fleet schedule."
+    }
+  }
+}

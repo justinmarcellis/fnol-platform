@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/Task.schema.json",
+  "title": "Task",
+  "description": "Work item on a claim (ACORD: ClaimsActivity concept). Created by rules, timers or people.",
+  "type": "object",
+  "required": [
+    "id",
+    "tenantId",
+    "claimId",
+    "type",
+    "title",
+    "status",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "claimId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "contact_insured",
+        "contact_claimant",
+        "request_document",
+        "inspect",
+        "review_coverage",
+        "siu_referral",
+        "subrogation_review",
+        "review_ai_output",
+        "other"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "assigneeId": {
+      "type": "string"
+    },
+    "queue": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "done",
+        "cancelled"
+      ]
+    },
+    "dueAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "createdBy": {
+      "$ref": "common.schema.json#/$defs/Actor"
+    },
+    "sourceRuleId": {
+      "type": "string"
+    },
+    "timerId": {
+      "$ref": "common.schema.json#/$defs/Id"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "completedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    }
+  }
+}

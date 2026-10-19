@@ -1,0 +1,62 @@
+{
+  "id": "S3-PRD-00",
+  "team": "product",
+  "title": "Sprint 3 planning: PRD",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-product",
+  "reviewer": "ceo",
+  "status": "done",
+  "sprint": 3,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:31:10.823Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:32:19.794Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:50:09.125Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ],
+  "spend": {
+    "usd": 0.0817,
+    "inputTokens": 6,
+    "cacheWriteTokens": 19880,
+    "cacheReadTokens": 157465,
+    "outputTokens": 48,
+    "agents": {
+      "af0db7838d3f00ef1": {
+        "label": "S3-PRD-00 mgr-product planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 19880,
+        "cacheReadTokens": 157465,
+        "outputTokens": 48,
+        "usd": 0.0817
+      }
+    }
+  },
+  "doneAt": "2026-10-18T21:50:09.125Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:50:09.124Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
+}

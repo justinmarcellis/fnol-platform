@@ -1,0 +1,22 @@
+{
+  "name": "fnol-platform",
+  "version": "0.1.0",
+  "description": "COTS First Notice of Loss platform proof of concept",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning scripts/dev.mjs",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.mjs",
+    "demo": "node --disable-warning=ExperimentalWarning scripts/demo-data.mjs",
+    "demo:reset": "node -e \"require('node:fs').rmSync('data',{recursive:true,force:true})\" && npm run seed && npm run demo",
+    "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.mjs\" \"tests/**/*.test.js\"",
+    "test:unit": "node --disable-warning=ExperimentalWarning --test \"tests/unit/**/*.test.mjs\" \"tests/unit/**/*.test.js\"",
+    "test:e2e": "node --disable-warning=ExperimentalWarning --test \"tests/e2e/**/*.test.mjs\""
+  },
+  "dependencies": {},
+  "optionalDependencies": {
+    "@anthropic-ai/vertex-sdk": "0.20.2",
+    "@google/genai": "2.27.0"
+  }
+}

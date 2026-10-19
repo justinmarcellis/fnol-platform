@@ -1,0 +1,146 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:38.938Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:34:03.993Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:39:20.404Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:43:32.533Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:44:20.851Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:44:43.245Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-QE-01",
+  "team": "quality",
+  "title": "Definition-of-done E2E proof and tenant-difference tests",
+  "story": "As the program sponsor I want an executable proof that every line of business runs the full FNOL chain over HTTP and that the two demo tenants differ materially, so the PoC meets its definition of done.",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-quality-e2e-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "tests/e2e/dod.test.mjs",
+    "tests/e2e/tenant-differences.test.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml",
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md"
+  ],
+  "requirements": [
+    "REQ-01",
+    "REQ-02",
+    "REQ-03",
+    "REQ-04",
+    "REQ-05",
+    "REQ-06",
+    "REQ-07",
+    "REQ-08",
+    "REQ-09",
+    "REQ-10",
+    "REQ-13",
+    "REQ-16",
+    "REQ-17",
+    "REQ-18",
+    "REQ-22"
+  ],
+  "valueDrivers": [
+    "Credible proof of STP and routing",
+    "Tenant configuration over code",
+    "Core-suite integration without lock-in"
+  ],
+  "acceptance": [
+    "tests/e2e/dod.test.mjs runs the chain report -> document upload -> extraction fields -> coverage verified -> triage (severity, fraud indicators, subrogation flag, explanation) -> routing decision (queue/adjuster or fast track) -> adjuster view with AI summary, once for each of personal_auto, homeowners and commercial_auto, on the tenant that offers that LOB",
+    "Intake channels are mixed: claimant for one LOB, csr_phone for another, API (integration role) for the third; all calls go through HTTP with role tokens, never direct module calls",
+    "Each LOB asserts a claim.routed webhook delivery received by a local http receiver in the test with a valid HMAC signature (recomputed with the subscription secret), and that the sample core-suite adapter received the mapped ACORD-aligned payload",
+    "tests/e2e/tenant-differences.test.mjs asserts the two tenants differ in branding, LOBs, locales, questions shown, STP outcome for the same glass claim, timers and adapter mapping profile, each as a separate named test",
+    "Steps whose module is not built use the harness NotImplemented/t.todo mapping, never silent skips; assertion failures fail",
+    "Both files pass: node --test --disable-warning=ExperimentalWarning tests/e2e/dod.test.mjs tests/e2e/tenant-differences.test.mjs; only synthetic data, no secrets or real carrier names"
+  ],
+  "brief": "Reuse tests/e2e/harness.mjs (bootHarness, createApi(app, tenantId) returning api(method, route, {body, role}), runStep/NotImplemented, listTenants, scenarioAppliesTo, loadSynthetic with fallback in tests/e2e/fakes) and tests/e2e/steps.mjs as examples; read tests/e2e/scenarios.test.mjs first and do not edit those files (you may import from them). Tenants are tenants/aurelia-mutual.json and tenants/kestrel-point.json; read each config to find which tenant offers which LOB, and pick LOB->tenant from config, not hard-coded assumptions. Generate policies/scenarios via tests/synthetic (generateScenario(name,{seed,tenantId,state}); aliases auto->personal_auto, home->homeowners). Chain over /api/v1: POST /intake/sessions then answers/narrative (IntakeStep, mind 422 IntakeStepError), POST /claims or submit, POST /claims/{id}/documents (10 MB limit, 7 allowed types, magic-byte check, so use a tiny valid PDF/PNG buffer), GET document extraction, GET /claims/{id}/coverage, triage result, routing decision, GET adjuster view. Create the webhook with POST /integrations/webhooks as tenant_admin; spin up node:http on 127.0.0.1 port 0 as receiver; read the signing header name and HMAC scheme from modules.md integrations/webhooks and src/modules/integrations/webhooks, verify with node:crypto timingSafeEqual. Delivery is async: poll with a bounded deadline (no fixed sleeps), and close server and harness in t.after. Adapter payload: read the adapters folder and the fake-core routes (GET /integrations/fake-core/claims) and assert ACORD-aligned mapped fields. Same glass claim for tenant differences: use the same scenario name on both tenants and assert the STP/fast-track outcome differs, with the reason from the routing explanation. Pitfalls: seeds must be fixed for determinism; ports must be ephemeral; run only your own files. Post contract-change to architecture hub if a field you need is undocumented.",
+  "startedAt": "2026-10-18T21:34:03.993Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:43:32.533Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "dod.test.mjs personal_auto/claimant_web case fails on re-run (report step errors, 8 downstream todos); IC claimed 38 pass 0 fail"
+      },
+      {
+        "at": "2026-10-18T21:44:43.244Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "Both files pass (38 pass, 0 fail, 1 t.todo for unapplied fieldMapProfile); all 3 LOBs run full flow with HMAC webhook and adapter payload; one named test per tenant difference; only test files changed"
+      }
+    ],
+    "firstPass": false
+  },
+  "doneAt": "2026-10-18T21:44:43.245Z",
+  "spend": {
+    "usd": 1.6921,
+    "inputTokens": 104,
+    "cacheWriteTokens": 207831,
+    "cacheReadTokens": 5676139,
+    "outputTokens": 3723,
+    "agents": {
+      "a08b280da7f2ddf31": {
+        "label": "S3-QE-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 20249,
+        "cacheReadTokens": 219861,
+        "outputTokens": 61,
+        "usd": 0.0952
+      },
+      "a328feac0f70d9bee": {
+        "label": "S3-QE-01 ic-quality-e2e-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 78,
+        "cacheWriteTokens": 143480,
+        "cacheReadTokens": 4944089,
+        "outputTokens": 2017,
+        "usd": 1.3678
+      },
+      "a652c611747fa685b": {
+        "label": "S3-QE-01 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 19611,
+        "cacheReadTokens": 158020,
+        "outputTokens": 859,
+        "usd": 0.0892
+      },
+      "af5fa5dccc0895941": {
+        "label": "S3-QE-01 ic-quality-e2e-engineer rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 24491,
+        "cacheReadTokens": 354169,
+        "outputTokens": 786,
+        "usd": 0.1399
+      }
+    }
+  }
+}

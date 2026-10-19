@@ -1,0 +1,98 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:08:12.848Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:17:25.742Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:18:39.678Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:20:01.456Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-PLT-02",
+  "team": "platform",
+  "title": "GCP deployment path: Dockerfile, Cloud Run service, deployment guide",
+  "story": "As a licensee platform engineer I want a build-and-validate-only deployment path onto the GCP landing zone so the PoC can move to Cloud Run once credentials exist.",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-platform-iac-engineer",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "Dockerfile",
+    ".dockerignore",
+    "infra/cloudrun/service.yaml",
+    "docs/deployment.md",
+    "tests/unit/core/deployment-files.test.mjs"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "Dockerfile uses node:22-slim, runs as a non-root USER, installs no dev tooling, sets NODE_ENV=production, exposes PORT 8080, has a HEALTHCHECK against /healthz using node (no curl), and its CMD starts the server; .dockerignore excludes .git, node_modules, .terraform, infra/, data/db files, .env*, and tests of other teams are not required",
+    "infra/cloudrun/service.yaml is a Knative-style Cloud Run service (serving.knative.dev/v1) for project jmfnol-app-dev with run.googleapis.com/ingress: internal-and-cloud-load-balancing, serviceAccountName set to a runtime account created in infra/2-env/identities.tf (e.g. fnol-intake-api@jmfnol-app-dev.iam.gserviceaccount.com), secrets only via secretKeyRef from Secret Manager (no literal secret values), startup/liveness probes on /healthz, and devMode off",
+    "YAML parses: python3 -c 'import yaml,sys;yaml.safe_load(open(\"infra/cloudrun/service.yaml\"))' exits 0, and tests/unit/core/deployment-files.test.mjs (zero-dep text/structure assertions on all three files) passes via node --test --disable-warning=ExperimentalWarning tests/unit/core/deployment-files.test.mjs",
+    "docs/deployment.md explains how the PoC maps onto infra/ stages 0-bootstrap, 1-org, 2-env and which project and service account it uses; a production-changes section covers Cloud SQL or Firestore instead of SQLite, Cloud KMS instead of the local master key, Pub/Sub instead of the in-process bus (outbox as transactional publisher), and Secret Manager; and an exact ordered command list (gcloud auth, artifact registry repo create, docker build/push, secret creation, gcloud run services replace infra/cloudrun/service.yaml, verification) clearly marked as not run because no credentials exist"
+  ],
+  "brief": "Read infra/README.md, infra/2-env/identities.tf (runtime accounts: fnol-<key> in the app project, keys include intake-api, gateway, etc.), infra/2-env/main.tf (project id pattern prefix-key-env so app project is jmfnol-app-dev), kms.tf, network.tf (Direct VPC egress), envs/dev.tfvars, src/server.mjs and scripts/dev.mjs (how the server starts, PORT, env vars such as master key and devMode; check src/core/crypto.mjs and auth.mjs for exact env var names and use them verbatim). Dockerfile: node:22-slim, WORKDIR /app, copy package*.json then run `npm ci --omit=dev --omit=optional` only if a lockfile exists (the core is zero-dependency; AI vendor SDKs are optionalDependencies, include them only if the server needs them at runtime, note the choice in docs), copy src, scripts, and other runtime dirs the server imports (verify by reading imports; web assets under src/web), USER node, HEALTHCHECK using `node -e fetch(...)`. Set a data dir under a writable path for SQLite and note it is ephemeral on Cloud Run. service.yaml: use annotations autoscaling.knative.dev/maxScale small, ingress annotation, vpc-access via run.googleapis.com/network-interfaces for Direct VPC egress referencing the env network/subnet names from network.tf, image placeholder REGION-docker.pkg.dev/jmfnol-app-dev/fnol/fnol-platform:TAG, env from secretKeyRef for the master key and signing secret. Deployment test: read files with node:fs, assert the key strings and the absence of anything resembling a literal secret; do not require a YAML library. Run the python yaml parse if python3 with yaml is available and report the result. No credentials, no real carrier names, do not run gcloud against anything. Do not touch package.json or any infra/*.tf.",
+  "valueDrivers": [
+    "time-to-deploy",
+    "security"
+  ],
+  "requirements": [
+    "Container image build definition",
+    "Cloud Run manifest aligned with landing zone",
+    "Documented prod migration path and commands"
+  ],
+  "startedAt": "2026-10-18T21:17:25.742Z",
+  "doneAt": "2026-10-18T21:20:01.456Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:20:01.456Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met: Dockerfile/.dockerignore/service.yaml/deployment.md conform, YAML parses, 5/5 tests pass; no src changes so no regression gate"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.3205,
+    "inputTokens": 24,
+    "cacheWriteTokens": 61081,
+    "cacheReadTokens": 753249,
+    "outputTokens": 1714,
+    "agents": {
+      "a5f13e1892bf6f0be": {
+        "label": "S2-PLT-02 ic-platform-iac-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 16,
+        "cacheWriteTokens": 40665,
+        "cacheReadTokens": 531207,
+        "outputTokens": 1650,
+        "usd": 0.2244
+      },
+      "a9d782c55da67358c": {
+        "label": "S2-PLT-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 20416,
+        "cacheReadTokens": 222042,
+        "outputTokens": 64,
+        "usd": 0.0961
+      }
+    }
+  }
+}

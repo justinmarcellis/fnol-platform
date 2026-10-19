@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.timer.breached.schema.json",
+  "title": "claim.timer.breached",
+  "description": "A regulatory timer passed its due time without being met. Published by claims.",
+  "x-publisher": "claims",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.timer.breached"
+    },
+    "source": {
+      "pattern": "/modules/claims$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "timerId",
+        "state",
+        "kind",
+        "dueAt",
+        "breachedAt"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "timerId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "definitionId": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "../domain/common.schema.json#/$defs/UsState"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "acknowledge",
+            "contact",
+            "decide"
+          ]
+        },
+        "dueAt": {
+          "$ref": "../domain/common.schema.json#/$defs/Timestamp"
+        },
+        "breachedAt": {
+          "$ref": "../domain/common.schema.json#/$defs/Timestamp"
+        }
+      }
+    }
+  }
+}

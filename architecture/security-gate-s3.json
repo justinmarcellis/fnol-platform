@@ -1,0 +1,44 @@
+[
+ {
+  "ticket": "S3-WFL-01",
+  "severity": "high",
+  "file": "src/modules/intake/routes.js:56-59 (submit), src/modules/intake/service.js:~251-270",
+  "summary": "Intake submit returns the stored claim unprojected to claimant and agent tokens. On the idempotent replay path it exposes triage, fraud and SIU data. This bypasses the S3-WFL-02 claim projection (SEC2-004).",
+  "scenario": "A claimant submits a complete session (201). After the async claim.triaged and routing events land, the claimant POSTs /intake/sessions/{id}/submit again. The session is 'submitted', so service.submit returns mod('claims').getClaim(doc.claimId) with no include, which is the full stored doc, and routes.js sends it as-is. The body contains triage.severityScore, complexity, flags (including siu) and routing.adjusterId. Claim reads at GET /claims/{id} now use viewFor/projectClaim for non-staff, but intake does not. The first submit also returns decrypted parties, vehicles and properties from createClaim. Static read; not run end to end. Fix: apply projectClaim/viewFor for non-staff in the route or service, and return only {id, claimNumber, status} to claimant and agent."
+ },
+ {
+  "ticket": "S3-WFL-01",
+  "severity": "medium",
+  "file": "src/modules/intake/service.js:~265, src/modules/intake/routes.js:57, src/modules/claims/service.mjs:138-140",
+  "summary": "A client-supplied Idempotency-Key is passed to claims.createClaim without a session namespace. The claims lookup is by key only, so a matching key returns another claim, decrypted with parties and vehicles, to the caller.",
+  "scenario": "An attacker session (claimant or agent) is complete. The attacker submits with an Idempotency-Key equal to one already used for another claim in the tenant, for example a key an integration partner derived from a predictable id. createClaimSync finds the prior row by idempotency_key and returns present(load(prior.id), include parties, vehicles, properties) with no ownership check. The attacker reads another insured's PII, and their own session is then marked submitted against that claim. Exploitability depends on key guessability; the default key intake:<sessionId> is safe. Fix: use `intake:${sessionId}` (or `intake:${sessionId}:${key}`) and never let the client key address the global namespace."
+ },
+ {
+  "ticket": "S3-WFL-01",
+  "severity": "medium",
+  "file": "src/modules/intake/questions.js:12-40 (isSafePattern), :121-124",
+  "summary": "The SEC2-014 local pattern guard still accepts polynomial and counted-group backtracking patterns. A tenant-authored validation.pattern can freeze the single-threaded server for every tenant.",
+  "scenario": "isSafePattern returns true for '^a*a*a*a*a*a*b' and '.*.*.*.*.*x'. It also returns true for '(a?){30}a{30}', because a counted group is rejected only if it contains a quantifier or an alternation, and '?' is not tracked. I measured '^a*a*a*a*a*a*b' against a run of 'a' characters: 40 chars took 141 ms, 80 took 1.1 s and 120 took 12.5 s (about n^6). At 300 chars it ran past 100 s. The 2000-char input cap does not help, and the answer limit for a text question is 500 chars unless the tenant raises maxLength (up to 8000 for longtext). A tenant admin saves such a pattern, since the config validator is still unguarded. Any claimant, agent or CSR answer then hangs the event loop for all tenants. Fix: lower the input cap for pattern questions (for example 200), reject adjacent or repeated unbounded quantifiers and counted groups with optional bodies, or run the pattern with a time budget in a worker or RE2."
+ },
+ {
+  "ticket": "S3-WFL-01",
+  "severity": "medium",
+  "file": "src/modules/intake/service.js (narrative, answer, mergeSuggestions, saveDoc), src/modules/intake/conversation.js:~96",
+  "summary": "Narrative-derived suggestions are stored in plaintext in intake_sessions.doc. The narrative text and injury or loss details are PII at rest, contrary to the 'answers are encrypted' guarantee.",
+  "scenario": "POST /narrative with up to 8000 chars. suggestFromNarrative pushes {questionId:'loss_description', value: text.slice(0,8000)}, plus injuries and lossDate. mergeSuggestions puts these in doc.suggestions, and saveDoc writes ctx.db.toJson(doc) unencrypted. Any DB dump, backup or SQL read shows free-text accident narratives and injury indicators for unsubmitted or abandoned sessions. Real answers go through encryptPii in intake_answers; suggestions are not covered. Sessions are only expired, never purged. Fix: encrypt doc.suggestions (or their values) with ctx.crypto.encryptPii and decrypt on read, and purge or redact on expiry or submit."
+ },
+ {
+  "ticket": "S3-AI-01",
+  "severity": "medium",
+  "summary": "The PDF text scan does not enforce its 100 ms deadline inside scanSection. An unterminated TJ array fills `parts` with millions of strings and holds the event loop for about 1.5 s.",
+  "file": "/home/user/fnol-platform/src/modules/evidence/parse.mjs",
+  "scenario": "A claimant uploads a roughly 10 MB PDF containing `%PDF-BT ` followed by `[(a)` repeated and a closing `ET`. I ran this locally against extractPdfText and a 12 MB input took 1470 ms, against a 100 ms budget. addDocument calls it synchronously through readableText when the kind is auto-detected, and extract() calls it again. A few concurrent uploads from a claimant token stall every tenant for seconds. SEC2-005's regex and inflate vectors are fixed, and BT-only, stream-only and unbalanced-paren inputs all finish in 150 ms or less. Fix: check the deadline and a parts-count cap inside the scanSection loops, and cap the per-section length."
+ },
+ {
+  "ticket": "S3-AI-01",
+  "severity": "medium",
+  "summary": "parseMultipart has no cap on part count and runs synchronously. Many tiny parts can take about 2 s with no time budget.",
+  "file": "/home/user/fnol-platform/src/modules/evidence/parse.mjs",
+  "scenario": "A request body of about 16 MB made of `--a\\r\\n\\r\\n` repeated, with `boundary=a`, took 2250 ms in my local run. Each part allocates slices and header objects, and the upload route is open to claimant, csr, adjuster and integration tokens. The 15 MB BODY_LIMIT is the only bound. Fix: stop after a small maximum number of parts, for example 20, and return a 400 error."
+ }
+]

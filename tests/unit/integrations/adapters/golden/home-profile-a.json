@@ -1,0 +1,84 @@
+{
+  "payload": {
+    "claimsNotificationAddRq": {
+      "rqUID": "evt_golden0002",
+      "transactionRequestDt": "2026-10-18T09:00:00.000Z",
+      "policy": {
+        "policyNumber": "HOM-200001",
+        "lobCd": "HOME"
+      },
+      "claimsOccurrence": {
+        "itemIdInfo": {
+          "agencyId": "BRV-2026-000007"
+        },
+        "lossDt": "2026-09-30",
+        "lossCauseCd": "WATERPLMB",
+        "incidentDesc": "Burst pipe in kitchen.",
+        "addr": {
+          "addr1": "9 Demo Road",
+          "city": "Placeholder",
+          "stateProvCd": "TX",
+          "postalCode": "75000"
+        }
+      },
+      "claimsParty": [
+        {
+          "claimsPartyInfo": {
+            "claimsPartyRoleCd": [
+              "Insured",
+              "Reporter"
+            ]
+          },
+          "generalPartyInfo": {
+            "nameInfo": {
+              "personName": {
+                "givenName": "Bo",
+                "surname": "Sample"
+              },
+              "legalEntityCd": "IN"
+            },
+            "birthDt": "1990-12-25",
+            "communicationsInfo": {
+              "phoneNumber": "+15555550102"
+            }
+          }
+        }
+      ],
+      "propertyLossInfo": [
+        {
+          "roleCd": "insured_location",
+          "location": {
+            "addr1": "9 Demo Road",
+            "city": "Placeholder",
+            "stateProvCd": "TX",
+            "postalCode": "75000",
+            "policyLocationId": "LOC1"
+          },
+          "dwellingTypeCd": "single_family",
+          "yearBuilt": 1998,
+          "occupiedInd": true,
+          "habitableInd": false,
+          "damagedAreaCd": [
+            "kitchen"
+          ],
+          "damageDesc": "water damage to floor",
+          "mitigationStartedInd": true
+        }
+      ],
+      "com.fnolplatform_Claim": {
+        "lob": "homeowners",
+        "channel": "csr_phone",
+        "reportedDt": "2026-10-01T15:00:00.000Z",
+        "riskStateCd": "TX"
+      }
+    }
+  },
+  "unmapped": [
+    "claim.status"
+  ],
+  "warnings": [
+    "no acordLobCd configured for lob \"homeowners\"; used built-in default",
+    "no coverage verification available; coverage section omitted",
+    "no triage result available; triage extension omitted"
+  ]
+}

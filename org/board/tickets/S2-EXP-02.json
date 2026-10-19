@@ -1,0 +1,102 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:26.109Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:14:46.716Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:19:59.817Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:26:30.327Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-EXP-02",
+  "team": "experience",
+  "title": "Carrier admin console at /admin",
+  "story": "REQ-13, REQ-22, REQ-23 no-code tenant configuration",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-admin-ui-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "src/web/admin/",
+    "tests/unit/web/admin/",
+    "tests/ui/admin.test.mjs",
+    "tests/ui/admin-harness.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "GET /admin serves the app; dev login as tenant_admin or carrier_admin",
+    "Editors for branding (colors, name, logo URL), LOBs, locales, question sets (add/edit/reorder, simple showIf builder), rules (list, enable/disable, threshold edit), per-state regulatory timers, webhooks",
+    "POST /config/validate errors shown inline next to fields; PUT /config sends If-Match and handles 409/412 conflicts",
+    "Version history list displayed",
+    "Value drivers KPI panel reads GET /api/v1/kpis and shows 'KPIs not available yet' on 404",
+    "node --test tests/unit/web/admin/*.test.mjs passes (config-edit helpers: set path, reorder, showIf build, error mapping)",
+    "node --test tests/ui/admin.test.mjs passes or skips cleanly: change Aurelia STP glass threshold, save, reload, value persisted, Kestrel config unchanged",
+    "Does not modify files outside listed paths"
+  ],
+  "brief": "Build vanilla-JS ES module app in src/web/admin/ reusing src/web/shared (api.js, devlogin.js, theme.js, i18n.js, components/). Study src/web/claimant for wiring and mount convention (read-only). Keep pure logic in a testable module (src/web/admin/config-model.js): immutable path-set, move item up/down, showIf builder producing the condition shape defined by the question-set schema (look in the config schemas/contracts; support simple field/op/value conditions only), validation-error-path to field mapping. Flow: GET /config (keep ETag/version) -> edit draft -> POST /config/validate -> render errors inline by JSON path -> PUT /config with If-Match -> reload version history (use the config history endpoint in the contracts; if absent, post a contract-change request and hide the panel gracefully). Rule thresholds: locate the STP amount/glass threshold in the real tenant config files and expose rule params generically as labelled number inputs. KPI panel: fetch /api/v1/kpis, on 404 render 'KPIs not available yet'. UI test: boot createApp on port 0 against temp db with real tenants and modules, log in via the dev login, edit Aurelia, save, reload page, assert value persisted, then fetch Kestrel config through API and compare to the original. Own harness copy in tests/ui/admin-harness.mjs; t.skip if playwright import fails (require from /opt/node-tools/node_modules). Beware: the test mutates tenant config; use temp copies of config if the app supports a config dir/db, never the repo files. Run only your tests. Do not git commit.",
+  "valueDrivers": [
+    "time to onboard a carrier",
+    "no-code configurability"
+  ],
+  "requirements": [
+    "REQ-13",
+    "REQ-22",
+    "REQ-23"
+  ],
+  "startedAt": "2026-10-18T21:14:46.716Z",
+  "doneAt": "2026-10-18T21:26:30.327Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:26:30.327Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 29 unit + 5 Playwright tests pass (34/34, none skipped); Aurelia glass change persists, Kestrel unchanged, 409/404 fallbacks covered"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.8544,
+    "inputTokens": 58,
+    "cacheWriteTokens": 124382,
+    "cacheReadTokens": 2661872,
+    "outputTokens": 1095,
+    "agents": {
+      "ada83e5b716c16d14": {
+        "label": "S2-EXP-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 19200,
+        "cacheReadTokens": 219711,
+        "outputTokens": 827,
+        "usd": 0.1002
+      },
+      "adb0ee2a71538cc62": {
+        "label": "S2-EXP-02 ic-experience-admin-ui-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 50,
+        "cacheWriteTokens": 105182,
+        "cacheReadTokens": 2442161,
+        "outputTokens": 268,
+        "usd": 0.7542
+      }
+    }
+  }
+}

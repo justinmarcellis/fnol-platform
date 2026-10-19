@@ -1,0 +1,1003 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/domain/TenantConfig.schema.json",
+  "title": "Tenant configuration",
+  "description": "The COTS heart: one versioned document per tenant (tenants/<tenant>.json) that configures branding, lines of business, question sets, rules, queues, regulatory timers, notifications and AI. Validated on PUT; every change audited and published as tenant.config.updated.",
+  "type": "object",
+  "required": [
+    "tenantId",
+    "version",
+    "displayName",
+    "branding",
+    "lobs",
+    "questionSets",
+    "rules",
+    "queues",
+    "timers",
+    "ai"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "tenantId": {
+      "$ref": "common.schema.json#/$defs/TenantId"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonic; PUT must send current version (optimistic concurrency)."
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Fictional carrier name."
+    },
+    "claimNumberPrefix": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,5}$"
+    },
+    "timeZone": {
+      "type": "string",
+      "default": "America/Chicago"
+    },
+    "locales": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "en"
+      ]
+    },
+    "branding": {
+      "type": "object",
+      "required": [
+        "primaryColor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "logoUrl": {
+          "type": "string",
+          "description": "Relative path to a synthetic logo asset."
+        },
+        "primaryColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "accentColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "fontFamily": {
+          "type": "string"
+        },
+        "supportPhone": {
+          "type": "string"
+        },
+        "supportEmail": {
+          "type": "string",
+          "format": "email"
+        },
+        "legalFooter": {
+          "$ref": "common.schema.json#/$defs/I18nText"
+        },
+        "fraudWarning": {
+          "type": "object",
+          "description": "State fraud-warning text by state code.",
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/I18nText"
+          }
+        }
+      }
+    },
+    "lobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "label"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/Lob"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "label": {
+            "$ref": "common.schema.json#/$defs/I18nText"
+          },
+          "acordLobCd": {
+            "type": "string",
+            "examples": [
+              "AUTOP",
+              "HOME",
+              "AUTOB"
+            ]
+          },
+          "states": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/UsState"
+            }
+          },
+          "lossTypes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "label"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "$ref": "common.schema.json#/$defs/I18nText"
+                },
+                "causes": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "common.schema.json#/$defs/LossCause"
+                  }
+                }
+              }
+            }
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/Channel"
+            }
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "questionSets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "lob",
+          "version",
+          "questions"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "lob": {
+            "$ref": "common.schema.json#/$defs/Lob"
+          },
+          "lossTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Empty = applies to every loss type of the LOB."
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/Channel"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "text",
+                "type"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{1,63}$"
+                },
+                "text": {
+                  "$ref": "common.schema.json#/$defs/I18nText"
+                },
+                "help": {
+                  "$ref": "common.schema.json#/$defs/I18nText"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "text",
+                    "longtext",
+                    "number",
+                    "currency",
+                    "boolean",
+                    "date",
+                    "time",
+                    "datetime",
+                    "select",
+                    "multiselect",
+                    "address",
+                    "location",
+                    "phone",
+                    "email",
+                    "vin",
+                    "party",
+                    "vehicle",
+                    "media",
+                    "disclosure"
+                  ]
+                },
+                "required": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "requiredIf": {
+                  "$ref": "common.schema.json#/$defs/Condition"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "value",
+                      "label"
+                    ],
+                    "properties": {
+                      "value": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "$ref": "common.schema.json#/$defs/I18nText"
+                      }
+                    }
+                  }
+                },
+                "validation": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "number"
+                    },
+                    "max": {
+                      "type": "number"
+                    },
+                    "pattern": {
+                      "type": "string"
+                    },
+                    "maxLength": {
+                      "type": "integer"
+                    },
+                    "notInFuture": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "showIf": {
+                  "$ref": "common.schema.json#/$defs/Condition",
+                  "description": "Ask only when true; facts are answers.<id>, session.*, policy.*."
+                },
+                "pii": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "mapsTo": {
+                  "type": "string",
+                  "description": "Domain path the answer populates, e.g. lossEvent.lossDate, parties[role=driver].phone, vehicles[role=insured].drivable"
+                },
+                "aiAssist": {
+                  "type": "boolean",
+                  "description": "Allow AI to prefill/extract this answer from narrative or documents."
+                },
+                "order": {
+                  "type": "integer"
+                },
+                "section": {
+                  "type": "string"
+                }
+              }
+            },
+            "minItems": 1
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "stage",
+          "when",
+          "then"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9-]{2,40}$",
+            "examples": [
+              "RT-INJURY-01"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "intake",
+              "triage",
+              "routing",
+              "post_routing"
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "default": 100,
+            "description": "Lower runs first."
+          },
+          "stopOnMatch": {
+            "type": "boolean",
+            "default": false
+          },
+          "appliesTo": {
+            "type": "object",
+            "properties": {
+              "lobs": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/Lob"
+                }
+              },
+              "states": {
+                "type": "array",
+                "items": {
+                  "$ref": "common.schema.json#/$defs/UsState"
+                }
+              },
+              "lossTypes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "effectiveFrom": {
+                "$ref": "common.schema.json#/$defs/Date"
+              },
+              "effectiveTo": {
+                "$ref": "common.schema.json#/$defs/Date"
+              }
+            }
+          },
+          "when": {
+            "$ref": "common.schema.json#/$defs/Condition"
+          },
+          "then": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "route_queue",
+                    "assign_adjuster",
+                    "fast_track",
+                    "deny_fast_track",
+                    "add_flag",
+                    "add_task",
+                    "require_question",
+                    "add_severity",
+                    "set_complexity",
+                    "refer_siu",
+                    "start_timer",
+                    "notify",
+                    "block_submit"
+                  ]
+                },
+                "queue": {
+                  "type": "string"
+                },
+                "adjusterId": {
+                  "type": "string"
+                },
+                "flag": {
+                  "type": "string"
+                },
+                "questionId": {
+                  "type": "string"
+                },
+                "points": {
+                  "type": "integer",
+                  "minimum": -100,
+                  "maximum": 100
+                },
+                "complexity": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "task": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "dueInHours": {
+                      "type": "integer"
+                    },
+                    "queue": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "timerId": {
+                  "type": "string"
+                },
+                "template": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            },
+            "minItems": 1
+          }
+        }
+      }
+    },
+    "queues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,40}$"
+          },
+          "label": {
+            "$ref": "common.schema.json#/$defs/I18nText"
+          },
+          "lobs": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/Lob"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "adjusters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "assignment": {
+            "type": "string",
+            "enum": [
+              "round_robin",
+              "least_loaded",
+              "manual"
+            ],
+            "default": "round_robin"
+          },
+          "slaHours": {
+            "type": "integer"
+          },
+          "maxSeverity": {
+            "type": "integer"
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "defaultQueue": {
+      "type": "string"
+    },
+    "fastTrack": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "maxSeverity": {
+          "type": "integer",
+          "default": 25
+        },
+        "maxFraudScore": {
+          "type": "integer",
+          "default": 20
+        },
+        "maxEstimate": {
+          "$ref": "common.schema.json#/$defs/Money"
+        },
+        "queue": {
+          "type": "string",
+          "default": "fast_track"
+        }
+      }
+    },
+    "severityBands": {
+      "type": "object",
+      "properties": {
+        "moderate": {
+          "type": "integer",
+          "default": 25
+        },
+        "major": {
+          "type": "integer",
+          "default": 50
+        },
+        "severe": {
+          "type": "integer",
+          "default": 75
+        }
+      }
+    },
+    "timers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "kind",
+          "duration"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "common.schema.json#/$defs/UsState"
+          },
+          "lobs": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/Lob"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "acknowledge",
+              "contact",
+              "decide"
+            ]
+          },
+          "duration": {
+            "type": "object",
+            "required": [
+              "value",
+              "unit"
+            ],
+            "properties": {
+              "value": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "hours",
+                  "days",
+                  "business_days"
+                ]
+              }
+            }
+          },
+          "startOn": {
+            "type": "string",
+            "default": "claim.reported",
+            "description": "Event type that starts the timer."
+          },
+          "stopOn": {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string"
+              },
+              "toStatus": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "taskType": {
+                "type": "string"
+              }
+            },
+            "description": "Event (optionally filtered by new status or completed task type) that marks the timer met."
+          },
+          "warnBefore": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "integer"
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "hours",
+                  "days",
+                  "business_days"
+                ]
+              }
+            }
+          },
+          "onBreach": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "route_queue",
+                    "assign_adjuster",
+                    "fast_track",
+                    "deny_fast_track",
+                    "add_flag",
+                    "add_task",
+                    "require_question",
+                    "add_severity",
+                    "set_complexity",
+                    "refer_siu",
+                    "start_timer",
+                    "notify",
+                    "block_submit"
+                  ]
+                },
+                "queue": {
+                  "type": "string"
+                },
+                "adjusterId": {
+                  "type": "string"
+                },
+                "flag": {
+                  "type": "string"
+                },
+                "questionId": {
+                  "type": "string"
+                },
+                "points": {
+                  "type": "integer",
+                  "minimum": -100,
+                  "maximum": 100
+                },
+                "complexity": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "task": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "dueInHours": {
+                      "type": "integer"
+                    },
+                    "queue": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "timerId": {
+                  "type": "string"
+                },
+                "template": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "citation": {
+            "type": "string",
+            "description": "Tenant-entered reference; seeded values are illustrative, not legal advice."
+          }
+        }
+      }
+    },
+    "holidays": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/Date"
+      },
+      "description": "Excluded from business-day timers."
+    },
+    "notifications": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claimant": {
+          "type": "object",
+          "properties": {
+            "channels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "email",
+                  "sms"
+                ]
+              }
+            },
+            "onEvents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "internal": {
+          "type": "object",
+          "properties": {
+            "onEvents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "emails": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          }
+        },
+        "webhooks": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "allowedHosts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "signingAlgorithm": {
+              "type": "string",
+              "enum": [
+                "hmac-sha256"
+              ],
+              "default": "hmac-sha256"
+            },
+            "includePii": {
+              "type": "boolean",
+              "const": false,
+              "description": "Events never carry PII in v1."
+            }
+          }
+        }
+      }
+    },
+    "integrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policyPort": {
+          "type": "object",
+          "properties": {
+            "adapter": {
+              "type": "string",
+              "default": "mock-pas"
+            },
+            "settings": {
+              "type": "object"
+            }
+          }
+        },
+        "claimsPort": {
+          "type": "object",
+          "properties": {
+            "adapter": {
+              "type": "string",
+              "default": "core-claims-suite"
+            },
+            "pushOn": {
+              "type": "string",
+              "enum": [
+                "claim.reported",
+                "claim.routed",
+                "manual"
+              ],
+              "default": "claim.routed"
+            },
+            "settings": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "ai": {
+      "type": "object",
+      "required": [
+        "provider"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "local",
+            "vertex-claude",
+            "vertex-gemini",
+            "cascade"
+          ],
+          "description": "cascade = use the cascade list below."
+        },
+        "cascade": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "provider"
+            ],
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "local",
+                  "vertex-claude",
+                  "vertex-gemini"
+                ]
+              },
+              "model": {
+                "type": "string"
+              },
+              "minConfidence": {
+                "$ref": "common.schema.json#/$defs/Confidence"
+              },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tasks": {
+          "type": "object",
+          "description": "Per-task overrides keyed by task (extract_document, classify_photo, severity, fraud_signals, summarize, next_question).",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "threshold": {
+                "$ref": "common.schema.json#/$defs/Confidence"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "region": {
+          "type": "string",
+          "default": "us-central1"
+        },
+        "redactPiiBeforeModel": {
+          "type": "boolean",
+          "default": true
+        },
+        "maxTokensPerClaim": {
+          "type": "integer"
+        },
+        "humanConfirmRequired": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "piiKeyRef": {
+          "type": "string",
+          "description": "Reference to the per-tenant data key (never the key)."
+        },
+        "sessionTtlMinutes": {
+          "type": "integer",
+          "default": 60
+        },
+        "dataRetentionDays": {
+          "type": "integer"
+        }
+      }
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/Timestamp"
+    },
+    "updatedBy": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Added 1.2.0. Evidence upload settings.",
+      "properties": {
+        "maxUploadBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 15728640,
+          "default": 10485760,
+          "description": "Per-file upload cap in bytes (default 10 MB). Core refuses request bodies over 15 MB regardless."
+        }
+      }
+    },
+    "seedVersion": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Seed-once loader version (src/core/tenants.mjs): a tenants/*.json file is re-applied at boot only when this is greater than the stored config's seedVersion."
+    }
+  }
+}

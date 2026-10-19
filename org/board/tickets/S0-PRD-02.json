@@ -1,0 +1,72 @@
+{
+  "status": "done",
+  "sprint": 0,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:14:21.907Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:20:20.337Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:21:37.674Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:21:53.667Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S0-PRD-02",
+  "team": "product",
+  "title": "Personas, packaging and competitive landscape",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-product-personas",
+  "reviewer": "dir-product",
+  "paths": [
+    "product/personas.md",
+    "product/packaging.md",
+    "product/competitive-landscape.md"
+  ],
+  "acceptance": [
+    "At least 7 personas with goals, pains, FNOL moments",
+    "Packaging tiers with pricing hypotheses and the metric each is priced on",
+    "Competitive landscape by vendor category with our differentiation"
+  ],
+  "startedAt": "2026-10-18T20:20:20.337Z",
+  "doneAt": "2026-10-18T20:21:53.667Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:21:53.666Z",
+        "by": "dir-product",
+        "verdict": "accept",
+        "reason": "Nine personas, tiered packaging with value metrics, competitive categories present"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.2549,
+    "inputTokens": 10,
+    "cacheWriteTokens": 79181,
+    "cacheReadTokens": 253197,
+    "outputTokens": 632,
+    "agents": {
+      "a01e5ffdf52f4d54c": {
+        "label": "ic-product-personas",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 79181,
+        "cacheReadTokens": 253197,
+        "outputTokens": 632,
+        "usd": 0.2549
+      }
+    }
+  }
+}

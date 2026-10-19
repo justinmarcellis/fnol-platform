@@ -1,0 +1,98 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:32:19.374Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:33:15.154Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:37:35.183Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:43:11.431Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S3-EXP-02",
+  "team": "experience",
+  "title": "CSR portal fixes: disclosure checkbox, policy search, missing[] panel",
+  "story": "S2-EXP-03-4 and CSR portal improvements",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-csr-portal-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 3,
+  "paths": [
+    "src/web/csr/",
+    "tests/unit/web/csr/",
+    "tests/ui/csr.test.mjs"
+  ],
+  "contracts": [
+    "architecture/core-runtime-api.md",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "Disclosure questions render as a required checkbox (labelled, aria-required) and the submitted answer is boolean true, never a string",
+    "Policy lookup uses GET /api/v1/policies?q=<text> and renders items from {items, matchedOn} (with matched field shown); no exact-lookup call remains in search.js",
+    "Required-items panel lists IntakeStep.missing[] entries and updates after each answer",
+    "The CSR todo test in tests/ui/csr.test.mjs is a real passing test and the page.route workaround is removed",
+    "node --test --disable-warning=ExperimentalWarning tests/ui/csr.test.mjs tests/unit/web/csr/ passes with Chromium actually run",
+    "Unit tests in tests/unit/web/csr/ cover disclosure coercion, search response mapping and missing[] rendering"
+  ],
+  "brief": "You must run the CSR flow in Chromium via the Playwright test (Playwright at /opt/node-tools/node_modules, browsers /opt/pw-browsers) before declaring done. Blocker S2-EXP-03-4 is in org/hubs/experience.jsonl. (1) src/web/csr/assisted.js/app.js: question type disclosure currently renders as a text fx-field and sends a string; server rejects with 422 (fraud_disclosure on personal_auto). Render a required checkbox ('I confirm the caller was read the disclosure') and send boolean true; unchecked blocks submit with an inline accessible error. Add a pure helper for answer coercion so it is unit-testable in tests/unit/web/csr/assisted.test.mjs or a new test file in that folder. (2) search.js: replace exact policy lookup with GET /api/v1/policies?q= (URL-encode q), response {items, matchedOn}; show each item with policy number, insured name, and which field matched. Handle empty results and errors via errors.js. Check architecture/core-runtime-api.md and docs/api-reference.md for the item shape. (3) Show IntakeStep.missing[] (array of missing required field/question ids) in the required-items panel; use friendly labels where known and keep it aria-live polite. Strings go in strings.js. (4) tests/ui/csr.test.mjs: it contains a page.route workaround that rewrites the disclosure answer to boolean; remove it and flip the t.todo test (the one titled 'CSR can answer the fraud disclosure through the UI alone') to a real passing test. Do not touch src/web/claimant, shared, package.json. Report Chromium test output in your result.",
+  "valueDrivers": [
+    "CSR handle time",
+    "first-call completion"
+  ],
+  "requirements": [
+    "S2-EXP-03-4",
+    "IMP-6"
+  ],
+  "startedAt": "2026-10-18T21:33:15.154Z",
+  "doneAt": "2026-10-18T21:43:11.431Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:43:11.431Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 31 tests pass with Chromium run, no skips; checkbox boolean true, GET /policies?q, missing[] panel, workaround removed"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.6085,
+    "inputTokens": 48,
+    "cacheWriteTokens": 82235,
+    "cacheReadTokens": 1932206,
+    "outputTokens": 1634,
+    "agents": {
+      "a2b31aab3b732ebe2": {
+        "label": "S3-EXP-02 ic-experience-csr-portal-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 42,
+        "cacheWriteTokens": 64520,
+        "cacheReadTokens": 1774231,
+        "outputTokens": 1605,
+        "usd": 0.5323
+      },
+      "a5b6bee33077d88a9": {
+        "label": "S3-EXP-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 17715,
+        "cacheReadTokens": 157975,
+        "outputTokens": 29,
+        "usd": 0.0762
+      }
+    }
+  }
+}

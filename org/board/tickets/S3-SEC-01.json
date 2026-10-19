@@ -1,0 +1,84 @@
+{
+  "status": "done",
+  "sprint": 3,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:46:32.694Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:47:03.632Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:48:49.218Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:49:28.197Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "reviewer": "qe-acceptance",
+  "id": "S3-SEC-01",
+  "team": "security",
+  "title": "Flip SEC2 todo tests for fixed findings; align contract roles",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-security-authz-engineer",
+  "paths": [
+    "tests/security/",
+    "architecture/security-review-s2.md",
+    "architecture/contracts/openapi.yaml",
+    "architecture/contracts/modules.md"
+  ],
+  "acceptance": [
+    "Every SEC2 high finding fixed in Sprint 3 (001-007) has its t.todo regression test converted to a real passing test; any still failing is reported with evidence",
+    "security-review-s2.md has a status column (fixed in ticket / open) for all 23 findings plus the Sprint 3 security-gate findings appended as SEC3-xxx",
+    "openapi x-roles match the routes as now registered (carrier_admin removed from intake writes and POST /claims/{id}/routing) and the route snapshot refreshed with the documented refresh command",
+    "tests/security/*.test.mjs all pass"
+  ],
+  "brief": "Fixes landed in S3-WFL-01/02 (SEC2-001, 004), S3-INT-01/02 (SEC2-002, 003, 007), S3-AI-01 (SEC2-005, 006). Read org/hubs/security.jsonl for the fix notes. The Sprint 3 security-gate review found new mediums listed in architecture/security-gate-s3.json; append them as SEC3-001.. with status open. Do not change src/.",
+  "startedAt": "2026-10-18T21:47:03.632Z",
+  "doneAt": "2026-10-18T21:49:28.197Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:49:28.196Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All 4 criteria met: SEC2 001-007 real passing tests, 23 findings + SEC3-001..006 in review doc, openapi carrier_admin removed and snapshot refreshed, security suite 175 pass/0 fail (remaining todos documented with evidence)"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.5652,
+    "inputTokens": 42,
+    "cacheWriteTokens": 84599,
+    "cacheReadTokens": 1636720,
+    "outputTokens": 2625,
+    "agents": {
+      "a91413030f9131960": {
+        "label": "S3-SEC-01 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 23735,
+        "cacheReadTokens": 162860,
+        "outputTokens": 879,
+        "usd": 0.1007
+      },
+      "adf82888a03cf2dd1": {
+        "label": "S3-SEC-01 ic-security-authz-engineer",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 36,
+        "cacheWriteTokens": 60864,
+        "cacheReadTokens": 1473860,
+        "outputTokens": 1746,
+        "usd": 0.4645
+      }
+    }
+  }
+}

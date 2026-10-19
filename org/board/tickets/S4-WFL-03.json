@@ -1,0 +1,123 @@
+{
+  "status": "done",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T22:02:02.257Z",
+  "history": [
+    {
+      "at": "2026-10-18T22:04:56.029Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:04:56.093Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:05:56.874Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T22:06:08.143Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:06:50.522Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "reviewer": "qe-acceptance",
+  "id": "S4-WFL-03",
+  "team": "workflow",
+  "title": "Instant acknowledgment, insured-vehicle question and claimant policy vehicles",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-workflow-intake-flow-dev",
+  "paths": [
+    "src/modules/claims/",
+    "src/modules/intake/",
+    "tenants/",
+    "architecture/contracts/"
+  ],
+  "acceptance": [
+    "See workflow args: REQ-12 acknowledgment, demo beat 5, insured_vehicle, policy-vehicles, Party.atFault, idempotency test"
+  ],
+  "startedAt": "2026-10-18T22:04:56.029Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:05:56.874Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "All criteria met and 321 ticket tests pass, but new regression: tests/security/routes.test.mjs 'openapi role matrix has not drifted' fails because the new policy-vehicles operation is not in tests/security/routes.snapshot.json (not in baseline); security-review the x-roles and refresh the snapshot (or ask its owner)"
+      },
+      {
+        "at": "2026-10-18T22:06:50.522Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 130 ticket tests pass (explicit files), e2e+security gate 0 failures (only known TODOs)"
+      }
+    ],
+    "firstPass": false
+  },
+  "doneAt": "2026-10-18T22:06:50.522Z",
+  "spend": {
+    "usd": 1.3982,
+    "inputTokens": 104,
+    "cacheWriteTokens": 190064,
+    "cacheReadTokens": 4373933,
+    "outputTokens": 4808,
+    "agents": {
+      "a1534aa5df0de0605": {
+        "label": "S4-WFL-03 ic-workflow-intake-flow-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 64,
+        "cacheWriteTokens": 92647,
+        "cacheReadTokens": 3210849,
+        "outputTokens": 2801,
+        "usd": 0.9019
+      },
+      "a30cc9de2876c72a2": {
+        "label": "S4-WFL-03 ic-workflow-intake-flow-dev rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 17182,
+        "cacheReadTokens": 215159,
+        "outputTokens": 87,
+        "usd": 0.0869
+      },
+      "a5211dbfa82d5ba7e": {
+        "label": "S4-WFL-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 22680,
+        "cacheReadTokens": 286259,
+        "outputTokens": 57,
+        "usd": 0.1145
+      },
+      "ab3006c9a48a8eab3": {
+        "label": "S4-WFL-03 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 21540,
+        "cacheReadTokens": 283516,
+        "outputTokens": 687,
+        "usd": 0.1174
+      },
+      "abf5a17e67674626c": {
+        "label": "S4-WFL-03 security",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 12,
+        "cacheWriteTokens": 36015,
+        "cacheReadTokens": 378150,
+        "outputTokens": 1176,
+        "usd": 0.1775
+      }
+    }
+  }
+}

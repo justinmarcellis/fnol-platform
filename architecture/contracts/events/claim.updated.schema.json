@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.fnol-platform.example/events/claim.updated.schema.json",
+  "title": "claim.updated",
+  "description": "Added 1.2.0. A claim changed in a way no dedicated event covers: flag, task, external ref, reserve suggestion, routing patch from a timer action, checks/triage/routing applied from another event, or a timer started, met or cancelled. Carries ids and codes only, never PII. Consumers re-read the claim through the API. Published by claims.",
+  "x-publisher": "claims",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "claim.updated"
+    },
+    "source": {
+      "pattern": "/modules/claims$"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "change"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id"
+        },
+        "change": {
+          "type": "string",
+          "enum": [
+            "flag_added",
+            "routing_updated",
+            "external_ref_set",
+            "task_added",
+            "task_updated",
+            "reserve_suggested",
+            "updated_from_event",
+            "timer_started",
+            "timer_met",
+            "timer_cancelled"
+          ]
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Claim.version after the change."
+        },
+        "flag": {
+          "type": "string",
+          "description": "flag_added"
+        },
+        "taskId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id",
+          "description": "task_added, task_updated"
+        },
+        "reserveId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id",
+          "description": "reserve_suggested"
+        },
+        "timerId": {
+          "$ref": "../domain/common.schema.json#/$defs/Id",
+          "description": "timer_*"
+        },
+        "definitionId": {
+          "type": "string",
+          "description": "timer_*: TenantConfig.timers[].id"
+        },
+        "system": {
+          "type": "string",
+          "description": "external_ref_set: core system id"
+        },
+        "status": {
+          "type": "string",
+          "description": "external_ref_set: core-sync status"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^(claim|tenant)\\.[a-z_.]+$",
+          "description": "updated_from_event: type of the event applied"
+        },
+        "queue": {
+          "type": "string",
+          "description": "routing_updated"
+        },
+        "adjusterId": {
+          "type": "string",
+          "description": "routing_updated"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:07:26.110Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:20:15.060Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T21:25:42.471Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T21:26:37.201Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S2-EXP-03",
+  "team": "experience",
+  "title": "Claimant and CSR UI smoke tests plus a11y check",
+  "story": "Playwright smoke coverage and accessibility warnings for Sprint 1 apps",
+  "points": 5,
+  "tier": "mid",
+  "owner": "ic-experience-accessibility-specialist",
+  "reviewer": "qe-acceptance",
+  "sprint": 2,
+  "paths": [
+    "tests/ui/claimant.test.mjs",
+    "tests/ui/csr.test.mjs",
+    "tests/ui/a11y-harness.mjs",
+    "src/web/shared/a11y-check.js",
+    "tests/unit/web/shared/a11y-check.test.mjs"
+  ],
+  "contracts": [
+    "architecture/contracts/modules.md",
+    "architecture/core-runtime-api.md"
+  ],
+  "acceptance": [
+    "node --test tests/ui/claimant.test.mjs passes or skips cleanly: Aurelia personal auto glass guided intake to claim number and status page",
+    "Spanish toggle shows Spanish labels; Kestrel branding differs from Aurelia",
+    "node --test tests/ui/csr.test.mjs passes or skips cleanly: CSR login, policy lookup, assisted intake submit",
+    "src/web/shared/a11y-check.js exports a pure/DOM-run check for input labels, img alt, landmarks, brand-token color contrast (WCAG ratio); results reported as warnings (console/test diagnostics), not failures",
+    "node --test tests/unit/web/shared/a11y-check.test.mjs passes on fixture HTML and contrast math",
+    "No edits to src/web/claimant or src/web/csr; any real bug reported in result and posted as blocker to experience hub"
+  ],
+  "brief": "Write tests only; read src/web/claimant and src/web/csr read-only to learn selectors, routes and flows. Boot createApp on port 0 against temp db with real tenants and modules; seed policies via ctx.forTenant(t).modules.coverage.seedPolicies(generatePolicies(...)) from tests/synthetic; keep the boot helper in tests/ui/a11y-harness.mjs (own copy; other tickets have theirs). Load playwright via createRequire resolving from /opt/node-tools/node_modules; t.skip cleanly if import or browser launch fails. a11y-check.js: framework-free functions taking a Document/root element (so it runs both in the browser via page.evaluate with the function source and in node unit tests with simple string parsing or a minimal fake DOM) plus contrastRatio(hex,hex) and checkTokens(tokensObject) for foreground/background brand pairs read from tenant branding and src/web/shared/tokens.css; require 4.5:1 for text. Report findings as warnings with t.diagnostic and console.warn; never fail on them. Claimant flow: choose Aurelia, pick personal auto glass, fill steps with synthetic policy data, submit, assert claim number format and status page. Spanish: toggle locale and assert a known Spanish label from the i18n dictionaries. Kestrel: compare brand name or CSS custom property to Aurelia's. CSR: dev login as csr, look up a seeded policy, run assisted intake to submit. If you find a genuine bug, mark that assertion with a clear message, post a blocker: AGENT_ID=ic-experience-accessibility-specialist node org/cli.mjs post experience blocker \"...\" --ticket S2-EXP-03, and describe it in your result. Run only your tests. Do not git commit.",
+  "valueDrivers": [
+    "quality",
+    "accessibility compliance"
+  ],
+  "requirements": [
+    "REQ-13"
+  ],
+  "startedAt": "2026-10-18T21:20:15.060Z",
+  "doneAt": "2026-10-18T21:26:37.201Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T21:26:37.201Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "15 runnable tests pass, 4 TODO for app bugs reported as blockers; criteria met (glass flow uses auto-general due to blocker 2); no app edits seen"
+      }
+    ],
+    "firstPass": true
+  },
+  "spend": {
+    "usd": 0.8482,
+    "inputTokens": 58,
+    "cacheWriteTokens": 110673,
+    "cacheReadTokens": 2701088,
+    "outputTokens": 3115,
+    "agents": {
+      "a2baa3c10a8ab22e9": {
+        "label": "S2-EXP-03 ic-experience-accessibility-specialist",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 52,
+        "cacheWriteTokens": 90789,
+        "cacheReadTokens": 2541046,
+        "outputTokens": 2237,
+        "usd": 0.7577
+      },
+      "a9fb991375ece731c": {
+        "label": "S2-EXP-03 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 6,
+        "cacheWriteTokens": 19884,
+        "cacheReadTokens": 160042,
+        "outputTokens": 878,
+        "usd": 0.0905
+      }
+    }
+  }
+}

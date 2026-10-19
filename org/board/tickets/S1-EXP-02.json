@@ -1,0 +1,159 @@
+{
+  "status": "done",
+  "dependsOn": [],
+  "createdAt": "2026-10-18T20:34:36.094Z",
+  "history": [
+    {
+      "at": "2026-10-18T20:38:25.428Z",
+      "from": "ready",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:43:07.400Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:47:30.125Z",
+      "from": "review",
+      "to": "in_progress"
+    },
+    {
+      "at": "2026-10-18T20:47:49.787Z",
+      "from": "in_progress",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T20:48:08.231Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "id": "S1-EXP-02",
+  "team": "experience",
+  "title": "Claimant web app: guided and conversational intake, evidence, status",
+  "story": "Story 2: Claimant web app",
+  "points": 8,
+  "tier": "mid",
+  "owner": "ic-experience-claimant-web-dev",
+  "reviewer": "qe-acceptance",
+  "sprint": 1,
+  "paths": [
+    "src/web/claimant/",
+    "tests/unit/web/claimant/"
+  ],
+  "contracts": [
+    "architecture/contracts/openapi.yaml (intake/sessions*, claims/{id}, claims/{id}/documents, config/public, auth/token)",
+    "architecture/contracts/domain/IntakeSession.schema.json",
+    "architecture/contracts/domain/Claim.schema.json"
+  ],
+  "requirements": [
+    "REQ-01",
+    "REQ-02",
+    "REQ-04",
+    "REQ-12"
+  ],
+  "valueDrivers": [
+    "claimant self-service",
+    "instant acknowledgment",
+    "white-label branding",
+    "accessibility",
+    "multilingual"
+  ],
+  "acceptance": [
+    "src/web/claimant/index.html (plus app.js and pure modules) loads at / and picks tenant from ?tenant=aurelia-mutual|kestrel-point (default aurelia-mutual), applies branding from GET /config/public, and shows a visible tenant picker for the demo",
+    "Guided mode asks one question at a time from POST /intake/sessions then answers/next-question, rendering by question type, without client-side showIf logic (server decides); back/edit of previous answer supported via re-answering",
+    "Conversational mode renders a chat transcript, accepts free-text answers, and displays AI-prefilled answers (as returned in the IntakeStep) with confirm/edit actions before they are accepted",
+    "After submit the page shows the claim number immediately, then an evidence upload step (photos/documents to POST /claims/{id}/documents) and a status page with timeline polling GET /claims/{id} (interval configurable, stops on terminal status, pauses when tab hidden)",
+    "If API calls fail with service_unavailable or the route is missing, the UI shows a clear 'service unavailable' state with retry, never a blank page or uncaught error",
+    "Spanish toggle appears only when the tenant public config lists es; selection persists and html lang updates",
+    "Mobile-first CSS (works at 320px), keyboard operable, focus moves to new question heading, aria-live announcements, skip link, reduced-motion respected",
+    "Tests in tests/unit/web/claimant/ with a fake api cover the guided state machine, conversational prefill confirmation, submit->upload->status flow, unavailable state, polling stop rule; node --test --disable-warning=ExperimentalWarning tests/unit/web/claimant/ passes"
+  ],
+  "brief": "Build the claimant app under src/web/claimant/ against openapi.yaml; the backend may not exist yet, so all logic must tolerate failures.\n\nKIT INTERFACE (agreed now so apps build in parallel; S1-EXP-01 implements exactly this, apps import it): src/web/shared/api.js exports createApiClient({baseUrl='/api/v1', getToken, fetchImpl=fetch}) returning {get,post,put,patch,del,upload(path,FormData)} that return parsed JSON and throw ApiError {status,code,message,details,requestId} from the error envelope; network failure/5xx/404-on-missing-route throws ApiError with code 'service_unavailable'. src/web/shared/i18n.js exports t(key,params), setLocale, getLocale, registerStrings(locale,table), supportedLocales (en, es). src/web/shared/theme.js exports applyBranding(publicConfig), setScheme('light'|'dark'|'auto'). src/web/shared/devlogin.js exports devLogin(api,{tenant,role}) -> {token,principal}. Components are custom elements registered on import of src/web/shared/components/index.js: fx-field, fx-chips, fx-stepper, fx-upload, fx-chat, fx-timeline, fx-toast, fx-table. Each is attribute/property driven and emits CustomEvents named 'fx-change' (detail {value}) / 'fx-submit'. Shared CSS: src/web/shared/tokens.css and components.css. Apps put pure logic (state, view-models, API orchestration) in plain modules taking an injected api and t, so node tests need no DOM or kit.\nBecause the kit is built in parallel, import it by absolute path (/shared/...) only from browser-side files (index.html, app.js, views); keep pure logic modules (flow.js guided state machine, chat.js conversational controller, status.js polling controller, upload.js, strings.js registering claimant.* en/es via registerStrings) free of kit imports: they take injected {api, t, clock, timers}. Tests import only those pure modules and use a hand-written fake api returning IntakeStep-shaped objects (read IntakeStep and IntakeSession schemas for fields: question with id/type/prompt/options/help, prefilled, progress, done).\n\nFlow: auth: claimant dev token via devLogin (role claimant, selected tenant) in dev mode; start session {lob, channel:'web', locale}; loop answers; when question is null call submit with an Idempotency-Key header (crypto.randomUUID) and show the claim number from Claim.claimNumber; then upload evidence; then status page with fx-timeline from the claim's history/status. Polling: default 10s, stop on closed/denied/paid-type terminal statuses read from the Claim schema enum. Persist only language and tenant in localStorage wrapped in try/catch. Pitfalls: never trust client-side branching; escape all text (use textContent); do not store tokens in localStorage (memory/sessionStorage only); no real carrier names; write only your paths; run only your tests.",
+  "startedAt": "2026-10-18T20:38:25.428Z",
+  "review": {
+    "reworkCount": 1,
+    "verdicts": [
+      {
+        "at": "2026-10-18T20:47:30.125Z",
+        "by": "qe-acceptance",
+        "verdict": "rework",
+        "reason": "Missing routes do not reach the 'service unavailable' state. Live server returns 404 {error:{code:'not_found'}} for POST /intake/sessions, but flow.isUnavailable only treats 404 as unavailable when code==='route_not_found', so the start screen shows a generic inline error with no retry. Tests use a fake that never matches the real server. Fix: treat 404 on the start call (and other non-session-scoped routes) as unavailable, and add a test using the real error shape. Everything else checked is fine: 22/22 tests pass, static files served, contract shapes match."
+      },
+      {
+        "at": "2026-10-18T20:48:08.231Z",
+        "by": "qe-acceptance",
+        "verdict": "accept",
+        "reason": "All criteria met; 24 tests pass; start-404 not_found now reaches unavailable+retry; server-driven showIf, idempotent submit, polling stop/pause, es toggle, a11y verified; in-scope paths only"
+      }
+    ],
+    "firstPass": false,
+    "escapedDefects": [
+      {
+        "id": "DEF-S2-4",
+        "severity": "high",
+        "summary": "Claimant status polling throws Illegal invocation after submit (timers.setTimeout unbound)",
+        "foundIn": "S2-EXP-03"
+      },
+      {
+        "id": "DEF-S2-5",
+        "severity": "medium",
+        "summary": "Claimant startSession never sends lossType; glass question set unreachable",
+        "foundIn": "S2-EXP-03"
+      },
+      {
+        "id": "DEF-S2-6",
+        "severity": "low",
+        "summary": "Empty language picker visible for English-only tenants ([hidden] overridden by CSS)",
+        "foundIn": "S2-EXP-03"
+      }
+    ]
+  },
+  "doneAt": "2026-10-18T20:48:08.231Z",
+  "spend": {
+    "usd": 1.2748,
+    "inputTokens": 92,
+    "cacheWriteTokens": 191828,
+    "cacheReadTokens": 3822493,
+    "outputTokens": 3068,
+    "agents": {
+      "a25a02f6ac7dacc40": {
+        "label": "S1-EXP-02 review",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 28,
+        "cacheWriteTokens": 51853,
+        "cacheReadTokens": 1097912,
+        "outputTokens": 157,
+        "usd": 0.3508
+      },
+      "a476f047d8d71b489": {
+        "label": "S1-EXP-02 ic-experience-claimant-web-dev",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 46,
+        "cacheWriteTokens": 95105,
+        "cacheReadTokens": 2226724,
+        "outputTokens": 2035,
+        "usd": 0.7035
+      },
+      "a50a7c53cde220602": {
+        "label": "S1-EXP-02 ic-experience-claimant-web-dev rework",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 22917,
+        "cacheReadTokens": 221547,
+        "outputTokens": 43,
+        "usd": 0.102
+      },
+      "a805863ab4b0a3290": {
+        "label": "S1-EXP-02 review r2",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 10,
+        "cacheWriteTokens": 21953,
+        "cacheReadTokens": 276310,
+        "outputTokens": 833,
+        "usd": 0.1185
+      }
+    }
+  }
+}

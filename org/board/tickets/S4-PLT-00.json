@@ -1,0 +1,62 @@
+{
+  "id": "S4-PLT-00",
+  "team": "platform",
+  "title": "Sprint 4 planning: PLT",
+  "points": 1,
+  "tier": "mid",
+  "owner": "mgr-platform",
+  "reviewer": "ceo",
+  "status": "done",
+  "sprint": 4,
+  "dependsOn": [],
+  "createdAt": "2026-10-18T21:47:22.316Z",
+  "history": [
+    {
+      "at": "2026-10-18T21:48:35.689Z",
+      "from": "ready",
+      "to": "review"
+    },
+    {
+      "at": "2026-10-18T22:20:55.134Z",
+      "from": "review",
+      "to": "done"
+    }
+  ],
+  "paths": [
+    "org/board/tickets/"
+  ],
+  "acceptance": [
+    "Disjoint, parallel, testable tickets"
+  ],
+  "spend": {
+    "usd": 0.1095,
+    "inputTokens": 8,
+    "cacheWriteTokens": 21898,
+    "cacheReadTokens": 220570,
+    "outputTokens": 1061,
+    "agents": {
+      "a17db73a948a2589a": {
+        "label": "S4-PLT-00 mgr-platform planning",
+        "model": "claude-sonnet-5-5",
+        "inputTokens": 8,
+        "cacheWriteTokens": 21898,
+        "cacheReadTokens": 220570,
+        "outputTokens": 1061,
+        "usd": 0.1095
+      }
+    }
+  },
+  "doneAt": "2026-10-18T22:20:55.134Z",
+  "review": {
+    "reworkCount": 0,
+    "verdicts": [
+      {
+        "at": "2026-10-18T22:20:55.133Z",
+        "by": "ceo",
+        "verdict": "accept",
+        "reason": "Plan executed"
+      }
+    ],
+    "firstPass": true
+  }
+}
