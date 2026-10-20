@@ -699,7 +699,7 @@ export function actionsPanel(view, { role = 'adjuster' } = {}) {
   const request = ro ? '' : `<form class="request-form fx-stack-sm" id="request-form" tabindex="-1" novalidate><h3>${esc(t('adj.request.heading'))}</h3>
 <label for="request-kind">${esc(t('adj.request.kind'))}</label><select class="fx-select" id="request-kind" name="kind">${REQUEST_KINDS.map((k) => `<option value="${k}">${esc(t(`adj.request.kind.${k}`))}</option>`).join('')}</select>
 <label for="request-message">${esc(t('adj.request.message'))}</label><textarea class="fx-textarea" id="request-message" name="message" rows="2" aria-describedby="request-hint"></textarea>
-<p class="adj-muted" id="request-hint">${esc(t(status === 'in_review' ? 'adj.request.hint.pending' : 'adj.request.hint'))}</p>
+<p class="adj-muted" id="request-hint">${esc(t(status === 'in_review' || status === 'assigned' ? 'adj.request.hint.pending' : 'adj.request.hint'))}</p>
 <p class="err" role="alert" hidden></p><div><button class="fx-btn small" type="submit">${esc(t('adj.request.submit'))}</button></div></form>`;
   const statusLine = `<p class="adj-line"><span class="adj-muted">${esc(t('adj.claim.status'))}</span> ${statusBadge(status)}</p>`;
   const moveBlock = moveBtns ? `<div class="fx-btn-group" id="status-moves">${moveBtns}</div>` : '';

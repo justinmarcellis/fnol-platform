@@ -227,3 +227,8 @@
 }
 
 @media (max-width: 559px) { .cl-card { padding: var(--fx-space-4); } .cl-hero { padding: var(--fx-space-6) var(--fx-space-5); } }
+
+/* Journey: adjuster messages stand out above the status tracker. */
+.cl-messages { border-inline-start: 4px solid var(--fx-color-warning, #b45309); }
+.cl-message { display: grid; gap: 4px; padding: 8px 0; }
+.cl-message p { margin: 0; }

@@ -48,13 +48,15 @@ export function updateTask(api, claimId, taskId, status) {
 
 /**
  * Ask the claimant for information: a contact note shared with the claimant, then, when the claim is
- * in review, a move to pending_info so the queue shows it is waiting on the claimant.
+ * in review (or assigned, which starts the review first), a move to pending_info so the queue shows it is waiting on the claimant.
  * @returns {Promise<{ok:true, note:object, moved:boolean}>}
  */
 export async function requestInfo(api, claimId, { body, status } = {}) {
   const id = encodeURIComponent(claimId);
   const note = await api.post(`/claims/${id}/notes`, { body: String(body).trim(), category: 'contact', visibility: 'shared_with_claimant' });
   let moved = false;
+  // Journey: from an assigned claim the adjuster starts the review and asks in one step.
+  if (status === 'assigned') { await api.post(`/claims/${id}/status`, { to: 'in_review', reason: 'adjuster review started' }); status = 'in_review'; }
   if (status === 'in_review') {
     await api.post(`/claims/${id}/status`, { to: 'pending_info', reason: 'awaiting information from the claimant' });
     moved = true;

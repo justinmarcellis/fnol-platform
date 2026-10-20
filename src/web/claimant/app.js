@@ -773,6 +773,24 @@ function showSubmitted(claim, { replace = false } = {}) {
     try { await navigator.clipboard.writeText(number); copyBtn.lastChild.textContent = t('claimant.submitted.copied'); announce(t('claimant.submitted.copied')); } catch { /* clipboard may be blocked */ }
   } }, icon('file', 16), h('span', { text: t('claimant.submitted.copy') }));
 
+  // Journey: what the adjuster asked for (shared notes), shown above the status so the claimant sees it first.
+  const messagesCard = card('cl-messages', h('div', { class: 'cl-cardhead' }, h('span', { class: 'cl-cardicon', 'aria-hidden': 'true' }, icon('alert-circle', 22)),
+    h('div', {}, h('h2', { class: 'cl-title', text: t('claimant.messages.heading') }), h('p', { class: 'muted cl-sub', text: t('claimant.messages.help') }))));
+  const messagesList = h('ul', { class: 'cl-files', id: 'messages-list', 'aria-live': 'polite' });
+  messagesCard.append(messagesList);
+  messagesCard.hidden = true;
+  let messageIds = '';
+  async function loadMessages() {
+    let items = [];
+    try { const res = await api.get(`/claims/${encodeURIComponent(claim.id)}/messages`); items = Array.isArray(res?.items) ? res.items : []; } catch { return; }
+    const ids = items.map((m) => m.id).join();
+    if (ids === messageIds) return;
+    if (messageIds !== '' || items.length) announce(t('claimant.messages.heading'));
+    messageIds = ids;
+    messagesCard.hidden = !items.length;
+    messagesList.replaceChildren(...items.map((m) => h('li', { class: 'cl-message' }, h('p', { text: m.body }), m.at ? h('small', { class: 'muted', text: t('claimant.messages.sent', { date: formatDateTime(m.at) }) }) : null)));
+  }
+
   render('submitted', progressHeader('done'),
     card('cl-success',
       h('span', { class: 'cl-bigicon ok', 'aria-hidden': 'true' }, icon('check', 32)),
@@ -780,6 +798,7 @@ function showSubmitted(claim, { replace = false } = {}) {
       h('p', { class: 'muted', text: t('claimant.submitted.lede') }),
       h('div', { class: 'cl-claimno' }, h('div', {}, h('p', { class: 'cl-eyebrow', text: t('claimant.submitted.number') }), h('p', { class: 'claim-number', id: 'claim-number', text: number })), copyBtn),
       h('p', { class: 'cl-claimmeta' }, badgeSlot, whenSlot)),
+    messagesCard,
     card('', h('div', { class: 'cl-cardhead' }, h('span', { class: 'cl-cardicon', 'aria-hidden': 'true' }, icon('activity', 22)), h('div', {}, h('h2', { class: 'cl-title', text: t('claimant.next.heading') }), h('p', { class: 'muted cl-sub', text: t('claimant.status.live') }))),
       statusBox, note, h('div', { class: 'cl-actions inline' }, refresh)),
     card('', h('div', { class: 'cl-cardhead' }, h('span', { class: 'cl-cardicon', 'aria-hidden': 'true' }, icon('camera', 22)), h('div', {}, h('h2', { class: 'cl-title', text: t('claimant.evidence.heading') }), h('p', { class: 'muted cl-sub', text: t('claimant.evidence.help', { max: MAX_BYTES / 1048576 }) }))),
@@ -813,6 +832,7 @@ function showSubmitted(claim, { replace = false } = {}) {
   statusBox.after(activitySlot);
   paint(claim);
   loadDocuments();
+  loadMessages();
   // Photos chosen in the media question are uploaded as soon as the claim exists.
   if (fresh && app.pendingFiles.size) {
     const files = [...app.pendingFiles.values()].flat();
@@ -825,6 +845,7 @@ function showSubmitted(claim, { replace = false } = {}) {
   app.unsubs.push(poller.subscribe((s) => {
     if (s.claim) {
       paint(s.claim);
+      loadMessages();
       if (s.status !== lastStatus) { lastStatus = s.status; announce(t(`claimant.status.${s.status}`)); }
     }
     note.textContent = s.final ? t('claimant.status.final', { status: t(`claimant.status.${s.status}`) })

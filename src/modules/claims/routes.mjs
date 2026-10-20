@@ -76,6 +76,19 @@ export function registerRoutes(router) {
     res.json(200, { items: await claims(req).listNotes(req.params.claimId, { redact: !canSeePii(req) }) });
   }, { roles: ['csr', 'adjuster', 'supervisor', 'auditor'] });
 
+  // Journey: messages the adjuster shared with the claimant (requestInfo notes). Owners and producing agents read the same
+  // whitelist as staff: only shared notes, only the text and time, never internal notes or the author's identity.
+  router.get(`${BASE}/:claimId/messages`, async (req, res) => {
+    const claim = await claims(req).getClaim(req.params.claimId, { redact: true });
+    if (!isStaff(req.user) && !ownsClaim(claim, req.user) && !(await producedBy(req)).includes(claim.policyNumber)) {
+      throw new req.ctx.AppError('not_found', 'Claim not found', 404);
+    }
+    const notes = await claims(req).listNotes(req.params.claimId);
+    const items = notes.filter((n) => n.visibility === 'shared_with_claimant')
+      .map((n) => ({ id: n.id, body: n.body, at: n.createdAt, category: n.category }));
+    res.json(200, { items });
+  }, { roles: ['claimant', 'agent', ...READ] });
+
   router.post(`${BASE}/:claimId/notes`, async (req, res) => {
     // body.ai is never accepted over HTTP (SEC2-016): AI provenance is set only by the AI-assist code path.
     const { body, category, visibility } = req.body ?? {};
