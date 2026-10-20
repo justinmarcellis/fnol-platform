@@ -90,5 +90,6 @@ Cloud SQL, Pub/Sub, Cloud KMS and SSO are production gaps tracked in `docs/cots-
 | 2026-10-19 04:18 | fnol-platform-00004-kvk | f2d6fc9 | Labelled-name redaction (S5-AI-08), per-policy holder lockout (S5-WFL-05) | Same checks; full npm test 1446 pass, 0 fail, 3 todo |
 | 2026-10-19 13:26 | fnol-platform-00005-zqd | 22a6591 | Sprint 6 redesign: design system, app shell, persona switcher, four app redesigns, design QA; FNOL_DEV_MODE=1 now explicit (S6-PLT-01) | Same checks; full npm test 1533 pass, 0 fail, 3 todo |
 | 2026-10-19 21:35 | fnol-platform-00006-55f | 4b5878a | Sprint 6 bug bash: policy data fills on every desk, agent desk, demo personas, timers on every intake claim, intake answers kept | IAP on, run.invoker only the IAP agent; full npm test 1705 pass, 1 load-sensitive UI test (passes alone); demo audit clean across 12 personas |
+| 2026-10-20 00:24 | fnol-platform-00007-xjg | a019ba8 | Two-persona demo journey: adjuster requests reach the claimant's claim page (docs/demo-journey.md) | IAP on (302 to Google sign-in); full npm test 1708 pass, 0 fail; scripts/demo-journey.mjs all 12 beats ok locally |
 
 Images are tagged with the short commit (`$REGION-docker.pkg.dev/$PROJECT/fnol/platform:<sha>`) as well as `poc`. Build from a clean `git worktree` of the commit so uncommitted files never reach the image.
