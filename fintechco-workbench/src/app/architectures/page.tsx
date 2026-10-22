@@ -51,10 +51,10 @@ export default function ArchitecturesPage() {
         <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">How Claude fits into FinTechCo</div>
         <h2 className="mt-1 font-serif text-[34px] font-bold leading-tight">Set it up once, then put it to work</h2>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-black/65">
-          A small platform team sets up access, rules, monitoring and budgets one time. Every team after that, from engineers building
-          prototypes to analysts cleaning data, starts on day one with those safeguards already in place.
+          A small platform team sets up access, rules, monitoring and budgets one time. Every team after that, whether it&apos;s building
+          prototypes, cleaning data, publishing dashboards or processing paperwork, starts on day one with those safeguards in place.
         </p>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {ARCHITECTURES.map((a) => (
             <a key={a.id} href={`#${a.id}`} className="group rounded-xl border border-black/5 bg-oat p-4 transition hover:border-terracotta">
               <div className="font-mono text-[11px] uppercase tracking-wide text-terracotta">{a.nav}</div>

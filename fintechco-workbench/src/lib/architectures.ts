@@ -228,4 +228,142 @@ export const ARCHITECTURES: Architecture[] = [
       "Enforce \"no production changes\" with real permissions, not just instructions.",
     ],
   },
+  {
+    id: "dashboards",
+    nav: "Dashboards",
+    title: "Trusted dashboards in days, not a months-long backlog",
+    kicker: "One definition behind every number",
+    headline: "Claude drafts the dashboard and the metric definitions behind it. Your reporting owner reviews them, and every chart and question uses the same numbers.",
+    quote:
+      "Dashboard requests usually wait weeks in a backlog, and the same metric ends up defined three different ways. Here Claude drafts the definitions and the dashboard in hours, the reporting owner reviews them like any other change, and everyone works from the same numbers.",
+    lanes: [
+      {
+        label: "People",
+        tone: "people",
+        items: [
+          { name: "Analyst", note: "Turns a stakeholder's request into a dashboard" },
+          { name: "Reporting owner", note: "Approves new metrics and changes" },
+          { name: "Metric owners", note: "Agree what each metric means" },
+        ],
+      },
+      {
+        label: "Building it",
+        tone: "workspace",
+        items: [
+          { name: "Claude Code", note: "Drafts metric definitions, dashboards and charts from a plain-English request" },
+          { name: "Shared glossary", note: "Approved definitions and chart standards" },
+          { name: "Version history", note: "Every change reviewed before it goes live" },
+        ],
+      },
+      {
+        label: "Behind the scenes",
+        tone: "platform",
+        items: [
+          { name: "Claude in your Google Cloud account", note: "Billed to your project" },
+          { name: "Access as the signed-in person", note: "Same roles and row-level rules as the analyst" },
+          { name: "Custom visuals when needed", note: "A small private app on the same definitions" },
+        ],
+      },
+      {
+        label: "Looker and BigQuery",
+        tone: "data",
+        items: [
+          { name: "Business stakeholders", note: "Use dashboards and ask follow-ups in plain English" },
+          { name: "One set of metric definitions", note: "Reused by every dashboard and question" },
+          { name: "Trusted data", note: "Only approved views are exposed" },
+        ],
+      },
+    ],
+    steps: [
+      "Ask. The analyst gives Claude the request in plain English, for example \"weekly churn by region, with a drill-down to each account.\"",
+      "Check what exists. Claude looks at the metrics already defined, signed in as the analyst, so the same access rules apply.",
+      "Build. Claude adds any new metrics using the approved glossary, drafts the dashboard in a test area, and checks it.",
+      "Review and publish. The reporting owner approves the change, and it goes live. Custom visuals run as a small private app on the same definitions.",
+      "Use and measure. Stakeholders explore the dashboard and ask follow-up questions in plain English. We track time from request to dashboard and how often it's used.",
+    ],
+    value: [
+      { title: "Request to dashboard in days", detail: "Instead of weeks in a backlog", measure: "Days from request to published dashboard" },
+      { title: "One definition per metric", detail: "No more three versions of \"active customer\"", measure: "Duplicate definitions retired" },
+      { title: "Custom visuals without the wait", detail: "Bespoke charts built on the same numbers", measure: "Custom requests closed" },
+      { title: "Self-service follow-ups", detail: "Stakeholders ask their own questions", measure: "Follow-up tickets avoided" },
+      { title: "Access follows the person", detail: "Claude sees only what the user can see", measure: "Access exceptions and audit findings" },
+    ],
+    guardrailsTitle: "Built-in safeguards",
+    guardrails: ["Access rules follow each user", "Usage and value tracking", "Changes tested before they go live", "Private apps that read approved data only"],
+    watchouts: [
+      "Protect the shared definitions. Claude can propose new metrics, but metric owners should approve changes to existing ones.",
+      "Custom apps must read data as the user or through approved views. Don't give them broad access.",
+      "Some of these connections are still in preview. Turn on only what each team needs.",
+    ],
+  },
+  {
+    id: "documents",
+    nav: "Documents",
+    title: "Turn incoming paperwork into decisions automatically",
+    kicker: "Capture, check and route every document",
+    headline: "Every document is sorted, read and checked within minutes of arriving. Clean ones go straight through, and people only see what needs a human.",
+    quote:
+      "This is the intake engine. Every document is sorted, read and checked within minutes. Clean documents go straight through, people only see the fields the system wasn't sure about, and missing items are requested the same day instead of weeks later.",
+    lanes: [
+      {
+        label: "Arrives",
+        tone: "people",
+        items: [
+          { name: "Email", note: "" },
+          { name: "Web portal or app upload", note: "" },
+          { name: "Scanned mail", note: "" },
+          { name: "Partner file transfers", note: "" },
+        ],
+      },
+      {
+        label: "Understand",
+        tone: "workspace",
+        items: [
+          { name: "Secure storage", note: "Encrypted with your own keys" },
+          { name: "Sort and separate", note: "Identifies each document type in a bundle" },
+          { name: "Read the fields", note: "With a confidence score for each one" },
+          { name: "Read free text", note: "Notes, codes and summaries" },
+        ],
+      },
+      {
+        label: "Check and route",
+        tone: "platform",
+        items: [
+          { name: "Check against our rules", note: "And against our existing records" },
+          { name: "Confident and complete?", note: "Decides where each document goes" },
+          { name: "Missing-information request", note: "Sent to the sender the same day" },
+        ],
+      },
+      {
+        label: "Act",
+        tone: "data",
+        items: [
+          { name: "Straight through", note: "Clean documents go into our systems automatically" },
+          { name: "Review screen", note: "People check only the uncertain fields, next to the original" },
+          { name: "Corrections improve the system", note: "Every fix becomes training data" },
+        ],
+      },
+    ],
+    steps: [
+      "Arrive. Documents come in by email, upload, scanned mail or partner transfer and are stored securely.",
+      "Sort. The system identifies each document's type and splits bundles into individual documents.",
+      "Read. It pulls out each field with a confidence score, and summarizes any free text.",
+      "Check. Business rules and cross-checks against our records run on every document.",
+      "Route. Confident, complete documents go straight into our systems. Uncertain fields go to a person, and anything missing is requested from the sender the same day.",
+      "Learn and report. Reviewer corrections improve the system, and a dashboard shows how much flows through untouched, how long it takes, and the cost per document.",
+    ],
+    value: [
+      { title: "No manual typing", detail: "Fields are captured automatically", measure: "Minutes of handling per document" },
+      { title: "Right the first time", detail: "Problems and gaps are caught on arrival", measure: "Days waiting on the sender" },
+      { title: "People handle exceptions only", detail: "Reviewers see just the uncertain fields", measure: "Share of documents with no human touch" },
+      { title: "Better every week", detail: "Corrections feed back into the system", measure: "Accuracy over time" },
+    ],
+    guardrailsTitle: "Built-in safeguards",
+    guardrails: ["Encrypted with your own keys", "Private network boundary", "Personal data masked before analytics", "Reports on speed, accuracy and cost"],
+    watchouts: [
+      "Set confidence thresholds by the cost of a mistake. A wrong bank account number matters more than a wrong middle initial.",
+      "The review screen is your own app. Google's built-in review feature has been retired.",
+      "Some newer document-reading options are in preview. Check region and encryption support before relying on them.",
+    ],
+  },
 ];
