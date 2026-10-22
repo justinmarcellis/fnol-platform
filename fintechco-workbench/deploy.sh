@@ -25,7 +25,8 @@ PROJECT="${1:-}"
 if [[ -z "$PROJECT" ]]; then
   echo ">> Looking for the project that hosts fintechco-roi.web.app..."
   for p in $(gcloud projects list --format='value(projectId)'); do
-    if firebase hosting:sites:list --project "$p" 2>/dev/null | grep -q "fintechco-roi"; then PROJECT="$p"; break; fi
+    sites=$(firebase hosting:sites:list --project "$p" 2>/dev/null || true)
+    if [[ "$sites" == *fintechco-roi* ]]; then PROJECT="$p"; break; fi
   done
   PROJECT="${PROJECT:-$(gcloud config get-value project 2>/dev/null)}"
 fi
@@ -55,6 +56,15 @@ firebase hosting:sites:create "$SITE" --project "$PROJECT" >/dev/null 2>&1 || tr
 sed -i.bak "s/\"site\": \"[^\"]*\"/\"site\": \"$SITE\"/" firebase.json && rm -f firebase.json.bak
 firebase deploy --only hosting --project "$PROJECT" --non-interactive
 
+REVISION=$(gcloud run services describe fintechco-workbench --project "$PROJECT" --region "$REGION" --format 'value(status.latestReadyRevisionName)')
 echo
-echo "Cloud Run URL: $RUN_URL"
-echo "Published:     https://$SITE.web.app"
+echo "================ DEPLOY SUMMARY ================"
+echo "Project:          $PROJECT"
+echo "Cloud Run rev:    $REVISION"
+echo "Cloud Run URL:    $RUN_URL"
+echo "  serves:         $(curl -s "$RUN_URL/api/status" | grep -o '"version":"[^"]*","revision":"[^"]*"')"
+echo "Published URL:    https://$SITE.web.app"
+echo "  serves:         $(curl -s "https://$SITE.web.app/api/status?t=$(date +%s)" | grep -o '"version":"[^"]*","revision":"[^"]*"')"
+echo "Both 'serves' lines should show $REVISION. If the web.app line differs or is empty,"
+echo "the site $SITE belongs to another project: re-run as ./deploy.sh <that-project-id>."
+echo "================================================"

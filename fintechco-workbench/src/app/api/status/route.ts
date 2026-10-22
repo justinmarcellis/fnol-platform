@@ -3,7 +3,15 @@ import { ensureWorkspace, getLiveStatus, WORKSPACE } from "@/lib/workspace";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Bump when shipping UI changes so deploy.sh can confirm the live site is current. */
+const APP_VERSION = "paced-playback-1";
+
 export async function GET() {
   ensureWorkspace();
-  return Response.json({ live: getLiveStatus(), workspace: WORKSPACE });
+  return Response.json({
+    version: APP_VERSION,
+    revision: process.env.K_REVISION ?? "local",
+    live: getLiveStatus(),
+    workspace: WORKSPACE,
+  });
 }
