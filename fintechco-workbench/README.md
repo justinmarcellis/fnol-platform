@@ -1,0 +1,41 @@
+# FinTechCo Agentic Engineering Workbench
+
+One-page demo app for the "Live Workbench" section of the FinTechCo executive briefing. Three one-click scenarios show headless Claude Code (`claude -p`) fixing real files in `/tmp/demo-workspace`, with real `pytest` gates, a before/after diff, and a business-impact artifact per scenario.
+
+| # | Team | What runs | Gate |
+|---|------|-----------|------|
+| 1 | SRE & Security (20) | Masks raw PANs in `sre_payment_worker.py` + `sre_log_check.go`, structured JSON logs | `test_pci_compliance.py` 0/4 → 4/4 |
+| 2 | Data Science → SWE (40 + 120) | Untyped notebook → typed scoring module + FastAPI route + TS contract; live contract tester | `test_fraud_api.py` 0/4 → 4/4 |
+| 3 | Quants & Execs | Stdlib Pearson r / p-value / stress slope from `fred_macro_data.csv`; dual-axis chart + Board bullets | `test_macro_stress.py` 0/4 → 4/4 |
+
+## Modes
+
+- **Live CLI**: enabled when the `claude` CLI is installed and `ANTHROPIC_API_KEY` (or `CLAUDE_CODE_USE_VERTEX=1` / `CLAUDE_CODE_USE_BEDROCK=1`) is set. Streams `stream-json` events into the terminal. If the CLI goes quiet for 15s (`LIVE_IDLE_TIMEOUT_MS`), errors, or runs past 150s (`LIVE_MAX_MS`), the run switches to Safe Mode mid-stream. If Claude's edit doesn't clear the gate, the verified patch is applied and the gate re-runs.
+- **Deterministic Safe Mode**: no model call. It writes the verified patch from `verified-patches/<id>/`, and every `pytest` run, file read, diff and the Scenario 3 statistics are executed for real. The terminal narration is scripted and the token cost is an estimate (marked `est.`). If you're asked, describe it as a replay of a verified Claude Code run.
+
+## Run locally
+
+```sh
+npm install
+pip install pytest          # or apt install python3-pytest
+npm run dev                 # http://localhost:3000
+npm run verify:seed         # shows the 12 seed tests failing before any fix
+```
+
+Keyboard: `1` `2` `3` run scenarios · `?` talk track and CTO objection answers · `Esc` close.
+**Reset** restores `/tmp/demo-workspace` from `seed-workspace/`, so you can re-run the demo any number of times. A single scenario can also be re-run on its own.
+
+## Deploy to Cloud Run
+
+```sh
+./deploy.sh <gcp-project-id>                         # Safe Mode only
+ANTHROPIC_KEY_SECRET=anthropic-api-key ./deploy.sh <project>   # + Live CLI (key in Secret Manager)
+USE_VERTEX=1 ./deploy.sh <project>                   # + Live CLI through Vertex AI (grant the runtime SA roles/aiplatform.user)
+MIN_INSTANCES=1 ./deploy.sh <project>                # demo day: no cold start
+```
+
+Uses `--max-instances 1` so the in-memory `/tmp` workspace stays consistent. Keep `npm run dev` running locally as a backup tab.
+
+## Data note
+
+`fed_funds_rate` is FRED `FEDFUNDS` quarterly averages (2025-Q4 and 2026-Q1 are approximate). `fintechco_delinquency_rate` is a synthetic series for the fictional FinTechCo. The correlation (r ≈ 0.91) is computed live, not hard-coded.
