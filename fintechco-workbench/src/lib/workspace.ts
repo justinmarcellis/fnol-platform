@@ -1,4 +1,4 @@
-import { execFile, execFileSync } from "node:child_process";
+import { execFile, execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import type { PytestSummary, Scenario } from "./scenarios";
@@ -24,9 +24,38 @@ export function ensureWorkspace(dir: string): void {
   pruneIdleWorkspaces();
 }
 
+/** Seed files get one old timestamp, so the "before finishing" hook can tell which code changed this session. */
+const SEED_TIME = new Date("2020-01-01T00:00:00Z");
+
 export function resetWorkspace(dir: string): void {
   fs.rmSync(dir, { recursive: true, force: true });
   fs.cpSync(SEED_DIR, dir, { recursive: true });
+  for (const f of fs.readdirSync(dir)) {
+    if (f.endsWith(".py") || f.endsWith(".go")) fs.utimesSync(path.join(dir, f), SEED_TIME, SEED_TIME);
+  }
+}
+
+/** Runs a hook script from the workspace's .claude/hooks exactly as Claude Code does: event JSON on stdin. */
+export function runHook(dir: string, script: string, event: object): Promise<Record<string, unknown> | null> {
+  return new Promise((resolve) => {
+    const child = spawn("python3", [path.join(dir, ".claude", "hooks", script)], {
+      cwd: dir,
+      env: { ...PY_ENV, CLAUDE_PROJECT_DIR: dir },
+    });
+    let out = "";
+    const timer = setTimeout(() => child.kill("SIGKILL"), 60000);
+    child.stdout.on("data", (d: Buffer) => (out += d.toString()));
+    child.on("error", () => resolve(null));
+    child.on("close", () => {
+      clearTimeout(timer);
+      try {
+        resolve(out.trim() ? JSON.parse(out) : null);
+      } catch {
+        resolve(null);
+      }
+    });
+    child.stdin.end(JSON.stringify({ session_id: path.basename(dir), cwd: dir, ...event }));
+  });
 }
 
 let lastPrune = 0;
@@ -59,6 +88,12 @@ function readOrEmpty(p: string): string {
   } catch {
     return "";
   }
+}
+
+/** The verified "after" files for a scenario, as Claude would write them. */
+export function verifiedPatchFiles(s: Scenario): { file: string; content: string }[] {
+  const patchDir = path.join(PATCH_DIR, String(s.id));
+  return fs.readdirSync(patchDir).map((file) => ({ file, content: fs.readFileSync(path.join(patchDir, file), "utf8") }));
 }
 
 /** Writes the verified "after" files for a scenario into the workspace. */

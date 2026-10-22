@@ -20,8 +20,10 @@ import {
   readSeed,
   readWorkspace,
   runPytest,
+  runHook,
   runPython,
   SEED_DIR,
+  verifiedPatchFiles,
   workspaceFor,
 } from "@/lib/workspace";
 
@@ -119,6 +121,9 @@ async function runScenario(dir: string, s: Scenario, requested: Mode, log: Log, 
     `Loaded FinTechCo's ${rules} engineering rules and permissions (${settings.permissions.allow.length} actions allowed, ${settings.permissions.deny.length} blocked). Running inside your private cloud.`,
   );
   await pace();
+  const start = await runHook(dir, "architecture_context.py", { hook_event_name: "SessionStart" });
+  if (start) log("hook", "Session start: FinTechCo's Architecture Patterns skill loaded into Claude's context");
+  await pace();
 
   log("bash", "Running the automated checks before changing anything");
   const baseline = await runPytest(dir, s.testFile);
@@ -156,6 +161,10 @@ async function runScenario(dir: string, s: Scenario, requested: Mode, log: Log, 
     pytest = await runPytest(dir, s.testFile);
     streamPytest(pytest, log);
   }
+
+  const stop = await runHook(dir, "require_checks.py", { hook_event_name: "Stop", stop_hook_active: false });
+  if (stop?.decision === "block") log("hook", `Before finishing: blocked. ${stop.reason}`);
+  else if (stop?.systemMessage) log("hook", `Before finishing: ${stop.systemMessage}, so Claude may report the task as done.`);
 
   const durationMs = Date.now() - t0;
   log(
@@ -206,6 +215,20 @@ async function safeScript(dir: string, s: Scenario, log: Log) {
     log("reasoning", "Full card numbers are being written to the logs in two places. That breaks the card industry's security rules.");
     await pace();
     log("reasoning", "Plan: show only the last four digits, and write logs in a consistent format the team can search.");
+    await pace();
+    log("edit", "Tries to add an example log line to sre_payment_worker.py");
+    await pace();
+    const attempt = await runHook(dir, "block_secrets.py", {
+      hook_event_name: "PreToolUse",
+      tool_name: "Edit",
+      tool_input: { file_path: "sre_payment_worker.py", new_string: '# Example log line: "Gateway timeout for PAN 4111 1111 1111 1111"' },
+    });
+    const denied = (attempt?.hookSpecificOutput as { permissionDecisionReason?: string } | undefined)?.permissionDecisionReason;
+    if (denied) {
+      log("hook", `Before editing: ${denied}`);
+      await pace();
+      log("reasoning", "The example itself contained a card number. Using a masked example instead.");
+    }
   } else if (s.id === 2) {
     try {
       const out = await runPython(dir, ["-c", "from ds_fraud_notebook import evaluate_transaction_risk as f; print(repr(f(4500, 8, True)))"]);
@@ -228,11 +251,27 @@ async function safeScript(dir: string, s: Scenario, log: Log) {
     log("reasoning", "There's also no check that the person is allowed to issue refunds, and nothing stops a refund bigger than the payment, or a second refund.");
     await pace();
     log("reasoning", "Plan: fix all four, keep the change small, and write review notes so the human reviewer knows what changed and what's left to check.");
+    await pace();
+    log("reasoning", "Applying the Architecture Patterns skill: parameterized queries, permission check first, guard the amount, secrets from Secret Manager.");
   }
   await pace();
 
+  const patches = verifiedPatchFiles(s);
+  const blocked: string[] = [];
+  for (const { file, content } of patches) {
+    const res = await runHook(dir, "block_secrets.py", { hook_event_name: "PreToolUse", tool_name: "Write", tool_input: { file_path: file, content } });
+    if (res) blocked.push(file);
+  }
+  log(
+    "hook",
+    blocked.length
+      ? `Before editing: blocked changes to ${blocked.join(", ")}`
+      : `Before editing: scanned ${patches.length} change${patches.length > 1 ? "s" : ""} for card numbers and secrets. Nothing found.`,
+  );
+  await pace();
   applyVerifiedPatch(dir, s);
   for (const f of s.targets) {
+    await runHook(dir, "audit_log.py", { hook_event_name: "PostToolUse", tool_name: readSeed(f) ? "Edit" : "Write", tool_input: { file_path: f } });
     const { added, removed } = diffStats(readSeed(f), readWorkspace(dir, f));
     log("edit", `${readSeed(f) ? "Updated" : "Created"} ${f}: ${added} lines added, ${removed} removed`);
     await pace();

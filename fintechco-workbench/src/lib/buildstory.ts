@@ -47,6 +47,7 @@ export const SPRINTS = [
       { title: "Chrome-only crash found and fixed", tag: "Quality" },
       { title: "Works on iPhone", tag: "Design" },
       { title: "Guided tour, permission tester and audit log", tag: "Security" },
+      { title: "Real hooks and sandbox: blocked edits, required checks", tag: "Security" },
     ],
   },
 ];

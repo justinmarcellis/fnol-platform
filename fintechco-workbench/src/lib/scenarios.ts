@@ -119,6 +119,7 @@ export type LogTag =
   | "pass"
   | "fail"
   | "guard"
+  | "hook"
   | "done";
 
 export type StreamEvent =

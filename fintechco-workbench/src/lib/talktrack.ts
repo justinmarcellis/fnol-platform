@@ -15,6 +15,7 @@ export const TALK_TRACKS: TalkTrack[] = [
       "Open Governance. \"These are the rules Claude follows, kept in the repo and reviewed like code. Rule 1: never log a full card number.\" Switch to Permissions: \"Green is allowed, red is blocked. Claude can't send data out even if someone asks it to.\"",
       "Click Run. When the first checks fail: \"Before touching anything, it runs our checks. They fail. A full card number is reaching our logs today.\"",
       "When it finds the leaks: \"It found them in two systems written in two languages. One rule, applied everywhere.\"",
+      "When the red [hook] line appears: \"A hook your security team owns just refused an edit with a card number in it. Claude wasn't asked to be careful; it wasn't allowed. Governance → Guardrails in action shows every hook and the sandbox.\"",
       "What changed: \"A small, readable fix: only the last four digits show, and the logs are now searchable. It didn't touch the checks themselves.\"",
       "Scorecard: \"Three leaks down to zero, proven by tests. And consistent logs are why we expect incidents to be resolved in half the time.\"",
     ],

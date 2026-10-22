@@ -23,6 +23,7 @@ const TAGS: Record<LogTag, { label: string; cls: string }> = {
   pass: { label: "[passed]", cls: "text-[#3fb950]" },
   fail: { label: "[failed]", cls: "text-[#f85149]" },
   guard: { label: "[note]", cls: "text-[#f0883e]" },
+  hook: { label: "[hook]", cls: "text-[#ff7b72]" },
   done: { label: "[done]", cls: "text-[#3fb950]" },
 };
 

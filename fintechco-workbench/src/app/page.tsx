@@ -8,5 +8,10 @@ export default function Page() {
   const seed = path.join(process.cwd(), "seed-workspace");
   const claudeMd = fs.readFileSync(path.join(seed, "CLAUDE.md"), "utf8");
   const settingsJson = fs.readFileSync(path.join(seed, ".claude", "settings.json"), "utf8");
-  return <Workbench claudeMd={claudeMd} settingsJson={settingsJson} />;
+  const hookDir = path.join(seed, ".claude", "hooks");
+  const hookFiles: Record<string, string> = Object.fromEntries(
+    fs.readdirSync(hookDir).filter((f) => f.endsWith(".py")).map((f) => [f, fs.readFileSync(path.join(hookDir, f), "utf8")]),
+  );
+  hookFiles["SKILL.md"] = fs.readFileSync(path.join(seed, ".claude", "skills", "architecture-patterns", "SKILL.md"), "utf8");
+  return <Workbench claudeMd={claudeMd} settingsJson={settingsJson} hookFiles={hookFiles} />;
 }

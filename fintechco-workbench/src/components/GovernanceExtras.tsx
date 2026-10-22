@@ -142,3 +142,110 @@ export function AuditLog({ lines }: { lines: TermLine[] }) {
     </div>
   );
 }
+
+const STOPS = [
+  {
+    when: "Session starts",
+    hook: "SessionStart",
+    file: "architecture_context.py",
+    who: "CTO · VP Engineering",
+    what: "Loads FinTechCo's Architecture Patterns skill into every session, so 120 engineers get the same patterns, not 120 styles.",
+    match: "Session start",
+  },
+  {
+    when: "Before every edit",
+    hook: "PreToolUse · Edit|Write",
+    file: "block_secrets.py",
+    who: "CISO · InfoSec",
+    what: "Scans each proposed change. A full card number or a secret is refused before it reaches a file, and Claude is told why.",
+    match: "Before editing",
+  },
+  {
+    when: "After every action",
+    hook: "PostToolUse · all tools",
+    file: "audit_log.py",
+    who: "SRE · Audit",
+    what: "Writes one structured record per action to .claude/audit.jsonl, ready to ship to your security monitoring.",
+    match: "",
+  },
+  {
+    when: "Before finishing",
+    hook: "Stop",
+    file: "require_checks.py",
+    who: "Engineering managers",
+    what: "Claude can't say \"done\" until the checks for the code it changed pass. If they fail, it's sent back to fix them.",
+    match: "Before finishing",
+  },
+  {
+    when: "Every shell command",
+    hook: "Sandbox",
+    file: "",
+    who: "CISO · Data leads",
+    what: "The operating system fences in every command Claude runs: no route to the internet except approved hosts (here, only the Python package index), and no access outside the project.",
+    match: "",
+  },
+];
+
+export function GuardrailsTimeline({ lines, hookFiles }: { lines: TermLine[]; hookFiles: Record<string, string> }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const hookLines = lines.filter((l) => l.tag === "hook");
+  return (
+    <div className="p-5">
+      <div className="text-[13px] text-[#c9d1d9]">
+        <b className="text-white">Rules guide Claude. Hooks enforce them.</b> Hooks are scripts your platform team owns. Claude Code runs them at fixed points
+        in every session, and Claude can&apos;t skip or talk its way around them. Managed centrally, individual users can&apos;t turn them off.
+      </div>
+      <ol className="mt-4 space-y-2">
+        {STOPS.map((s, i) => {
+          const seen = s.match ? hookLines.filter((l) => l.text.startsWith(s.match)) : [];
+          return (
+            <li key={s.when} className="relative rounded-lg border border-termline bg-term2 p-3 pl-11">
+              <span className="absolute left-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-terracotta text-[11px] font-bold text-white">{i + 1}</span>
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className="text-[14px] font-semibold text-white">{s.when}</span>
+                <code className="text-[11px] text-[#7d8590]">{s.hook}</code>
+                <span className="ml-auto rounded bg-white/5 px-1.5 py-0.5 text-[10.5px] text-[#d2a8ff]">{s.who}</span>
+              </div>
+              <div className="mt-1 text-[12.5px] leading-snug text-[#8b949e]">{s.what}</div>
+              {seen.length > 0 && (
+                <div className="mt-2 space-y-0.5 border-l-2 border-[#ff7b72] pl-2 text-[12px] text-[#ffa198]">
+                  {seen.map((l) => (
+                    <div key={l.id}>Last run: {l.text.replace(/^Before (editing|finishing): |^Session start: /, "")}</div>
+                  ))}
+                </div>
+              )}
+              {s.file && hookFiles[s.file] && (
+                <>
+                  <button onClick={() => setOpen(open === s.file ? null : s.file)} className="mt-2 font-mono text-[11px] text-[#58a6ff] hover:underline">
+                    {open === s.file ? "Hide" : "View"} .claude/hooks/{s.file}
+                  </button>
+                  {open === s.file && (
+                    <pre className="scroll-dark mt-2 max-h-64 overflow-auto rounded bg-term p-3 font-mono text-[11.5px] leading-relaxed text-[#c9d1d9]">{hookFiles[s.file]}</pre>
+                  )}
+                </>
+              )}
+              {s.hook === "Sandbox" && (
+                <pre className="mt-2 overflow-auto rounded bg-term p-3 font-mono text-[11.5px] text-[#c9d1d9]">{`"sandbox": {
+  "enabled": true,
+  "allowUnsandboxedCommands": false,
+  "network": { "allowedDomains": ["pypi.org", "files.pythonhosted.org"] }
+}`}</pre>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {hookFiles["SKILL.md"] && (
+        <div className="mt-3">
+          <button onClick={() => setOpen(open === "skill" ? null : "skill")} className="font-mono text-[11px] text-[#58a6ff] hover:underline">
+            {open === "skill" ? "Hide" : "View"} the Architecture Patterns skill (.claude/skills/architecture-patterns/SKILL.md)
+          </button>
+          {open === "skill" && (
+            <pre className="scroll-dark mt-2 max-h-64 overflow-auto rounded bg-term p-3 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap text-[#c9d1d9]">{hookFiles["SKILL.md"]}</pre>
+          )}
+        </div>
+      )}
+      {hookLines.length === 0 && <div className="mt-3 text-[12px] text-[#7d8590]">Run a scenario to see what each hook did. Scenario 1 shows a blocked edit.</div>}
+    </div>
+  );
+}

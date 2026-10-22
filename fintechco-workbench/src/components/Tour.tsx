@@ -37,7 +37,7 @@ const STEPS: Step[] = [
   {
     target: "governance",
     title: "Safe by design",
-    body: "Claude follows written rules and strict permissions. Open Governance to read the rules, test what's allowed or blocked, and see an audit log of every action.",
+    body: "Rules guide Claude; hooks and a sandbox enforce them. Open Governance to read the rules, see the hooks that run at every step, test what's blocked, and read the audit log.",
   },
   {
     target: "fits",

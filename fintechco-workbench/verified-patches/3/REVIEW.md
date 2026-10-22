@@ -9,6 +9,8 @@
 | 3 | High | 7 | Anyone signed in could issue refunds. | Only users with the `refunds` role can issue one. |
 | 4 | Medium | 7 | A refund could be larger than the payment, or the same order could be refunded twice. | Both are now rejected with a clear error. |
 
+**Architecture patterns applied** (FinTechCo Architecture Patterns skill): parameterized data access, permission check first, guard the amount, secrets from Secret Manager.
+
 **For the human reviewer**
 - Confirm `refunds` is the right role name for support agents.
 - The exposed key is still in this branch's history. Rotate it before merging.

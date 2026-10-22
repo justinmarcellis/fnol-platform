@@ -6,3 +6,4 @@ node_modules
 !seed-workspace/CLAUDE.md
 firebase-public
 !verified-patches/**/*.md
+!seed-workspace/.claude/skills/**/*.md

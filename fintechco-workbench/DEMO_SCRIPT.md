@@ -26,6 +26,8 @@ Close the window.
   > "The first thing it does is run our checks, and they fail. A full card number is reaching our logs right now."
 - When the **[found]** lines appear:
   > "It found the problem in two systems written in two different languages. One rule, applied everywhere."
+- When the red **[hook] Before editing: Blocked by FinTechCo policy** line appears:
+  > "Watch this. Claude tried to add an example log line, and the example itself had a card number in it. A hook, a script your security team owns, ran before the edit and refused it. Claude didn't decide to be careful. It wasn't allowed. It switched to a masked example on its own."
 - When **"4 of 4 checks passed"** appears:
   > "Fixed and proven. And it didn't change the checks to get there; our rules forbid that."
 
@@ -37,6 +39,9 @@ Close the window.
 - **Security scorecard (bottom right):**
   > "Three leaks down to zero, proven by tests." Point at the log line: "The top line is a compliance finding. The bottom line is safe, and it's searchable."
   > "That last part matters for incidents. When logs are consistent, the team, and Claude, can find the cause faster. We expect incidents to be resolved in half the time."
+
+- **Optional, 30 seconds:** open **Governance → Guardrails in action**.
+  > "Rules guide Claude; hooks enforce them. One runs at the start of every session to load our architecture patterns, one before every edit, one after every action for the audit trail, and one that won't let Claude say 'done' until the checks pass. Underneath, a sandbox keeps every command off the internet except approved hosts. Your platform team owns these files, and users can't switch them off."
 
 **Bridge.**
 > "That's the safety side. Now speed, for the 160 people who build the product."

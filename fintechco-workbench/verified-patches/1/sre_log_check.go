@@ -34,5 +34,6 @@ func probeGateway(url string, testCard string) {
 }
 
 func main() {
-	probeGateway("https://auth-gw.internal.fintechco.com/healthz", "4111222233334444")
+	// The probe card comes from Secret Manager at deploy time, never from source code.
+	probeGateway("https://auth-gw.internal.fintechco.com/healthz", os.Getenv("PROBE_TEST_CARD"))
 }
