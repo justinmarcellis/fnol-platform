@@ -13,7 +13,7 @@ const TITLES: Record<number, string> = {
 
 export default function Artifact({ result }: { result?: RunResult }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-termline bg-term lg:min-h-0 lg:flex-1">
+    <div data-tour="impact" className="flex flex-col overflow-hidden rounded-xl border border-termline bg-term lg:min-h-0 lg:flex-1">
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-termline bg-term2 px-3">
         <BarChart3 className="h-4 w-4 text-[#7d8590]" />
         <span className="whitespace-nowrap font-mono text-[12px] text-[#e6edf3]">Business impact</span>

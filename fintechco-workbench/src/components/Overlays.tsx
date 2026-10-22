@@ -3,22 +3,26 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { OBJECTIONS, TALK_TRACKS } from "@/lib/talktrack";
+import { AuditLog, PermissionTester } from "./GovernanceExtras";
+import type { TermLine } from "./Terminal";
 
 export function GovernanceModal({
   open,
   onClose,
   claudeMd,
   settingsJson,
+  lines = [],
 }: {
   open: boolean;
   onClose: () => void;
   claudeMd: string;
   settingsJson: string;
+  lines?: TermLine[];
 }) {
-  const [tab, setTab] = useState<"md" | "json">("md");
+  const [tab, setTab] = useState<"md" | "json" | "try" | "audit">("md");
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-charcoal/50 p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-charcoal/50 p-3 sm:p-6" onClick={onClose}>
       <div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-alabaster shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-black/10 px-6 py-4">
           <div>
@@ -29,11 +33,13 @@ export function GovernanceModal({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex gap-1 px-6 pt-3">
+        <div className="flex flex-wrap gap-1 px-6 pt-3">
           {(
             [
               ["md", "Our rules"],
               ["json", "Permissions"],
+              ["try", "Try a permission"],
+              ["audit", "Audit log"],
             ] as const
           ).map(([k, label]) => (
             <button
@@ -45,12 +51,25 @@ export function GovernanceModal({
             </button>
           ))}
           <span className="ml-auto self-center text-[12px] text-black/50">
-            {tab === "md" ? "Written rules Claude reads at the start of every session" : "What Claude is allowed to do (green) and blocked from doing (red)"}
+            {
+              {
+                md: "Written rules Claude reads at the start of every session",
+                json: "What Claude is allowed to do (green) and blocked from doing (red)",
+                try: "See how the permissions decide, live",
+                audit: "A record of every action, and why it was allowed",
+              }[tab]
+            }
           </span>
         </div>
-        <pre className="scroll-dark mx-6 mb-6 min-h-0 flex-1 overflow-auto rounded-b-lg rounded-tr-lg bg-term p-5 font-mono text-[13px] leading-relaxed whitespace-pre-wrap text-[#e6edf3]">
-          {tab === "md" ? <Markdownish text={claudeMd} /> : <JsonHighlight text={settingsJson} />}
-        </pre>
+        {tab === "md" || tab === "json" ? (
+          <pre className="scroll-dark mx-6 mb-6 min-h-0 flex-1 overflow-auto rounded-b-lg rounded-tr-lg bg-term p-5 font-mono text-[13px] leading-relaxed whitespace-pre-wrap text-[#e6edf3]">
+            {tab === "md" ? <Markdownish text={claudeMd} /> : <JsonHighlight text={settingsJson} />}
+          </pre>
+        ) : (
+          <div className="scroll-dark mx-6 mb-6 min-h-0 flex-1 overflow-auto rounded-b-lg rounded-tr-lg bg-term text-[#e6edf3]">
+            {tab === "try" ? <PermissionTester settingsJson={settingsJson} /> : <AuditLog lines={lines} />}
+          </div>
+        )}
       </div>
     </div>
   );

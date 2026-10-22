@@ -38,7 +38,7 @@ export default function DiffPanel({ result }: { result?: RunResult }) {
   };
 
   return (
-    <div className="flex h-[55vh] flex-col overflow-hidden rounded-xl border border-termline bg-term lg:h-auto lg:min-h-0 lg:flex-1">
+    <div data-tour="diff" className="flex h-[55vh] flex-col overflow-hidden rounded-xl border border-termline bg-term lg:h-auto lg:min-h-0 lg:flex-1">
       <div className="flex min-h-9 shrink-0 flex-wrap items-center gap-2 border-b border-termline bg-term2 px-3 py-1.5 lg:flex-nowrap lg:py-0">
         <FileDiff className="h-4 w-4 text-[#7d8590]" />
         <span className="truncate font-mono text-[12px] text-[#e6edf3]">What changed</span>

@@ -7,6 +7,8 @@ export interface TermLine {
   id: number;
   tag: LogTag;
   text: string;
+  /** When the line appeared; used by the audit log. */
+  at?: number;
 }
 
 const TAGS: Record<LogTag, { label: string; cls: string }> = {
@@ -40,7 +42,7 @@ export default function Terminal({
   }, [lines]);
 
   return (
-    <section id="terminal" className="flex h-[65vh] scroll-mt-3 flex-col overflow-hidden rounded-xl border border-termline bg-term shadow-lg lg:h-auto lg:min-h-0">
+    <section id="terminal" data-tour="terminal" className="flex h-[65vh] scroll-mt-3 flex-col overflow-hidden rounded-xl border border-termline bg-term shadow-lg lg:h-auto lg:min-h-0">
       <div className="flex h-9 shrink-0 items-center gap-3 border-b border-termline bg-term2 px-3">
         <div className="flex gap-1.5">
           <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />

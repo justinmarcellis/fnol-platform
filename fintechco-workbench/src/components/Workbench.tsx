@@ -9,6 +9,7 @@ import Terminal, { type TermLine } from "./Terminal";
 import DiffPanel from "./DiffPanel";
 import Artifact from "./Artifacts";
 import { GovernanceModal, TalkTrackDrawer } from "./Overlays";
+import Tour from "./Tour";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -57,9 +58,9 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
     const id = seq.current++;
     const typeMs = tag === "out" ? 0 : Math.min(700, text.length * 7);
     if (typeMs === 0) {
-      setLines((prev) => [...prev, { id, tag, text }]);
+      setLines((prev) => [...prev, { id, tag, text, at: Date.now() }]);
     } else {
-      setLines((prev) => [...prev, { id, tag, text: "" }]);
+      setLines((prev) => [...prev, { id, tag, text: "", at: Date.now() }]);
       const steps = Math.max(1, Math.round(typeMs / 30));
       for (let i = 1; i <= steps; i++) {
         await sleep(30);
@@ -175,21 +176,24 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         </div>
 
         <div className="flex flex-wrap items-center gap-2 lg:ml-auto lg:shrink-0 lg:flex-nowrap">
+          <Tour />
           <Link
             href="/architectures"
+            data-tour="fits"
             className="flex items-center gap-1 whitespace-nowrap rounded-full bg-charcoal px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-black"
           >
             <Layers className="h-3.5 w-3.5 text-terracotta" /> How it fits together
           </Link>
           <a
             href="https://fintechco-roi.web.app/"
+            data-tour="roi"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 whitespace-nowrap rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat"
           >
             ROI Calculator <ExternalLink className="h-3.5 w-3.5" />
           </a>
-          <button onClick={() => setGovOpen(true)} className="whitespace-nowrap rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat">
+          <button data-tour="governance" onClick={() => setGovOpen(true)} className="whitespace-nowrap rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat">
             Governance
           </button>
           <button
@@ -205,7 +209,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       {/* Workbench */}
       <main className="grid flex-1 grid-cols-1 gap-3 bg-alabaster p-3 lg:min-h-0 lg:grid-cols-[280px_minmax(0,1fr)_minmax(0,1.15fr)]">
         {/* Left: scenarios */}
-        <section className="flex flex-col gap-3 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
+        <section data-tour="scenarios" className="flex flex-col gap-3 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
           {SCENARIOS.map((s) => {
             const r = results[s.id];
             const isRunning = running === s.id;
@@ -252,7 +256,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         </section>
       </main>
 
-      <GovernanceModal open={govOpen} onClose={() => setGovOpen(false)} claudeMd={claudeMd} settingsJson={settingsJson} />
+      <GovernanceModal open={govOpen} onClose={() => setGovOpen(false)} claudeMd={claudeMd} settingsJson={settingsJson} lines={lines} />
       <TalkTrackDrawer open={talkOpen} onClose={() => setTalkOpen(false)} />
     </div>
   );
