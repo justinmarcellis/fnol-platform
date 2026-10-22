@@ -12,6 +12,8 @@ export interface Scenario {
   /** Files Claude Code is expected to change; the diff viewer shows these. */
   targets: string[];
   testFile: string;
+  /** The request as a person would say it; shown in the terminal. */
+  ask: string;
   prompt: string;
   /** Estimated tokens / cost shown in Safe Mode, where no API call is made. */
   estTokens: number;
@@ -23,34 +25,37 @@ const GUARDRAIL =
 export const SCENARIOS: Scenario[] = [
   {
     id: 1,
-    team: "1. SRE & Security · 20 Engineers · Go / Python / Shell",
-    title: "PCI-DSS Log Audit & Auto-Remediation",
+    team: "1 · Security & reliability team",
+    title: "Find and fix leaked card numbers",
     details:
-      "Audits payment worker & Go health-check logs against CLAUDE.md, masks raw 16-digit PAN leaks, and runs pytest verification.",
+      "Claude checks the payment systems against our security rules, hides any full card numbers in the logs, and proves the fix with automated tests.",
     targets: ["sre_payment_worker.py", "sre_log_check.go"],
     testFile: "test_pci_compliance.py",
+    ask: "Check our payment logs for full card numbers, hide them, and prove the fix with tests",
     prompt: `Audit sre_payment_worker.py and sre_log_check.go against CLAUDE.md Rules 1 and 3. Mask every raw PAN as XXXX-XXXX-XXXX-1234 (last 4 visible) and emit structured JSON logs in both files. Run python3 -m pytest test_pci_compliance.py -q. ${GUARDRAIL}`,
     estTokens: 2840,
   },
   {
     id: 2,
-    team: "2. Data Science → SWE · 40 DS + 120 SWEs · Python / TS / Java",
-    title: "Fraud Prototype to Typed Production API",
+    team: "2 · Data science and engineering",
+    title: "Turn a fraud model into a production service",
     details:
-      "Refactors an untyped Jupyter/pandas scikit-learn fraud script into a typed FastAPI service + TypeScript/Java OpenAPI schema contract, then runs unit tests.",
+      "Claude turns a data scientist's rough fraud-scoring experiment into a reliable service other teams can call, then tests it.",
     targets: ["ds_fraud_notebook.py", "fraud_api_contract.ts"],
     testFile: "test_fraud_api.py",
+    ask: "Turn this fraud-scoring experiment into a reliable service other teams can use, and test it",
     prompt: `Promote ds_fraud_notebook.py to production per CLAUDE.md Rule 2: strict type hints, a dataclass/TypedDict schema, a risk_score bounded to [0.0, 1.0], APPROVE/REVIEW/DECLINE decisions, ValueError on invalid input, and a FastAPI POST /v1/payments/score endpoint. Also write fraud_api_contract.ts with the matching TypeScript request/response types. Run python3 -m pytest test_fraud_api.py -q. ${GUARDRAIL}`,
     estTokens: 3910,
   },
   {
     id: 3,
-    team: "3. Executive ROI & Quants · FRED Macro Data",
-    title: "Federal Reserve Stress-Test & Visual Brief",
+    team: "3 · Finance and risk leadership",
+    title: "Interest-rate stress test for the Board",
     details:
-      "Analyzes FRED Fed Funds Rate vs. FinTechCo payment delinquency CSV (2020–2026), quantifies the rate/credit correlation, and generates an interactive executive chart.",
+      "Claude compares six years of Federal Reserve interest rates with our late-payment rates, measures how closely they move together, and drafts a Board summary.",
     targets: ["fred_stress_analysis.py"],
     testFile: "test_macro_stress.py",
+    ask: "Compare Fed interest rates with our late payments since 2020 and draft three points for the Board",
     prompt: `Implement every function in fred_stress_analysis.py per its docstring using fred_macro_data.csv and the standard library only (CLAUDE.md Rule 5): Pearson r with a two-tailed p-value, the delinquency slope per +100bp of Fed Funds, and 3 Board-ready bullets. Make running the file print the brief as JSON. Run python3 -m pytest test_macro_stress.py -q. ${GUARDRAIL}`,
     estTokens: 4260,
   },
@@ -83,7 +88,7 @@ export function buildCliArgs(s: Scenario): string[] {
 }
 
 export function displayCommand(s: Scenario): string {
-  return `$ claude -p "${s.prompt.split(". ")[0]}…" --allowedTools "Read,Edit,Bash(pytest*)" --max-turns 8 --output-format stream-json`;
+  return `$ claude "${s.ask}"`;
 }
 
 export interface FileDiff {

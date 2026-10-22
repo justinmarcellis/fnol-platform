@@ -6,9 +6,9 @@ import type { MacroBrief } from "@/lib/scenarios";
 import type { RunResult } from "./Workbench";
 
 const TITLES: Record<number, string> = {
-  1: "SRE Incident & Compliance Scorecard",
-  2: "Interactive Payment Fraud API Contract Tester",
-  3: "Federal Reserve Stress-Test · Board Visual Brief",
+  1: "Security scorecard",
+  2: "Try the fraud check",
+  3: "Board briefing",
 };
 
 export default function Artifact({ result }: { result?: RunResult }) {
@@ -16,11 +16,11 @@ export default function Artifact({ result }: { result?: RunResult }) {
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-termline bg-term">
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-termline bg-term2 px-3">
         <BarChart3 className="h-4 w-4 text-[#7d8590]" />
-        <span className="whitespace-nowrap font-mono text-[12px] text-[#e6edf3]">Live Business Impact</span>
+        <span className="whitespace-nowrap font-mono text-[12px] text-[#e6edf3]">Business impact</span>
         {result && <span className="ml-auto truncate font-mono text-[11px] text-terracotta">{TITLES[result.scenarioId]}</span>}
       </div>
       <div className="scroll-dark min-h-0 flex-1 overflow-auto p-4 text-[#c9d1d9]">
-        {!result && <p className="font-mono text-[12px] text-[#7d8590]">The business-impact artifact for each scenario renders here when its run completes.</p>}
+        {!result && <p className="font-mono text-[12px] text-[#7d8590]">What this means for the business appears here when the run finishes.</p>}
         {result?.scenarioId === 1 && <SreScorecard result={result} />}
         {result?.scenarioId === 2 && <FraudTester key={result.metrics.durationMs} />}
         {result?.scenarioId === 3 && result.brief && <MacroChart brief={result.brief} />}
@@ -49,22 +49,22 @@ function SreScorecard({ result }: { result: RunResult }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2.5">
-        <Tile label="PAN leak sites" value={`${leakSites} → ${ok ? 0 : leakSites}`} sub="1 Python · 2 Go log calls" />
-        <Tile label="PCI-DSS 3.4 masking" value={ok ? "Verified" : "Failing"} sub={`pytest ${result.pytest.passed}/${result.pytest.total} · tests untouched`} />
-        <Tile label="Log format" value="JSON" sub="Python logging + Go slog" tone="slate" />
+        <Tile label="Card-number leaks" value={`${leakSites} → ${ok ? 0 : leakSites}`} sub="Found in two systems" />
+        <Tile label="Card-industry rules" value={ok ? "Met" : "Not met"} sub={`${result.pytest.passed} of ${result.pytest.total} checks passed`} />
+        <Tile label="Logs" value="Searchable" sub="Consistent, structured format" tone="slate" />
       </div>
       <div className="rounded-lg border border-termline bg-term2 p-3">
         <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-wide text-[#7d8590]">
-          <TrendingDown className="h-3.5 w-3.5" /> Projected incident MTTR · 20 SREs
+          <TrendingDown className="h-3.5 w-3.5" /> Expected time to resolve an incident
         </div>
         <Bar label="Today" minutes={42} max={42} color="bg-[#f85149]/70" />
         <Bar label="With Claude Code" minutes={21} max={42} color="bg-sage" />
         <div className="mt-1 text-[11.5px] text-[#8b949e]">
-          <b className="text-[#56d364]">−50% incident triage</b> (42 → 21 min): structured logs are machine-parsable, and Claude triages from them directly.
+          <b className="text-[#56d364]">Half the time</b> (42 → 21 minutes): consistent logs let the team, and Claude, find the cause faster.
         </div>
       </div>
       <div className="rounded-lg border border-termline bg-term2 p-3 font-mono text-[11px] leading-relaxed">
-        <div className="text-[#7d8590]">gateway timeout log line</div>
+        <div className="text-[#7d8590]">The same log line, before and after</div>
         <div className="mt-1 text-[#ffa198]">- [trace=req-9941] Gateway timeout for PAN 4111222233334444 amount=$1250.00</div>
         <div className="text-[#7ee787]">
           + {`{"event": "gateway_timeout", "severity": "ERROR", "trace_id": "req-9941", "pan": "XXXX-XXXX-XXXX-4444", "amount": 1250.0}`}
@@ -87,9 +87,9 @@ function Bar({ label, minutes, max, color }: { label: string; minutes: number; m
 }
 
 const PRESETS = [
-  { label: "$4,500 · foreign · 8 txns/24h", amount: 4500, velocity_24h: 8, is_foreign_ip: true },
-  { label: "$900 · domestic · 3 txns", amount: 900, velocity_24h: 3, is_foreign_ip: false },
-  { label: "$25 coffee · domestic", amount: 25, velocity_24h: 1, is_foreign_ip: false },
+  { label: "$4,500 from overseas, 8th purchase today", amount: 4500, velocity_24h: 8, is_foreign_ip: true },
+  { label: "$900 at home, 3rd purchase today", amount: 900, velocity_24h: 3, is_foreign_ip: false },
+  { label: "$25 coffee", amount: 25, velocity_24h: 1, is_foreign_ip: false },
 ];
 
 interface ScoreResponse {
@@ -130,7 +130,7 @@ function FraudTester() {
     <div className="space-y-3">
       <div className="grid grid-cols-[1fr_1fr] gap-3">
         <div className="rounded-lg border border-termline bg-term2 p-3">
-          <div className="font-mono text-[10.5px] uppercase tracking-wide text-[#7d8590]">POST /v1/payments/score</div>
+          <div className="font-mono text-[10.5px] uppercase tracking-wide text-[#7d8590]">Test a payment</div>
           <div className="mt-2 flex flex-wrap gap-1">
             {PRESETS.map((p) => (
               <button
@@ -144,7 +144,7 @@ function FraudTester() {
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-[11.5px]">
             <label className="flex flex-col gap-0.5 text-[#7d8590]">
-              amount
+              Amount ($)
               <input
                 type="number"
                 value={req.amount}
@@ -153,7 +153,7 @@ function FraudTester() {
               />
             </label>
             <label className="flex flex-col gap-0.5 text-[#7d8590]">
-              velocity_24h
+              Purchases in last 24 hours
               <input
                 type="number"
                 value={req.velocity_24h}
@@ -167,7 +167,7 @@ function FraudTester() {
                 checked={req.is_foreign_ip}
                 onChange={(e) => setReq({ ...req, label: "custom", is_foreign_ip: e.target.checked })}
               />
-              is_foreign_ip
+              From an overseas connection
             </label>
           </div>
           <button
@@ -175,12 +175,12 @@ function FraudTester() {
             disabled={busy}
             className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-terracotta py-1.5 text-[12.5px] font-semibold text-white hover:brightness-105 disabled:opacity-60"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send Test Transaction (${req.amount.toLocaleString("en-US")})
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Check this payment (${req.amount.toLocaleString("en-US")})
           </button>
         </div>
         <div className="rounded-lg border border-termline bg-term2 p-3 font-mono text-[11.5px]">
-          <div className="text-[10.5px] uppercase tracking-wide text-[#7d8590]">Response · executes workspace module</div>
-          {!res && <div className="mt-2 text-[#7d8590]">Send a transaction to call the scoring module Claude just refactored.</div>}
+          <div className="text-[10.5px] uppercase tracking-wide text-[#7d8590]">Result from the new service</div>
+          {!res && <div className="mt-2 text-[#7d8590]">Check a payment to call the service Claude just built. This runs live.</div>}
           {res && (
             <>
               {res.decision && <div className={`mt-1 font-serif text-[26px] font-bold ${decisionColor}`}>{res.decision}</div>}
@@ -206,9 +206,9 @@ function FraudTester() {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2.5">
-        <Tile label="Lead time for changes" value="−35%" sub="DORA target · 120 SWEs" tone="terracotta" />
-        <Tile label="Notebook → API" value="Weeks → Hours" sub="40 Data Scientists" tone="slate" />
-        <Tile label="Contract" value="Py · TS · Java" sub="one OpenAPI schema" />
+        <Tile label="Time to ship changes" value="35% faster" sub="Target across 120 engineers" tone="terracotta" />
+        <Tile label="Experiment to production" value="Weeks → hours" sub="For 40 data scientists" tone="slate" />
+        <Tile label="One shared definition" value="Every team" sub="Same inputs and outputs everywhere" />
       </div>
     </div>
   );
@@ -236,12 +236,12 @@ function MacroChart({ brief }: { brief: MacroBrief }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-full bg-terracotta px-2.5 py-0.5 font-mono text-[12px] font-bold text-white">
-          Pearson r = {brief.r.toFixed(2)}, p {brief.p_value < 0.001 ? "< 0.001" : `= ${brief.p_value.toFixed(3)}`}
+          Strong link: {brief.r.toFixed(2)} on a 0–1 scale{brief.p_value < 0.001 ? ", very unlikely to be chance" : ""}
         </span>
-        <span className="font-mono text-[11px] text-[#8b949e]">n = {brief.n} quarters · +{brief.slope_bp_per_100bp.toFixed(0)}bp per +100bp</span>
+        <span className="font-mono text-[11px] text-[#8b949e]">{brief.n} quarters · each 1-point rate rise ≈ +{(brief.slope_bp_per_100bp / 100).toFixed(2)} points of late payments</span>
         <span className="ml-auto flex items-center gap-3 font-mono text-[11px]">
-          <span className="flex items-center gap-1"><i className="inline-block h-0.5 w-4 bg-terracotta" /> FEDFUNDS %</span>
-          <span className="flex items-center gap-1"><i className="inline-block h-0.5 w-4 bg-[#58a6ff]" /> Delinquency %</span>
+          <span className="flex items-center gap-1"><i className="inline-block h-0.5 w-4 bg-terracotta" /> Fed interest rate %</span>
+          <span className="flex items-center gap-1"><i className="inline-block h-0.5 w-4 bg-[#58a6ff]" /> Our late payments %</span>
         </span>
       </div>
       <div className="relative rounded-lg border border-termline bg-term2 p-2">
@@ -286,15 +286,15 @@ function MacroChart({ brief }: { brief: MacroBrief }) {
         {h && (
           <div className="pointer-events-none absolute right-3 top-3 rounded-md border border-termline bg-term px-2.5 py-1.5 font-mono text-[11px]">
             <div className="text-[#e6edf3]">{h.quarter}</div>
-            <div className="text-terracotta">Fed Funds {h.fed_funds_rate.toFixed(2)}%</div>
-            <div className="text-[#58a6ff]">Delinquency {h.fintechco_delinquency_rate.toFixed(2)}%</div>
+            <div className="text-terracotta">Fed rate {h.fed_funds_rate.toFixed(2)}%</div>
+            <div className="text-[#58a6ff]">Late payments {h.fintechco_delinquency_rate.toFixed(2)}%</div>
             <div className="text-[#8b949e]">Unemployment {h.unemployment_rate.toFixed(1)}%</div>
           </div>
         )}
       </div>
       <div className="rounded-lg border border-termline bg-term2 p-3">
         <div className="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-wide text-[#7d8590]">
-          <ShieldCheck className="h-3.5 w-3.5" /> Board Risk Committee · executive summary
+          <ShieldCheck className="h-3.5 w-3.5" /> Summary for the Board
         </div>
         <ul className="mt-1.5 space-y-1.5 text-[12.5px] leading-snug text-[#e6edf3]">
           {brief.bullets.map((b) => (
@@ -305,7 +305,7 @@ function MacroChart({ brief }: { brief: MacroBrief }) {
           ))}
         </ul>
         <div className="mt-2 font-mono text-[10px] text-[#7d8590]">
-          FEDFUNDS: FRED quarterly averages (2025-Q4 onward approximate). Delinquency: synthetic FinTechCo series.
+          Interest rates: Federal Reserve quarterly averages (late 2025 onward approximate). Late payments: illustrative FinTechCo data.
         </div>
       </div>
     </div>

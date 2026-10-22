@@ -4,8 +4,8 @@ import { ArrowLeft, ArrowRight, ExternalLink, ShieldCheck, TriangleAlert } from 
 import { ARCHITECTURES, type Lane } from "@/lib/architectures";
 
 export const metadata: Metadata = {
-  title: "FinTechCo Reference Architectures",
-  description: "Executive view of the Claude Code on Google Cloud reference architectures.",
+  title: "How It Fits Together",
+  description: "How Claude Code fits into FinTechCo on Google Cloud, in plain language.",
 };
 
 const LANE_TONE: Record<Lane["tone"], string> = {
@@ -23,12 +23,12 @@ export default function ArchitecturesPage() {
           F
         </div>
         <h1 className="whitespace-nowrap font-serif text-[20px] font-bold leading-tight">
-          FinTechCo <span className="text-black/30">|</span> Reference Architectures
+          FinTechCo <span className="text-black/30">|</span> How it fits together
         </h1>
         <nav className="ml-6 hidden gap-1 lg:flex">
           {ARCHITECTURES.map((a) => (
-            <a key={a.id} href={`#${a.id}`} className="rounded-full px-3 py-1 font-mono text-[12px] text-black/60 hover:bg-oat hover:text-black">
-              {a.code}
+            <a key={a.id} href={`#${a.id}`} className="rounded-full px-3 py-1 text-[13px] text-black/60 hover:bg-oat hover:text-black">
+              {a.nav}
             </a>
           ))}
         </nav>
@@ -48,16 +48,16 @@ export default function ArchitecturesPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">Claude Code on Google Cloud</div>
-        <h2 className="mt-1 font-serif text-[34px] font-bold leading-tight">One foundation, two high-value patterns</h2>
+        <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">How Claude fits into FinTechCo</div>
+        <h2 className="mt-1 font-serif text-[34px] font-bold leading-tight">Set it up once, then put it to work</h2>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-black/65">
-          The platform team builds the foundation once. Rapid prototyping and data cleansing then inherit its model access, guardrails,
-          telemetry and cost controls, so every new team starts governed on day one.
+          A small platform team sets up access, rules, monitoring and budgets one time. Every team after that, from engineers building
+          prototypes to analysts cleaning data, starts on day one with those safeguards already in place.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {ARCHITECTURES.map((a) => (
             <a key={a.id} href={`#${a.id}`} className="group rounded-xl border border-black/5 bg-oat p-4 transition hover:border-terracotta">
-              <div className="font-mono text-[11px] text-terracotta">{a.code}</div>
+              <div className="font-mono text-[11px] uppercase tracking-wide text-terracotta">{a.nav}</div>
               <div className="mt-1 font-serif text-[17px] font-bold leading-snug">{a.title}</div>
               <div className="mt-1 text-[13px] text-black/60">{a.headline}</div>
               <div className="mt-2 flex items-center gap-1 text-[12px] font-medium text-slate group-hover:gap-2">
@@ -69,11 +69,8 @@ export default function ArchitecturesPage() {
 
         {ARCHITECTURES.map((a) => (
           <section key={a.id} id={a.id} className="mt-14 scroll-mt-24 border-t border-black/10 pt-10">
-            <div className="flex flex-wrap items-baseline gap-3">
-              <span className="rounded-md bg-charcoal px-2 py-0.5 font-mono text-[13px] font-bold text-terracotta">{a.code}</span>
-              <h3 className="font-serif text-[28px] font-bold leading-tight">{a.title}</h3>
-            </div>
-            <div className="mt-1 font-mono text-[12px] text-black/50">{a.valueStatement}</div>
+            <div className="font-mono text-[11px] uppercase tracking-wide text-terracotta">{a.kicker}</div>
+            <h3 className="mt-1 font-serif text-[28px] font-bold leading-tight">{a.title}</h3>
             <p className="mt-3 font-serif text-[19px] leading-snug">{a.headline}</p>
             <blockquote className="mt-4 border-l-4 border-terracotta pl-4 text-[14.5px] italic leading-relaxed text-black/70">“{a.quote}”</blockquote>
 
@@ -112,13 +109,13 @@ export default function ArchitecturesPage() {
                 </ol>
               </div>
               <div>
-                <h4 className="font-serif text-[18px] font-bold">Where the value lives</h4>
+                <h4 className="font-serif text-[18px] font-bold">What it&apos;s worth, and how we measure it</h4>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   {a.value.map((v) => (
-                    <div key={v.code} className="rounded-lg border border-black/5 bg-oat p-3">
-                      <div className="font-mono text-[10.5px] uppercase tracking-wide text-terracotta">{v.code}</div>
-                      <div className="mt-0.5 text-[13px] font-semibold leading-snug">{v.title}</div>
-                      <div className="mt-1 text-[12px] text-sage">Measure: {v.metric}</div>
+                    <div key={v.title} className="rounded-lg border border-black/5 bg-oat p-3">
+                      <div className="text-[13.5px] font-semibold leading-snug">{v.title}</div>
+                      <div className="mt-0.5 text-[12.5px] leading-snug text-black/60">{v.detail}</div>
+                      <div className="mt-1.5 text-[12px] text-sage">We measure: {v.measure}</div>
                     </div>
                   ))}
                 </div>
@@ -128,7 +125,7 @@ export default function ArchitecturesPage() {
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <div className="rounded-xl bg-charcoal p-4 text-white">
                 <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wide text-terracotta">
-                  <ShieldCheck className="h-4 w-4" /> {a.id === "foundation" ? "Value loop" : "Guardrails & value"}
+                  <ShieldCheck className="h-4 w-4" /> {a.guardrailsTitle}
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {a.guardrails.map((g, i) => (
@@ -141,7 +138,7 @@ export default function ArchitecturesPage() {
               </div>
               <div className="rounded-xl border border-black/10 bg-white p-4">
                 <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wide text-black/55">
-                  <TriangleAlert className="h-4 w-4 text-terracotta" /> Watch-outs
+                  <TriangleAlert className="h-4 w-4 text-terracotta" /> Worth knowing
                 </div>
                 <ul className="mt-2 space-y-1.5 text-[13px] leading-relaxed text-black/70">
                   {a.watchouts.map((w) => (
@@ -157,7 +154,7 @@ export default function ArchitecturesPage() {
         ))}
 
         <footer className="mt-14 flex items-center justify-between border-t border-black/10 pt-6 text-[12px] text-black/45">
-          <span>Based on the Claude Code on Google Cloud reference architectures (F2, RA7, RA8).</span>
+          <span>Based on the Claude Code on Google Cloud reference architectures.</span>
           <Link href="/" className="font-medium text-slate hover:underline">
             Back to the live Workbench →
           </Link>

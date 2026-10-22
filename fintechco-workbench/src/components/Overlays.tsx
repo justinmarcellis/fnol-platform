@@ -22,8 +22,8 @@ export function GovernanceModal({
       <div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-alabaster shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-black/10 px-6 py-4">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">Layer 1 // Workstation &amp; CI/CD</div>
-            <h2 className="font-serif text-2xl font-bold">Governance: Policy + Tool Allowlists</h2>
+            <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">The rules Claude follows</div>
+            <h2 className="font-serif text-2xl font-bold">Governance</h2>
           </div>
           <button onClick={onClose} className="ml-auto rounded-lg p-1.5 hover:bg-oat" aria-label="Close">
             <X className="h-5 w-5" />
@@ -32,8 +32,8 @@ export function GovernanceModal({
         <div className="flex gap-1 px-6 pt-3">
           {(
             [
-              ["md", "CLAUDE.md"],
-              ["json", ".claude/settings.json"],
+              ["md", "Our rules"],
+              ["json", "Permissions"],
             ] as const
           ).map(([k, label]) => (
             <button
@@ -45,7 +45,7 @@ export function GovernanceModal({
             </button>
           ))}
           <span className="ml-auto self-center text-[12px] text-black/50">
-            {tab === "md" ? "Version-controlled rules loaded at session start" : "Client-enforced allow/deny: curl, wget, web fetch blocked"}
+            {tab === "md" ? "Written rules Claude reads at the start of every session" : "What Claude is allowed to do (green) and blocked from doing (red)"}
           </span>
         </div>
         <pre className="scroll-dark mx-6 mb-6 min-h-0 flex-1 overflow-auto rounded-b-lg rounded-tr-lg bg-term p-5 font-mono text-[13px] leading-relaxed whitespace-pre-wrap text-[#e6edf3]">
@@ -98,7 +98,7 @@ export function TalkTrackDrawer({ open, onClose }: { open: boolean; onClose: () 
         <div className="flex items-center border-b border-black/10 px-6 py-4">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">Presenter only</div>
-            <h2 className="font-serif text-2xl font-bold">Talk Track · ~11 min</h2>
+            <h2 className="font-serif text-2xl font-bold">Presenter notes · about 11 min</h2>
           </div>
           <button onClick={onClose} className="ml-auto rounded-lg p-1.5 hover:bg-oat" aria-label="Close">
             <X className="h-5 w-5" />
@@ -122,7 +122,7 @@ export function TalkTrackDrawer({ open, onClose }: { open: boolean; onClose: () 
             </section>
           ))}
           <section>
-            <h3 className="font-serif text-[17px] font-bold">CTO Objection Handling</h3>
+            <h3 className="font-serif text-[17px] font-bold">Likely questions</h3>
             <div className="mt-2 space-y-2.5">
               {OBJECTIONS.map((o) => (
                 <div key={o.topic} className="rounded-lg bg-oat p-3">

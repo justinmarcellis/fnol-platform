@@ -92,7 +92,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
           if (ev.type === "log") await typeLine(ev.tag, ev.text);
           else if (ev.type === "mode") {
             setMode(ev.mode);
-            await typeLine("guard", `Deterministic Safe Mode engaged (${ev.reason})`);
+            await typeLine("guard", "Running a recorded version of this demo");
           } else if (ev.type === "result") {
             await sleep(400);
             setResults((r) => ({ ...r, [ev.scenarioId]: ev }));
@@ -177,7 +177,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
             href="/architectures"
             className="flex items-center gap-1 whitespace-nowrap rounded-full bg-charcoal px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-black"
           >
-            <Layers className="h-3.5 w-3.5 text-terracotta" /> Architectures
+            <Layers className="h-3.5 w-3.5 text-terracotta" /> How it fits together
           </Link>
           <a
             href="https://fintechco-roi.web.app/"
@@ -217,13 +217,6 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
                 <div className="font-mono text-[10.5px] uppercase tracking-wide text-black/55">{s.team}</div>
                 <h2 className="mt-1 font-serif text-[16px] font-bold leading-snug">{s.title}</h2>
                 <p className="mt-1 text-[12px] leading-snug text-black/65">{s.details}</p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {s.targets.map((f) => (
-                    <span key={f} className="rounded bg-white/70 px-1.5 py-0.5 font-mono text-[10.5px] text-slate">
-                      {f}
-                    </span>
-                  ))}
-                </div>
                 <div className="mt-2.5 flex items-center gap-2">
                   <button
                     onClick={(e) => {
@@ -231,14 +224,14 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
                       run(s.id);
                     }}
                     disabled={!!running}
-                    className={`flex items-center gap-1.5 rounded-lg bg-terracotta px-3.5 py-2 text-[13px] font-semibold text-white transition hover:brightness-105 disabled:opacity-60 ${isNext ? "ring-2 ring-terracotta/40 ring-offset-2 ring-offset-oat" : ""}`}
+                    className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-terracotta px-3.5 py-2 text-[13px] font-semibold text-white transition hover:brightness-105 disabled:opacity-60 ${isNext ? "ring-2 ring-terracotta/40 ring-offset-2 ring-offset-oat" : ""}`}
                   >
                     {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-white" />}
-                    {isRunning ? "Running…" : r ? "Run Again" : "Run Claude Code"}
+                    {isRunning ? "Running…" : r ? "Run again" : "Run"}
                   </button>
                   {r && (
                     <span className={`flex items-center gap-1 font-mono text-[11px] ${r.pytest.ok ? "text-sage" : "text-red-700"}`}>
-                      <CheckCircle2 className="h-4 w-4" /> {r.pytest.passed}/{r.pytest.total} passed
+                      <CheckCircle2 className="h-4 w-4" /> {r.pytest.passed} of {r.pytest.total} checks passed
                     </span>
                   )}
                 </div>

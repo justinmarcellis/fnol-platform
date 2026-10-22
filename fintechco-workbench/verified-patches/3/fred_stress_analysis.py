@@ -85,10 +85,18 @@ def build_board_brief(path: str = "fred_macro_data.csv") -> dict:
     last = rows[-1]
     shock = round(last["fintechco_delinquency_rate"] + 2 * slope, 2)
 
+    def plain(quarter: str) -> str:
+        year, q = quarter.split("-")
+        return f"{q} {year}"
+
+    chance = "very unlikely to be chance" if p < 0.001 else f"a {p:.1%} chance it's coincidence"
     bullets = [
-        f"Rate sensitivity is strong and significant: r = {r:.2f} (p {'< 0.001' if p < 0.001 else f'= {p:.3f}'}, n = {len(rows)} quarters).",
-        f"Each +100bp in Fed Funds has coincided with +{slope_bp:.0f}bp of FinTechCo delinquency; delinquency peaked at {peak['fintechco_delinquency_rate']:.2f}% in {peak['quarter']}.",
-        f"Stress case: a +200bp shock from {last['quarter']} implies ~{shock:.2f}% delinquency; recommend tightening credit limits on variable-rate cohorts before Q3.",
+        f"When interest rates rise, our late payments rise with them. Over {len(rows)} quarters the link is strong "
+        f"({r:.2f} on a 0-1 scale) and {chance}.",
+        f"Each 1-point rise in the Fed rate has come with about {slope:.2f} points more late payments. "
+        f"Late payments peaked at {peak['fintechco_delinquency_rate']:.2f}% in {plain(peak['quarter'])}.",
+        f"If rates rose another 2 points from {plain(last['quarter'])}, we'd expect late payments of about {shock:.2f}%. "
+        "We recommend tightening credit limits for customers on variable rates before Q3.",
     ]
     return {
         "n": len(rows),

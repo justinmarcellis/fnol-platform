@@ -116,13 +116,13 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
   const rules = (readSeed("CLAUDE.md").match(/\*\*Rule \d/g) || []).length;
   log(
     "init",
-    `Loaded CLAUDE.md (${rules} rules) & .claude/settings.json (${settings.permissions.allow.length} allow / ${settings.permissions.deny.length} deny) · Vertex AI / Bedrock private endpoint`,
+    `Loaded FinTechCo's ${rules} engineering rules and permissions (${settings.permissions.allow.length} actions allowed, ${settings.permissions.deny.length} blocked). Running inside your private cloud.`,
   );
   await pace();
 
-  log("bash", `Pre-flight gate: python3 -m pytest ${s.testFile} -q`);
+  log("bash", "Running the automated checks before changing anything");
   const baseline = await runPytest(s.testFile);
-  log(baseline.ok ? "pass" : "fail", `Baseline: ${baseline.passed}/${baseline.total || 4} passed — gate is ${baseline.ok ? "GREEN" : "RED"}`);
+  log(baseline.ok ? "pass" : "fail", `${baseline.passed} of ${baseline.total || 4} checks pass today${baseline.ok ? "" : ". There is a problem to fix"}`);
   await pace();
 
   let tokens = s.estTokens;
@@ -138,7 +138,7 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
     } else {
       mode = "safe";
       emit({ type: "mode", mode, reason: live.reason });
-      log("guard", `Live CLI ${live.reason} → switching to Deterministic Safe Mode`);
+      log("guard", `The live session stopped responding (${live.reason}), so we switched to the recorded version`);
       restoreTargets(s);
       await safeScript(s, log);
     }
@@ -146,12 +146,12 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
     await safeScript(s, log);
   }
 
-  log("bash", `Executing python3 -m pytest ${s.testFile} -q`);
+  log("bash", "Running the automated checks again");
   let pytest = await runPytest(s.testFile);
   streamPytest(pytest, log);
 
   if (!pytest.ok && !estimated) {
-    log("guard", "Live edit did not clear the gate → applying verified patch and re-running");
+    log("guard", "The live fix didn't pass every check, so we applied the reviewed fix and checked again");
     applyVerifiedPatch(s);
     pytest = await runPytest(s.testFile);
     streamPytest(pytest, log);
@@ -159,15 +159,15 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
 
   let brief: MacroBrief | undefined;
   if (s.id === 3) {
-    log("bash", "Executing python3 fred_stress_analysis.py");
+    log("bash", "Running the analysis on the interest-rate data");
     brief = await loadBrief();
-    log("out", `r = ${brief.r.toFixed(2)} · p ${brief.p_value < 0.001 ? "< 0.001" : "= " + brief.p_value.toFixed(3)} · +${brief.slope_bp_per_100bp.toFixed(0)}bp delinquency per +100bp Fed Funds`);
+    log("out", `Strong link between rates and late payments: ${brief.r.toFixed(2)} on a 0–1 scale`);
   }
 
   const durationMs = Date.now() - t0;
   log(
     "done",
-    `Completed · Tokens: ${tokens.toLocaleString("en-US")}${estimated ? " est." : ""} ($${costUsd.toFixed(3)}) | Zero Data Retention boundary`,
+    `Done. Cost of this run: about $${costUsd.toFixed(2)}. No data was kept by the model provider.`,
   );
 
   emit({
@@ -191,15 +191,14 @@ function restoreTargets(s: Scenario) {
 }
 
 function streamPytest(p: PytestSummary, log: Log) {
-  for (const line of p.output.split("\n").filter(Boolean).slice(-6)) log("out", line);
-  log(p.ok ? "pass" : "fail", `pytest: ${p.passed}/${p.total} ${p.ok ? "PASSED" : "FAILED"}${p.cached ? " (cached)" : ""}`);
+  log(p.ok ? "pass" : "fail", `${p.passed} of ${p.total} checks ${p.ok ? "passed" : "failed"}`);
 }
 
 /** Deterministic Safe Mode: real reads, real scans, real file writes, scripted narration. */
 async function safeScript(s: Scenario, log: Log) {
   for (const f of s.targets) {
     const src = readSeed(f);
-    log("read", src ? `Read ${f} (${lineCount(src)} lines)` : `Read ${f} — not found, will create`);
+    log("read", src ? `${f} (${lineCount(src)} lines)` : `${f} doesn't exist yet, so it will be created`);
     await pace();
   }
 
@@ -208,38 +207,38 @@ async function safeScript(s: Scenario, log: Log) {
       readSeed(f)
         .split("\n")
         .forEach((line, i) => {
-          if (LOG_CALL.test(line) && /(card|msg)/i.test(line)) log("grep", `${f}:${i + 1}  ${line.trim()}`);
+          if (LOG_CALL.test(line) && /(card|msg)/i.test(line)) log("grep", `${f}, line ${i + 1}: a full card number is written to the log`);
         });
     }
     await pace();
-    log("reasoning", "PCI-DSS Req. 3.4 violation: mask_pan() returns the raw PAN; Go probe logs card=%s in clear text.");
+    log("reasoning", "Full card numbers are being written to the logs in two places. That breaks the card industry's security rules.");
     await pace();
-    log("reasoning", "Rule 3 gap: free-text f-string logs. Plan: regex mask (last 4 visible) + JSON / slog structured events.");
+    log("reasoning", "Plan: show only the last four digits, and write logs in a consistent format the team can search.");
   } else if (s.id === 2) {
     try {
       const out = await runPython(["-c", "from ds_fraud_notebook import evaluate_transaction_risk as f; print(repr(f(4500, 8, True)))"]);
-      log("bash", `python3 -c "evaluate_transaction_risk(4500, 8, True)" → ${out.trim()}`);
+      log("bash", `Tried the current model on a $4,500 payment: fraud score ${out.trim()}`);
     } catch {
-      log("bash", 'python3 -c "evaluate_transaction_risk(4500, 8, True)" → 1.44');
+      log("bash", "Tried the current model on a $4,500 payment: fraud score 1.44");
     }
     await pace();
-    log("reasoning", "Schema gap: notebook returns an unbounded bare float (1.44 > 1.0), no types, no input validation.");
+    log("reasoning", "The fraud score came back as 1.44, but a probability can't be above 1. There's also no check on bad inputs.");
     await pace();
-    log("reasoning", "Plan: typed dataclass + TypedDict contract, saturating score in [0,1], decision thresholds, FastAPI route, TS contract.");
+    log("reasoning", "Plan: keep the score between 0 and 1, return a clear approve / review / decline decision, reject bad inputs, and publish it as a service.");
   } else {
     const csv = readSeed("fred_macro_data.csv").trim().split("\n");
-    log("read", `Read fred_macro_data.csv (${csv.length - 1} quarters: ${csv[1].split(",")[0]} → ${csv[csv.length - 1].split(",")[0]})`);
+    log("read", `Interest rates and late payments, ${csv.length - 1} quarters from ${csv[1].split(",")[0]} to ${csv[csv.length - 1].split(",")[0]}`);
     await pace();
-    log("reasoning", "Stub raises NotImplementedError. Rule 5: stdlib only → Pearson r + t-test p-value via incomplete beta.");
+    log("reasoning", "The analysis hasn't been written yet. Our rules say it must be reproducible from the data file, with no special tools.");
     await pace();
-    log("reasoning", "Add OLS slope for a +200bp stress case and 3 Board bullets generated from the computed numbers.");
+    log("reasoning", "Plan: measure how closely rates and late payments move together, model a 2-point rate rise, and write three points for the Board.");
   }
   await pace();
 
   applyVerifiedPatch(s);
   for (const f of s.targets) {
     const { added, removed } = diffStats(readSeed(f), readWorkspace(f));
-    log("edit", `${readSeed(f) ? "Edit" : "Write"} ${f}  (+${added} −${removed})`);
+    log("edit", `${readSeed(f) ? "Updated" : "Created"} ${f}: ${added} lines added, ${removed} removed`);
     await pace();
   }
 }
@@ -406,9 +405,9 @@ function fallbackBrief(): MacroBrief {
     stress_delinquency_plus_200bp: Math.round(shock * 100) / 100,
     rows,
     bullets: [
-      `Rate sensitivity is strong and significant: r = ${r.toFixed(2)} (n = ${n} quarters).`,
-      `Each +100bp in Fed Funds has coincided with +${(slope * 100).toFixed(0)}bp of FinTechCo delinquency.`,
-      `Stress case: a +200bp shock from ${last.quarter} implies ~${shock.toFixed(2)}% delinquency.`,
+      `When interest rates rise, our late payments rise with them. The link is strong (${r.toFixed(2)} on a 0–1 scale).`,
+      `Each 1-point rise in the Fed rate has come with about ${slope.toFixed(2)} points more late payments.`,
+      `If rates rose another 2 points, we'd expect late payments of about ${shock.toFixed(2)}%.`,
     ],
   };
 }

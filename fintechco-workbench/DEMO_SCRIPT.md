@@ -1,102 +1,102 @@
 # FinTechCo Workbench: Presenter Script
 
-About 11 minutes in total, roughly 3½ minutes per scenario. Each run takes about 15 seconds to play out on screen, and the script fills the rest.
+About 11 minutes in total, roughly 3½ minutes per scenario. Each run plays out on screen in about 15 seconds, and the script fills the rest.
 **Before you start:** open https://fintechco-workbench.web.app and click **Reset Workspace**.
 
 ---
 
-## Transition from the deck (0:15)
+## Moving from the slides (15 seconds)
 
-> "Everything on the last slide was a claim. Let me show you three of them running. This is a live workbench on Google Cloud Run. Each button runs Claude Code headless, the same `claude -p` your CI pipeline would call, against a real workspace with real tests."
-
----
-
-## Scenario 1: SRE & Security, PCI-DSS Log Audit (3:30)
-
-**0:00 Set up the governance (≈45s).** Click **Governance**, stay on the CLAUDE.md tab.
-> "Before Claude touches any code, this is what it's bound by. This CLAUDE.md lives in your repo, under version control and code review. Rule 1 is PCI-DSS 3.4: never log a full card number."
-
-Click the **.claude/settings.json** tab.
-> "This is the hard boundary. Green is allowed: read, edit, run pytest. Red is denied: curl, wget, rm -rf, web fetch. The client enforces this, not the prompt. Even if someone asked Claude to send data out, it can't. And the env block routes every call through *your* Vertex AI project."
-
-Close the modal.
-
-**0:45 Run it (≈20s).** Click **Run Claude Code** on card 1.
-- When **[FAILED] Baseline: 0/4** appears:
-  > "First thing it does is run the compliance gate. It's red: four of four tests failing. A raw 16-digit card number is reaching our logs today."
-- When the **[tool:Grep]** lines appear:
-  > "It found the leak in the Python payment worker and in the Go health check. Two languages, one policy. That's how your 20 SREs actually work: Go, Python and shell."
-- When **[PASSED] 4/4** appears:
-  > "Gate is green. Notice it never touched the test file. Rule 4 forbids it."
-
-**1:20 Walk the results (≈2:00).**
-- **Diff panel (top right):**
-  > "Here's exactly what changed. Red is gone, green is new. A last-four mask, and the log line is now structured JSON. A small, reviewable diff, not a rewrite." Click the **sre_log_check.go** tab: "Same fix in Go, using slog."
-- **Copy PR Summary:**
-  > "One click gives your reviewer a compliance-ready PR description: files, test result, rules applied."
-- **Scorecard (bottom right):**
-  > "Three leak sites down to zero, verified by tests. Point at the before/after log line. That top line is a PCI finding. The bottom line is safe *and* machine-parsable."
-  > "That second part is where MTTR comes from. Structured logs mean triage is a query, not a grep. We'd target 42 minutes down to 21: the −50% on the KPI slide."
-
-**3:20 Bridge.**
-> "That's governance. Now velocity: the 160 people who ship product."
+> "Everything on that last slide was a claim. Let me show you three of them actually running. Each button gives Claude Code a real task, with real code and real checks, in a cloud environment like the one you'd use."
 
 ---
 
-## Scenario 2: Data Science → SWE, Notebook to Production API (3:45)
+## Scenario 1: Find and fix leaked card numbers (3½ minutes)
 
-**0:00 Set up the pain (≈40s).**
-> "Here's a handoff every fintech has. A data scientist builds a fraud model in a notebook. It's untyped, the coefficients were copied by hand, and an engineer spends two or three weeks turning it into a service. During that time the model is going stale."
+**Show the rules (about 45 seconds).** Click **Governance**. It opens on **Our rules**.
+> "Before Claude touches anything, this is what it has to follow. These rules live alongside your code and get reviewed like code. Rule 1: never write a full card number to a log."
 
-**0:40 Run it (≈20s).** Click **Run Claude Code** on card 2.
-- When **evaluate_transaction_risk(4500, 8, True) → 1.44** appears:
-  > "Look at this. It actually ran the notebook function, and the fraud *probability* came back as 1.44. That's above 100%. Today that bug ships, or it costs a week of back-and-forth."
-- When the **[reasoning]** lines appear:
-  > "It's planning against CLAUDE.md Rule 2: typed schema, a score bounded between zero and one, explicit decisions."
-- When **[PASSED] 4/4** appears: "Gate's green."
+Click **Permissions**.
+> "This is the hard boundary. Green is what Claude may do: read, edit, run our checks. Red is blocked: sending data out, deleting things, browsing the web. The software enforces it, so even if someone asked Claude to send data somewhere, it couldn't."
 
-**1:15 Walk the results (≈2:15).**
-- **Diff panel:**
-  > "Typed dataclass, a TypedDict contract, input validation that rejects a negative amount, APPROVE/REVIEW/DECLINE thresholds, and a FastAPI route." Click the **fraud_api_contract.ts** tab: "And the TypeScript contract for your checkout team. The Java team generates from the same OpenAPI spec. One contract across Python, TypeScript and Java."
-- **Contract Tester (the main moment):** click **Send Test Transaction ($4,500)**.
-  > "This is calling the module Claude just wrote. It's live, not a mock. A $4,500 foreign transaction with eight hits in 24 hours: DECLINE, schema valid, scored in a fraction of a millisecond."
-  Click **$25 coffee · domestic**, then **Send**.
-  > "Twenty-five-dollar coffee: APPROVE." *(Optional: invite the CTO to pick a number and type it into amount.)*
-- **KPI tiles:**
-  > "Notebook-to-API goes from weeks to hours. Across 40 data scientists and 120 engineers, that's the −35% lead time on the KPI slide, and it's the DORA number we'd measure in the pilot."
+Close the window.
 
-**3:35 Bridge.**
-> "Last one, and it's not for engineers at all."
+**Run it (about 20 seconds).** Click **Run** on card 1.
+- When **"0 of 4 checks pass today"** appears:
+  > "The first thing it does is run our checks, and they fail. A full card number is reaching our logs right now."
+- When the **[found]** lines appear:
+  > "It found the problem in two systems written in two different languages. One rule, applied everywhere."
+- When **"4 of 4 checks passed"** appears:
+  > "Fixed and proven. And it didn't change the checks to get there; our rules forbid that."
+
+**Walk through the results (about 2 minutes).**
+- **What changed (top right):**
+  > "This is exactly what Claude changed. Red lines were removed, green lines were added. It's a small fix a reviewer can read in a minute."
+- **Copy summary for reviewers:**
+  > "One click gives the reviewer a ready-made summary: what changed and how we know it works."
+- **Security scorecard (bottom right):**
+  > "Three leaks down to zero, proven by tests." Point at the log line: "The top line is a compliance finding. The bottom line is safe, and it's searchable."
+  > "That last part matters for incidents. When logs are consistent, the team, and Claude, can find the cause faster. We expect incidents to be resolved in half the time."
+
+**Bridge.**
+> "That's the safety side. Now speed, for the 160 people who build the product."
 
 ---
 
-## Scenario 3: Quants & Execs, Federal Reserve Stress Test (3:30)
+## Scenario 2: Turn a fraud model into a production service (3½ minutes)
 
-**0:00 Set up (≈35s).**
-> "Your CRO owes the Board Risk Committee a rate-sensitivity brief by Friday. Normally a quant spends two days in a notebook. Policy says it has to be reproducible: standard library only, computed from the checked-in data."
+**Set it up (about 40 seconds).**
+> "Every fintech knows this handoff. A data scientist builds a fraud model as an experiment. Then an engineer spends two or three weeks rebuilding it into something production can rely on, and the model goes stale while they wait."
 
-**0:35 Run it (≈15s).** Click **Run Claude Code** on card 3.
-- When **Read fred_macro_data.csv (25 quarters…)** appears:
-  > "Six years of Fed Funds data from FRED against our delinquency rate, quarterly."
-- When the **[reasoning]** lines appear:
-  > "No numpy, no scipy. It's writing the Pearson correlation and the p-value from first principles, and the test suite checks the math."
-- When **r = 0.91 · p < 0.001** appears:
-  > "There's the answer: strong and statistically significant."
+**Run it (about 20 seconds).** Click **Run** on card 2.
+- When **"fraud score 1.44"** appears:
+  > "Look at this. It tested the current model first, and the fraud probability came back as 1.44. A probability can't be above 1. Today, that ships."
+- When the **[thinking]** lines appear:
+  > "Now it's planning the fix against our rules: a score that stays between 0 and 1, and a clear decision for every payment."
+- When **"4 of 4 checks passed"** appears: "All checks pass."
 
-**1:05 Walk the results (≈2:10).**
-- **Chart:** hover across 2022 into 2023.
-  > "Orange is the Fed Funds rate, blue is our delinquency. Watch the 2022 hiking cycle. Delinquency follows it up with a short lag. The correlation is computed live from the CSV, not typed into a slide."
-  Hover 2020-Q2: "And here's the COVID spike. Unemployment at 13%, delinquency up even at zero rates. Credit risk isn't only about rates, and the model doesn't pretend it is."
-- **Board bullets:**
-  > "And these are the three bullets for the Board, generated from the computed numbers." Read the third bullet aloud: "A +200 basis point shock implies about 2.8% delinquency. That's a number a CRO can act on."
-- **Diff (optional, 15s):** "Behind it, about 90 lines of tested, reviewable Python, not a black-box spreadsheet."
+**Walk through the results (about 2¼ minutes).**
+- **What changed:**
+  > "The score is now kept between 0 and 1, every payment gets approve, review or decline, and bad inputs are rejected." Click the second file tab: "It also wrote a shared definition, so every team calls this service the same way."
+- **Try the fraud check (the main moment):** click **Check this payment ($4,500)**.
+  > "This is the service Claude just built, running live, not a mock-up. A $4,500 payment from overseas, the eighth purchase today: declined, in well under a millisecond."
+  Click **$25 coffee**, then **Check this payment**.
+  > "A $25 coffee: approved." *(Optional: ask the CTO to type in an amount.)*
+- **Impact tiles:**
+  > "Experiment to production goes from weeks to hours. Across 40 data scientists and 120 engineers, that's our target of shipping changes 35% faster, and it's what we'd measure in the pilot."
 
-**3:15 Close the demo.**
-> "Three teams, one governed platform. Security got a verified PCI fix, engineering got a production API, the Board got a stress test. Each run cost a few cents in tokens." Click **ROI Calculator ↗**: "Now let's put your numbers on it. This is where the $3.8M comes from."
+**Bridge.**
+> "Last one, and it isn't for engineers at all."
+
+---
+
+## Scenario 3: Interest-rate stress test for the Board (3½ minutes)
+
+**Set it up (about 35 seconds).**
+> "Your risk team owes the Board an analysis of how interest rates affect late payments, due Friday. That's normally a couple of days of work. And our rules say any number shown to the Board must be reproducible from the data we keep on record."
+
+**Run it (about 15 seconds).** Click **Run** on card 3.
+- When **"Interest rates and late payments, 25 quarters…"** appears:
+  > "Six years of Federal Reserve interest rates next to our own late-payment rate."
+- When the **[thinking]** lines appear:
+  > "It's writing the analysis itself, with no special tools, and our checks verify the math."
+- When **"Strong link between rates and late payments: 0.91"** appears:
+  > "There's the answer: a strong link."
+
+**Walk through the results (about 2 minutes).**
+- **Chart:** move the mouse across 2022 and into 2023.
+  > "Orange is the Fed's interest rate, blue is our late payments. When the Fed started raising rates in 2022, our late payments followed. That number is calculated live from the data, not typed onto a slide."
+  Hover over the middle of 2020: "And here's COVID. Unemployment hit 13%, and late payments rose even with rates near zero. Rates aren't the whole story, and the analysis doesn't pretend they are."
+- **Board summary:**
+  > "And here are three points for the Board, written from the calculated numbers." Read the third aloud: "If rates rose another two points, we'd expect late payments of about 2.8%. That's something a risk officer can act on."
+
+**Close the demo.**
+> "Three teams, one set of rules. Security got a proven fix, engineering got a production service, and the Board got its analysis. Each run cost a few cents." Click **ROI Calculator ↗**: "Now let's put your numbers into it. This is where the $3.8 million comes from."
 
 ---
 
 ## If something goes wrong
-- **Any run looks off:** click **Reset Workspace** and run it again. Each run starts from a clean copy of the files.
-- **Asked "is that a live model?":** "This deployment runs in deterministic mode so the demo is repeatable. The tests, diffs and statistics you saw executed for real on Cloud Run. In the pilot it runs live against your Vertex AI project, through the same pipeline."
-- **Presenter notes on screen:** press `?` to open or close them. They aren't visible to the audience otherwise.
+- **A run looks wrong:** click **Reset Workspace** and run it again. Every run starts from a clean copy.
+- **Someone asks "Is that a live model?":** "This version replays a reviewed run so the demo is the same every time. The checks, the code changes and the numbers you saw were all computed live just now. In the pilot, Claude works live inside your own Google Cloud account."
+- **Your notes:** press `?` to open or close the presenter notes. The audience never sees them unless you open them.
+- **Want more on the setup?** Click **How it fits together** in the top bar for a one-page overview of the setup.

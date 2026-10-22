@@ -5,43 +5,42 @@ export interface TalkTrack {
   beats: string[];
 }
 
-/** ~11 minutes total; the full word-for-word version is DEMO_SCRIPT.md. */
+/** About 11 minutes in total. The word-for-word version is DEMO_SCRIPT.md. */
 export const TALK_TRACKS: TalkTrack[] = [
   {
     scenario: 1,
-    minutes: "3:30",
-    title: "SRE & Security: PCI-DSS Log Audit",
+    minutes: "3½ min",
+    title: "Find and fix leaked card numbers",
     beats: [
-      "Open Governance first (10s): \"This CLAUDE.md is checked into the repo. Rule 1 is PCI-DSS 3.4. settings.json denies curl, wget, rm -rf and web access. Claude cannot exfiltrate even if asked.\"",
-      "Click Run. Point at the pre-flight line: \"The gate is RED before Claude touches anything: 4 of 4 tests failing. A raw card number is reaching our logs.\"",
-      "As grep lines stream: \"It found the leak in Python and in the Go health check. Two languages, one policy. That's your 20 SREs working in Go, Python and shell.\"",
-      "Diff panel: \"Surgical: a last-4 mask and structured JSON logs. It didn't touch the tests; Rule 4 forbids it.\"",
-      "Scorecard: \"PAN leak sites: 3 → 0. Incident triage target is −50%, 42 to 21 minutes MTTR, because every log line is now machine-parsable.\"",
-      "Bridge: \"That's governance. Now velocity, the 160 people who ship features.\"",
+      "Open Governance. \"These are the rules Claude follows, kept in the repo and reviewed like code. Rule 1: never log a full card number.\" Switch to Permissions: \"Green is allowed, red is blocked. Claude can't send data out even if someone asks it to.\"",
+      "Click Run. When the first checks fail: \"Before touching anything, it runs our checks. They fail. A full card number is reaching our logs today.\"",
+      "When it finds the leaks: \"It found them in two systems written in two languages. One rule, applied everywhere.\"",
+      "What changed: \"A small, readable fix: only the last four digits show, and the logs are now searchable. It didn't touch the checks themselves.\"",
+      "Scorecard: \"Three leaks down to zero, proven by tests. And consistent logs are why we expect incidents to be resolved in half the time.\"",
     ],
   },
   {
     scenario: 2,
-    minutes: "3:45",
-    title: "Data Science → SWE: Notebook to Typed API",
+    minutes: "3½ min",
+    title: "Turn a fraud model into a production service",
     beats: [
-      "Set up the pain (30s): \"Today a DS hands a notebook to an SWE and it takes weeks. Untyped, scores above 1.0, nobody owns the contract.\"",
-      "Click Run. Call out the real execution: \"Claude ran the notebook function: 1.44. A probability above 1. That bug would ship today.\"",
-      "Diff: \"Typed dataclass, TypedDict contract, bounded score, explicit APPROVE/REVIEW/DECLINE thresholds, input validation, a FastAPI route, and the TypeScript contract for the checkout team.\"",
-      "Contract Tester: click Send. \"This is executing the module Claude just wrote, live. Change the amount to $25 and it approves.\" Let the CTO pick a number.",
-      "Impact: \"Notebook-to-API goes from weeks to hours; target −35% lead time across 40 DS and 120 SWEs. The DORA number we'd measure in the pilot.\"",
+      "Set up: \"A data scientist builds a fraud model as an experiment. Turning it into something production can rely on usually takes engineers weeks.\"",
+      "Click Run. When the score of 1.44 appears: \"It tested the model first, and the fraud probability came back as 1.44. That's impossible, and today it would ship.\"",
+      "What changed: \"The score now stays between 0 and 1, every payment gets a clear approve, review or decline, bad inputs are rejected, and other teams get one shared definition.\"",
+      "Try it: click Check this payment. \"This is the service Claude just built, running live. $4,500 from overseas: declined.\" Pick the $25 coffee: \"Approved.\"",
+      "Impact: \"Experiment to production in hours, not weeks. Across 160 people, that's our 35% faster target.\"",
     ],
   },
   {
     scenario: 3,
-    minutes: "3:30",
-    title: "Quants & Executives: FRED Stress Test",
+    minutes: "3½ min",
+    title: "Interest-rate stress test for the Board",
     beats: [
-      "Frame: \"Claude Code isn't only for engineers. Your quant team owes the Board a rate-sensitivity brief by Friday.\"",
-      "Click Run. \"Rule 5 says standard library only, reproducible from the checked-in CSV. It wrote the Pearson test and p-value from scratch, and the test suite verifies the math.\"",
-      "Chart: hover the 2022 hiking cycle. \"Delinquency follows the rate with a lag. The correlation is computed, not typed in.\"",
-      "Read the three Board bullets aloud. \"The stress case is a number the CRO can act on.\"",
-      "Close: \"Three teams, one governed platform, a few cents per run. Header shows the cost. Against a $32.4M payroll, 12% velocity is $3.8M a year.\" Then click ROI Calculator (top right) to open fintechco-roi.web.app and model it live.",
+      "Set up: \"This one isn't for engineers. The risk team owes the Board an interest-rate analysis by Friday.\"",
+      "Click Run. \"Our rules say Board numbers must be reproducible from the data we keep on record, so Claude writes the analysis itself, and tests check the math.\"",
+      "Chart: hover across 2022. \"When the Fed raised rates, our late payments followed. That 0.91 is calculated live, not typed onto a slide.\"",
+      "Read the three Board points aloud. \"The last one is something a risk officer can act on.\"",
+      "Close: \"Three teams, one set of rules, a few cents per run.\" Click ROI Calculator to model FinTechCo's own numbers.",
     ],
   },
 ];
@@ -55,26 +54,26 @@ export interface Objection {
 export const OBJECTIONS: Objection[] = [
   {
     topic: "Security",
-    question: "\"Our code and card data can't leave our cloud.\"",
+    question: "\"Our code and customer data can't leave our cloud.\"",
     answer:
-      "Claude runs through your own Vertex AI or Bedrock tenancy, inside your IAM, VPC-SC and audit logging, under zero data retention. Your code is not used for training. CLAUDE.md and managed settings.json enforce the tool allowlist on every workstation and CI runner, and the deny rules (curl, wget, web fetch) are enforced by the client, not by prompt.",
+      "It doesn't. Claude runs inside your own Google Cloud or AWS account, under your existing access controls and audit logs, and the model provider keeps nothing. Your code isn't used to train models. The rules you saw are enforced by the software itself, not just written in a prompt.",
   },
   {
-    topic: "Copilot / Cursor",
-    question: "\"We already pay for Copilot. Why another tool?\"",
+    topic: "Existing tools",
+    question: "\"We already pay for Copilot. Why add this?\"",
     answer:
-      "Autocomplete predicts the next line in one file. Claude Code is an agent: it reads the repo, runs the tests, and iterates until the gate is green, as you just saw. It's terminal-native, so the same agent runs headless in CI (claude -p) and works for SREs and data scientists who don't live in an IDE. Keep Copilot for completion; this covers the work completion can't.",
+      "Autocomplete suggests the next line. Claude Code takes on a whole task: it reads the code, makes the change, runs the checks and keeps going until they pass, as you just saw. It also works for security, data and risk teams, not just people writing code in an editor. Keep both. They do different jobs.",
   },
   {
-    topic: "Token cost",
+    topic: "Cost",
     question: "\"How do we stop costs running away?\"",
     answer:
-      "Each run in this demo cost cents, and the header shows it per run. Controls: per-user and per-team spend limits on the Vertex / Bedrock billing account, --max-turns and model selection in managed settings, prompt caching for repeated repository context, and OpenTelemetry cost metrics into your existing dashboards. Even 10× this usage is a rounding error against $3.8M of recaptured capacity.",
+      "Each run you saw cost a few cents, and the cost is shown every time. You set budgets per team, choose which models people can use, and see spend in the dashboards you already have. Even ten times this usage is small next to the $3.8M of engineering time we expect to free up.",
   },
   {
     topic: "Adoption",
-    question: "\"How do we avoid shelfware?\"",
+    question: "\"How do we make sure people actually use it?\"",
     answer:
-      "Start with 25 champions (15 SWE, 5 DS, 5 SRE) and baseline DORA metrics in week 1. Ship a shared CLAUDE.md and slash commands for your top 5 workflows so day one is useful. Report lead time and MTTR weekly against the baseline. Expand to 180 only when the pilot hits its numbers, so the roll-out decision rests on your data.",
+      "Start with 25 volunteers across engineering, data and security, and measure where they start. Give them shared rules and ready-made workflows for their five most common tasks, so day one is useful. Report progress weekly, and expand to all 180 only once the pilot hits its numbers.",
   },
 ];

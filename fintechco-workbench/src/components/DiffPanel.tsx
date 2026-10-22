@@ -19,18 +19,18 @@ export default function DiffPanel({ result }: { result?: RunResult }) {
     const md = [
       `## ${s.title}`,
       "",
-      `Automated by Claude Code (headless, ${result.mode === "live" ? "live CLI" : "deterministic safe mode"}) under FinTechCo CLAUDE.md.`,
+      "Prepared by Claude Code, following FinTechCo's engineering rules.",
       "",
-      "### Files changed",
+      "### What changed",
       ...files.map((f) => {
         const st = diffStats(f.before, f.after);
         return `- \`${f.path}\` (+${st.added} / −${st.removed})${f.before ? "" : " — new file"}`;
       }),
       "",
-      "### Verification",
-      `- \`python3 -m pytest ${s.testFile} -q\`: **${result.pytest.passed}/${result.pytest.total} passed**`,
-      "- Test files unmodified (CLAUDE.md Rule 4)",
-      `- Run cost: $${result.metrics.costUsd.toFixed(3)}${result.metrics.estimated ? " (est.)" : ""}, ${result.metrics.tokens.toLocaleString("en-US")} tokens`,
+      "### How we know it works",
+      `- Automated checks: **${result.pytest.passed} of ${result.pytest.total} passed**`,
+      "- The checks themselves were not changed",
+      `- Cost of this run: $${result.metrics.costUsd.toFixed(3)}${result.metrics.estimated ? " (est.)" : ""}, ${result.metrics.tokens.toLocaleString("en-US")} tokens`,
     ].join("\n");
     await navigator.clipboard.writeText(md).catch(() => undefined);
     setCopied(true);
@@ -41,20 +41,20 @@ export default function DiffPanel({ result }: { result?: RunResult }) {
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-termline bg-term">
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-termline bg-term2 px-3">
         <FileDiff className="h-4 w-4 text-[#7d8590]" />
-        <span className="truncate font-mono text-[12px] text-[#e6edf3]">Before / After Diff · Test Verification</span>
+        <span className="truncate font-mono text-[12px] text-[#e6edf3]">What changed</span>
         {result && (
           <>
             <span
               className={`ml-auto whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${result.pytest.ok ? "bg-sage text-white" : "bg-[#da3633] text-white"}`}
             >
-              pytest: {result.pytest.passed}/{result.pytest.total} {result.pytest.ok ? "PASSED" : "FAILED"}
+              {result.pytest.passed} of {result.pytest.total} checks {result.pytest.ok ? "passed" : "failed"}
             </span>
             <button
               onClick={copySummary}
               className="flex items-center gap-1 whitespace-nowrap rounded-md border border-termline px-2 py-0.5 text-[11px] text-[#c9d1d9] hover:bg-white/5"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-[#3fb950]" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
-              {copied ? "Copied" : "Copy PR Summary"}
+              {copied ? "Copied" : "Copy summary for reviewers"}
             </button>
           </>
         )}
@@ -77,7 +77,7 @@ export default function DiffPanel({ result }: { result?: RunResult }) {
       )}
       <div className="scroll-dark min-h-0 flex-1 overflow-auto font-mono text-[11.5px] leading-[1.55]">
         {!file && (
-          <div className="p-4 text-[#7d8590]">Run a scenario to see the exact lines Claude Code changed in /tmp/demo-workspace.</div>
+          <div className="p-4 text-[#7d8590]">Run a scenario to see exactly what Claude changed. Red lines were removed, green lines were added.</div>
         )}
         {file &&
           lines.map((l, i) => (

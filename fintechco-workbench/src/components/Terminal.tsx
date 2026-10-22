@@ -11,16 +11,16 @@ export interface TermLine {
 
 const TAGS: Record<LogTag, { label: string; cls: string }> = {
   cmd: { label: "", cls: "text-[#e6edf3]" },
-  init: { label: "[init]", cls: "text-[#58a6ff]" },
-  read: { label: "[tool:Read]", cls: "text-[#79c0ff]" },
-  grep: { label: "[tool:Grep]", cls: "text-[#d2a8ff]" },
-  reasoning: { label: "[reasoning]", cls: "text-[#c9b8ff]" },
-  edit: { label: "[tool:Edit]", cls: "text-[#e3b341]" },
-  bash: { label: "[tool:Bash]", cls: "text-[#3fb950]" },
+  init: { label: "[setup]", cls: "text-[#58a6ff]" },
+  read: { label: "[reading]", cls: "text-[#79c0ff]" },
+  grep: { label: "[found]", cls: "text-[#d2a8ff]" },
+  reasoning: { label: "[thinking]", cls: "text-[#c9b8ff]" },
+  edit: { label: "[editing]", cls: "text-[#e3b341]" },
+  bash: { label: "[running]", cls: "text-[#3fb950]" },
   out: { label: "  │", cls: "text-[#7d8590]" },
-  pass: { label: "[PASSED]", cls: "text-[#3fb950]" },
-  fail: { label: "[FAILED]", cls: "text-[#f85149]" },
-  guard: { label: "[guard]", cls: "text-[#f0883e]" },
+  pass: { label: "[passed]", cls: "text-[#3fb950]" },
+  fail: { label: "[failed]", cls: "text-[#f85149]" },
+  guard: { label: "[note]", cls: "text-[#f0883e]" },
   done: { label: "[done]", cls: "text-[#3fb950]" },
 };
 
@@ -48,14 +48,14 @@ export default function Terminal({
         <span
           className={`ml-auto rounded px-1.5 py-0.5 font-mono text-[10.5px] ${mode === "live" ? "bg-[#238636]/30 text-[#3fb950]" : "bg-[#9e6a03]/30 text-[#e3b341]"}`}
         >
-          {mode === "live" ? "LIVE CLI" : "SAFE MODE"}
+          {mode === "live" ? "LIVE" : "REPLAY"}
         </span>
       </div>
       <div className="scroll-dark min-h-0 flex-1 overflow-y-auto p-4 font-mono text-[12px] leading-[1.55]">
         {lines.length === 0 && (
           <div className="text-[#7d8590]">
-            <div>FinTechCo headless Claude Code runner · stream-json → NDJSON</div>
-            <div className="mt-1">Click Run Claude Code on a scenario to start.</div>
+            <div>Claude Code is ready.</div>
+            <div className="mt-1">Pick a scenario on the left and click Run.</div>
             <div className="mt-3 text-[#e6edf3]">
               $ <span className="cursor-blink">▋</span>
             </div>
