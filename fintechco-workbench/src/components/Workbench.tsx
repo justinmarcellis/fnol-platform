@@ -10,19 +10,19 @@ import { GovernanceModal, TalkTrackDrawer } from "./Overlays";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Pause after each line type, tuned so a run plays out in roughly 30 seconds. */
+/** Pause after each line type, tuned so a run plays out in roughly 18 seconds. */
 const HOLD_MS: Record<LogTag, number> = {
-  cmd: 900,
-  init: 900,
-  read: 700,
-  grep: 600,
-  reasoning: 1800,
-  edit: 1100,
-  bash: 900,
-  out: 200,
-  pass: 1300,
-  fail: 1400,
-  guard: 1200,
+  cmd: 500,
+  init: 500,
+  read: 400,
+  grep: 350,
+  reasoning: 1100,
+  edit: 650,
+  bash: 500,
+  out: 100,
+  pass: 800,
+  fail: 850,
+  guard: 700,
   done: 0,
 };
 
@@ -53,7 +53,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
   /** Types a line out character by character, then holds so the audience can read it. */
   const typeLine = useCallback(async (tag: LogTag, text: string) => {
     const id = seq.current++;
-    const typeMs = tag === "out" ? 0 : Math.min(1400, text.length * 14);
+    const typeMs = tag === "out" ? 0 : Math.min(700, text.length * 7);
     if (typeMs === 0) {
       setLines((prev) => [...prev, { id, tag, text }]);
     } else {

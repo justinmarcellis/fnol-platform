@@ -1,6 +1,6 @@
 # FinTechCo Workbench: Presenter Script
 
-About 11 minutes in total, roughly 3½ minutes per scenario. Each run takes about 30 seconds to play out on screen, and the script fills the rest.
+About 11 minutes in total, roughly 3½ minutes per scenario. Each run takes about 15 seconds to play out on screen, and the script fills the rest.
 **Before you start:** open https://fintechco-workbench.web.app and click **Reset Workspace**.
 
 ---
@@ -21,7 +21,7 @@ Click the **.claude/settings.json** tab.
 
 Close the modal.
 
-**0:45 Run it (≈35s).** Click **Run Claude Code** on card 1.
+**0:45 Run it (≈20s).** Click **Run Claude Code** on card 1.
 - When **[FAILED] Baseline: 0/4** appears:
   > "First thing it does is run the compliance gate. It's red: four of four tests failing. A raw 16-digit card number is reaching our logs today."
 - When the **[tool:Grep]** lines appear:
@@ -48,7 +48,7 @@ Close the modal.
 **0:00 Set up the pain (≈40s).**
 > "Here's a handoff every fintech has. A data scientist builds a fraud model in a notebook. It's untyped, the coefficients were copied by hand, and an engineer spends two or three weeks turning it into a service. During that time the model is going stale."
 
-**0:40 Run it (≈35s).** Click **Run Claude Code** on card 2.
+**0:40 Run it (≈20s).** Click **Run Claude Code** on card 2.
 - When **evaluate_transaction_risk(4500, 8, True) → 1.44** appears:
   > "Look at this. It actually ran the notebook function, and the fraud *probability* came back as 1.44. That's above 100%. Today that bug ships, or it costs a week of back-and-forth."
 - When the **[reasoning]** lines appear:
@@ -75,7 +75,7 @@ Close the modal.
 **0:00 Set up (≈35s).**
 > "Your CRO owes the Board Risk Committee a rate-sensitivity brief by Friday. Normally a quant spends two days in a notebook. Policy says it has to be reproducible: standard library only, computed from the checked-in data."
 
-**0:35 Run it (≈30s).** Click **Run Claude Code** on card 3.
+**0:35 Run it (≈15s).** Click **Run Claude Code** on card 3.
 - When **Read fred_macro_data.csv (25 quarters…)** appears:
   > "Six years of Fed Funds data from FRED against our delinquency rate, quarterly."
 - When the **[reasoning]** lines appear:

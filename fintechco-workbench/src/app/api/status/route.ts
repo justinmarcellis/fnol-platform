@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Bump when shipping UI changes so deploy.sh can confirm the live site is current. */
-const APP_VERSION = "paced-playback-1";
+const APP_VERSION = "paced-playback-2";
 
 export async function GET() {
   ensureWorkspace();
