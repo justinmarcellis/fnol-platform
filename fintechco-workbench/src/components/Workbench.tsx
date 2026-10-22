@@ -8,6 +8,24 @@ import DiffPanel from "./DiffPanel";
 import Artifact from "./Artifacts";
 import { GovernanceModal, TalkTrackDrawer } from "./Overlays";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Pause after each line type, tuned so a run plays out in roughly 30 seconds. */
+const HOLD_MS: Record<LogTag, number> = {
+  cmd: 900,
+  init: 900,
+  read: 700,
+  grep: 600,
+  reasoning: 1800,
+  edit: 1100,
+  bash: 900,
+  out: 200,
+  pass: 1300,
+  fail: 1400,
+  guard: 1200,
+  done: 0,
+};
+
 export type RunResult = Extract<StreamEvent, { type: "result" }>;
 
 export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string; settingsJson: string }) {
@@ -16,8 +34,6 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
   const [running, setRunning] = useState<ScenarioId | null>(null);
   const [results, setResults] = useState<Partial<Record<ScenarioId, RunResult>>>({});
   const [selected, setSelected] = useState<ScenarioId | null>(null);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [elapsed, setElapsed] = useState(0);
   const [govOpen, setGovOpen] = useState(false);
   const [talkOpen, setTalkOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -34,14 +50,22 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       .catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    if (startedAt === null) return;
-    const t = setInterval(() => setElapsed(Date.now() - startedAt), 100);
-    return () => clearInterval(t);
-  }, [startedAt]);
-
-  const push = useCallback((tag: LogTag, text: string) => {
-    setLines((prev) => [...prev, { id: seq.current++, tag, text }]);
+  /** Types a line out character by character, then holds so the audience can read it. */
+  const typeLine = useCallback(async (tag: LogTag, text: string) => {
+    const id = seq.current++;
+    const typeMs = tag === "out" ? 0 : Math.min(1400, text.length * 14);
+    if (typeMs === 0) {
+      setLines((prev) => [...prev, { id, tag, text }]);
+    } else {
+      setLines((prev) => [...prev, { id, tag, text: "" }]);
+      const steps = Math.max(1, Math.round(typeMs / 30));
+      for (let i = 1; i <= steps; i++) {
+        await sleep(30);
+        const shown = text.slice(0, Math.ceil((text.length * i) / steps));
+        setLines((prev) => prev.map((l) => (l.id === id ? { ...l, text: shown } : l)));
+      }
+    }
+    await sleep(HOLD_MS[tag]);
   }, []);
 
   const run = useCallback(
@@ -52,9 +76,28 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       setLines([]);
       const requested: Mode = liveAvailable.current ? "live" : "safe";
       setMode(requested);
-      const t0 = Date.now();
-      setStartedAt(t0);
-      setElapsed(0);
+      // Events are queued and played back at reading pace: Firebase Hosting buffers the
+      // stream, so the browser may receive the whole run at once.
+      const queue: StreamEvent[] = [];
+      let streamDone = false;
+      const player = (async () => {
+        for (;;) {
+          const ev = queue.shift();
+          if (!ev) {
+            if (streamDone) return;
+            await sleep(40);
+            continue;
+          }
+          if (ev.type === "log") await typeLine(ev.tag, ev.text);
+          else if (ev.type === "mode") {
+            setMode(ev.mode);
+            await typeLine("guard", `Deterministic Safe Mode engaged (${ev.reason})`);
+          } else if (ev.type === "result") {
+            await sleep(400);
+            setResults((r) => ({ ...r, [ev.scenarioId]: ev }));
+          } else if (ev.type === "error") await typeLine("fail", `error: ${ev.message}`);
+        }
+      })();
       try {
         const res = await fetch("/api/run-scenario", {
           method: "POST",
@@ -74,26 +117,18 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
             const raw = buf.slice(0, nl);
             buf = buf.slice(nl + 1);
             if (!raw.trim()) continue;
-            const ev = JSON.parse(raw) as StreamEvent;
-            if (ev.type === "log") push(ev.tag, ev.text);
-            else if (ev.type === "mode") {
-              setMode(ev.mode);
-              push("guard", `Deterministic Safe Mode engaged (${ev.reason})`);
-            } else if (ev.type === "result") {
-              setResults((r) => ({ ...r, [ev.scenarioId]: ev }));
-            }
-            else if (ev.type === "error") push("fail", `error: ${ev.message}`);
+            queue.push(JSON.parse(raw) as StreamEvent);
           }
         }
       } catch (e) {
-        push("fail", `Run failed: ${e instanceof Error ? e.message : String(e)}`);
+        queue.push({ type: "error", message: `Run failed: ${e instanceof Error ? e.message : String(e)}` });
       } finally {
+        streamDone = true;
+        await player;
         setRunning(null);
-        setStartedAt(null);
-        setElapsed(Date.now() - t0);
       }
     },
-    [push, running],
+    [running, typeLine],
   );
 
   const reset = useCallback(async () => {
@@ -103,7 +138,6 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
     setLines([]);
     setResults({});
     setSelected(null);
-    setElapsed(0);
     setResetting(false);
   }, [running]);
 
@@ -207,7 +241,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         </section>
 
         {/* Center: terminal */}
-        <Terminal lines={lines} running={!!running} elapsedMs={elapsed} mode={mode} />
+        <Terminal lines={lines} running={!!running} mode={mode} />
 
         {/* Right: diff + artifact */}
         <section className="flex min-h-0 flex-col gap-3">

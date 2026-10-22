@@ -5,11 +5,11 @@ export interface TalkTrack {
   beats: string[];
 }
 
-/** ~13 minutes total: 4 + 5 + 4, leaving buffer inside the 15-minute workbench slot. */
+/** ~11 minutes total; the full word-for-word version is DEMO_SCRIPT.md. */
 export const TALK_TRACKS: TalkTrack[] = [
   {
     scenario: 1,
-    minutes: "0:00 – 4:00",
+    minutes: "3:30",
     title: "SRE & Security: PCI-DSS Log Audit",
     beats: [
       "Open Governance first (10s): \"This CLAUDE.md is checked into the repo. Rule 1 is PCI-DSS 3.4. settings.json denies curl, wget, rm -rf and web access. Claude cannot exfiltrate even if asked.\"",
@@ -22,7 +22,7 @@ export const TALK_TRACKS: TalkTrack[] = [
   },
   {
     scenario: 2,
-    minutes: "4:00 – 9:00",
+    minutes: "3:45",
     title: "Data Science → SWE: Notebook to Typed API",
     beats: [
       "Set up the pain (30s): \"Today a DS hands a notebook to an SWE and it takes weeks. Untyped, scores above 1.0, nobody owns the contract.\"",
@@ -34,7 +34,7 @@ export const TALK_TRACKS: TalkTrack[] = [
   },
   {
     scenario: 3,
-    minutes: "9:00 – 13:00",
+    minutes: "3:30",
     title: "Quants & Executives: FRED Stress Test",
     beats: [
       "Frame: \"Claude Code isn't only for engineers. Your quant team owes the Board a rate-sensitivity brief by Friday.\"",

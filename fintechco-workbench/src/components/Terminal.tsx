@@ -27,12 +27,10 @@ const TAGS: Record<LogTag, { label: string; cls: string }> = {
 export default function Terminal({
   lines,
   running,
-  elapsedMs,
   mode,
 }: {
   lines: TermLine[];
   running: boolean;
-  elapsedMs: number;
   mode: Mode;
 }) {
   const end = useRef<HTMLDivElement>(null);
@@ -52,7 +50,6 @@ export default function Terminal({
         >
           {mode === "live" ? "LIVE CLI" : "SAFE MODE"}
         </span>
-        <span className="w-14 text-right font-mono text-[12px] tabular-nums text-[#e6edf3]">{(elapsedMs / 1000).toFixed(1)}s</span>
       </div>
       <div className="scroll-dark min-h-0 flex-1 overflow-y-auto p-4 font-mono text-[12px] leading-[1.55]">
         {lines.length === 0 && (

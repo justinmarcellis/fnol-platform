@@ -36,7 +36,8 @@ const MAX_LIVE_MS = Number(process.env.LIVE_MAX_MS || 150000);
 let busy = false;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const pace = () => sleep(450 + Math.random() * 400);
+// The browser paces playback; this only keeps live and safe event order natural.
+const pace = () => sleep(80);
 /** A logging call (Python logger.x / Go log.Printf) — used to locate PAN leak sites. */
 const LOG_CALL = /\blog(ger)?\.\w+\(/;
 const lineCount = (s: string) => (s ? s.replace(/\n$/, "").split("\n").length : 0);
@@ -166,7 +167,7 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
   const durationMs = Date.now() - t0;
   log(
     "done",
-    `Completed in ${(durationMs / 1000).toFixed(1)}s | Tokens: ${tokens.toLocaleString("en-US")}${estimated ? " est." : ""} ($${costUsd.toFixed(3)}) | Zero Data Retention boundary`,
+    `Completed · Tokens: ${tokens.toLocaleString("en-US")}${estimated ? " est." : ""} ($${costUsd.toFixed(3)}) | Zero Data Retention boundary`,
   );
 
   emit({

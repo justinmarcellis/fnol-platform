@@ -30,7 +30,7 @@ export default function DiffPanel({ result }: { result?: RunResult }) {
       "### Verification",
       `- \`python3 -m pytest ${s.testFile} -q\`: **${result.pytest.passed}/${result.pytest.total} passed**`,
       "- Test files unmodified (CLAUDE.md Rule 4)",
-      `- Run cost: $${result.metrics.costUsd.toFixed(3)}${result.metrics.estimated ? " (est.)" : ""}, ${result.metrics.tokens.toLocaleString("en-US")} tokens, ${(result.metrics.durationMs / 1000).toFixed(1)}s`,
+      `- Run cost: $${result.metrics.costUsd.toFixed(3)}${result.metrics.estimated ? " (est.)" : ""}, ${result.metrics.tokens.toLocaleString("en-US")} tokens`,
     ].join("\n");
     await navigator.clipboard.writeText(md).catch(() => undefined);
     setCopied(true);
