@@ -33,28 +33,28 @@ export default function Terminal({
   running: boolean;
   mode: Mode;
 }) {
-  const end = useRef<HTMLDivElement>(null);
-  // Braces matter: newer Chrome returns a Promise from scrollIntoView, which React would call as a cleanup.
+  const body = useRef<HTMLDivElement>(null);
+  // Scroll only the terminal, not the page (scrollIntoView would also move the page on phones).
   useEffect(() => {
-    end.current?.scrollIntoView({ block: "end" });
+    if (body.current) body.current.scrollTop = body.current.scrollHeight;
   }, [lines]);
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-termline bg-term shadow-lg">
+    <section id="terminal" className="flex h-[65vh] scroll-mt-3 flex-col overflow-hidden rounded-xl border border-termline bg-term shadow-lg lg:h-auto lg:min-h-0">
       <div className="flex h-9 shrink-0 items-center gap-3 border-b border-termline bg-term2 px-3">
         <div className="flex gap-1.5">
           <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
           <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
           <span className="h-3 w-3 rounded-full bg-[#28c840]" />
         </div>
-        <span className="font-mono text-[12px] text-[#7d8590]">claude — /tmp/demo-workspace</span>
+        <span className="truncate font-mono text-[12px] text-[#7d8590]">claude — /tmp/demo-workspace</span>
         <span
           className={`ml-auto rounded px-1.5 py-0.5 font-mono text-[10.5px] ${mode === "live" ? "bg-[#238636]/30 text-[#3fb950]" : "bg-[#9e6a03]/30 text-[#e3b341]"}`}
         >
           {mode === "live" ? "LIVE" : "REPLAY"}
         </span>
       </div>
-      <div className="scroll-dark min-h-0 flex-1 overflow-y-auto p-4 font-mono text-[12px] leading-[1.55]">
+      <div ref={body} className="scroll-dark min-h-0 flex-1 overflow-y-auto p-4 font-mono text-[12px] leading-[1.55]">
         {lines.length === 0 && (
           <div className="text-[#7d8590]">
             <div>Claude Code is ready.</div>
@@ -84,7 +84,6 @@ export default function Terminal({
             <span className="cursor-blink">▋</span>
           </div>
         )}
-        <div ref={end} />
       </div>
     </section>
   );

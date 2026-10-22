@@ -38,14 +38,14 @@ export default function DiffPanel({ result }: { result?: RunResult }) {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-termline bg-term">
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-termline bg-term2 px-3">
+    <div className="flex h-[55vh] flex-col overflow-hidden rounded-xl border border-termline bg-term lg:h-auto lg:min-h-0 lg:flex-1">
+      <div className="flex min-h-9 shrink-0 flex-wrap items-center gap-2 border-b border-termline bg-term2 px-3 py-1.5 lg:flex-nowrap lg:py-0">
         <FileDiff className="h-4 w-4 text-[#7d8590]" />
         <span className="truncate font-mono text-[12px] text-[#e6edf3]">What changed</span>
         {result && (
           <>
             <span
-              className={`ml-auto whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${result.pytest.ok ? "bg-sage text-white" : "bg-[#da3633] text-white"}`}
+              className={`sm:ml-auto whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold ${result.pytest.ok ? "bg-sage text-white" : "bg-[#da3633] text-white"}`}
             >
               {result.pytest.passed} of {result.pytest.total} checks {result.pytest.ok ? "passed" : "failed"}
             </span>

@@ -18,11 +18,11 @@ const LANE_TONE: Record<Lane["tone"], string> = {
 export default function ArchitecturesPage() {
   return (
     <div className="min-h-screen bg-alabaster">
-      <header className="sticky top-0 z-10 flex h-[4.5rem] items-center gap-3 border-b border-black/10 bg-alabaster/95 px-5 backdrop-blur">
+      <header className="sticky top-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-black/10 bg-alabaster/95 px-4 py-3 backdrop-blur lg:h-[4.5rem] lg:flex-nowrap lg:px-5 lg:py-0">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-charcoal font-serif text-xl font-bold text-terracotta">
           F
         </div>
-        <h1 className="whitespace-nowrap font-serif text-[20px] font-bold leading-tight">
+        <h1 className="min-w-0 font-serif text-[17px] font-bold leading-tight sm:text-[20px] lg:whitespace-nowrap">
           FinTechCo <span className="text-black/30">|</span> How it fits together
         </h1>
         <nav className="ml-6 hidden gap-1 lg:flex">
@@ -32,7 +32,7 @@ export default function ArchitecturesPage() {
             </a>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2 lg:ml-auto">
           <a
             href="https://fintechco-roi.web.app/"
             target="_blank"
@@ -47,9 +47,9 @@ export default function ArchitecturesPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">How Claude fits into FinTechCo</div>
-        <h2 className="mt-1 font-serif text-[34px] font-bold leading-tight">Set it up once, then put it to work</h2>
+        <h2 className="mt-1 font-serif text-[28px] font-bold leading-tight sm:text-[34px]">Set it up once, then put it to work</h2>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-black/65">
           A small platform team sets up access, rules, monitoring and budgets one time. Every team after that, whether it&apos;s building
           prototypes, cleaning data, publishing dashboards or processing paperwork, starts on day one with those safeguards in place.
@@ -153,7 +153,7 @@ export default function ArchitecturesPage() {
           </section>
         ))}
 
-        <footer className="mt-14 flex items-center justify-between border-t border-black/10 pt-6 text-[12px] text-black/45">
+        <footer className="mt-14 flex flex-wrap items-center justify-between gap-2 border-t border-black/10 pt-6 text-[12px] text-black/45">
           <span>Based on the Claude Code on Google Cloud reference architectures.</span>
           <Link href="/" className="font-medium text-slate hover:underline">
             Back to the live Workbench →

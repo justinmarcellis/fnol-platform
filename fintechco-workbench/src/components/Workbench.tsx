@@ -76,6 +76,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       setRunning(id);
       setSelected(id);
       setLines([]);
+      if (window.innerWidth < 1024) setTimeout(() => document.getElementById("terminal")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
       const requested: Mode = liveAvailable.current ? "live" : "safe";
       setMode(requested);
       // Events are queued and played back at reading pace: Firebase Hosting buffers the
@@ -161,19 +162,19 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
   const nextId = SCENARIOS.find((s) => !results[s.id])?.id;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex min-h-screen flex-col lg:h-screen lg:overflow-hidden">
       {/* Header */}
-      <header className="flex h-[4.5rem] shrink-0 items-center gap-4 border-b border-black/10 bg-alabaster px-5">
-        <div className="flex shrink-0 items-center gap-3">
+      <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-black/10 bg-alabaster px-4 py-3 lg:h-[4.5rem] lg:flex-nowrap lg:px-5 lg:py-0">
+        <div className="flex min-w-0 items-center gap-3 lg:shrink-0">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-charcoal font-serif text-xl font-bold text-terracotta">
             F
           </div>
-          <h1 className="whitespace-nowrap font-serif text-[20px] font-bold leading-tight">
+          <h1 className="font-serif text-[17px] font-bold leading-tight sm:text-[20px] lg:whitespace-nowrap">
             FinTechCo <span className="text-black/30">|</span> Agentic Engineering Workbench
           </h1>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto lg:shrink-0 lg:flex-nowrap">
           <Link
             href="/architectures"
             className="flex items-center gap-1 whitespace-nowrap rounded-full bg-charcoal px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-black"
@@ -202,9 +203,9 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       </header>
 
       {/* Workbench */}
-      <main className="grid min-h-0 flex-1 grid-cols-[280px_minmax(0,1fr)_minmax(0,1.15fr)] gap-3 bg-alabaster p-3">
+      <main className="grid flex-1 grid-cols-1 gap-3 bg-alabaster p-3 lg:min-h-0 lg:grid-cols-[280px_minmax(0,1fr)_minmax(0,1.15fr)]">
         {/* Left: scenarios */}
-        <section className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+        <section className="flex flex-col gap-3 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
           {SCENARIOS.map((s) => {
             const r = results[s.id];
             const isRunning = running === s.id;
@@ -245,7 +246,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         <Terminal lines={lines} running={!!running} mode={mode} />
 
         {/* Right: diff + artifact */}
-        <section className="flex min-h-0 flex-col gap-3">
+        <section className="flex flex-col gap-3 lg:min-h-0">
           <DiffPanel key={shown?.scenarioId ?? 0} result={shown} />
           <Artifact result={shown} />
         </section>
