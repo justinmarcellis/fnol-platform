@@ -97,7 +97,7 @@ export function TalkTrackDrawer({ open, onClose }: { open: boolean; onClose: () 
       >
         <div className="flex items-center border-b border-black/10 px-6 py-4">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">Presenter only · press ? to toggle</div>
+            <div className="font-mono text-[11px] uppercase tracking-wide text-black/50">Presenter only</div>
             <h2 className="font-serif text-2xl font-bold">Talk Track · ~13 min</h2>
           </div>
           <button onClick={onClose} className="ml-auto rounded-lg p-1.5 hover:bg-oat" aria-label="Close">

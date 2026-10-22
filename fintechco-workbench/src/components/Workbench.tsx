@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, CircleHelp, Loader2, Play, RotateCcw, ShieldCheck, Zap } from "lucide-react";
+import { CheckCircle2, Loader2, Play, RotateCcw } from "lucide-react";
 import { SCENARIOS, type LogTag, type Mode, type ScenarioId, type StreamEvent } from "@/lib/scenarios";
 import Terminal, { type TermLine } from "./Terminal";
 import DiffPanel from "./DiffPanel";
@@ -10,31 +10,28 @@ import { GovernanceModal, TalkTrackDrawer } from "./Overlays";
 
 export type RunResult = Extract<StreamEvent, { type: "result" }>;
 
-const ROI = "$3.8M+";
-
 export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string; settingsJson: string }) {
   const [mode, setMode] = useState<Mode>("safe");
-  const [live, setLive] = useState<{ available: boolean; reason: string } | null>(null);
   const [lines, setLines] = useState<TermLine[]>([]);
   const [running, setRunning] = useState<ScenarioId | null>(null);
   const [results, setResults] = useState<Partial<Record<ScenarioId, RunResult>>>({});
   const [selected, setSelected] = useState<ScenarioId | null>(null);
-  const [lastId, setLastId] = useState<ScenarioId | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [govOpen, setGovOpen] = useState(false);
   const [talkOpen, setTalkOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const seq = useRef(0);
+  const liveAvailable = useRef(false);
 
   useEffect(() => {
     fetch("/api/status")
       .then((r) => r.json())
       .then((s) => {
-        setLive(s.live);
-        if (s.live?.available) setMode("live");
+        liveAvailable.current = !!s.live?.available;
+        if (liveAvailable.current) setMode("live");
       })
-      .catch(() => setLive({ available: false, reason: "status check failed" }));
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -53,6 +50,8 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       setRunning(id);
       setSelected(id);
       setLines([]);
+      const requested: Mode = liveAvailable.current ? "live" : "safe";
+      setMode(requested);
       const t0 = Date.now();
       setStartedAt(t0);
       setElapsed(0);
@@ -60,7 +59,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         const res = await fetch("/api/run-scenario", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ scenarioId: id, mode }),
+          body: JSON.stringify({ scenarioId: id, mode: requested }),
         });
         if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
         const reader = res.body.getReader();
@@ -82,7 +81,6 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
               push("guard", `Deterministic Safe Mode engaged (${ev.reason})`);
             } else if (ev.type === "result") {
               setResults((r) => ({ ...r, [ev.scenarioId]: ev }));
-              setLastId(ev.scenarioId);
             }
             else if (ev.type === "error") push("fail", `error: ${ev.message}`);
           }
@@ -95,7 +93,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         setElapsed(Date.now() - t0);
       }
     },
-    [mode, push, running],
+    [push, running],
   );
 
   const reset = useCallback(async () => {
@@ -105,7 +103,6 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
     setLines([]);
     setResults({});
     setSelected(null);
-    setLastId(null);
     setElapsed(0);
     setResetting(false);
   }, [running]);
@@ -118,14 +115,13 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       else if (e.key === "Escape") {
         setTalkOpen(false);
         setGovOpen(false);
-      } else if (!govOpen && ["1", "2", "3"].includes(e.key)) run(Number(e.key) as ScenarioId);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [run, govOpen]);
+  }, []);
 
   const shown = selected ? results[selected] : undefined;
-  const current = lastId ? results[lastId] : undefined;
   const nextId = SCENARIOS.find((s) => !results[s.id])?.id;
 
   return (
@@ -136,60 +132,21 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-charcoal font-serif text-xl font-bold text-terracotta">
             F
           </div>
-          <div>
-            <h1 className="whitespace-nowrap font-serif text-[18px] font-bold leading-tight">
-              FinTechCo <span className="text-black/30">|</span> Agentic Engineering Workbench
-            </h1>
-            <span className="mt-0.5 inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-sage/30 bg-sage/10 px-2 py-0.5 font-mono text-[10px] text-sage">
-              <ShieldCheck className="h-3 w-3" /> Cloud Boundary: GCP Vertex AI & AWS Bedrock · Zero Data Retention
-            </span>
-          </div>
-        </div>
-
-        <div className="mx-auto hidden items-center gap-2 whitespace-nowrap rounded-full bg-charcoal px-4 py-1.5 font-mono text-[11.5px] text-white xl:flex">
-          <Zap className="h-3.5 w-3.5 text-terracotta" />
-          <span>
-            Run Cost:{" "}
-            <b className="text-terracotta">
-              {current ? `$${current.metrics.costUsd.toFixed(3)}${current.metrics.estimated ? " est." : ""}` : "$0.000"}
-            </b>
-          </span>
-          <span className="text-white/30">|</span>
-          <span>
-            180-Eng Annual ROI: <b className="text-[#7fc495]">{ROI}</b>
-          </span>
+          <h1 className="whitespace-nowrap font-serif text-[20px] font-bold leading-tight">
+            FinTechCo <span className="text-black/30">|</span> Agentic Engineering Workbench
+          </h1>
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <div className="flex whitespace-nowrap rounded-lg border border-black/15 bg-oat p-0.5 text-[11.5px]" title={live?.reason}>
-            <button
-              onClick={() => live?.available && setMode("live")}
-              disabled={!live?.available || !!running}
-              className={`rounded-md px-2.5 py-1 font-mono transition ${mode === "live" ? "bg-charcoal text-white" : "text-black/60"} disabled:cursor-not-allowed disabled:opacity-50`}
-            >
-              Live CLI (claude -p)
-            </button>
-            <button
-              onClick={() => setMode("safe")}
-              title="Deterministic Safe Mode: verified patches, real pytest"
-              disabled={!!running}
-              className={`rounded-md px-2.5 py-1 font-mono transition ${mode === "safe" ? "bg-charcoal text-white" : "text-black/60"}`}
-            >
-              Safe Mode
-            </button>
-          </div>
           <button onClick={() => setGovOpen(true)} className="whitespace-nowrap rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat">
             Governance
-          </button>
-          <button onClick={() => setTalkOpen(true)} className="flex items-center gap-1 rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat">
-            <CircleHelp className="h-4 w-4" /> ?
           </button>
           <button
             onClick={reset}
             disabled={!!running}
             className="flex items-center gap-1 whitespace-nowrap rounded-lg bg-slate px-3 py-1.5 text-[12.5px] font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
-            <RotateCcw className={`h-4 w-4 ${resetting ? "animate-spin" : ""}`} /> Reset
+            <RotateCcw className={`h-4 w-4 ${resetting ? "animate-spin" : ""}`} /> Reset Workspace
           </button>
         </div>
       </header>
@@ -235,14 +192,10 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
                       <CheckCircle2 className="h-4 w-4" /> {r.pytest.passed}/{r.pytest.total} passed
                     </span>
                   )}
-                  <kbd className="ml-auto rounded border border-black/15 px-1.5 font-mono text-[10px] text-black/40">{s.id}</kbd>
                 </div>
               </div>
             );
           })}
-          <p className="px-1 font-mono text-[10.5px] leading-relaxed text-black/45">
-            Workspace: /tmp/demo-workspace · Live CLI: {live ? (live.available ? "available" : live.reason) : "checking…"} · Keys: 1 2 3 run · ? talk track
-          </p>
         </section>
 
         {/* Center: terminal */}

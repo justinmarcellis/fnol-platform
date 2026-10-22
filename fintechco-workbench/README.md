@@ -22,7 +22,7 @@ npm run dev                 # http://localhost:3000
 npm run verify:seed         # shows the 12 seed tests failing before any fix
 ```
 
-Keyboard: `1` `2` `3` run scenarios · `?` talk track and CTO objection answers · `Esc` close.
+Everything is one click: **Run Claude Code** on each card, **Governance** and **Reset Workspace** in the header. Live CLI is used automatically when available, otherwise Safe Mode. Presenter notes (talk track + CTO objection answers) are hidden; press `?` to open them if you want them.
 **Reset** restores `/tmp/demo-workspace` from `seed-workspace/`, so you can re-run the demo any number of times. A single scenario can also be re-run on its own.
 
 ## Deploy to Cloud Run

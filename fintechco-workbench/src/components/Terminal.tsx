@@ -58,7 +58,7 @@ export default function Terminal({
         {lines.length === 0 && (
           <div className="text-[#7d8590]">
             <div>FinTechCo headless Claude Code runner · stream-json → NDJSON</div>
-            <div className="mt-1">Select a scenario (or press 1, 2, 3) to start.</div>
+            <div className="mt-1">Click Run Claude Code on a scenario to start.</div>
             <div className="mt-3 text-[#e6edf3]">
               $ <span className="cursor-blink">▋</span>
             </div>
