@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, ExternalLink, Loader2, Play, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ExternalLink, Layers, Loader2, Play, RotateCcw } from "lucide-react";
 import { SCENARIOS, type LogTag, type Mode, type ScenarioId, type StreamEvent } from "@/lib/scenarios";
 import Terminal, { type TermLine } from "./Terminal";
 import DiffPanel from "./DiffPanel";
@@ -172,6 +173,12 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          <Link
+            href="/architectures"
+            className="flex items-center gap-1 whitespace-nowrap rounded-full bg-charcoal px-3.5 py-1.5 text-[12.5px] font-medium text-white hover:bg-black"
+          >
+            <Layers className="h-3.5 w-3.5 text-terracotta" /> Architectures
+          </Link>
           <a
             href="https://fintechco-roi.web.app/"
             target="_blank"
