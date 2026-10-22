@@ -34,6 +34,8 @@ USE_VERTEX=1 ./deploy.sh <project>                   # + Live CLI through Vertex
 MIN_INSTANCES=1 ./deploy.sh <project>                # demo day: no cold start
 ```
 
+To match `fintechco-roi.web.app`, install the Firebase CLI (`npm i -g firebase-tools`, then `firebase login`) and run `./deploy.sh <firebase-project-id>` with the same project that hosts the ROI calculator. The script deploys Cloud Run, creates the Hosting site `fintechco-workbench`, and proxies it, so the demo is served at **https://fintechco-workbench.web.app**. Override the name with `FIREBASE_SITE=...`.
+
 Uses `--max-instances 1` so the in-memory `/tmp` workspace stays consistent. Keep `npm run dev` running locally as a backup tab.
 
 ## Data note

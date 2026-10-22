@@ -41,7 +41,7 @@ export const TALK_TRACKS: TalkTrack[] = [
       "Click Run. \"Rule 5 says standard library only, reproducible from the checked-in CSV. It wrote the Pearson test and p-value from scratch, and the test suite verifies the math.\"",
       "Chart: hover the 2022 hiking cycle. \"Delinquency follows the rate with a lag. The correlation is computed, not typed in.\"",
       "Read the three Board bullets aloud. \"The stress case is a number the CRO can act on.\"",
-      "Close: \"Three teams, one governed platform, a few cents per run. Header shows the cost. Against a $32.4M payroll, 12% velocity is $3.8M a year.\" Then back to the deck: Impact & ROI.",
+      "Close: \"Three teams, one governed platform, a few cents per run. Header shows the cost. Against a $32.4M payroll, 12% velocity is $3.8M a year.\" Then click ROI Calculator (top right) to open fintechco-roi.web.app and model it live.",
     ],
   },
 ];

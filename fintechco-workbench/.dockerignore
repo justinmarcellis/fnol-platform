@@ -4,3 +4,4 @@ node_modules
 **/.pytest_cache
 *.md
 !seed-workspace/CLAUDE.md
+firebase-public

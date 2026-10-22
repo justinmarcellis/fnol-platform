@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Loader2, Play, RotateCcw } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Play, RotateCcw } from "lucide-react";
 import { SCENARIOS, type LogTag, type Mode, type ScenarioId, type StreamEvent } from "@/lib/scenarios";
 import Terminal, { type TermLine } from "./Terminal";
 import DiffPanel from "./DiffPanel";
@@ -138,6 +138,14 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          <a
+            href="https://fintechco-roi.web.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 whitespace-nowrap rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat"
+          >
+            ROI Calculator <ExternalLink className="h-3.5 w-3.5" />
+          </a>
           <button onClick={() => setGovOpen(true)} className="whitespace-nowrap rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat">
             Governance
           </button>
