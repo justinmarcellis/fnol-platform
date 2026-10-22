@@ -1,21 +1,43 @@
 #!/usr/bin/env bash
-# One-command deploy to Cloud Run. Usage: ./deploy.sh [gcp-project-id]
+# One-command deploy: Cloud Run + Firebase Hosting (https://fintechco-workbench.web.app).
+# Usage: ./deploy.sh [gcp-project-id]
+#   With no project id, it finds the project that hosts fintechco-roi.web.app.
 #
 # Optional environment:
 #   REGION=us-central1        Cloud Run region
-#   MIN_INSTANCES=1           keep one warm instance on demo day (no cold start)
+#   MIN_INSTANCES=1           keep one warm instance on demo day (default 1)
+#   FIREBASE_SITE=name        Hosting site name (default fintechco-workbench)
 #   ANTHROPIC_KEY_SECRET=name Secret Manager secret holding ANTHROPIC_API_KEY (enables Live CLI mode)
 #   USE_VERTEX=1 VERTEX_PROJECT=... VERTEX_REGION=us-east5   run Live mode through Vertex AI instead
-#   FIREBASE_SITE=fintechco-workbench  also publish at https://<site>.web.app (needs the firebase CLI;
-#                                      use the Firebase project that hosts fintechco-roi.web.app)
 set -euo pipefail
 cd "$(dirname "$0")"
 
-PROJECT="${1:-$(gcloud config get-value project 2>/dev/null)}"
 REGION="${REGION:-us-central1}"
-ARGS=(--project "$PROJECT" --region "$REGION" --source . --allow-unauthenticated
-      --memory 1Gi --cpu 1 --max-instances 1 --min-instances "${MIN_INSTANCES:-0}" --timeout 300)
+SITE="${FIREBASE_SITE:-fintechco-workbench}"
 
+command -v firebase >/dev/null || npm install -g firebase-tools >/dev/null
+if ! firebase projects:list >/dev/null 2>&1; then
+  echo ">> Sign in to Firebase (opens a link; paste the code back here)"
+  firebase login --no-localhost
+fi
+
+PROJECT="${1:-}"
+if [[ -z "$PROJECT" ]]; then
+  echo ">> Looking for the project that hosts fintechco-roi.web.app..."
+  for p in $(gcloud projects list --format='value(projectId)'); do
+    if firebase hosting:sites:list --project "$p" 2>/dev/null | grep -q "fintechco-roi"; then PROJECT="$p"; break; fi
+  done
+  PROJECT="${PROJECT:-$(gcloud config get-value project 2>/dev/null)}"
+fi
+[[ -n "$PROJECT" ]] || { echo "No project found. Run: ./deploy.sh <project-id>"; exit 1; }
+echo ">> Deploying to project: $PROJECT"
+gcloud config set project "$PROJECT" >/dev/null
+
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com \
+  firebasehosting.googleapis.com --project "$PROJECT"
+
+ARGS=(--project "$PROJECT" --region "$REGION" --source . --allow-unauthenticated --quiet
+      --memory 1Gi --cpu 1 --max-instances 1 --min-instances "${MIN_INSTANCES:-1}" --timeout 300)
 # Firebase Hosting proxies Cloud Run with a 60s limit, so cap live runs below it.
 ENV_VARS="LIVE_IDLE_TIMEOUT_MS=15000,LIVE_MAX_MS=50000"
 if [[ -n "${ANTHROPIC_KEY_SECRET:-}" ]]; then
@@ -27,14 +49,12 @@ fi
 ARGS+=(--set-env-vars "$ENV_VARS")
 
 gcloud run deploy fintechco-workbench "${ARGS[@]}"
-gcloud run services describe fintechco-workbench --project "$PROJECT" --region "$REGION" --format 'value(status.url)'
+RUN_URL=$(gcloud run services describe fintechco-workbench --project "$PROJECT" --region "$REGION" --format 'value(status.url)')
 
-SITE="${FIREBASE_SITE:-fintechco-workbench}"
-if command -v firebase >/dev/null; then
-  firebase hosting:sites:create "$SITE" --project "$PROJECT" 2>/dev/null || true
-  sed -i.bak "s/\"site\": \"[^\"]*\"/\"site\": \"$SITE\"/" firebase.json && rm -f firebase.json.bak
-  firebase deploy --only hosting --project "$PROJECT"
-  echo "Published: https://$SITE.web.app"
-else
-  echo "firebase CLI not found (npm i -g firebase-tools) - skipping the web.app URL; the Cloud Run URL above works."
-fi
+firebase hosting:sites:create "$SITE" --project "$PROJECT" >/dev/null 2>&1 || true
+sed -i.bak "s/\"site\": \"[^\"]*\"/\"site\": \"$SITE\"/" firebase.json && rm -f firebase.json.bak
+firebase deploy --only hosting --project "$PROJECT" --non-interactive
+
+echo
+echo "Cloud Run URL: $RUN_URL"
+echo "Published:     https://$SITE.web.app"
