@@ -4,7 +4,9 @@ import { useEffect } from "react";
 
 /** Shows the real error instead of Next's blank "Application error" page, with a one-click recovery. */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => console.error(error), [error]);
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
   return (
     <div className="flex h-screen items-center justify-center bg-alabaster p-6">
       <div className="max-w-2xl rounded-xl bg-oat p-6">

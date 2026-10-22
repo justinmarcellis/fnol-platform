@@ -34,7 +34,10 @@ export default function Terminal({
   mode: Mode;
 }) {
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [lines]);
+  // Braces matter: newer Chrome returns a Promise from scrollIntoView, which React would call as a cleanup.
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [lines]);
 
   return (
     <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-termline bg-term shadow-lg">
