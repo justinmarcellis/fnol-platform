@@ -5,25 +5,52 @@ import type { PytestSummary, Scenario } from "./scenarios";
 
 export const SEED_DIR = path.join(process.cwd(), "seed-workspace");
 export const PATCH_DIR = path.join(process.cwd(), "verified-patches");
-export const WORKSPACE = process.env.DEMO_WORKSPACE || "/tmp/demo-workspace";
+/** Each visitor gets a private copy of the seed files under this root. */
+export const WORKSPACE_ROOT = process.env.DEMO_WORKSPACE || "/tmp/demo-workspace";
+const IDLE_WORKSPACE_MS = 3 * 60 * 60 * 1000;
 
 const PY_ENV = { ...process.env, PYTHONDONTWRITEBYTECODE: "1" };
 
-export function ensureWorkspace(): void {
-  if (!fs.existsSync(path.join(WORKSPACE, "CLAUDE.md"))) resetWorkspace();
+/** Resolves the caller's workspace from the x-workbench-session header (browser-generated id). */
+export function workspaceFor(req: Request): string {
+  const raw = req.headers.get("x-workbench-session") ?? "";
+  const id = /^[a-zA-Z0-9-]{8,64}$/.test(raw) ? raw : "shared";
+  return path.join(WORKSPACE_ROOT, id);
 }
 
-export function resetWorkspace(): void {
-  fs.rmSync(WORKSPACE, { recursive: true, force: true });
-  fs.cpSync(SEED_DIR, WORKSPACE, { recursive: true });
+export function ensureWorkspace(dir: string): void {
+  if (!fs.existsSync(path.join(dir, "CLAUDE.md"))) resetWorkspace(dir);
+  else fs.utimesSync(dir, new Date(), new Date());
+  pruneIdleWorkspaces();
+}
+
+export function resetWorkspace(dir: string): void {
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.cpSync(SEED_DIR, dir, { recursive: true });
+}
+
+let lastPrune = 0;
+/** Deletes workspaces nobody has touched for a few hours; runs at most every 10 minutes. */
+function pruneIdleWorkspaces(): void {
+  const now = Date.now();
+  if (now - lastPrune < 10 * 60 * 1000) return;
+  lastPrune = now;
+  for (const name of fs.readdirSync(WORKSPACE_ROOT)) {
+    const p = path.join(WORKSPACE_ROOT, name);
+    try {
+      if (now - fs.statSync(p).mtimeMs > IDLE_WORKSPACE_MS) fs.rmSync(p, { recursive: true, force: true });
+    } catch {
+      /* already gone */
+    }
+  }
 }
 
 export function readSeed(file: string): string {
   return readOrEmpty(path.join(SEED_DIR, file));
 }
 
-export function readWorkspace(file: string): string {
-  return readOrEmpty(path.join(WORKSPACE, file));
+export function readWorkspace(dir: string, file: string): string {
+  return readOrEmpty(path.join(dir, file));
 }
 
 function readOrEmpty(p: string): string {
@@ -35,11 +62,11 @@ function readOrEmpty(p: string): string {
 }
 
 /** Writes the verified "after" files for a scenario into the workspace. */
-export function applyVerifiedPatch(s: Scenario): string[] {
-  const dir = path.join(PATCH_DIR, String(s.id));
+export function applyVerifiedPatch(dir: string, s: Scenario): string[] {
+  const patchDir = path.join(PATCH_DIR, String(s.id));
   const written: string[] = [];
-  for (const f of fs.readdirSync(dir)) {
-    fs.copyFileSync(path.join(dir, f), path.join(WORKSPACE, f));
+  for (const f of fs.readdirSync(patchDir)) {
+    fs.copyFileSync(path.join(patchDir, f), path.join(dir, f));
     written.push(f);
   }
   return written;
@@ -58,7 +85,7 @@ function hasPytest(): boolean {
   return pythonOk;
 }
 
-export function runPytest(testFile: string): Promise<PytestSummary> {
+export function runPytest(dir: string, testFile: string): Promise<PytestSummary> {
   if (!hasPytest()) {
     return Promise.resolve({
       passed: 4,
@@ -73,7 +100,7 @@ export function runPytest(testFile: string): Promise<PytestSummary> {
     execFile(
       "python3",
       ["-m", "pytest", testFile, "-q", "-p", "no:cacheprovider", "--tb=line", "--color=no"],
-      { cwd: WORKSPACE, timeout: 30000, env: PY_ENV },
+      { cwd: dir, timeout: 30000, env: PY_ENV },
       (_err, stdout, stderr) => {
         const output = `${stdout}${stderr}`.trim();
         const num = (re: RegExp) => Number(output.match(re)?.[1] ?? 0);
@@ -85,9 +112,9 @@ export function runPytest(testFile: string): Promise<PytestSummary> {
   });
 }
 
-export function runPython(args: string[]): Promise<string> {
+export function runPython(dir: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile("python3", args, { cwd: WORKSPACE, timeout: 20000, env: PY_ENV }, (err, stdout) =>
+    execFile("python3", args, { cwd: dir, timeout: 20000, env: PY_ENV }, (err, stdout) =>
       err ? reject(err) : resolve(stdout),
     );
   });

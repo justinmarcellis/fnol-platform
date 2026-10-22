@@ -22,7 +22,7 @@ import {
   runPytest,
   runPython,
   SEED_DIR,
-  WORKSPACE,
+  workspaceFor,
 } from "@/lib/workspace";
 
 export const runtime = "nodejs";
@@ -31,7 +31,8 @@ export const dynamic = "force-dynamic";
 const IDLE_TIMEOUT_MS = Number(process.env.LIVE_IDLE_TIMEOUT_MS || 15000);
 const MAX_LIVE_MS = Number(process.env.LIVE_MAX_MS || 150000);
 
-let busy = false;
+/** Sessions with a run in progress; each visitor has their own workspace. */
+const busy = new Set<string>();
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // The browser paces playback; this only keeps live and safe event order natural.
@@ -44,8 +45,9 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { scenarioId?: number; mode?: Mode };
   const scenario = getScenario(Number(body.scenarioId));
   if (!scenario) return Response.json({ error: "unknown scenario" }, { status: 400 });
-  if (busy) return Response.json({ error: "a scenario is already running" }, { status: 409 });
-  busy = true;
+  const dir = workspaceFor(req);
+  if (busy.has(dir)) return Response.json({ error: "a scenario is already running" }, { status: 409 });
+  busy.add(dir);
 
   const encoder = new TextEncoder();
   let closed = false;
@@ -63,11 +65,11 @@ export async function POST(req: Request) {
       };
       const log = (tag: LogTag, text: string) => emit({ type: "log", tag, text });
       try {
-        await runScenario(scenario, body.mode === "live" ? "live" : "safe", log, emit, (c) => (child = c));
+        await runScenario(dir, scenario, body.mode === "live" ? "live" : "safe", log, emit, (c) => (child = c));
       } catch (err) {
         emit({ type: "error", message: err instanceof Error ? err.message : String(err) });
       } finally {
-        busy = false;
+        busy.delete(dir);
         if (!closed) {
           closed = true;
           controller.close();
@@ -92,10 +94,10 @@ export async function POST(req: Request) {
 type Log = (tag: LogTag, text: string) => void;
 type Emit = (ev: StreamEvent) => void;
 
-async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, setChild: (c: ChildProcess) => void) {
+async function runScenario(dir: string, s: Scenario, requested: Mode, log: Log, emit: Emit, setChild: (c: ChildProcess) => void) {
   const t0 = Date.now();
-  ensureWorkspace();
-  restoreTargets(s);
+  ensureWorkspace(dir);
+  restoreTargets(dir, s);
 
   let mode: Mode = requested;
   if (mode === "live") {
@@ -119,7 +121,7 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
   await pace();
 
   log("bash", "Running the automated checks before changing anything");
-  const baseline = await runPytest(s.testFile);
+  const baseline = await runPytest(dir, s.testFile);
   log(baseline.ok ? "pass" : "fail", `${baseline.passed} of ${baseline.total || 4} checks pass today${baseline.ok ? "" : ". There is a problem to fix"}`);
   await pace();
 
@@ -128,7 +130,7 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
   let estimated = true;
 
   if (mode === "live") {
-    const live = await runLive(s, log, setChild);
+    const live = await runLive(dir, s, log, setChild);
     if (live.ok) {
       tokens = live.tokens;
       costUsd = live.costUsd;
@@ -137,21 +139,21 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
       mode = "safe";
       emit({ type: "mode", mode, reason: live.reason });
       log("guard", `The live session stopped responding (${live.reason}), so we switched to the recorded version`);
-      restoreTargets(s);
-      await safeScript(s, log);
+      restoreTargets(dir, s);
+      await safeScript(dir, s, log);
     }
   } else {
-    await safeScript(s, log);
+    await safeScript(dir, s, log);
   }
 
   log("bash", "Running the automated checks again");
-  let pytest = await runPytest(s.testFile);
+  let pytest = await runPytest(dir, s.testFile);
   streamPytest(pytest, log);
 
   if (!pytest.ok && !estimated) {
     log("guard", "The live fix didn't pass every check, so we applied the reviewed fix and checked again");
-    applyVerifiedPatch(s);
-    pytest = await runPytest(s.testFile);
+    applyVerifiedPatch(dir, s);
+    pytest = await runPytest(dir, s.testFile);
     streamPytest(pytest, log);
   }
 
@@ -165,16 +167,16 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
     type: "result",
     scenarioId: s.id,
     mode,
-    files: s.targets.map((f) => ({ path: f, before: readSeed(f), after: readWorkspace(f) })),
+    files: s.targets.map((f) => ({ path: f, before: readSeed(f), after: readWorkspace(dir, f) })),
     pytest,
     metrics: { durationMs, tokens, costUsd, estimated },
   });
 }
 
-function restoreTargets(s: Scenario) {
+function restoreTargets(dir: string, s: Scenario) {
   for (const f of s.targets) {
     const seed = path.join(SEED_DIR, f);
-    const dest = path.join(WORKSPACE, f);
+    const dest = path.join(dir, f);
     if (fs.existsSync(seed)) fs.copyFileSync(seed, dest);
     else fs.rmSync(dest, { force: true });
   }
@@ -185,7 +187,7 @@ function streamPytest(p: PytestSummary, log: Log) {
 }
 
 /** Deterministic Safe Mode: real reads, real scans, real file writes, scripted narration. */
-async function safeScript(s: Scenario, log: Log) {
+async function safeScript(dir: string, s: Scenario, log: Log) {
   for (const f of s.targets) {
     const src = readSeed(f);
     log("read", src ? `${f} (${lineCount(src)} lines)` : `${f} doesn't exist yet, so it will be created`);
@@ -206,7 +208,7 @@ async function safeScript(s: Scenario, log: Log) {
     log("reasoning", "Plan: show only the last four digits, and write logs in a consistent format the team can search.");
   } else if (s.id === 2) {
     try {
-      const out = await runPython(["-c", "from ds_fraud_notebook import evaluate_transaction_risk as f; print(repr(f(4500, 8, True)))"]);
+      const out = await runPython(dir, ["-c", "from ds_fraud_notebook import evaluate_transaction_risk as f; print(repr(f(4500, 8, True)))"]);
       log("bash", `Tried the current model on a $4,500 payment: fraud score ${out.trim()}`);
     } catch {
       log("bash", "Tried the current model on a $4,500 payment: fraud score 1.44");
@@ -229,9 +231,9 @@ async function safeScript(s: Scenario, log: Log) {
   }
   await pace();
 
-  applyVerifiedPatch(s);
+  applyVerifiedPatch(dir, s);
   for (const f of s.targets) {
-    const { added, removed } = diffStats(readSeed(f), readWorkspace(f));
+    const { added, removed } = diffStats(readSeed(f), readWorkspace(dir, f));
     log("edit", `${readSeed(f) ? "Updated" : "Created"} ${f}: ${added} lines added, ${removed} removed`);
     await pace();
   }
@@ -245,7 +247,7 @@ interface LiveResult {
 }
 
 /** Spawns `claude -p` with stream-json output and maps events to terminal lines. */
-function runLive(s: Scenario, log: Log, setChild: (c: ChildProcess) => void): Promise<LiveResult> {
+function runLive(dir: string, s: Scenario, log: Log, setChild: (c: ChildProcess) => void): Promise<LiveResult> {
   return new Promise((resolve) => {
     const env = { ...process.env };
     // The seed settings.json pins a demo Vertex project; override it with this host's real provider config.
@@ -277,7 +279,7 @@ function runLive(s: Scenario, log: Log, setChild: (c: ChildProcess) => void): Pr
     };
     const fail = (reason: string) => finish({ ok: false, reason, tokens: 0, costUsd: 0 });
 
-    const child = spawn("claude", args, { cwd: WORKSPACE, env, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("claude", args, { cwd: dir, env, stdio: ["ignore", "pipe", "pipe"] });
     setChild(child);
 
     let idle = setTimeout(() => fail(`idle > ${IDLE_TIMEOUT_MS / 1000}s`), IDLE_TIMEOUT_MS);
@@ -312,7 +314,7 @@ function runLive(s: Scenario, log: Log, setChild: (c: ChildProcess) => void): Pr
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function handle(ev: any) {
       if (ev.type === "system" && ev.subtype === "init") {
-        log("init", `Live session ${String(ev.session_id).slice(0, 8)} · model ${ev.model} · ${ev.tools?.length ?? 0} tools · cwd ${WORKSPACE}`);
+        log("init", `Live session ${String(ev.session_id).slice(0, 8)} · model ${ev.model} · ${ev.tools?.length ?? 0} tools`);
       } else if (ev.type === "assistant") {
         for (const block of ev.message?.content ?? []) {
           if (block.type === "text" && block.text?.trim()) {

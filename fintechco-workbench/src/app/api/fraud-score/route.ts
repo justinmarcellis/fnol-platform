@@ -1,4 +1,4 @@
-import { ensureWorkspace, runPython } from "@/lib/workspace";
+import { ensureWorkspace, runPython, workspaceFor } from "@/lib/workspace";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +20,8 @@ except ValueError as e:
 
 /** POST /v1/payments/score stand-in: executes the scoring module currently in /tmp/demo-workspace. */
 export async function POST(req: Request) {
-  ensureWorkspace();
+  const dir = workspaceFor(req);
+  ensureWorkspace(dir);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const payload = {
     amount: Number(body.amount ?? 0),
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
   };
   const t0 = performance.now();
   try {
-    const out = JSON.parse(await runPython(["-c", SCRIPT, JSON.stringify(payload)]));
+    const out = JSON.parse(await runPython(dir, ["-c", SCRIPT, JSON.stringify(payload)]));
     const roundtrip_ms = Math.round(performance.now() - t0);
     const schema_valid =
       typeof out.risk_score === "number" && out.risk_score >= 0 && out.risk_score <= 1 &&

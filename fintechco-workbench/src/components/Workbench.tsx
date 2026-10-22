@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { sessionHeaders } from "@/lib/session";
 import { CheckCircle2, ExternalLink, Layers, Loader2, Play, RotateCcw } from "lucide-react";
 import { SCENARIOS, type LogTag, type Mode, type ScenarioId, type StreamEvent } from "@/lib/scenarios";
 import Terminal, { type TermLine } from "./Terminal";
@@ -42,7 +43,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
   const liveAvailable = useRef(false);
 
   useEffect(() => {
-    fetch("/api/status")
+    fetch("/api/status", { headers: sessionHeaders() })
       .then((r) => r.json())
       .then((s) => {
         liveAvailable.current = !!s.live?.available;
@@ -102,7 +103,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
       try {
         const res = await fetch("/api/run-scenario", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: sessionHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({ scenarioId: id, mode: requested }),
         });
         if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
@@ -135,7 +136,7 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
   const reset = useCallback(async () => {
     if (running) return;
     setResetting(true);
-    await fetch("/api/reset", { method: "POST" }).catch(() => undefined);
+    await fetch("/api/reset", { method: "POST", headers: sessionHeaders() }).catch(() => undefined);
     setLines([]);
     setResults({});
     setSelected(null);

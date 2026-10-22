@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { sessionHeaders } from "@/lib/session";
 import { BarChart3, CheckCircle2, Loader2, Send, TrendingDown } from "lucide-react";
 import type { RunResult } from "./Workbench";
 
@@ -111,7 +112,7 @@ function FraudTester() {
     try {
       const r = await fetch("/api/fraud-score", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: sessionHeaders({ "content-type": "application/json" }),
         body: JSON.stringify(req),
       });
       setRes((await r.json()).response);
