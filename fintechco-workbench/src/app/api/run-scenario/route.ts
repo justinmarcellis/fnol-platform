@@ -8,8 +8,6 @@ import {
   EST_USD_PER_TOKEN,
   getScenario,
   type LogTag,
-  type MacroBrief,
-  type MacroRow,
   type Mode,
   type PytestSummary,
   type Scenario,
@@ -157,13 +155,6 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
     streamPytest(pytest, log);
   }
 
-  let brief: MacroBrief | undefined;
-  if (s.id === 3) {
-    log("bash", "Running the analysis on the interest-rate data");
-    brief = await loadBrief();
-    log("out", `Strong link between rates and late payments: ${brief.r.toFixed(2)} on a 0–1 scale`);
-  }
-
   const durationMs = Date.now() - t0;
   log(
     "done",
@@ -177,7 +168,6 @@ async function runScenario(s: Scenario, requested: Mode, log: Log, emit: Emit, s
     files: s.targets.map((f) => ({ path: f, before: readSeed(f), after: readWorkspace(f) })),
     pytest,
     metrics: { durationMs, tokens, costUsd, estimated },
-    brief,
   });
 }
 
@@ -226,12 +216,16 @@ async function safeScript(s: Scenario, log: Log) {
     await pace();
     log("reasoning", "Plan: keep the score between 0 and 1, return a clear approve / review / decline decision, reject bad inputs, and publish it as a service.");
   } else {
-    const csv = readSeed("fred_macro_data.csv").trim().split("\n");
-    log("read", `Interest rates and late payments, ${csv.length - 1} quarters from ${csv[1].split(",")[0]} to ${csv[csv.length - 1].split(",")[0]}`);
+    readSeed("refund_service.py")
+      .split("\n")
+      .forEach((line, i) => {
+        if (/f"(SELECT|UPDATE)/.test(line)) log("grep", `refund_service.py, line ${i + 1}: the customer's input is pasted straight into a database query`);
+        if (/API_KEY = "/.test(line)) log("grep", `refund_service.py, line ${i + 1}: a live payments key is written into the code`);
+      });
     await pace();
-    log("reasoning", "The analysis hasn't been written yet. Our rules say it must be reproducible from the data file, with no special tools.");
+    log("reasoning", "There's also no check that the person is allowed to issue refunds, and nothing stops a refund bigger than the payment, or a second refund.");
     await pace();
-    log("reasoning", "Plan: measure how closely rates and late payments move together, model a 2-point rate rise, and write three points for the Board.");
+    log("reasoning", "Plan: fix all four, keep the change small, and write review notes so the human reviewer knows what changed and what's left to check.");
   }
   await pace();
 
@@ -362,52 +356,4 @@ function summarizeInput(input: any): string {
   if (input.file_path) return path.basename(input.file_path);
   if (input.pattern) return input.pattern;
   return JSON.stringify(input).slice(0, 120);
-}
-
-async function loadBrief(): Promise<MacroBrief> {
-  try {
-    return JSON.parse(await runPython(["fred_stress_analysis.py"])) as MacroBrief;
-  } catch {
-    return fallbackBrief();
-  }
-}
-
-/** Used only if python3 is unavailable: same math, computed in TypeScript. */
-function fallbackBrief(): MacroBrief {
-  const [header, ...lines] = readSeed("fred_macro_data.csv").trim().split("\n");
-  const cols = header.split(",");
-  const rows = lines.map((l) => {
-    const v = l.split(",");
-    return Object.fromEntries(cols.map((c, i) => [c, i === 0 ? v[i] : Number(v[i])])) as unknown as MacroRow;
-  });
-  const xs = rows.map((r) => r.fed_funds_rate);
-  const ys = rows.map((r) => r.fintechco_delinquency_rate);
-  const n = xs.length;
-  const mx = xs.reduce((a, b) => a + b, 0) / n;
-  const my = ys.reduce((a, b) => a + b, 0) / n;
-  let sxy = 0;
-  let sxx = 0;
-  let syy = 0;
-  xs.forEach((x, i) => {
-    sxy += (x - mx) * (ys[i] - my);
-    sxx += (x - mx) ** 2;
-    syy += (ys[i] - my) ** 2;
-  });
-  const r = sxy / Math.sqrt(sxx * syy);
-  const slope = sxy / sxx;
-  const last = rows[n - 1];
-  const shock = last.fintechco_delinquency_rate + 2 * slope;
-  return {
-    n,
-    r,
-    p_value: 0.0001,
-    slope_bp_per_100bp: Math.round(slope * 1000) / 10,
-    stress_delinquency_plus_200bp: Math.round(shock * 100) / 100,
-    rows,
-    bullets: [
-      `When interest rates rise, our late payments rise with them. The link is strong (${r.toFixed(2)} on a 0–1 scale).`,
-      `Each 1-point rise in the Fed rate has come with about ${slope.toFixed(2)} points more late payments.`,
-      `If rates rose another 2 points, we'd expect late payments of about ${shock.toFixed(2)}%.`,
-    ],
-  };
 }

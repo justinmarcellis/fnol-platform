@@ -6,7 +6,7 @@ One-page demo app for the "Live Workbench" section of the FinTechCo executive br
 |---|------|-----------|------|
 | 1 | SRE & Security (20) | Masks raw PANs in `sre_payment_worker.py` + `sre_log_check.go`, structured JSON logs | `test_pci_compliance.py` 0/4 → 4/4 |
 | 2 | Data Science → SWE (40 + 120) | Untyped notebook → typed scoring module + FastAPI route + TS contract; live contract tester | `test_fraud_api.py` 0/4 → 4/4 |
-| 3 | Quants & Execs | Stdlib Pearson r / p-value / stress slope from `fred_macro_data.csv`; dual-axis chart + Board bullets | `test_macro_stress.py` 0/4 → 4/4 |
+| 3 | Every engineering team | Reviews pull request #1427 (refund feature): fixes query injection, a hardcoded key, a missing permission check and refund limits; writes REVIEW.md | `test_refund_service.py` 0/4 → 4/4 |
 
 ## Modes
 
@@ -37,7 +37,3 @@ MIN_INSTANCES=1 ./deploy.sh <project>                # demo day: no cold start
 To match `fintechco-roi.web.app`, install the Firebase CLI (`npm i -g firebase-tools`, then `firebase login`) and run `./deploy.sh <firebase-project-id>` with the same project that hosts the ROI calculator. The script deploys Cloud Run, creates the Hosting site `fintechco-workbench`, and proxies it, so the demo is served at **https://fintechco-workbench.web.app**. Override the name with `FIREBASE_SITE=...`.
 
 Uses `--max-instances 1` so the in-memory `/tmp` workspace stays consistent. Keep `npm run dev` running locally as a backup tab.
-
-## Data note
-
-`fed_funds_rate` is FRED `FEDFUNDS` quarterly averages (2025-Q4 and 2026-Q1 are approximate). `fintechco_delinquency_rate` is a synthetic series for the fictional FinTechCo. The correlation (r ≈ 0.91) is computed live, not hard-coded.

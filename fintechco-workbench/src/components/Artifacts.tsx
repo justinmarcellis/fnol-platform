@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, CheckCircle2, Loader2, Send, ShieldCheck, TrendingDown } from "lucide-react";
-import type { MacroBrief } from "@/lib/scenarios";
+import { BarChart3, CheckCircle2, Loader2, Send, TrendingDown } from "lucide-react";
 import type { RunResult } from "./Workbench";
 
 const TITLES: Record<number, string> = {
   1: "Security scorecard",
   2: "Try the fraud check",
-  3: "Board briefing",
+  3: "Pull request review",
 };
 
 export default function Artifact({ result }: { result?: RunResult }) {
@@ -23,7 +22,7 @@ export default function Artifact({ result }: { result?: RunResult }) {
         {!result && <p className="font-mono text-[12px] text-[#7d8590]">What this means for the business appears here when the run finishes.</p>}
         {result?.scenarioId === 1 && <SreScorecard result={result} />}
         {result?.scenarioId === 2 && <FraudTester key={result.metrics.durationMs} />}
-        {result?.scenarioId === 3 && result.brief && <MacroChart brief={result.brief} />}
+        {result?.scenarioId === 3 && <PullRequestReview ok={result.pytest.ok} />}
       </div>
     </div>
   );
@@ -214,100 +213,49 @@ function FraudTester() {
   );
 }
 
-function MacroChart({ brief }: { brief: MacroBrief }) {
-  const [hover, setHover] = useState<number | null>(null);
-  const rows = brief.rows;
-  const W = 640;
-  const H = 230;
-  const pad = { l: 40, r: 44, t: 14, b: 26 };
-  const iw = W - pad.l - pad.r;
-  const ih = H - pad.t - pad.b;
-  const ffMax = 6;
-  const dqMin = 0.5;
-  const dqMax = 3.25;
-  const x = (i: number) => pad.l + (i / (rows.length - 1)) * iw;
-  const yFF = (v: number) => pad.t + ih - (v / ffMax) * ih;
-  const yDQ = (v: number) => pad.t + ih - ((v - dqMin) / (dqMax - dqMin)) * ih;
-  const path = (f: (v: number) => number, key: "fed_funds_rate" | "fintechco_delinquency_rate") =>
-    rows.map((r, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${f(r[key]).toFixed(1)}`).join(" ");
-  const h = hover !== null ? rows[hover] : null;
+const FINDINGS = [
+  { severity: "Critical", tone: "bg-[#da3633]", line: "Lines 8, 11", what: "Customer input pasted straight into a database query", why: "A crafted order ID could refund every order." },
+  { severity: "Critical", tone: "bg-[#da3633]", line: "Line 4", what: "Live payments key written into the code", why: "Anyone with access to the code could see it. Moved to the secure vault." },
+  { severity: "High", tone: "bg-[#bd561d]", line: "Line 7", what: "No permission check", why: "Anyone signed in could issue refunds. Now limited to the refunds role." },
+  { severity: "Medium", tone: "bg-[#9e6a03]", line: "Line 7", what: "Refunds not limited", why: "A refund could exceed the payment or be issued twice. Both are now blocked." },
+];
 
+function PullRequestReview({ ok }: { ok: boolean }) {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-full bg-terracotta px-2.5 py-0.5 font-mono text-[12px] font-bold text-white">
-          Strong link: {brief.r.toFixed(2)} on a 0–1 scale{brief.p_value < 0.001 ? ", very unlikely to be chance" : ""}
-        </span>
-        <span className="font-mono text-[11px] text-[#8b949e]">{brief.n} quarters · each 1-point rate rise ≈ +{(brief.slope_bp_per_100bp / 100).toFixed(2)} points of late payments</span>
-        <span className="ml-auto flex items-center gap-3 font-mono text-[11px]">
-          <span className="flex items-center gap-1"><i className="inline-block h-0.5 w-4 bg-terracotta" /> Fed interest rate %</span>
-          <span className="flex items-center gap-1"><i className="inline-block h-0.5 w-4 bg-[#58a6ff]" /> Our late payments %</span>
+      <div className="flex items-center gap-2 rounded-lg border border-termline bg-term2 px-3 py-2">
+        <span className="font-mono text-[12px] text-[#8b949e]">#1427</span>
+        <span className="text-[13px] font-semibold text-[#e6edf3]">Add self-serve refunds for support agents</span>
+        <span className="ml-auto flex items-center gap-1.5 text-[12px]">
+          <span className="rounded-full bg-[#da3633]/20 px-2 py-0.5 text-[#ff7b72] line-through">Blocked</span>
+          <span className="text-[#7d8590]">→</span>
+          <span className={`rounded-full px-2 py-0.5 font-semibold text-white ${ok ? "bg-sage" : "bg-[#da3633]"}`}>
+            {ok ? "Ready for human review" : "Still blocked"}
+          </span>
         </span>
       </div>
-      <div className="relative rounded-lg border border-termline bg-term2 p-2">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" onMouseLeave={() => setHover(null)}>
-          {[0, 2, 4, 6].map((v) => (
-            <g key={v}>
-              <line x1={pad.l} x2={W - pad.r} y1={yFF(v)} y2={yFF(v)} stroke="#30363d" strokeDasharray="2 4" />
-              <text x={pad.l - 6} y={yFF(v) + 3} textAnchor="end" fontSize="10" fill="#d97757">{v}%</text>
-            </g>
-          ))}
-          {[1, 2, 3].map((v) => (
-            <text key={v} x={W - pad.r + 6} y={yDQ(v) + 3} fontSize="10" fill="#58a6ff">{v.toFixed(1)}%</text>
-          ))}
-          {rows.map((r, i) =>
-            r.quarter.endsWith("Q1") ? (
-              <text key={r.quarter} x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="#7d8590">
-                {r.quarter.slice(0, 4)}
-              </text>
-            ) : null,
-          )}
-          <path d={path(yFF, "fed_funds_rate")} fill="none" stroke="#d97757" strokeWidth="2.5" />
-          <path d={path(yDQ, "fintechco_delinquency_rate")} fill="none" stroke="#58a6ff" strokeWidth="2.5" />
-          {hover !== null && (
-            <>
-              <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={pad.t + ih} stroke="#8b949e" strokeDasharray="3 3" />
-              <circle cx={x(hover)} cy={yFF(rows[hover].fed_funds_rate)} r="4" fill="#d97757" />
-              <circle cx={x(hover)} cy={yDQ(rows[hover].fintechco_delinquency_rate)} r="4" fill="#58a6ff" />
-            </>
-          )}
-          {rows.map((r, i) => (
-            <rect
-              key={r.quarter}
-              x={x(i) - iw / (rows.length - 1) / 2}
-              y={pad.t}
-              width={iw / (rows.length - 1)}
-              height={ih}
-              fill="transparent"
-              onMouseEnter={() => setHover(i)}
-            />
-          ))}
-        </svg>
-        {h && (
-          <div className="pointer-events-none absolute right-3 top-3 rounded-md border border-termline bg-term px-2.5 py-1.5 font-mono text-[11px]">
-            <div className="text-[#e6edf3]">{h.quarter}</div>
-            <div className="text-terracotta">Fed rate {h.fed_funds_rate.toFixed(2)}%</div>
-            <div className="text-[#58a6ff]">Late payments {h.fintechco_delinquency_rate.toFixed(2)}%</div>
-            <div className="text-[#8b949e]">Unemployment {h.unemployment_rate.toFixed(1)}%</div>
+      <div className="space-y-1.5">
+        {FINDINGS.map((f) => (
+          <div key={f.what} className="flex gap-3 rounded-lg border border-termline bg-term2 px-3 py-2">
+            <span className={`h-fit shrink-0 rounded px-1.5 py-0.5 text-[10.5px] font-bold text-white ${f.tone}`}>{f.severity}</span>
+            <div className="min-w-0">
+              <div className="text-[12.5px] font-semibold text-[#e6edf3]">
+                {f.what} <span className="font-mono text-[11px] font-normal text-[#7d8590]">· {f.line}</span>
+              </div>
+              <div className="text-[12px] text-[#8b949e]">{f.why}</div>
+            </div>
+            <CheckCircle2 className="ml-auto h-4 w-4 shrink-0 text-[#56d364]" />
           </div>
-        )}
+        ))}
       </div>
-      <div className="rounded-lg border border-termline bg-term2 p-3">
-        <div className="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-wide text-[#7d8590]">
-          <ShieldCheck className="h-3.5 w-3.5" /> Summary for the Board
-        </div>
-        <ul className="mt-1.5 space-y-1.5 text-[12.5px] leading-snug text-[#e6edf3]">
-          {brief.bullets.map((b) => (
-            <li key={b} className="flex gap-2">
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta" />
-              {b}
-            </li>
-          ))}
-        </ul>
-        <div className="mt-2 font-mono text-[10px] text-[#7d8590]">
-          Interest rates: Federal Reserve quarterly averages (late 2025 onward approximate). Late payments: illustrative FinTechCo data.
-        </div>
+      <div className="grid grid-cols-3 gap-2.5">
+        <Tile label="Wait for first review" value="Minutes" sub="Instead of about a day" tone="terracotta" />
+        <Tile label="Found before a person looked" value="4 issues" sub="2 critical, all fixed" />
+        <Tile label="Time to ship changes" value="35% faster" sub="Target across 120 engineers" tone="slate" />
       </div>
+      <p className="text-[11.5px] text-[#7d8590]">
+        In practice this runs automatically on every pull request, inside your existing code review. The human reviewer still approves the merge.
+      </p>
     </div>
   );
 }

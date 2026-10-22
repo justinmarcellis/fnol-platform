@@ -34,13 +34,13 @@ export const TALK_TRACKS: TalkTrack[] = [
   {
     scenario: 3,
     minutes: "3½ min",
-    title: "Interest-rate stress test for the Board",
+    title: "Review every pull request before a person does",
     beats: [
-      "Set up: \"This one isn't for engineers. The risk team owes the Board an interest-rate analysis by Friday.\"",
-      "Click Run. \"Our rules say Board numbers must be reproducible from the data we keep on record, so Claude writes the analysis itself, and tests check the math.\"",
-      "Chart: hover across 2022. \"When the Fed raised rates, our late payments followed. That 0.91 is calculated live, not typed onto a slide.\"",
-      "Read the three Board points aloud. \"The last one is something a risk officer can act on.\"",
-      "Close: \"Three teams, one set of rules, a few cents per run.\" Click ROI Calculator to model FinTechCo's own numbers.",
+      "Set up: \"Every change waits for a senior engineer to review it, often for a day. And reviewers are tired, so things slip through.\"",
+      "Click Run. When the checks fail: \"This is a real-looking pull request: a new refund feature. Our checks fail before anyone has looked at it.\"",
+      "When the [found] lines appear: \"In seconds it found someone could refund every order with a crafted ID, and a live payments key sitting in the code.\"",
+      "Results: walk the four findings, then open the REVIEW.md tab. \"It fixed them and left notes in plain English, including what the human still has to decide.\"",
+      "Close: \"This runs on every pull request, automatically. Your senior engineers review a clean change, not a first draft. That's where 35% faster comes from.\" Then click ROI Calculator.",
     ],
   },
 ];

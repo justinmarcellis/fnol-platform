@@ -70,28 +70,31 @@ Close the window.
 
 ---
 
-## Scenario 3: Interest-rate stress test for the Board (3½ minutes)
+## Scenario 3: Review every pull request before a person does (3½ minutes)
 
-**Set it up (about 35 seconds).**
-> "Your risk team owes the Board an analysis of how interest rates affect late payments, due Friday. That's normally a couple of days of work. And our rules say any number shown to the Board must be reproducible from the data we keep on record."
+**Set it up (about 40 seconds).**
+> "Here's where engineering time actually goes. Every change waits for a senior engineer to review it, often for a day or more. Reviewers are busy and tired, so things slip through. That's the bottleneck behind the 35% on the KPI slide."
 
 **Run it (about 15 seconds).** Click **Run** on card 3.
-- When **"Interest rates and late payments, 25 quarters…"** appears:
-  > "Six years of Federal Reserve interest rates next to our own late-payment rate."
+- When **"0 of 4 checks pass today"** appears:
+  > "This is a realistic pull request: a new feature that lets support agents issue refunds. It fails our checks before anyone has looked at it."
+- When the **[found]** lines appear:
+  > "In seconds it found two serious problems. Someone could type a specially crafted order number and refund every order. And there's a live payments key sitting in the code."
 - When the **[thinking]** lines appear:
-  > "It's writing the analysis itself, with no special tools, and our checks verify the math."
-- When **"Strong link between rates and late payments: 0.91"** appears:
-  > "There's the answer: a strong link."
+  > "It also noticed that anyone signed in could issue refunds, and nothing stops a refund bigger than the payment."
+- When **"4 of 4 checks passed"** appears: "All four fixed, and proven."
 
-**Walk through the results (about 2 minutes).**
-- **Chart:** move the mouse across 2022 and into 2023.
-  > "Orange is the Fed's interest rate, blue is our late payments. When the Fed started raising rates in 2022, our late payments followed. That number is calculated live from the data, not typed onto a slide."
-  Hover over the middle of 2020: "And here's COVID. Unemployment hit 13%, and late payments rose even with rates near zero. Rates aren't the whole story, and the analysis doesn't pretend they are."
-- **Board summary:**
-  > "And here are three points for the Board, written from the calculated numbers." Read the third aloud: "If rates rose another two points, we'd expect late payments of about 2.8%. That's something a risk officer can act on."
+**Walk through the results (about 2¼ minutes).**
+- **Pull request review (bottom right):**
+  > "Blocked, now ready for human review. Four findings, two of them critical, each with the line, the problem and the fix, in plain English."
+- **What changed (top right):** click the **REVIEW.md** tab.
+  > "These are the notes it leaves for the human reviewer. It also tells the reviewer what's still their call: confirm the role name, and rotate the exposed key, because it's still in the history. Claude doesn't approve its own work. A person merges."
+  Click **refund_service.py**: "And here's the fix itself. It's small, and a reviewer can read it in a minute."
+- **Impact tiles:**
+  > "In practice this runs automatically on every pull request, inside the code review tools your team already uses. Senior engineers stop being the first line of defense and review a clean change instead of a first draft. That's how you get changes shipped 35% faster, and it's the first thing we'd measure in the pilot."
 
 **Close the demo.**
-> "Three teams, one set of rules. Security got a proven fix, engineering got a production service, and the Board got its analysis. Each run cost a few cents." Click **ROI Calculator ↗**: "Now let's put your numbers into it. This is where the $3.8 million comes from."
+> "Three teams, one set of rules. Security got a proven fix, data science got a production service, and every engineer gets a reviewer that never sleeps. Each run cost a few cents." Click **ROI Calculator ↗**: "Now let's put your numbers into it. This is where the $3.8 million comes from."
 
 ---
 

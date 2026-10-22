@@ -5,3 +5,4 @@ node_modules
 *.md
 !seed-workspace/CLAUDE.md
 firebase-public
+!verified-patches/**/*.md

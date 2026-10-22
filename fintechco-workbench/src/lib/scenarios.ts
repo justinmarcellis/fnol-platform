@@ -49,15 +49,15 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 3,
-    team: "3 · Finance and risk leadership",
-    title: "Interest-rate stress test for the Board",
+    team: "3 · Every engineering team",
+    title: "Review every pull request before a person does",
     details:
-      "Claude compares six years of Federal Reserve interest rates with our late-payment rates, measures how closely they move together, and drafts a Board summary.",
-    targets: ["fred_stress_analysis.py"],
-    testFile: "test_macro_stress.py",
-    ask: "Compare Fed interest rates with our late payments since 2020 and draft three points for the Board",
-    prompt: `Implement every function in fred_stress_analysis.py per its docstring using fred_macro_data.csv and the standard library only (CLAUDE.md Rule 5): Pearson r with a two-tailed p-value, the delinquency slope per +100bp of Fed Funds, and 3 Board-ready bullets. Make running the file print the brief as JSON. Run python3 -m pytest test_macro_stress.py -q. ${GUARDRAIL}`,
-    estTokens: 4260,
+      "Claude reviews a new refund feature like a senior engineer, finds the security problems, fixes them, and leaves clear notes for the human reviewer.",
+    targets: ["refund_service.py", "REVIEW.md"],
+    testFile: "test_refund_service.py",
+    ask: "Review this pull request for security and correctness, fix what's blocking, and leave notes for the reviewer",
+    prompt: `refund_service.py is pull request #1427. Review it for security and correctness against CLAUDE.md. Fix every blocking issue in refund_service.py, then write REVIEW.md for the human reviewer: a table of each finding with severity, line, what was wrong and what changed, in plain English, plus anything the reviewer must still check. Run python3 -m pytest test_refund_service.py -q. ${GUARDRAIL}`,
+    estTokens: 3620,
   },
 ];
 
@@ -81,7 +81,7 @@ export function buildCliArgs(s: Scenario): string[] {
     "--permission-mode",
     "acceptEdits",
     "--allowedTools",
-    "Read,Edit,Write,Glob,Grep,Bash(python3 -m pytest*),Bash(pytest*),Bash(python3 fred_stress_analysis.py*)",
+    "Read,Edit,Write,Glob,Grep,Bash(python3 -m pytest*),Bash(pytest*)",
     "--disallowedTools",
     "Bash(curl*),Bash(wget*),Bash(rm*),WebFetch,WebSearch",
   ];
@@ -105,23 +105,6 @@ export interface PytestSummary {
   output: string;
   /** True when python3/pytest was unavailable and cached output was shown. */
   cached: boolean;
-}
-
-export interface MacroRow {
-  quarter: string;
-  fed_funds_rate: number;
-  unemployment_rate: number;
-  fintechco_delinquency_rate: number;
-}
-
-export interface MacroBrief {
-  n: number;
-  r: number;
-  p_value: number;
-  slope_bp_per_100bp: number;
-  stress_delinquency_plus_200bp: number;
-  rows: MacroRow[];
-  bullets: string[];
 }
 
 export type LogTag =
@@ -148,6 +131,5 @@ export type StreamEvent =
       files: FileDiff[];
       pytest: PytestSummary;
       metrics: { durationMs: number; tokens: number; costUsd: number; estimated: boolean };
-      brief?: MacroBrief;
     }
   | { type: "error"; message: string };
