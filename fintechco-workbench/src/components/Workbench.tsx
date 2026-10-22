@@ -256,6 +256,12 @@ export default function Workbench({ claudeMd, settingsJson }: { claudeMd: string
         </section>
       </main>
 
+      <Link
+        href="/how-it-was-built"
+        className="fixed bottom-3 right-3 z-30 rounded-full border border-black/10 bg-alabaster/95 px-3 py-1.5 text-[12px] font-medium text-black/60 shadow-md backdrop-blur hover:text-charcoal"
+      >
+        How this was built →
+      </Link>
       <GovernanceModal open={govOpen} onClose={() => setGovOpen(false)} claudeMd={claudeMd} settingsJson={settingsJson} lines={lines} />
       <TalkTrackDrawer open={talkOpen} onClose={() => setTalkOpen(false)} />
     </div>
