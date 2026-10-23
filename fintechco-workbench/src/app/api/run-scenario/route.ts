@@ -177,6 +177,7 @@ async function runScenario(dir: string, s: Scenario, requested: Mode, log: Log, 
     scenarioId: s.id,
     mode,
     files: s.targets.map((f) => ({ path: f, before: readSeed(f), after: readWorkspace(dir, f) })),
+    baseline,
     pytest,
     metrics: { durationMs, tokens, costUsd, estimated },
   });

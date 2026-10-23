@@ -13,5 +13,8 @@ export default function Page() {
     fs.readdirSync(hookDir).filter((f) => f.endsWith(".py")).map((f) => [f, fs.readFileSync(path.join(hookDir, f), "utf8")]),
   );
   hookFiles["SKILL.md"] = fs.readFileSync(path.join(seed, ".claude", "skills", "architecture-patterns", "SKILL.md"), "utf8");
-  return <Workbench claudeMd={claudeMd} settingsJson={settingsJson} hookFiles={hookFiles} />;
+  const testFiles: Record<string, string> = Object.fromEntries(
+    fs.readdirSync(seed).filter((f) => /^test_.*\.py$/.test(f)).map((f) => [f, fs.readFileSync(path.join(seed, f), "utf8")]),
+  );
+  return <Workbench claudeMd={claudeMd} settingsJson={settingsJson} hookFiles={hookFiles} testFiles={testFiles} />;
 }

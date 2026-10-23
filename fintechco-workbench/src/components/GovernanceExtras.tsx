@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, CircleHelp, ShieldX } from "lucide-react";
 import type { TermLine } from "./Terminal";
+import { CHECK_SUITES } from "@/lib/checks";
+import type { PytestSummary, ScenarioId } from "@/lib/scenarios";
 
 interface Action {
   label: string;
@@ -246,6 +248,91 @@ export function GuardrailsTimeline({ lines, hookFiles }: { lines: TermLine[]; ho
         </div>
       )}
       {hookLines.length === 0 && <div className="mt-3 text-[12px] text-[#7d8590]">Run a scenario to see what each hook did. Scenario 1 shows a blocked edit.</div>}
+    </div>
+  );
+}
+
+export type CheckRuns = Partial<Record<ScenarioId, { baseline?: PytestSummary; pytest: PytestSummary }>>;
+
+/** Pulls one test function, with any decorators, out of a test file. */
+function functionSource(file: string, name: string): string {
+  const lines = file.split("\n");
+  const start = lines.findIndex((l) => l.startsWith(`def ${name}(`));
+  if (start < 0) return "";
+  let end = start + 1;
+  while (end < lines.length && (lines[end] === "" || /^\s/.test(lines[end]))) end++;
+  return lines.slice(start, end).join("\n").trimEnd();
+}
+
+function Status({ label, result }: { label: string; result?: "pass" | "fail" }) {
+  if (!result) return null;
+  const pass = result === "pass";
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-[10.5px] font-medium ${pass ? "bg-[#3fb950]/15 text-[#3fb950]" : "bg-[#ff7b72]/15 text-[#ff7b72]"}`}>
+      {label}: {pass ? "pass" : "fail"}
+    </span>
+  );
+}
+
+export function AutomatedChecks({ testFiles, runs }: { testFiles: Record<string, string>; runs: CheckRuns }) {
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <div className="p-5">
+      <div className="text-[13px] leading-relaxed text-[#c9d1d9]">
+        <b className="text-white">Automated checks prove the result.</b> Each one is a few lines of code your engineers write: it sets up a real example, runs
+        the code, and states what must be true. If any statement is false, the check fails. Claude runs them before it starts, to show the problem, and again
+        at the end, to prove the fix. Rule 4 says it may never edit them, and a hook won&apos;t let it finish until they pass.
+      </div>
+      <div className="mt-4 space-y-4">
+        {CHECK_SUITES.map((suite) => {
+          const run = runs[suite.scenario];
+          const cached = run && !Object.keys(run.pytest.checks ?? {}).length;
+          return (
+            <section key={suite.file} className="rounded-lg border border-termline bg-term2">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-termline px-3 py-2">
+                <span className="text-[14px] font-semibold text-white">Scenario {suite.scenario} · {suite.about}</span>
+                <code className="text-[11px] text-[#7d8590]">{suite.file}</code>
+                <span className="ml-auto text-[11.5px] text-[#8b949e]">
+                  {run
+                    ? `Last run: ${run.baseline ? `${run.baseline.passed} of ${run.baseline.total || 4} before, ` : ""}${run.pytest.passed} of ${run.pytest.total} after`
+                    : "Not run yet"}
+                </span>
+              </div>
+              <ol className="divide-y divide-termline">
+                {suite.checks.map((c) => {
+                  const key = `${suite.file}:${c.name}`;
+                  const code = testFiles[suite.file] ? functionSource(testFiles[suite.file], c.name) : "";
+                  return (
+                    <li key={c.name} className="px-3 py-2.5">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="text-[13.5px] text-white">{c.title}</span>
+                        <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10.5px] text-[#d2a8ff]">{c.rule}</span>
+                        <span className="ml-auto flex gap-1">
+                          <Status label="Before" result={run?.baseline?.checks?.[c.name]} />
+                          <Status label="After" result={run?.pytest.checks?.[c.name]} />
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-[12.5px] leading-snug text-[#8b949e]">{c.proves}</div>
+                      {code && (
+                        <>
+                          <button onClick={() => setOpen(open === key ? null : key)} className="mt-1 font-mono text-[11px] text-[#58a6ff] hover:underline">
+                            {open === key ? "Hide" : "View"} how it&apos;s written
+                          </button>
+                          {open === key && (
+                            <pre className="scroll-dark mt-1.5 overflow-auto rounded bg-term p-3 font-mono text-[11.5px] leading-relaxed text-[#c9d1d9]">{code}</pre>
+                          )}
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+              {cached && <div className="px-3 pb-2 text-[11px] text-[#7d8590]">Individual results aren&apos;t available for this run.</div>}
+            </section>
+          );
+        })}
+      </div>
+      {Object.keys(runs).length === 0 && <div className="mt-3 text-[12px] text-[#7d8590]">Run a scenario to see each check fail before the fix and pass after it.</div>}
     </div>
   );
 }

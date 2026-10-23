@@ -32,7 +32,17 @@ const HOLD_MS: Record<LogTag, number> = {
 
 export type RunResult = Extract<StreamEvent, { type: "result" }>;
 
-export default function Workbench({ claudeMd, settingsJson, hookFiles }: { claudeMd: string; settingsJson: string; hookFiles: Record<string, string> }) {
+export default function Workbench({
+  claudeMd,
+  settingsJson,
+  hookFiles,
+  testFiles,
+}: {
+  claudeMd: string;
+  settingsJson: string;
+  hookFiles: Record<string, string>;
+  testFiles: Record<string, string>;
+}) {
   const [mode, setMode] = useState<Mode>("safe");
   const [lines, setLines] = useState<TermLine[]>([]);
   const [running, setRunning] = useState<ScenarioId | null>(null);
@@ -263,7 +273,7 @@ export default function Workbench({ claudeMd, settingsJson, hookFiles }: { claud
       >
         How this was built →
       </Link>
-      <GovernanceModal open={govOpen} onClose={() => setGovOpen(false)} claudeMd={claudeMd} settingsJson={settingsJson} lines={lines} hookFiles={hookFiles} />
+      <GovernanceModal open={govOpen} onClose={() => setGovOpen(false)} claudeMd={claudeMd} settingsJson={settingsJson} lines={lines} hookFiles={hookFiles} testFiles={testFiles} runs={results} />
       <TalkTrackDrawer open={talkOpen} onClose={() => setTalkOpen(false)} />
     </div>
   );

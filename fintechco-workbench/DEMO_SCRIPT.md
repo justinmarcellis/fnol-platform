@@ -30,6 +30,8 @@ Close the window.
   > "Watch this. Claude tried to add an example log line, and the example itself had a card number in it. A hook, a script your security team owns, ran before the edit and refused it. Claude didn't decide to be careful. It wasn't allowed. It switched to a masked example on its own."
 - When **"4 of 4 checks passed"** appears:
   > "Fixed and proven. And it didn't change the checks to get there; our rules forbid that."
+- **Optional, 20 seconds:** open **Governance → Automated checks**.
+  > "These are the four checks, in plain English. Each one was red before the fix and is green now. Click 'View how it's written' and you can see it's a few lines: set up an example, run the code, state what must be true."
 
 **Walk through the results (about 2 minutes).**
 - **What changed (top right):**

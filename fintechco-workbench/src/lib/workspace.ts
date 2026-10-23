@@ -129,19 +129,23 @@ export function runPytest(dir: string, testFile: string): Promise<PytestSummary>
       ok: true,
       cached: true,
       output: `${testFile} ....  [100%]\n4 passed (cached: python3/pytest not installed on this host)`,
+      checks: {},
     });
   }
   return new Promise((resolve) => {
     execFile(
       "python3",
-      ["-m", "pytest", testFile, "-q", "-p", "no:cacheprovider", "--tb=line", "--color=no"],
+      ["-m", "pytest", testFile, "-q", "-rA", "-p", "no:cacheprovider", "--tb=line", "--color=no"],
       { cwd: dir, timeout: 30000, env: PY_ENV },
       (_err, stdout, stderr) => {
         const output = `${stdout}${stderr}`.trim();
         const num = (re: RegExp) => Number(output.match(re)?.[1] ?? 0);
         const passed = num(/(\d+) passed/);
         const failed = num(/(\d+) failed/) + num(/(\d+) errors?/);
-        resolve({ passed, failed, total: passed + failed, ok: failed === 0 && passed > 0, output, cached: false });
+        // -rA lists each check as "PASSED file::name" or "FAILED file::name - reason".
+        const checks: Record<string, "pass" | "fail"> = {};
+        for (const m of output.matchAll(/^(PASSED|FAILED|ERROR) \S+::(\w+)/gm)) checks[m[2]] = m[1] === "PASSED" ? "pass" : "fail";
+        resolve({ passed, failed, total: passed + failed, ok: failed === 0 && passed > 0, output, cached: false, checks });
       },
     );
   });

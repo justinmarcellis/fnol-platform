@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { OBJECTIONS, TALK_TRACKS } from "@/lib/talktrack";
-import { AuditLog, GuardrailsTimeline, PermissionTester } from "./GovernanceExtras";
+import { AuditLog, AutomatedChecks, GuardrailsTimeline, PermissionTester, type CheckRuns } from "./GovernanceExtras";
 import type { TermLine } from "./Terminal";
 
 export function GovernanceModal({
@@ -13,6 +13,8 @@ export function GovernanceModal({
   settingsJson,
   lines = [],
   hookFiles = {},
+  testFiles = {},
+  runs = {},
 }: {
   open: boolean;
   onClose: () => void;
@@ -20,8 +22,10 @@ export function GovernanceModal({
   settingsJson: string;
   lines?: TermLine[];
   hookFiles?: Record<string, string>;
+  testFiles?: Record<string, string>;
+  runs?: CheckRuns;
 }) {
-  const [tab, setTab] = useState<"md" | "json" | "hooks" | "try" | "audit">("md");
+  const [tab, setTab] = useState<"md" | "json" | "checks" | "hooks" | "try" | "audit">("md");
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-charcoal/50 p-3 sm:p-6" onClick={onClose}>
@@ -40,6 +44,7 @@ export function GovernanceModal({
             [
               ["md", "Our rules"],
               ["json", "Permissions"],
+              ["checks", "Automated checks"],
               ["hooks", "Guardrails in action"],
               ["try", "Try a permission"],
               ["audit", "Audit log"],
@@ -58,6 +63,7 @@ export function GovernanceModal({
               {
                 md: "Written rules Claude reads at the start of every session",
                 json: "What Claude is allowed to do (green) and blocked from doing (red)",
+                checks: "The tests that prove each fix, and how they did on the last run",
                 hooks: "Hooks and the sandbox: checks Claude cannot skip",
                 try: "See how the permissions decide, live",
                 audit: "A record of every action, and why it was allowed",
@@ -71,7 +77,11 @@ export function GovernanceModal({
           </pre>
         ) : (
           <div className="scroll-dark mx-6 mb-6 min-h-0 flex-1 overflow-auto rounded-b-lg rounded-tr-lg bg-term text-[#e6edf3]">
-            {tab === "try" ? <PermissionTester settingsJson={settingsJson} /> : tab === "hooks" ? <GuardrailsTimeline lines={lines} hookFiles={hookFiles} /> : <AuditLog lines={lines} />}
+            {tab === "checks" ? (
+              <AutomatedChecks testFiles={testFiles} runs={runs} />
+            ) : tab === "try" ? (
+              <PermissionTester settingsJson={settingsJson} />
+            ) : tab === "hooks" ? <GuardrailsTimeline lines={lines} hookFiles={hookFiles} /> : <AuditLog lines={lines} />}
           </div>
         )}
       </div>

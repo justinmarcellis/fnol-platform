@@ -105,6 +105,8 @@ export interface PytestSummary {
   output: string;
   /** True when python3/pytest was unavailable and cached output was shown. */
   cached: boolean;
+  /** Pass or fail for each check, keyed by test function name. Empty when results were cached. */
+  checks: Record<string, "pass" | "fail">;
 }
 
 export type LogTag =
@@ -130,6 +132,8 @@ export type StreamEvent =
       scenarioId: ScenarioId;
       mode: Mode;
       files: FileDiff[];
+      /** The checks as they stood before Claude changed anything. */
+      baseline: PytestSummary;
       pytest: PytestSummary;
       metrics: { durationMs: number; tokens: number; costUsd: number; estimated: boolean };
     }
