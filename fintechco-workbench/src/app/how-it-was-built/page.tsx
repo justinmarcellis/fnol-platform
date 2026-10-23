@@ -170,6 +170,9 @@ export default function HowItWasBuilt() {
 
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-2 border-t border-black/10 pt-6 text-[12px] text-black/45">
           <span>Built with Claude Code, deployed on Google Cloud.</span>
+          <Link href="/agent-lifecycle" className="font-medium text-slate hover:underline">
+            How teams build and grow agents →
+          </Link>
           <Link href="/" className="font-medium text-slate hover:underline">
             Back to the live Workbench →
           </Link>

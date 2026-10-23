@@ -33,6 +33,9 @@ export default function ArchitecturesPage() {
           ))}
         </nav>
         <div className="flex items-center gap-2 lg:ml-auto">
+          <Link href="/agent-lifecycle" className="whitespace-nowrap rounded-lg border border-black/15 bg-white px-3 py-1.5 text-[12.5px] font-medium hover:bg-oat">
+            Building agents
+          </Link>
           <a
             href="https://fintechco-roi.web.app/"
             target="_blank"
@@ -155,6 +158,9 @@ export default function ArchitecturesPage() {
 
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-2 border-t border-black/10 pt-6 text-[12px] text-black/45">
           <span>Based on the Claude Code on Google Cloud reference architectures.</span>
+          <Link href="/agent-lifecycle" className="font-medium text-slate hover:underline">
+            How teams build and grow agents →
+          </Link>
           <Link href="/" className="font-medium text-slate hover:underline">
             Back to the live Workbench →
           </Link>
