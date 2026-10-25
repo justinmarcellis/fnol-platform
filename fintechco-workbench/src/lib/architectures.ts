@@ -1,4 +1,5 @@
-// Plain-language summaries of the three Claude Code on Google Cloud reference architectures.
+// Plain-language summaries of how Claude Code fits into FinTechCo: the Google Cloud reference
+// architectures, a fraud-claims intake design, and three ways engineering teams run Claude Code.
 
 export interface Lane {
   label: string;
@@ -19,6 +20,10 @@ export interface Architecture {
   guardrailsTitle: string;
   guardrails: string[];
   watchouts: string[];
+  /** Heading shown above this section, opening a new group of sections. */
+  groupIntro?: { kicker: string; title: string; lede: string };
+  /** Extra panel rendered after the lanes (see src/lib/architectureExtras.ts). */
+  extra?: "fraud-desk" | "review-judge";
 }
 
 export const ARCHITECTURES: Architecture[] = [
@@ -364,6 +369,282 @@ export const ARCHITECTURES: Architecture[] = [
       "Set confidence thresholds by the cost of a mistake. A wrong bank account number matters more than a wrong middle initial.",
       "The review screen is your own app. Google's built-in review feature has been retired.",
       "Some newer document-reading options are in preview. Check region and encryption support before relying on them.",
+    ],
+  },
+  {
+    id: "fraud-claims",
+    nav: "Fraud claims",
+    title: "Every fraud report matched to the right customer in one click",
+    kicker: "Reported fraud, matched to the right customer",
+    headline: "App reports arrive structured. Emails don't. Claude reads every email, pulls the customer's records from the mainframe, and hands the analyst a ready-made case with the likely customer already found.",
+    quote:
+      "Today 12 analysts match 500 to 1,200 reports a day by hand, and emails sit in a queue while the investigation clock is already running. Here Claude does the reading, the lookup and the reformatting. The analyst confirms the match in one click, and every correction teaches the system.",
+    lanes: [
+      {
+        label: "Arrives",
+        tone: "people",
+        items: [
+          { name: "Bank app report", note: "Structured: claim type, card, amounts, customer ID" },
+          { name: "Email to the fraud inbox", note: "Free form, attachments, forwarded threads" },
+          { name: "Call center notes", note: "Typed by an agent during the call" },
+        ],
+      },
+      {
+        label: "Claude reads and shapes",
+        tone: "workspace",
+        items: [
+          { name: "Read the message", note: "Who, what happened, when, how much, which card" },
+          { name: "Classify the claim", note: "Card not present, account takeover, scam, lost card" },
+          { name: "Fill the case format", note: "The exact fields the service desk expects" },
+          { name: "Confidence on every field", note: "Low-confidence fields are flagged, never guessed" },
+        ],
+      },
+      {
+        label: "Matches to our records",
+        tone: "platform",
+        items: [
+          { name: "Mainframe customer file", note: "Read-only lookup by name, email, phone, last four" },
+          { name: "Card and payment history", note: "Confirms the disputed transactions exist" },
+          { name: "Open and past cases", note: "Spots duplicates and repeat reporters" },
+          { name: "Ranked customer matches", note: "Best CID plus related CIDs, such as joint holders" },
+        ],
+      },
+      {
+        label: "Analyst decides",
+        tone: "data",
+        items: [
+          { name: "Case desk screen", note: "Email on the left, the prepared case on the right" },
+          { name: "One-click match", note: "Confirm the CID, link a related one, or search" },
+          { name: "Straight into the service desk", note: "The same queue the app reports use today" },
+          { name: "Corrections feed back", note: "Every change becomes a test case" },
+        ],
+      },
+    ],
+    steps: [
+      "Arrive. App reports go straight to the service desk as they do today. Emails and call notes land in a secure inbox, and card numbers are masked to the last four before anything else reads them.",
+      "Read. Claude reads each email and pulls out the claim: type, dates, amounts, merchant, card, and how the customer can be reached. Each field gets a confidence score.",
+      "Look up. Through read-only connections to the mainframe and card systems, it finds the customers who could have sent it and ranks them, including related customers such as a joint account holder.",
+      "Shape. It converts everything into the service desk's case format, so an email case looks exactly like an app case.",
+      "Decide. The analyst sees the original email next to the prepared case and the top matches, and confirms with one click. Nothing is filed without a person.",
+      "Learn. Each confirmation or correction is saved as a test case. A judge model scores every day's work, and Claude proposes rule and instruction updates that only go live after they pass the tests and a lead approves them.",
+    ],
+    value: [
+      { title: "Hours back every day", detail: "Analysts confirm instead of retyping and searching", measure: "Minutes per email case" },
+      { title: "No reports left waiting", detail: "Emails are prepared as they arrive, at 500 or 1,200 a day", measure: "Time from email to case opened" },
+      { title: "Fewer wrong matches", detail: "Ranked matches with the evidence shown, never a silent guess", measure: "Share of matches changed later" },
+      { title: "Better every week", detail: "Corrections and the judge's scores drive each update", measure: "First-choice match accuracy" },
+    ],
+    guardrailsTitle: "Built-in safeguards",
+    guardrails: ["Read-only mainframe access", "Card numbers masked to last four", "A person confirms every match", "Updates gated by tests and a lead", "Every lookup logged"],
+    watchouts: [
+      "The investigation clock usually starts when the bank receives the report, so an email that waits a day in a queue is a day lost. Prepare cases on arrival.",
+      "Keep the match threshold strict. When two customers are close, show both and let the analyst choose; never file to a guess.",
+      "Start with the mainframe's existing read APIs. If there aren't any, a read-only query service in front of it is the first piece of work.",
+    ],
+    extra: "fraud-desk",
+  },
+  {
+    id: "laptops",
+    nav: "Laptops",
+    groupIntro: {
+      kicker: "How engineers run Claude Code",
+      title: "Three ways engineering teams run Claude Code every day",
+      lede:
+        "The same foundation, applied where engineers work: on their own laptops, on every pull request, and during incidents. Each runs through our own Google Cloud project, under our IAM and logging, and puts a person where a change becomes real.",
+    },
+    title: "Governed laptops: Claude Code for every engineer",
+    kicker: "One set of rules on every machine",
+    headline: "The everyday setup. People work in their own terminal and editor as they do today, and IT sets the rules from one place.",
+    quote:
+      "This is the pilot's starting point. IT installs one settings file on every laptop, engineers sign in with their existing Google identity, and every model call is made with our cloud credentials and shows up in our audit logs.",
+    lanes: [
+      {
+        label: "People",
+        tone: "people",
+        items: [
+          { name: "Engineers and data scientists", note: "Ask for a task in plain English" },
+          { name: "Reliability engineers", note: "Scripts, runbooks and on-call tooling" },
+        ],
+      },
+      {
+        label: "On the laptop",
+        tone: "workspace",
+        items: [
+          { name: "Claude Code", note: "In the terminal or editor; a permission check our policy sets" },
+          { name: "Company settings file", note: "Rules, permissions and hooks; users can't edit it" },
+          { name: "Hooks and sandbox", note: "Checks run before edits; commands reach approved hosts only" },
+        ],
+      },
+      {
+        label: "Behind the scenes",
+        tone: "platform",
+        items: [
+          { name: "Corporate proxy", note: "Approved traffic only" },
+          { name: "Claude through our Google Cloud project", note: "Our IAM and logging; not used for training" },
+          { name: "Device management", note: "Installs and restores the settings file" },
+        ],
+      },
+      {
+        label: "Where the work lands",
+        tone: "data",
+        items: [
+          { name: "Pull requests", note: "Security approves any change to the rules files" },
+          { name: "Audit logs", note: "Every model call, by person" },
+          { name: "Usage dashboards", note: "Cost and accepted changes per team" },
+        ],
+      },
+    ],
+    steps: [
+      "Install the rules. IT's device management installs the company settings file on every laptop: permissions, hooks and the sandbox. Engineers can't change it.",
+      "Ask. An engineer gives Claude Code a task. It reads the code and the team rulebook from the repository.",
+      "Call the model privately. Each request leaves through the corporate proxy and reaches Claude through our own Google Cloud project, under our IAM.",
+      "Check as it works. Hooks run before each edit and before Claude can say it's finished. The sandbox keeps commands off the open internet.",
+      "Review. The engineer reviews the change and opens a pull request. Changes to the rules need the security team's approval.",
+    ],
+    value: [
+      { title: "Faster everyday work", detail: "Tests, fixes and refactors done end to end", measure: "Time from ticket to merged change" },
+      { title: "One rulebook", detail: "Managed settings override anything set locally", measure: "Risky actions blocked" },
+      { title: "No keys on laptops", detail: "People sign in with their Google identity", measure: "Stored credentials found: zero" },
+      { title: "Spend you can see", detail: "Model choice and budgets set per team", measure: "Cost per engineer per month" },
+    ],
+    guardrailsTitle: "Built-in safeguards",
+    guardrails: ["Managed settings win", "Only company hooks run", "Bypass mode disabled", "Every call in audit logs"],
+    watchouts: [
+      "Start every team in Manual mode, set by the company policy, where Claude asks the engineer before edits and commands. Move a team to Auto mode only once the pilot data supports it.",
+      "Keep the settings file in a repository with required reviews, so a rules change is a reviewed change.",
+    ],
+  },
+  {
+    id: "reviews",
+    nav: "PR review",
+    title: "Pull request review, graded by a second model",
+    kicker: "Every change checked, and every check graded",
+    headline: "Claude reviews every pull request before a person does. A separate judge model grades those reviews against a test set, so we know the reviewer is getting better, not just busier.",
+    quote:
+      "An automated reviewer is only useful if people trust it. So every review is graded: a judge model checks each comment against the code, a weekly test of planted bugs measures what it catches, and reviewers' thumbs up or down keep the judge honest.",
+    lanes: [
+      {
+        label: "Trigger",
+        tone: "people",
+        items: [
+          { name: "Engineer opens a pull request", note: "Any repository, any language" },
+          { name: "Short-lived CI runner", note: "Inside our network; thrown away after each job" },
+          { name: "Short-lived credential", note: "Swapped for the job's identity; no stored keys" },
+        ],
+      },
+      {
+        label: "Claude reviews",
+        tone: "workspace",
+        items: [
+          { name: "Reads the change", note: "Plus the team rulebook and review rules" },
+          { name: "Runs tests and secret scan", note: "The same checks a person would run" },
+          { name: "Posts comments and fixes", note: "Plain English, with suggested changes" },
+        ],
+      },
+      {
+        label: "Judge and evaluations",
+        tone: "platform",
+        items: [
+          { name: "Judge model grades each review", note: "Is the comment true, important and actionable?" },
+          { name: "Planted-bug test set", note: "Known defects; measures what the reviewer catches" },
+          { name: "Reviewer feedback", note: "Thumbs up or down on each comment" },
+          { name: "Release gate", note: "A new prompt or model ships only if scores hold" },
+        ],
+      },
+      {
+        label: "Human decides",
+        tone: "data",
+        items: [
+          { name: "Human reviewer", note: "Approves the merge; Claude never merges" },
+          { name: "Quality dashboard", note: "Catch rate, false alarms and cost per review" },
+        ],
+      },
+    ],
+    steps: [
+      "Trigger. Opening a pull request starts a job on a short-lived runner inside our network, with a short-lived credential.",
+      "Review. Claude reads the change and the team's rules, runs the tests and secret scan, and posts comments and suggested fixes.",
+      "Grade. A separate judge model, with its own instructions, scores every comment for accuracy, severity and whether it can be acted on. Comments it rates as wrong are flagged for a person, not hidden.",
+      "Test. Each week the reviewer runs against a fixed set of pull requests with planted bugs. Catch rate and false alarms are tracked over time.",
+      "Calibrate. Reviewers' thumbs up and down are compared with the judge's scores, so we notice if the judge drifts.",
+      "Gate. Any change to the reviewer's prompt, rules or model ships only if it matches or beats the current scores.",
+    ],
+    value: [
+      { title: "Faster reviews", detail: "Seniors review a change that already passes the checks", measure: "Time to first human review" },
+      { title: "A reviewer we can trust", detail: "Every comment graded; wrong ones flagged", measure: "Share of comments rated correct" },
+      { title: "Bugs caught early", detail: "Planted-bug tests measure it every week", measure: "Catch rate on the test set" },
+      { title: "Safe to improve", detail: "Changes ship only if the scores hold", measure: "Score change per release" },
+    ],
+    guardrailsTitle: "Built-in safeguards",
+    guardrails: ["Claude can comment, never merge", "Runner thrown away after each job", "Judge uses a separate prompt", "Every call logged to the CI identity"],
+    watchouts: [
+      "A judge model has blind spots too. Check a sample of its grades by hand every month, and keep the planted-bug set private so it isn't learned.",
+      "Grade on a fixed rubric with written examples. Vague questions like 'is this a good review?' give noisy scores.",
+    ],
+    extra: "review-judge",
+  },
+  {
+    id: "incidents",
+    nav: "On-call",
+    title: "On-call assistant: read-only investigation on every alert",
+    kicker: "A first look at every incident in minutes",
+    headline: "An alert starts an investigation that can read but not change. The on-call engineer gets a summary with evidence, and a proposed fix to accept or reject.",
+    quote:
+      "The first twenty minutes of an incident are spent gathering facts. Claude does that part as soon as the alert fires, with read-only access, so the on-call engineer starts from a summary instead of a blank screen.",
+    lanes: [
+      {
+        label: "Trigger",
+        tone: "people",
+        items: [
+          { name: "Monitoring alert", note: "For example, payment timeouts above normal" },
+          { name: "Incident topic", note: "One message per alert starts a job" },
+        ],
+      },
+      {
+        label: "Claude investigates",
+        tone: "workspace",
+        items: [
+          { name: "Headless Claude Code job", note: "Runs in Cloud Run with time and spend limits" },
+          { name: "Reads logs and code", note: "Through a read-only connector; card data redacted" },
+          { name: "Finds the likely cause", note: "With the evidence that supports it" },
+        ],
+      },
+      {
+        label: "Behind the scenes",
+        tone: "platform",
+        items: [
+          { name: "Read-only service account", note: "Can read logs and code, nothing else" },
+          { name: "Claude through our Google Cloud project", note: "Our IAM and logging; not used for training" },
+          { name: "Full record", note: "What it read and concluded, attached to the incident" },
+        ],
+      },
+      {
+        label: "On-call decides",
+        tone: "data",
+        items: [
+          { name: "Summary in the incident channel", note: "Likely cause, evidence, next steps" },
+          { name: "Draft pull request", note: "A proposed fix and a test" },
+          { name: "On-call engineer", note: "Merges through normal review, or closes it" },
+        ],
+      },
+    ],
+    steps: [
+      "Alert. Monitoring fires and publishes a message that starts a short Cloud Run job.",
+      "Investigate. Claude Code runs headless with read-only tools: it searches code and queries logs, but can't touch running systems.",
+      "Summarize. It posts the likely cause with evidence in the incident channel.",
+      "Propose. If the cause is in code, it opens a draft pull request with a fix and a test.",
+      "Decide. The on-call engineer merges it through normal review, or closes it.",
+    ],
+    value: [
+      { title: "Faster first look", detail: "Facts gathered before anyone logs in", measure: "Time to first useful summary" },
+      { title: "Shorter incidents", detail: "Engineers start from evidence, not a blank screen", measure: "Time to resolve" },
+      { title: "Safe by design", detail: "Read-only access; fixes go through review", measure: "Changes made without review: zero" },
+      { title: "Costs capped", detail: "Time and spend limits on every job", measure: "Cost per incident" },
+    ],
+    guardrailsTitle: "Built-in safeguards",
+    guardrails: ["Read-only access", "Card data redacted", "Time and spend limits", "Draft pull requests only"],
+    watchouts: [
+      "Add this after the pilot, once incident data shows where triage time actually goes.",
+      "Noisy alerts will start noisy jobs. Fix alert quality first, or limit the assistant to the alerts that matter.",
     ],
   },
 ];
